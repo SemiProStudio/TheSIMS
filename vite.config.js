@@ -24,15 +24,6 @@ export default defineConfig({
     
     // Warn on large chunks
     chunkSizeWarningLimit: 500,
-    
-    // Minification
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: false, // Keep console.warn/error for debugging
-        drop_debugger: true,
-      },
-    },
   },
   
   // Dev server
