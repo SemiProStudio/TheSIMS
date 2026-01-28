@@ -25,8 +25,8 @@ const PANEL_COLORS = {
 };
 
 function Dashboard({
-  inventory,
-  categorySettings,
+  inventory = [],
+  categorySettings = {},
   layoutPrefs,
   onViewItem,
   onFilteredView,
@@ -146,7 +146,7 @@ function Dashboard({
   // Upcoming reservations
   const upcomingReservations = useMemo(() => {
     return inventory
-      .flatMap(i => i.reservations.map(r => ({ ...r, item: i })))
+      .flatMap(i => (i.reservations || []).map(r => ({ ...r, item: i })))
       .filter(r => new Date(r.start) >= new Date())
       .sort((a, b) => new Date(a.start) - new Date(b.start))
       .slice(0, 6);
