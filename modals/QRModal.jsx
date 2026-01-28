@@ -121,12 +121,10 @@ export const QRModal = memo(function QRModal({ item, onClose }) {
       <div style={{ padding: spacing[6], textAlign: 'center' }}>
         <div style={{ 
           marginBottom: spacing[4], 
-          display: 'flex', 
-          justifyContent: 'center',
+          display: 'inline-block',
           background: '#FFFFFF',
           padding: spacing[3],
-          borderRadius: borderRadius.lg,
-          display: 'inline-block'
+          borderRadius: borderRadius.lg
         }}>
           <QRCode data={item.id} size={180} />
         </div>

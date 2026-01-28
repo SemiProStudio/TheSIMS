@@ -15,7 +15,7 @@ import { SectionErrorBoundary } from './components/ErrorBoundary.jsx';
 import { FullPageLoading, ContentLoading, ViewLoading, ModalLoading } from './components/Loading.jsx';
 
 // Custom hooks for state management
-import { useNavigation, useFilters, useModals, useSidebar, useInventoryActions } from './hooks';
+import { useNavigation, useFilters, useModals, useSidebar, useInventoryActions } from './hooks/index.js';
 
 // ============================================================================
 // Core Components (always needed, loaded eagerly)
