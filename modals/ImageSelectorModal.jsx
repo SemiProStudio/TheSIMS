@@ -56,10 +56,10 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
     
     try {
       // Import storage service dynamically to avoid circular deps
-      const { storageService, isDemoMode } = await import('../lib/index.js');
+      const { storageService } = await import('../lib/index.js');
       
-      if (isDemoMode || !itemId) {
-        // In demo mode or no itemId, just use the data URL
+      if (!itemId) {
+        // No itemId, just use the data URL
         onSelect(uploadedImage);
       } else {
         // Upload to Supabase Storage

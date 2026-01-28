@@ -1051,13 +1051,23 @@ export default function App() {
   // ============================================================================
   // Image Handler
   // ============================================================================
-  const selectImage = useCallback((image) => {
+  const selectImage = useCallback(async (image) => {
     if (selectedItem) {
+      // Update local state immediately
       setInventory(prev => updateById(prev, selectedItem.id, { image }));
       setSelectedItem(prev => ({ ...prev, image }));
+      
+      // Persist to database
+      if (dataContext?.updateItem) {
+        try {
+          await dataContext.updateItem(selectedItem.id, { image });
+        } catch (err) {
+          console.error('Failed to save image:', err);
+        }
+      }
     }
     closeModal();
-  }, [selectedItem, closeModal]);
+  }, [selectedItem, closeModal, dataContext]);
 
   // ============================================================================
   // Reservation Handlers
