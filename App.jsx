@@ -1696,20 +1696,15 @@ export default function App() {
           overflow: 'auto',
         }}
       >
-        {/* Mobile header with menu button */}
-        <div className="mobile-header" style={{
-          display: 'none',
-          alignItems: 'center',
-          gap: 12,
-          marginBottom: 16,
-        }}>
+        {/* Mobile header with menu button - FIXED at top */}
+        <div className="mobile-header">
           <button
             onClick={() => setSidebarOpen(true)}
             style={{
-              background: colors.bgMedium,
-              border: `1px solid ${colors.borderLight}`,
+              background: 'transparent',
+              border: 'none',
               borderRadius: 8,
-              padding: '10px 12px',
+              padding: '8px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -1718,13 +1713,42 @@ export default function App() {
             }}
             aria-label="Open menu"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="3" y1="12" x2="21" y2="12"></line>
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
           </button>
-          <span style={{ fontWeight: 600, fontSize: 18 }}>SIMS</span>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 8,
+            flex: 1,
+          }}>
+            <img 
+              src="/moe.png" 
+              alt="" 
+              style={{ width: 28, height: 28, borderRadius: 6 }}
+              onError={(e) => e.target.style.display = 'none'}
+            />
+            <span style={{ fontWeight: 600, fontSize: 16, color: colors.textPrimary }}>SIMS</span>
+          </div>
+          {currentUser && (
+            <div style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: colors.primary,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: colors.bgDark,
+              fontWeight: 600,
+              fontSize: 14,
+            }}>
+              {currentUser.name?.charAt(0).toUpperCase() || 'U'}
+            </div>
+          )}
         </div>
 
         <div style={{ flex: 1, minHeight: 0 }}>
