@@ -43,9 +43,21 @@ export const VIEW_PERMISSIONS = {
 export function PermissionsProvider({ children, currentUser, roles }) {
   // Get the user's role
   const userRole = useMemo(() => {
-    if (!currentUser || !roles || roles.length === 0) return null;
+    if (!currentUser) return null;
+    
+    // If user has an embedded role object from Supabase join, use it directly
+    if (currentUser.role && typeof currentUser.role === 'object' && currentUser.role.permissions) {
+      return currentUser.role;
+    }
+    
+    // Otherwise, look up role from roles array
+    if (!roles || roles.length === 0) return null;
+    
+    // Support both roleId (frontend) and role_id (database) naming
+    const userRoleId = currentUser.roleId || currentUser.role_id;
+    
     // Find user's assigned role, or fall back to role_user (most restrictive standard role)
-    return roles.find(r => r.id === currentUser.roleId) || 
+    return roles.find(r => r.id === userRoleId) || 
            roles.find(r => r.id === 'role_user') || 
            null;
   }, [currentUser, roles]);

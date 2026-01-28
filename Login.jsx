@@ -32,12 +32,27 @@ function Login({ loginForm, setLoginForm, onLogin, isLoading, error, isDemoMode 
           gap: spacing[3],
           marginBottom: spacing[8]
         }}>
+          <img 
+            src="/moe.png" 
+            alt="SIMS Logo"
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: borderRadius.xl,
+              objectFit: 'cover',
+            }}
+            onError={(e) => {
+              // Fallback to gradient icon if image fails to load
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+          />
           <div style={{
             width: 56,
             height: 56,
             borderRadius: borderRadius.xl,
             background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-            display: 'flex',
+            display: 'none',
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
