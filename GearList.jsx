@@ -10,6 +10,7 @@ import { Search, Plus, Grid, List, CheckSquare, Square, MinusSquare, X, Bookmark
 import { colors, styles, spacing, borderRadius, typography, withOpacity, zIndex } from './theme.js';
 import { getStatusColor, filterBySearch, filterByCategory, filterByStatus, generateId } from './utils.js';
 import { Badge, Card, Button, SearchInput, Pagination } from './components/ui.jsx';
+import { OptimizedImage } from './components/OptimizedImage.jsx';
 import { useDebounce, usePagination } from './hooks.js';
 import { usePermissions, ViewOnlyBanner } from './PermissionsContext.jsx';
 
@@ -301,11 +302,12 @@ const GridItem = memo(function GridItem({ item, onViewItem, selectionMode, isSel
           </div>
         )}
         {item.image ? (
-          <img
+          <OptimizedImage
             src={item.image}
-            alt=""
-            loading="lazy"
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            alt={item.name}
+            size="thumbnail"
+            style={{ width: '100%', height: '100%' }}
+            objectFit="cover"
           />
         ) : (
           <div style={{
@@ -389,16 +391,14 @@ const ListItem = memo(function ListItem({ item, onViewItem, selectionMode, isSel
         </div>
       )}
       {item.image ? (
-        <img
+        <OptimizedImage
           src={item.image}
-          alt=""
-          loading="lazy"
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: borderRadius.md,
-            objectFit: 'cover'
-          }}
+          alt={item.name}
+          size="thumbnail"
+          width={56}
+          height={56}
+          style={{ borderRadius: borderRadius.md }}
+          objectFit="cover"
         />
       ) : (
         <div style={{

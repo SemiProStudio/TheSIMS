@@ -9,6 +9,7 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity} from '.
 import { formatDate, formatMoney, getStatusColor, getConditionColor } from './utils.js';
 import { ITEM_DETAIL_SECTIONS } from './constants.js';
 import { Badge, Card, Button, CollapsibleSection, BackButton } from './components/ui.jsx';
+import { OptimizedImage } from './components/OptimizedImage.jsx';
 import NotesSection from './NotesSection.jsx';
 import RemindersSection from './RemindersSection.jsx';
 import MaintenanceSection from './MaintenanceSection.jsx';
@@ -737,7 +738,14 @@ function ItemDetail({
             }}
           >
             {item.image ? (
-              <img src={item.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <OptimizedImage 
+                src={item.image} 
+                alt={item.name} 
+                size="full"
+                style={{ width: '100%', height: '100%' }} 
+                objectFit="cover"
+                lazy={false}
+              />
             ) : (
               <>
                 <Upload size={48} color={colors.textMuted} />

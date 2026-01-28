@@ -8,6 +8,7 @@ import { Plus, Package, Trash2, ArrowLeft, ChevronRight, Edit2, AlertTriangle, L
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from './theme.js';
 import { formatMoney, getStatusColor } from './utils.js';
 import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog } from './components/ui.jsx';
+import { OptimizedImage } from './components/OptimizedImage.jsx';
 
 function PackagesView({ 
   packages, 
@@ -448,7 +449,15 @@ function PackagesView({
               {packageItems.map(item => (
                 <div key={item.id} className="list-item" onClick={() => handleViewItem(item.id)}>
                   {item.image ? (
-                    <img src={item.image} alt="" className="list-item-image" />
+                    <OptimizedImage 
+                      src={item.image} 
+                      alt={item.name} 
+                      size="thumbnail"
+                      width={40} 
+                      height={40}
+                      style={{ borderRadius: borderRadius.md, flexShrink: 0 }}
+                      objectFit="cover"
+                    />
                   ) : (
                     <div className="list-item-image-placeholder">
                       <Package size={16} color={colors.textMuted} />

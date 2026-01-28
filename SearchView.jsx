@@ -8,6 +8,7 @@ import { STATUS } from './constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { getStatusColor } from './utils.js';
 import { Badge, Card, Button, SearchInput } from './components/ui.jsx';
+import { OptimizedImage } from './components/OptimizedImage.jsx';
 
 const ALL_STATUSES = Object.values(STATUS);
 
@@ -161,7 +162,15 @@ function SearchView({
                 />
                 <div onClick={() => onViewItem(item.id)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: spacing[3], cursor: 'pointer' }}>
                   {item.image ? (
-                    <img src={item.image} alt="" style={{ width: 48, height: 48, borderRadius: borderRadius.md, objectFit: 'cover' }} />
+                    <OptimizedImage 
+                      src={item.image} 
+                      alt={item.name} 
+                      size="thumbnail"
+                      width={48} 
+                      height={48} 
+                      style={{ borderRadius: borderRadius.md }}
+                      objectFit="cover"
+                    />
                   ) : (
                     <div style={{ width: 48, height: 48, borderRadius: borderRadius.md, background: `${withOpacity(colors.primary, 10)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textMuted, fontSize: typography.fontSize.xs }}>No img</div>
                   )}
