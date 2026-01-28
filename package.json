@@ -1,0 +1,63 @@
+{
+  "name": "sims-inventory",
+  "version": "2.0.0",
+  "description": "Studio Inventory Management System - Professional gear tracking for production companies",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
+    "db:setup": "echo 'Run schema.sql, then functions.sql, then seed.sql in Supabase SQL Editor'",
+    "deploy:vercel": "vercel"
+  },
+  "dependencies": {
+    "@sentry/react": "^7.100.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "lucide-react": "^0.294.0",
+    "prop-types": "^15.8.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@testing-library/jest-dom": "^6.1.0",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/user-event": "^14.5.0",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/coverage-v8": "^1.0.0",
+    "eslint": "^8.55.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "jsdom": "^23.0.0",
+    "vite": "^5.0.8",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "inventory",
+    "management",
+    "production",
+    "film",
+    "video",
+    "equipment",
+    "tracking",
+    "supabase",
+    "react"
+  ],
+  "author": "SIMS Team",
+  "license": "MIT"
+}

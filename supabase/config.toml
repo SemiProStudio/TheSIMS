@@ -1,0 +1,39 @@
+# =============================================================================
+# Supabase Configuration
+# =============================================================================
+
+[project]
+id = "your-project-id"
+name = "sims"
+
+# =============================================================================
+# Edge Functions
+# =============================================================================
+
+# Send Email Function
+# Called by other functions and the app to send transactional emails
+[functions.send-email]
+verify_jwt = true
+
+# Due Date Reminder Function  
+# Runs daily at 9:00 AM UTC to check for items due soon
+[functions.due-date-reminder]
+verify_jwt = false
+
+# =============================================================================
+# Scheduled Functions (Cron Jobs)
+# =============================================================================
+# Due date reminders run daily at 9:00 AM UTC
+# To enable, run: supabase functions deploy due-date-reminder --schedule "0 9 * * *"
+
+# =============================================================================
+# Environment Variables Required
+# =============================================================================
+# Set these in your Supabase dashboard under Project Settings > Edge Functions:
+#
+# RESEND_API_KEY     - Your Resend API key (get from resend.com)
+# FROM_EMAIL         - The "from" email address (e.g., "SIMS <notifications@yourdomain.com>")
+#
+# These are automatically available:
+# SUPABASE_URL            - Your project URL
+# SUPABASE_SERVICE_ROLE_KEY - Service role key for admin operations
