@@ -60,7 +60,6 @@ export function DataProvider({ children }) {
       setError(null);
 
       try {
-        // Load from Supabase
         const [
           inventoryData,
           packagesData,
@@ -116,12 +115,10 @@ export function DataProvider({ children }) {
       timestamp: new Date().toISOString()
     };
 
-    
-      try {
-        await auditLogService.create(newEntry);
-      } catch (err) {
-        console.error('Failed to create audit log:', err);
-      }
+    try {
+      await auditLogService.create(newEntry);
+    } catch (err) {
+      console.error('Failed to create audit log:', err);
     }
 
     setAuditLog(prev => [newEntry, ...prev]);
@@ -136,13 +133,11 @@ export function DataProvider({ children }) {
   }, []);
 
   const updateItem = useCallback(async (id, updates) => {
-    
-      try {
-        await inventoryService.update(id, updates);
-      } catch (err) {
-        console.error('Failed to update item:', err);
-        throw err;
-      }
+    try {
+      await inventoryService.update(id, updates);
+    } catch (err) {
+      console.error('Failed to update item:', err);
+      throw err;
     }
     
     setInventory(prev => prev.map(item => 
@@ -153,13 +148,11 @@ export function DataProvider({ children }) {
   const createItem = useCallback(async (item) => {
     let newItem = item;
     
-    
-      try {
-        newItem = await inventoryService.create(item);
-      } catch (err) {
-        console.error('Failed to create item:', err);
-        throw err;
-      }
+    try {
+      newItem = await inventoryService.create(item);
+    } catch (err) {
+      console.error('Failed to create item:', err);
+      throw err;
     }
     
     setInventory(prev => [...prev, newItem]);
@@ -167,13 +160,11 @@ export function DataProvider({ children }) {
   }, []);
 
   const deleteItem = useCallback(async (id) => {
-    
-      try {
-        await inventoryService.delete(id);
-      } catch (err) {
-        console.error('Failed to delete item:', err);
-        throw err;
-      }
+    try {
+      await inventoryService.delete(id);
+    } catch (err) {
+      console.error('Failed to delete item:', err);
+      throw err;
     }
     
     setInventory(prev => prev.filter(item => item.id !== id));
@@ -186,7 +177,6 @@ export function DataProvider({ children }) {
       return itemWithDetails;
     } catch (err) {
       console.error('Failed to fetch item details:', err);
-      // Fall back to local inventory
       return inventory.find(item => item.id === id) || null;
     }
   }, [inventory]);
@@ -202,13 +192,11 @@ export function DataProvider({ children }) {
   const createPackage = useCallback(async (pkg) => {
     let newPackage = pkg;
     
-    
-      try {
-        newPackage = await packagesService.create(pkg);
-      } catch (err) {
-        console.error('Failed to create package:', err);
-        throw err;
-      }
+    try {
+      newPackage = await packagesService.create(pkg);
+    } catch (err) {
+      console.error('Failed to create package:', err);
+      throw err;
     }
     
     setPackages(prev => [...prev, newPackage]);
@@ -216,13 +204,11 @@ export function DataProvider({ children }) {
   }, []);
 
   const updatePackage = useCallback(async (id, updates) => {
-    
-      try {
-        await packagesService.update(id, updates);
-      } catch (err) {
-        console.error('Failed to update package:', err);
-        throw err;
-      }
+    try {
+      await packagesService.update(id, updates);
+    } catch (err) {
+      console.error('Failed to update package:', err);
+      throw err;
     }
     
     setPackages(prev => prev.map(pkg => 
@@ -231,13 +217,11 @@ export function DataProvider({ children }) {
   }, []);
 
   const deletePackage = useCallback(async (id) => {
-    
-      try {
-        await packagesService.delete(id);
-      } catch (err) {
-        console.error('Failed to delete package:', err);
-        throw err;
-      }
+    try {
+      await packagesService.delete(id);
+    } catch (err) {
+      console.error('Failed to delete package:', err);
+      throw err;
     }
     
     setPackages(prev => prev.filter(pkg => pkg.id !== id));
@@ -254,13 +238,11 @@ export function DataProvider({ children }) {
   const createPackList = useCallback(async (packList) => {
     let newPackList = packList;
     
-    
-      try {
-        newPackList = await packListsService.create(packList);
-      } catch (err) {
-        console.error('Failed to create pack list:', err);
-        throw err;
-      }
+    try {
+      newPackList = await packListsService.create(packList);
+    } catch (err) {
+      console.error('Failed to create pack list:', err);
+      throw err;
     }
     
     setPackLists(prev => [...prev, newPackList]);
@@ -268,13 +250,11 @@ export function DataProvider({ children }) {
   }, []);
 
   const updatePackList = useCallback(async (id, updates) => {
-    
-      try {
-        await packListsService.update(id, updates);
-      } catch (err) {
-        console.error('Failed to update pack list:', err);
-        throw err;
-      }
+    try {
+      await packListsService.update(id, updates);
+    } catch (err) {
+      console.error('Failed to update pack list:', err);
+      throw err;
     }
     
     setPackLists(prev => prev.map(pl => 
@@ -283,13 +263,11 @@ export function DataProvider({ children }) {
   }, []);
 
   const deletePackList = useCallback(async (id) => {
-    
-      try {
-        await packListsService.delete(id);
-      } catch (err) {
-        console.error('Failed to delete pack list:', err);
-        throw err;
-      }
+    try {
+      await packListsService.delete(id);
+    } catch (err) {
+      console.error('Failed to delete pack list:', err);
+      throw err;
     }
     
     setPackLists(prev => prev.filter(pl => pl.id !== id));
@@ -306,13 +284,11 @@ export function DataProvider({ children }) {
   const createClient = useCallback(async (client) => {
     let newClient = client;
     
-    
-      try {
-        newClient = await clientsService.create(client);
-      } catch (err) {
-        console.error('Failed to create client:', err);
-        throw err;
-      }
+    try {
+      newClient = await clientsService.create(client);
+    } catch (err) {
+      console.error('Failed to create client:', err);
+      throw err;
     }
     
     setClients(prev => [...prev, newClient]);
@@ -320,13 +296,11 @@ export function DataProvider({ children }) {
   }, []);
 
   const updateClient = useCallback(async (id, updates) => {
-    
-      try {
-        await clientsService.update(id, updates);
-      } catch (err) {
-        console.error('Failed to update client:', err);
-        throw err;
-      }
+    try {
+      await clientsService.update(id, updates);
+    } catch (err) {
+      console.error('Failed to update client:', err);
+      throw err;
     }
     
     setClients(prev => prev.map(client => 
@@ -335,13 +309,11 @@ export function DataProvider({ children }) {
   }, []);
 
   const deleteClient = useCallback(async (id) => {
-    
-      try {
-        await clientsService.delete(id);
-      } catch (err) {
-        console.error('Failed to delete client:', err);
-        throw err;
-      }
+    try {
+      await clientsService.delete(id);
+    } catch (err) {
+      console.error('Failed to delete client:', err);
+      throw err;
     }
     
     setClients(prev => prev.filter(client => client.id !== id));
@@ -391,26 +363,17 @@ export function DataProvider({ children }) {
   // NOTIFICATION OPERATIONS
   // =============================================================================
 
-  // Save notification preferences
   const saveNotificationPreferences = useCallback(async (userId, preferences) => {
-    
-      try {
-        await notificationPreferencesService.upsert(userId, preferences);
-      } catch (err) {
-        console.error('Failed to save notification preferences:', err);
-        throw err;
-      }
+    try {
+      await notificationPreferencesService.upsert(userId, preferences);
+    } catch (err) {
+      console.error('Failed to save notification preferences:', err);
+      throw err;
     }
-    
-    // Update local user state
-    setUsers(prev => prev.map(u => 
-      u.id === userId ? { ...u, notificationPreferences: preferences } : u
-    ));
     
     return preferences;
   }, []);
 
-  // Get notification preferences for a user
   const getNotificationPreferences = useCallback(async (userId) => {
     try {
       return await notificationPreferencesService.getByUserId(userId);
@@ -420,7 +383,6 @@ export function DataProvider({ children }) {
     }
   }, []);
 
-  // Send checkout confirmation email
   const sendCheckoutEmail = useCallback(async ({ borrowerEmail, borrowerName, item, checkoutDate, dueDate, project }) => {
     try {
       return await emailService.sendCheckoutConfirmation({
@@ -433,12 +395,10 @@ export function DataProvider({ children }) {
       });
     } catch (err) {
       console.error('Failed to send checkout email:', err);
-      // Don't throw - email failure shouldn't block checkout
       return { success: false, error: err.message };
     }
   }, []);
 
-  // Send checkin confirmation email
   const sendCheckinEmail = useCallback(async ({ borrowerEmail, borrowerName, item, returnDate }) => {
     try {
       return await emailService.sendCheckinConfirmation({
@@ -453,7 +413,6 @@ export function DataProvider({ children }) {
     }
   }, []);
 
-  // Send reservation confirmation email
   const sendReservationEmail = useCallback(async ({ userEmail, userName, item, reservation }) => {
     try {
       return await emailService.sendReservationConfirmation({
@@ -553,34 +512,28 @@ export function DataProvider({ children }) {
     categories,
     specs,
     auditLog,
-    // Inventory
     updateInventory,
     updateItem,
     createItem,
     deleteItem,
     getItemWithDetails,
-    // Packages
     updatePackages,
     createPackage,
     updatePackage,
     deletePackage,
-    // Pack Lists
     updatePackLists,
     createPackList,
     updatePackList,
     deletePackList,
-    // Clients
     updateClients,
     createClient,
     updateClient,
     deleteClient,
-    // Notifications
     saveNotificationPreferences,
     getNotificationPreferences,
     sendCheckoutEmail,
     sendCheckinEmail,
     sendReservationEmail,
-    // Other
     updateUsers,
     updateRoles,
     updateLocations,
@@ -607,9 +560,5 @@ export function useData() {
   }
   return context;
 }
-
-// =============================================================================
-// EXPORT
-// =============================================================================
 
 export default DataContext;
