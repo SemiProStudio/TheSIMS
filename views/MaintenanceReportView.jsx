@@ -20,7 +20,7 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
     const records = [];
     inventory.forEach(item => {
       if (item.maintenanceHistory && item.maintenanceHistory.length > 0) {
-        item.maintenanceHistory.forEach(record => {
+        (item.maintenanceHistory || []).forEach(record => {
           records.push({
             ...record,
             itemId: item.id,

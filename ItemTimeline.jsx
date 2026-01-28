@@ -248,7 +248,7 @@ function ItemTimeline({ item }) {
 
     // Add maintenance history events
     if (item.maintenanceHistory) {
-      item.maintenanceHistory.forEach(record => {
+      (item.maintenanceHistory || []).forEach(record => {
         // Add scheduled event
         if (record.scheduledDate) {
           events.push({
@@ -284,7 +284,7 @@ function ItemTimeline({ item }) {
 
     // Add notes events
     if (item.notes) {
-      item.notes.filter(n => !n.deleted).forEach(note => {
+      (item.notes || []).filter(n => !n.deleted).forEach(note => {
         events.push({
           id: `note-${note.id}`,
           type: 'note_added',
@@ -297,7 +297,7 @@ function ItemTimeline({ item }) {
 
     // Add reservation events
     if (item.reservations) {
-      item.reservations.forEach(res => {
+      (item.reservations || []).forEach(res => {
         events.push({
           id: `res-${res.id}`,
           type: 'reservation_created',
@@ -317,7 +317,7 @@ function ItemTimeline({ item }) {
 
     // Add reminder events
     if (item.reminders) {
-      item.reminders.forEach(rem => {
+      (item.reminders || []).forEach(rem => {
         events.push({
           id: `rem-${rem.id}`,
           type: rem.completed ? 'reminder_completed' : 'reminder_created',

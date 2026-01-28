@@ -1063,7 +1063,7 @@ export default function App() {
       };
 
       const currentItem = inventory.find(i => i.id === selectedReservationItem.id);
-      const updatedReservations = currentItem.reservations.map(r => 
+      const updatedReservations = (currentItem.reservations || []).map(r => 
         r.id === editingReservationId ? updatedReservation : r
       );
       
@@ -1074,14 +1074,14 @@ export default function App() {
         } catch (err) {
           console.error('Failed to update reservation:', err);
           setInventory(prev => updateById(prev, selectedReservationItem.id, item => ({
-            reservations: item.reservations.map(r => 
+            reservations: (item.reservations || []).map(r => 
               r.id === editingReservationId ? updatedReservation : r
             )
           })));
         }
       } else {
         setInventory(prev => updateById(prev, selectedReservationItem.id, item => ({
-          reservations: item.reservations.map(r => 
+          reservations: (item.reservations || []).map(r => 
             r.id === editingReservationId ? updatedReservation : r
           )
         })));
@@ -1091,7 +1091,7 @@ export default function App() {
       if (selectedItem?.id === selectedReservationItem.id) {
         setSelectedItem(prev => ({
           ...prev,
-          reservations: prev.reservations.map(r => 
+          reservations: (prev.reservations || []).map(r => 
             r.id === editingReservationId ? updatedReservation : r
           )
         }));
@@ -1198,7 +1198,7 @@ export default function App() {
       title: 'Cancel Reservation',
       message: 'Are you sure you want to cancel this reservation? This action cannot be undone.',
       onConfirm: async () => {
-        const updatedReservations = item.reservations.filter(r => r.id !== resId);
+        const updatedReservations = (item.reservations || []).filter(r => r.id !== resId);
         
         // Use DataContext for Supabase persistence
         if (dataContext?.updateItem) {
@@ -1207,19 +1207,19 @@ export default function App() {
           } catch (err) {
             console.error('Failed to delete reservation:', err);
             setInventory(prev => updateById(prev, itemId, item => ({
-              reservations: item.reservations.filter(r => r.id !== resId)
+              reservations: (item.reservations || []).filter(r => r.id !== resId)
             })));
           }
         } else {
           setInventory(prev => updateById(prev, itemId, item => ({
-            reservations: item.reservations.filter(r => r.id !== resId)
+            reservations: (item.reservations || []).filter(r => r.id !== resId)
           })));
         }
         
         if (selectedItem?.id === itemId) {
           setSelectedItem(prev => ({
             ...prev,
-            reservations: prev.reservations.filter(r => r.id !== resId)
+            reservations: (prev.reservations || []).filter(r => r.id !== resId)
           }));
         }
         
@@ -1271,7 +1271,7 @@ export default function App() {
         })));
       } else if (entityType === 'reservation') {
         setInventory(prev => updateById(prev, selectedReservationItem.id, item => ({
-          reservations: item.reservations.map(r =>
+          reservations: (item.reservations || []).map(r =>
             r.id === entityId ? { ...r, notes: notesUpdater(r.notes || []) } : r
           )
         })));

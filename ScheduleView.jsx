@@ -23,8 +23,8 @@ function ScheduleView({
 }) {
   // Get all reservations with item info
   const allReservations = useMemo(() => {
-    return inventory
-      .flatMap(i => i.reservations.map(r => ({ ...r, item: i })))
+    return (inventory || [])
+      .flatMap(i => (i.reservations || []).map(r => ({ ...r, item: i })))
       .sort((a, b) => new Date(a.start) - new Date(b.start));
   }, [inventory]);
 
@@ -193,7 +193,7 @@ function ScheduleView({
           {scheduleDates.map((dt, idx) => {
             const ds = dt.toISOString().split('T')[0];
             const isToday = ds === today;
-            const events = inventory.flatMap(i => i.reservations.filter(r => r.start <= ds && r.end >= ds).map(r => ({ ...r, item: i })));
+            const events = (inventory || []).flatMap(i => (i.reservations || []).filter(r => r.start <= ds && r.end >= ds).map(r => ({ ...r, item: i })));
 
             return (
               <Card key={idx} padding={false} style={{ 
