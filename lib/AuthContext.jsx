@@ -4,36 +4,11 @@
 // =============================================================================
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase, auth } from './supabase.js';
+import { getSupabase, auth } from './supabase.js';
 import { usersService } from './services.js';
 
 // Context
 const AuthContext = createContext(null);
-
-// Safe localStorage wrapper
-const safeLocalStorage = {
-  getItem: (key) => {
-    try {
-      return localStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  },
-  setItem: (key, value) => {
-    try {
-      localStorage.setItem(key, value);
-    } catch {
-      // Ignore
-    }
-  },
-  removeItem: (key) => {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      // Ignore
-    }
-  }
-};
 
 // =============================================================================
 // Auth Provider
@@ -49,10 +24,15 @@ export function AuthProvider({ children }) {
   // Initialize auth state
   // =============================================================================
   useEffect(() => {
+    let subscription = null;
+    
     const initAuth = async () => {
       setLoading(true);
 
       try {
+        // Wait for Supabase client to be ready
+        const supabase = await getSupabase();
+        
         // Get current session
         const currentSession = await auth.getSession();
         setSession(currentSession);
@@ -61,9 +41,33 @@ export function AuthProvider({ children }) {
           setUser(currentSession.user);
           
           // Fetch user profile from database
-          const profile = await usersService.getById(currentSession.user.id);
-          setUserProfile(profile);
+          try {
+            const profile = await usersService.getById(currentSession.user.id);
+            setUserProfile(profile);
+          } catch (profileErr) {
+            console.error('Failed to fetch user profile:', profileErr);
+          }
         }
+        
+        // Subscribe to auth changes (now that supabase is ready)
+        const { data } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+          console.log('Auth state changed:', event);
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
+          
+          if (newSession?.user) {
+            try {
+              const profile = await usersService.getById(newSession.user.id);
+              setUserProfile(profile);
+            } catch (err) {
+              console.error('Failed to fetch user profile:', err);
+            }
+          } else {
+            setUserProfile(null);
+          }
+        });
+        
+        subscription = data.subscription;
       } catch (err) {
         console.error('Auth init error:', err);
         setError(err);
@@ -74,28 +78,9 @@ export function AuthProvider({ children }) {
 
     initAuth();
 
-    // Subscribe to auth changes
-    if (supabase) {
-      const { data: { subscription } } = auth.onAuthStateChange(async (event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        if (newSession?.user) {
-          try {
-            const profile = await usersService.getById(newSession.user.id);
-            setUserProfile(profile);
-          } catch (err) {
-            console.error('Failed to fetch user profile:', err);
-          }
-        } else {
-          setUserProfile(null);
-        }
-      });
-
-      return () => {
-        subscription?.unsubscribe();
-      };
-    }
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   // =============================================================================
@@ -105,24 +90,27 @@ export function AuthProvider({ children }) {
     setError(null);
 
     try {
-      const { user: authUser, session: newSession, error: authError } = await auth.signIn(email, password);
-      
-      if (authError) {
-        setError(authError);
-        return { user: null, error: authError };
-      }
+      const data = await auth.signIn(email, password);
+      const authUser = data.user;
+      const newSession = data.session;
 
       setUser(authUser);
       setSession(newSession);
 
       // Fetch user profile
+      let profile = null;
       if (authUser) {
-        const profile = await usersService.getById(authUser.id);
-        setUserProfile(profile);
+        try {
+          profile = await usersService.getById(authUser.id);
+          setUserProfile(profile);
+        } catch (profileErr) {
+          console.error('Failed to fetch profile after login:', profileErr);
+        }
       }
 
-      return { user: authUser, error: null };
+      return { user: profile || authUser, error: null };
     } catch (err) {
+      console.error('Sign in error:', err);
       setError(err);
       return { user: null, error: err };
     }
@@ -135,14 +123,8 @@ export function AuthProvider({ children }) {
     setError(null);
     
     try {
-      const { user: authUser, error: authError } = await auth.signUp(email, password, name);
-      
-      if (authError) {
-        setError(authError);
-        return { user: null, error: authError };
-      }
-      
-      return { user: authUser, error: null };
+      const data = await auth.signUp(email, password, name);
+      return { user: data.user, error: null };
     } catch (err) {
       setError(err);
       return { user: null, error: err };

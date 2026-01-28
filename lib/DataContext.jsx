@@ -37,6 +37,7 @@ export function DataProvider({ children }) {
   // Loading state
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Core data state
   const [inventory, setInventory] = useState([]);
@@ -51,59 +52,76 @@ export function DataProvider({ children }) {
   const [auditLog, setAuditLog] = useState([]);
 
   // =============================================================================
+  // DATA LOADING FUNCTION
+  // =============================================================================
+  
+  const loadData = useCallback(async () => {
+    console.log('[DataContext] Starting data load...');
+    setLoading(true);
+    setError(null);
+
+    try {
+      const [
+        inventoryData,
+        packagesData,
+        packListsData,
+        clientsData,
+        usersData,
+        rolesData,
+        locationsData,
+        categoriesData,
+        specsData,
+        auditLogData
+      ] = await Promise.all([
+        inventoryService.getAll(),
+        packagesService.getAll(),
+        packListsService.getAll(),
+        clientsService.getAll(),
+        usersService.getAll(),
+        rolesService.getAll(),
+        locationsService.getAll(),
+        categoriesService.getAll(),
+        specsService.getAll(),
+        auditLogService.getAll({ limit: 100 })
+      ]);
+
+      console.log('[DataContext] Data loaded:', {
+        inventory: inventoryData?.length || 0,
+        packages: packagesData?.length || 0,
+        packLists: packListsData?.length || 0,
+        clients: clientsData?.length || 0,
+        users: usersData?.length || 0,
+        roles: rolesData?.length || 0,
+        locations: locationsData?.length || 0,
+        categories: categoriesData?.length || 0
+      });
+
+      setInventory(inventoryData || []);
+      setPackages(packagesData || []);
+      setPackLists(packListsData || []);
+      setClients(clientsData || []);
+      setUsers(usersData || []);
+      setRoles(rolesData || []);
+      setLocations(locationsData || []);
+      setCategories(categoriesData?.map(c => c.name) || []);
+      setSpecs(specsData || {});
+      setAuditLog(auditLogData || []);
+      setDataLoaded(true);
+    } catch (err) {
+      console.error('[DataContext] Failed to load data:', err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // =============================================================================
   // INITIAL DATA LOAD
   // =============================================================================
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const [
-          inventoryData,
-          packagesData,
-          packListsData,
-          clientsData,
-          usersData,
-          rolesData,
-          locationsData,
-          categoriesData,
-          specsData,
-          auditLogData
-        ] = await Promise.all([
-          inventoryService.getAll(),
-          packagesService.getAll(),
-          packListsService.getAll(),
-          clientsService.getAll(),
-          usersService.getAll(),
-          rolesService.getAll(),
-          locationsService.getAll(),
-          categoriesService.getAll(),
-          specsService.getAll(),
-          auditLogService.getAll({ limit: 100 })
-        ]);
-
-        setInventory(inventoryData || []);
-        setPackages(packagesData || []);
-        setPackLists(packListsData || []);
-        setClients(clientsData || []);
-        setUsers(usersData || []);
-        setRoles(rolesData || []);
-        setLocations(locationsData || []);
-        setCategories(categoriesData?.map(c => c.name) || []);
-        setSpecs(specsData || {});
-        setAuditLog(auditLogData || []);
-      } catch (err) {
-        console.error('Failed to load data:', err);
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
-  }, []);
+  }, [loadData]);
 
   // =============================================================================
   // AUDIT LOG HELPER
@@ -435,6 +453,7 @@ export function DataProvider({ children }) {
     // State
     loading,
     error,
+    dataLoaded,
     
     // Data
     inventory,
@@ -447,6 +466,9 @@ export function DataProvider({ children }) {
     categories,
     specs,
     auditLog,
+    
+    // Refresh function
+    refreshData: loadData,
     
     // Setters (for direct state updates)
     setInventory,
@@ -502,6 +524,7 @@ export function DataProvider({ children }) {
   }), [
     loading,
     error,
+    dataLoaded,
     inventory,
     packages,
     packLists,
@@ -512,6 +535,7 @@ export function DataProvider({ children }) {
     categories,
     specs,
     auditLog,
+    loadData,
     updateInventory,
     updateItem,
     createItem,

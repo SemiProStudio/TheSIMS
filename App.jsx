@@ -113,21 +113,25 @@ export default function App() {
   const [packLists, setPackLists] = useState([]);
   const [clients, setClients] = useState([]);
   
-  // Sync with context data
+  // Sync with context data - always sync when data changes
   useEffect(() => {
-    if (!dataContext.loading) {
-      if (dataContext.inventory?.length) setInventory(dataContext.inventory);
-      if (dataContext.packages?.length) setPackages(dataContext.packages);
-      if (dataContext.clients?.length) setClients(dataContext.clients);
-      if (dataContext.users?.length) setUsers(dataContext.users);
-      if (dataContext.packLists?.length) setPackLists(dataContext.packLists);
-      if (dataContext.auditLog?.length) setAuditLog(dataContext.auditLog);
+    if (!dataContext.loading && dataContext.dataLoaded) {
+      console.log('[App] Syncing data from context:', {
+        inventory: dataContext.inventory?.length || 0,
+        packages: dataContext.packages?.length || 0
+      });
+      setInventory(dataContext.inventory || []);
+      setPackages(dataContext.packages || []);
+      setClients(dataContext.clients || []);
+      setUsers(dataContext.users || []);
+      setPackLists(dataContext.packLists || []);
+      setAuditLog(dataContext.auditLog || []);
       if (dataContext.roles?.length) setRoles(dataContext.roles);
       if (dataContext.locations?.length) setLocations(dataContext.locations);
       if (dataContext.categories?.length) setCategories(dataContext.categories);
       if (dataContext.specs && Object.keys(dataContext.specs).length) setSpecs(dataContext.specs);
     }
-  }, [dataContext]);
+  }, [dataContext.loading, dataContext.dataLoaded, dataContext.inventory, dataContext.packages, dataContext.clients, dataContext.users, dataContext.packLists, dataContext.auditLog, dataContext.roles, dataContext.locations, dataContext.categories, dataContext.specs]);
 
   // ============================================================================
   // Auth State
@@ -142,16 +146,20 @@ export default function App() {
   const sidebar = useSidebar();
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed, toggleSidebarCollapsed } = sidebar;
   
-  // Sync auth state with context
+  // Sync auth state with context and refresh data when authenticated
   useEffect(() => {
     if (auth.isAuthenticated && auth.userProfile) {
+      console.log('[App] User authenticated:', auth.userProfile.email);
       setIsLoggedIn(true);
       setCurrentUser({
         ...auth.userProfile,
         layoutPrefs: auth.userProfile.layoutPrefs || DEFAULT_LAYOUT_PREFS,
       });
+    } else if (!auth.loading && !auth.isAuthenticated) {
+      setIsLoggedIn(false);
+      setCurrentUser(null);
     }
-  }, [auth.isAuthenticated, auth.userProfile]);
+  }, [auth.isAuthenticated, auth.userProfile, auth.loading]);
 
   // ============================================================================
   // Navigation State - Using custom hook
@@ -236,13 +244,19 @@ export default function App() {
     }
     
     if (user) {
+      console.log('[App] Login successful, setting user and refreshing data');
       setIsLoggedIn(true);
       setCurrentUser({
         ...user,
         layoutPrefs: user.layoutPrefs || DEFAULT_LAYOUT_PREFS,
       });
+      
+      // Refresh data after login in case RLS policies affected initial load
+      if (dataContext.refreshData) {
+        dataContext.refreshData();
+      }
     }
-  }, [auth, loginForm]);
+  }, [auth, loginForm, dataContext]);
 
   const handleLogout = useCallback(async () => {
     await auth.signOut();
