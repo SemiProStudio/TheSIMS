@@ -462,9 +462,9 @@ const RoleEditor = memo(function RoleEditor({ role, onSave, onCancel }) {
 });
 
 // User Assignment Modal
-const UserAssignmentModal = memo(function UserAssignmentModal({ role, users, onSave, onClose }) {
+const UserAssignmentModal = memo(function UserAssignmentModal({ role, users = [], onSave, onClose }) {
   const [selectedUsers, setSelectedUsers] = useState(
-    new Set(users.filter(u => u.roleId === role.id).map(u => u.id))
+    new Set((users || []).filter(u => u.roleId === role.id || u.role_id === role.id).map(u => u.id))
   );
 
   const toggleUser = (userId) => {
@@ -532,7 +532,7 @@ const UserAssignmentModal = memo(function UserAssignmentModal({ role, users, onS
         </div>
         
         <div style={{ flex: 1, overflowY: 'auto', padding: spacing[3] }}>
-          {users.map(user => (
+          {(users || []).map(user => (
             <label
               key={user.id}
               className="list-item-hover"
@@ -579,7 +579,7 @@ const UserAssignmentModal = memo(function UserAssignmentModal({ role, users, onS
 });
 
 // Main Roles Manager Component
-function RolesManager({ roles, users, onSaveRole, onDeleteRole, onAssignUsers }) {
+function RolesManager({ roles = [], users = [], onSaveRole, onDeleteRole, onAssignUsers, onBack }) {
   const [editingRole, setEditingRole] = useState(null);
   const [assigningRole, setAssigningRole] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
@@ -595,19 +595,19 @@ function RolesManager({ roles, users, onSaveRole, onDeleteRole, onAssignUsers })
   };
 
   const handleSave = (roleData) => {
-    onSaveRole(roleData);
+    onSaveRole?.(roleData);
     setShowEditor(false);
     setEditingRole(null);
   };
 
   const handleDelete = (role) => {
     if (window.confirm(`Are you sure you want to delete the "${role.name}" role? Users with this role will need to be reassigned.`)) {
-      onDeleteRole(role.id);
+      onDeleteRole?.(role.id);
     }
   };
 
   const getUserCount = (roleId) => {
-    return users.filter(u => u.roleId === roleId).length;
+    return (users || []).filter(u => u.roleId === roleId || u.role_id === roleId).length;
   };
 
   if (showEditor) {
@@ -674,7 +674,7 @@ function RolesManager({ roles, users, onSaveRole, onDeleteRole, onAssignUsers })
       </Card>
 
       {/* Roles List */}
-      {roles.map(role => (
+      {(roles || []).map(role => (
         <RoleCard
           key={role.id}
           role={role}
@@ -689,7 +689,7 @@ function RolesManager({ roles, users, onSaveRole, onDeleteRole, onAssignUsers })
       {assigningRole && (
         <UserAssignmentModal
           role={assigningRole}
-          users={users}
+          users={users || []}
           onSave={onAssignUsers}
           onClose={() => setAssigningRole(null)}
         />

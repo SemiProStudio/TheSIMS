@@ -2114,6 +2114,30 @@ export default function App() {
           {currentView === VIEWS.ROLES_MANAGE && (
             <Suspense fallback={<ViewLoading message="Loading Roles..." />}>
               <RolesManager
+                roles={roles}
+                users={users}
+                onSaveRole={(roleData) => {
+                  if (roleData.id) {
+                    // Update existing role
+                    setRoles(prev => prev.map(r => r.id === roleData.id ? roleData : r));
+                  } else {
+                    // Create new role
+                    const newRole = { ...roleData, id: `role_${generateId()}` };
+                    setRoles(prev => [...prev, newRole]);
+                  }
+                }}
+                onDeleteRole={(roleId) => {
+                  setRoles(prev => prev.filter(r => r.id !== roleId));
+                  // Reset users with this role to default role
+                  setUsers(prev => prev.map(u => 
+                    u.roleId === roleId ? { ...u, roleId: 'role_user' } : u
+                  ));
+                }}
+                onAssignUsers={(roleId, userIds) => {
+                  setUsers(prev => prev.map(u => 
+                    userIds.includes(u.id) ? { ...u, roleId } : u
+                  ));
+                }}
                 onBack={() => setCurrentView(VIEWS.ADMIN)}
               />
             </Suspense>
