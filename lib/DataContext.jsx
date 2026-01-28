@@ -570,6 +570,7 @@ export function DataProvider({ children }) {
     updateItem,
     createItem,
     deleteItem,
+    getItemWithDetails,
     
     // Package Operations
     updatePackages,

@@ -300,7 +300,7 @@ export default function App() {
   // ============================================================================
   // Navigation Handlers
   // ============================================================================
-  const navigateToItem = useCallback(async (id, context = null) => {
+  const navigateToItem = useCallback((id, context = null) => {
     const item = findById(inventory, id);
     if (item) {
       // Set basic item immediately for fast UI response
@@ -314,17 +314,19 @@ export default function App() {
       window.scrollTo(0, 0);
       
       // Fetch full item details with related data (notes, reminders, reservations, etc.)
+      // This is async but we don't await it - UI updates when data arrives
       if (dataContext?.getItemWithDetails) {
-        try {
-          const itemWithDetails = await dataContext.getItemWithDetails(id);
-          if (itemWithDetails) {
-            setSelectedItem(itemWithDetails);
-            // Also update inventory with the detailed data
-            setInventory(prev => updateById(prev, id, itemWithDetails));
-          }
-        } catch (err) {
-          console.error('Failed to load item details:', err);
-        }
+        dataContext.getItemWithDetails(id)
+          .then(itemWithDetails => {
+            if (itemWithDetails) {
+              setSelectedItem(itemWithDetails);
+              // Also update inventory with the detailed data
+              setInventory(prev => updateById(prev, id, itemWithDetails));
+            }
+          })
+          .catch(err => {
+            console.error('Failed to load item details:', err);
+          });
       }
     }
   }, [inventory, dataContext]);
