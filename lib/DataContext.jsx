@@ -218,6 +218,23 @@ export function DataProvider({ children }) {
     setInventory(prev => prev.filter(item => item.id !== id));
   }, []);
 
+  // Fetch item with all related data (notes, reminders, reservations, maintenance)
+  const getItemWithDetails = useCallback(async (id) => {
+    if (isDemoMode) {
+      // In demo mode, return item from local state
+      return inventory.find(item => item.id === id) || null;
+    }
+    
+    try {
+      const itemWithDetails = await inventoryService.getByIdWithDetails(id);
+      return itemWithDetails;
+    } catch (err) {
+      console.error('Failed to fetch item details:', err);
+      // Fall back to local inventory
+      return inventory.find(item => item.id === id) || null;
+    }
+  }, [inventory]);
+
   // =============================================================================
   // PACKAGES OPERATIONS
   // =============================================================================
@@ -604,6 +621,7 @@ export function DataProvider({ children }) {
     updateItem,
     createItem,
     deleteItem,
+    getItemWithDetails,
     // Packages
     updatePackages,
     createPackage,

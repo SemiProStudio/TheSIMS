@@ -300,19 +300,34 @@ export default function App() {
   // ============================================================================
   // Navigation Handlers
   // ============================================================================
-  const navigateToItem = useCallback((id, context = null) => {
+  const navigateToItem = useCallback(async (id, context = null) => {
     const item = findById(inventory, id);
     if (item) {
+      // Set basic item immediately for fast UI response
       setSelectedItem(item);
-      setInventory(prev => updateById(prev, id, { viewCount: item.viewCount + 1 }));
+      setInventory(prev => updateById(prev, id, { viewCount: (item.viewCount || 0) + 1 }));
       setCurrentView(VIEWS.GEAR_DETAIL);
       setActiveModal(null);
       // Store back context if provided (e.g., from Packages view)
       setItemBackContext(context);
       // Scroll to top when viewing item detail
       window.scrollTo(0, 0);
+      
+      // Fetch full item details with related data (notes, reminders, reservations, etc.)
+      if (dataContext?.getItemWithDetails) {
+        try {
+          const itemWithDetails = await dataContext.getItemWithDetails(id);
+          if (itemWithDetails) {
+            setSelectedItem(itemWithDetails);
+            // Also update inventory with the detailed data
+            setInventory(prev => updateById(prev, id, itemWithDetails));
+          }
+        } catch (err) {
+          console.error('Failed to load item details:', err);
+        }
+      }
     }
-  }, [inventory]);
+  }, [inventory, dataContext]);
 
   const navigateToPackage = useCallback((id) => {
     const pkg = findById(packages, id);
