@@ -637,8 +637,19 @@ body {
 }
 
 /* Sidebar overlay - hidden by default, only shows on mobile when sidebar is open */
+/* Sidebar overlay - hidden by default on desktop */
 .sidebar-overlay {
-  display: none !important;
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  pointer-events: none;
 }
 
 /* Tablet - narrower sidebar */
@@ -706,24 +717,9 @@ body {
     margin-left: 0;
   }
   
-  /* Overlay when sidebar is open - MUST be hidden by default */
-  .sidebar-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-    /* Ensure it's below the sidebar */
-    pointer-events: none;
-  }
-  
+  /* Show overlay when sidebar is open on mobile */
   .sidebar-overlay.visible {
-    display: block;
+    display: block !important;
     pointer-events: auto;
   }
 }
