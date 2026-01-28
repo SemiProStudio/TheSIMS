@@ -216,6 +216,7 @@ export default function App() {
     itemForm, setItemForm,
     reservationForm, setReservationForm,
     confirmDialog,
+    setConfirmDialog,
     showConfirm,
     showDeleteConfirm,
     closeConfirm,
@@ -394,14 +395,6 @@ export default function App() {
 
   const openModal = useCallback((modalId) => setActiveModal(modalId), []);
   const closeModal = useCallback(() => setActiveModal(null), []);
-
-  // Confirm dialog state (must be before useInventoryActions which uses it)
-  const [confirmDialog, setConfirmDialog] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: null
-  });
 
   // ============================================================================
   // Inventory Actions - Using custom hook with Supabase persistence
