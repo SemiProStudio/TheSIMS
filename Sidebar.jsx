@@ -490,7 +490,7 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
                 color: colors.textMuted,
                 textTransform: 'capitalize'
               }}>
-                {user?.role}
+                {user?.role?.name || user?.roleId || 'User'}
               </div>
             </div>
             {!collapsed && (

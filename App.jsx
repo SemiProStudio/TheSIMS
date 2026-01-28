@@ -1914,7 +1914,7 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.ADMIN && currentUser?.role === 'admin' && (
+        {currentView === VIEWS.ADMIN && currentUser?.roleId === 'role_admin' && (
           <Suspense fallback={<ViewLoading message="Loading Admin Panel..." />}>
             <AdminPanel
               setCurrentView={setCurrentView}
@@ -1922,7 +1922,7 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.ADD_ITEM && currentUser?.role === 'admin' && (
+        {currentView === VIEWS.ADD_ITEM && currentUser?.roleId === 'role_admin' && (
           <Suspense fallback={<ViewLoading message="Loading Item Form..." />}>
             <ItemFormPage
               isEdit={false}
@@ -1939,7 +1939,7 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.EDIT_SPECS && currentUser?.role === 'admin' && (
+        {currentView === VIEWS.EDIT_SPECS && currentUser?.roleId === 'role_admin' && (
           <Suspense fallback={<ViewLoading message="Loading Specs Editor..." />}>
             <SpecsPage
               specs={specs}
@@ -1949,7 +1949,7 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.EDIT_CATEGORIES && currentUser?.role === 'admin' && (
+        {currentView === VIEWS.EDIT_CATEGORIES && currentUser?.roleId === 'role_admin' && (
           <Suspense fallback={<ViewLoading message="Loading Categories..." />}>
             <CategoriesPage
               categories={categories}
@@ -1996,7 +1996,7 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.USERS && currentUser?.role === 'admin' && (
+        {currentView === VIEWS.USERS && currentUser?.roleId === 'role_admin' && (
           <Suspense fallback={<ViewLoading message="Loading Users..." />}>
             <UsersPanel
               users={users}
@@ -2025,7 +2025,7 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.REPORTS && currentUser?.role === 'admin' && (
+        {currentView === VIEWS.REPORTS && currentUser?.roleId === 'role_admin' && (
           <Suspense fallback={<ViewLoading message="Loading Reports..." />}>
             <ReportsPanel
               inventory={inventory}
@@ -2035,7 +2035,7 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.AUDIT_LOG && currentUser?.role === 'admin' && (
+        {currentView === VIEWS.AUDIT_LOG && currentUser?.roleId === 'role_admin' && (
           <Suspense fallback={<ViewLoading message="Loading Audit Log..." />}>
             <AuditLogPanel 
               auditLog={auditLog} 
@@ -2044,7 +2044,7 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.MAINTENANCE_REPORT && currentUser?.role === 'admin' && (
+        {currentView === VIEWS.MAINTENANCE_REPORT && currentUser?.roleId === 'role_admin' && (
           <Suspense fallback={<ViewLoading message="Loading Maintenance Report..." />}>
             <MaintenanceReportPanel
               inventory={inventory}
@@ -2054,7 +2054,7 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.INSURANCE_REPORT && currentUser?.role === 'admin' && (
+        {currentView === VIEWS.INSURANCE_REPORT && currentUser?.roleId === 'role_admin' && (
           <Suspense fallback={<ViewLoading message="Loading Insurance Report..." />}>
             <InsuranceReportPanel
               inventory={inventory}
@@ -2065,7 +2065,7 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.LOCATIONS_MANAGE && currentUser?.role === 'admin' && (
+        {currentView === VIEWS.LOCATIONS_MANAGE && currentUser?.roleId === 'role_admin' && (
           <Suspense fallback={<ViewLoading message="Loading Locations..." />}>
             <LocationsManager
               locations={locations}
@@ -2076,7 +2076,7 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.CHANGE_LOG && currentUser?.role === 'admin' && (
+        {currentView === VIEWS.CHANGE_LOG && currentUser?.roleId === 'role_admin' && (
           <Suspense fallback={<ViewLoading message="Loading Change Log..." />}>
             <ChangeLog
               changeLog={changeLog}
@@ -2088,7 +2088,7 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.ROLES_MANAGE && currentUser?.role === 'admin' && (
+        {currentView === VIEWS.ROLES_MANAGE && currentUser?.roleId === 'role_admin' && (
           <Suspense fallback={<ViewLoading message="Loading Roles..." />}>
             <RolesManager
               onBack={() => setCurrentView(VIEWS.ADMIN)}
@@ -2100,7 +2100,7 @@ export default function App() {
           <Suspense fallback={<ViewLoading message="Loading Notifications..." />}>
             <NotificationSettings
               preferences={currentUser?.notificationPreferences}
-              isAdmin={currentUser?.role === 'admin'}
+              isAdmin={currentUser?.roleId === 'role_admin'}
               onSave={async (prefs) => {
                 // Save notification preferences to Supabase
                 if (dataContext?.saveNotificationPreferences) {
@@ -2292,7 +2292,7 @@ export default function App() {
             setUsers(prev => [...prev, newUser]);
             addAuditLog({
               type: 'user_created',
-              description: `New user created: ${newUser.name} (${newUser.role})`,
+              description: `New user created: ${newUser.name} (${newUser.role?.name || newUser.roleId || 'User'})`,
               user: currentUser?.name || 'Unknown',
               itemId: newUser.id
             });

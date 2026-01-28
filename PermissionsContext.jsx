@@ -51,8 +51,8 @@ export function PermissionsProvider({ children, currentUser, roles }) {
   const hasPermission = useCallback((functionId, requiredLevel = PERMISSION_LEVELS.VIEW) => {
     // If no role found, deny access (except for admin users by legacy role)
     if (!userRole) {
-      // Fallback for legacy 'admin' role string
-      if (currentUser?.role === 'admin') return true;
+      // Fallback for legacy 'admin' role string or roleId
+      if (currentUser?.roleId === 'role_admin') return true;
       return false;
     }
 
@@ -92,7 +92,7 @@ export function PermissionsProvider({ children, currentUser, roles }) {
   // Get the permission level for a function
   const getPermissionLevel = useCallback((functionId) => {
     if (!userRole) {
-      if (currentUser?.role === 'admin') return PERMISSION_LEVELS.EDIT;
+      if (currentUser?.roleId === 'role_admin') return PERMISSION_LEVELS.EDIT;
       return PERMISSION_LEVELS.HIDE;
     }
     return userRole.permissions[functionId] || PERMISSION_LEVELS.HIDE;

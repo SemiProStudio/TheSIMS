@@ -46,7 +46,10 @@ export const UsersPanel = memo(function UsersPanel({
               <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{u.name}</div>
               <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>{u.email}</div>
             </div>
-            <Badge text={u.role} color={u.role === 'admin' ? colors.danger : colors.available} />
+            <Badge 
+              text={u.role?.name || u.roleId || 'User'} 
+              color={(u.role?.name === 'Admin' || u.roleId === 'role_admin') ? colors.danger : colors.available} 
+            />
             <Button 
               variant="secondary" 
               danger 
