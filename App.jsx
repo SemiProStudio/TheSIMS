@@ -1820,7 +1820,7 @@ export default function App() {
                     <button
                       onClick={() => {
                         setMobileUserMenuOpen(false);
-                        setCurrentView(VIEWS.THEME);
+                        setCurrentView(VIEWS.THEME_SELECTOR);
                       }}
                       style={{
                         width: '100%',
