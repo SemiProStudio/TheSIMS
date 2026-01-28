@@ -94,6 +94,14 @@ export function useNavigation({ isLoggedIn = false, inventory = [], packages = [
   const navigate = useCallback((viewId) => {
     setCurrentView(viewId);
     
+    // Scroll to top on navigation (important for mobile)
+    window.scrollTo(0, 0);
+    // Also scroll main content area if it exists
+    const mainContent = document.getElementById('main-content');
+    if (mainContent) {
+      mainContent.scrollTop = 0;
+    }
+    
     // Clear selections when navigating to list views
     if (viewId === VIEWS.GEAR_LIST) {
       setSelectedItem(null);
@@ -113,6 +121,7 @@ export function useNavigation({ isLoggedIn = false, inventory = [], packages = [
     setSelectedItem(item);
     setItemBackContext(backContext);
     setCurrentView(VIEWS.GEAR_DETAIL);
+    window.scrollTo(0, 0);
   }, []);
 
   /**
@@ -122,6 +131,7 @@ export function useNavigation({ isLoggedIn = false, inventory = [], packages = [
   const navigateToPackage = useCallback((pkg) => {
     setSelectedPackage(pkg);
     setCurrentView(VIEWS.PACKAGE_DETAIL);
+    window.scrollTo(0, 0);
   }, []);
 
   /**
@@ -131,6 +141,7 @@ export function useNavigation({ isLoggedIn = false, inventory = [], packages = [
   const navigateToPackList = useCallback((packList) => {
     setSelectedPackList(packList);
     setCurrentView(VIEWS.PACK_LIST_DETAIL);
+    window.scrollTo(0, 0);
   }, []);
 
   /**
@@ -142,6 +153,7 @@ export function useNavigation({ isLoggedIn = false, inventory = [], packages = [
     setSelectedReservation(reservation);
     setSelectedReservationItem(item);
     setCurrentView(VIEWS.RESERVATION_DETAIL);
+    window.scrollTo(0, 0);
   }, []);
 
   /**
@@ -165,6 +177,7 @@ export function useNavigation({ isLoggedIn = false, inventory = [], packages = [
     } else {
       setCurrentView(VIEWS.DASHBOARD);
     }
+    window.scrollTo(0, 0);
   }, [currentView, itemBackContext]);
 
   /**

@@ -284,17 +284,30 @@ html, body, #root {
   height: 100%;
 }
 
+/* Prevent overscroll/bounce on mobile */
+html {
+  overflow: hidden;
+  height: 100%;
+}
+
 body {
   background-color: var(--bg-dark);
   margin: 0 !important;
   padding: 0 !important;
   overflow-x: hidden;
+  overflow-y: auto;
+  height: 100%;
+  /* Prevent pull-to-refresh and overscroll */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Ensure the app fills the viewport completely */
 #root {
+  min-height: 100%;
   min-height: 100vh;
-  min-width: 100vw;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
+  width: 100%;
 }
 
 /* Main app wrapper - this is where background pattern is applied */
@@ -304,7 +317,11 @@ body {
   background-repeat: repeat;
   background-attachment: fixed;
   min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
   cursor: var(--theme-cursor);
+  /* Ensure proper stacking context */
+  position: relative;
+  isolation: isolate;
 }
 
 /* Apply theme cursor to interactive elements */
@@ -613,6 +630,11 @@ body {
   }
 }
 
+/* Sidebar overlay - hidden by default, only shows on mobile when sidebar is open */
+.sidebar-overlay {
+  display: none !important;
+}
+
 /* Tablet - narrower sidebar */
 @media (max-width: 1024px) {
   .app-sidebar {
@@ -661,23 +683,34 @@ body {
   .app-main {
     margin-left: 0;
     padding: 16px;
+    /* Ensure main content scrolls properly on mobile */
+    min-height: 100vh;
+    min-height: 100dvh;
   }
   
   .app-main.sidebar-collapsed {
     margin-left: 0;
   }
   
-  /* Overlay when sidebar is open */
+  /* Overlay when sidebar is open - MUST be hidden by default */
   .sidebar-overlay {
     display: none;
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
     background: rgba(0, 0, 0, 0.5);
     z-index: 999;
+    /* Ensure it's below the sidebar */
+    pointer-events: none;
   }
   
   .sidebar-overlay.visible {
     display: block;
+    pointer-events: auto;
   }
 }
 
