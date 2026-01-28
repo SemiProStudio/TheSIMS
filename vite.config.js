@@ -18,19 +18,6 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom'],
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-icons': ['lucide-react'],
-          
-          // Feature chunks (loaded on demand via lazy loading)
-          'feature-admin': [
-            './AdminPages.jsx',
-            './RolesManager.jsx',
-            './LocationsManager.jsx',
-          ],
-          'feature-reports': [
-            './Views.jsx',
-          ],
-          'feature-modals': [
-            './Modals.jsx',
-          ],
         },
       },
     },
