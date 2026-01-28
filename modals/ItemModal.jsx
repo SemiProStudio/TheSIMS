@@ -5,7 +5,7 @@
 
 import React, { memo, useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Plus, Save, Trash2 } from 'lucide-react';
+import { Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { CONDITION } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Badge, Button } from '../components/ui.jsx';
@@ -438,6 +438,109 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
               <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>Auto-generated ID</span>
             </div>
           )}
+          
+          {/* Image Upload Section */}
+          <div style={{ marginBottom: spacing[4] }}>
+            <label style={styles.label}>Image (Optional)</label>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: spacing[3],
+              padding: spacing[3],
+              border: `1px dashed ${colors.border}`,
+              borderRadius: borderRadius.md,
+              background: colors.bgLight,
+            }}>
+              {itemForm.image ? (
+                <>
+                  <img 
+                    src={itemForm.image} 
+                    alt="Item preview" 
+                    style={{ 
+                      width: 80, 
+                      height: 80, 
+                      objectFit: 'cover', 
+                      borderRadius: borderRadius.md 
+                    }} 
+                  />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: 0, fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
+                      Image attached
+                    </p>
+                    <button
+                      onClick={() => handleChange('image', null)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: colors.danger,
+                        fontSize: typography.fontSize.sm,
+                        cursor: 'pointer',
+                        padding: 0,
+                        marginTop: spacing[1],
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: spacing[1],
+                      }}
+                    >
+                      <X size={14} /> Remove image
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{
+                    width: 80,
+                    height: 80,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: withOpacity(colors.primary, 10),
+                    borderRadius: borderRadius.md,
+                    color: colors.textMuted,
+                  }}>
+                    <Upload size={24} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="item-image-upload"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            handleChange('image', event.target.result);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    <label 
+                      htmlFor="item-image-upload"
+                      style={{
+                        ...styles.btnSec,
+                        display: 'inline-flex',
+                        cursor: 'pointer',
+                        fontSize: typography.fontSize.sm,
+                      }}
+                    >
+                      <Upload size={14} style={{ marginRight: spacing[1] }} />
+                      Choose Image
+                    </label>
+                    <p style={{ 
+                      margin: `${spacing[1]}px 0 0`, 
+                      fontSize: typography.fontSize.xs, 
+                      color: colors.textMuted 
+                    }}>
+                      JPG, PNG, or WebP (max 5MB)
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
           
           {/* Name and Brand */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
