@@ -1914,15 +1914,18 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.ADMIN && currentUser?.roleId === 'role_admin' && (
-          <Suspense fallback={<ViewLoading message="Loading Admin Panel..." />}>
-            <AdminPanel
-              setCurrentView={setCurrentView}
-            />
-          </Suspense>
-        )}
+        <PermissionGate permission="admin_users">
+          {currentView === VIEWS.ADMIN && (
+            <Suspense fallback={<ViewLoading message="Loading Admin Panel..." />}>
+              <AdminPanel
+                setCurrentView={setCurrentView}
+              />
+            </Suspense>
+          )}
+        </PermissionGate>
 
-        {currentView === VIEWS.ADD_ITEM && currentUser?.roleId === 'role_admin' && (
+        <PermissionGate permission="gear_list" requireEdit>
+          {currentView === VIEWS.ADD_ITEM && (
           <Suspense fallback={<ViewLoading message="Loading Item Form..." />}>
             <ItemFormPage
               isEdit={false}
@@ -1937,9 +1940,11 @@ export default function App() {
               onBack={() => setCurrentView(VIEWS.GEAR_LIST)}
             />
           </Suspense>
-        )}
+          )}
+        </PermissionGate>
 
-        {currentView === VIEWS.EDIT_SPECS && currentUser?.roleId === 'role_admin' && (
+        <PermissionGate permission="admin_specs">
+          {currentView === VIEWS.EDIT_SPECS && (
           <Suspense fallback={<ViewLoading message="Loading Specs Editor..." />}>
             <SpecsPage
               specs={specs}
@@ -1947,24 +1952,27 @@ export default function App() {
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />
           </Suspense>
-        )}
+          )}
+        </PermissionGate>
 
-        {currentView === VIEWS.EDIT_CATEGORIES && currentUser?.roleId === 'role_admin' && (
-          <Suspense fallback={<ViewLoading message="Loading Categories..." />}>
-            <CategoriesPage
-              categories={categories}
-              inventory={inventory}
-              specs={specs}
-              categorySettings={categorySettings}
-              onSave={(newCategories, newSpecs, newSettings) => {
-                setCategories(newCategories);
-                setSpecs(newSpecs);
-                setCategorySettings(newSettings);
-              }}
-              onBack={() => setCurrentView(VIEWS.ADMIN)}
-            />
-          </Suspense>
-        )}
+        <PermissionGate permission="admin_categories">
+          {currentView === VIEWS.EDIT_CATEGORIES && (
+            <Suspense fallback={<ViewLoading message="Loading Categories..." />}>
+              <CategoriesPage
+                categories={categories}
+                inventory={inventory}
+                specs={specs}
+                categorySettings={categorySettings}
+                onSave={(newCategories, newSpecs, newSettings) => {
+                  setCategories(newCategories);
+                  setSpecs(newSpecs);
+                  setCategorySettings(newSettings);
+                }}
+                onBack={() => setCurrentView(VIEWS.ADMIN)}
+              />
+            </Suspense>
+          )}
+        </PermissionGate>
 
         {currentView === VIEWS.CUSTOMIZE_DASHBOARD && (
           <Suspense fallback={<ViewLoading message="Loading Layout Editor..." />}>
@@ -1996,36 +2004,39 @@ export default function App() {
           </Suspense>
         )}
 
-        {currentView === VIEWS.USERS && currentUser?.roleId === 'role_admin' && (
-          <Suspense fallback={<ViewLoading message="Loading Users..." />}>
-            <UsersPanel
-              users={users}
-              currentUserId={currentUser.id}
-              onAddUser={() => openModal(MODALS.ADD_USER)}
-              onDeleteUser={(userId) => {
-                const userToDelete = users.find(u => u.id === userId);
-                setConfirmDialog({
-                  isOpen: true,
-                  title: 'Delete User',
-                  message: 'Are you sure you want to delete this user? This action cannot be undone.',
-                  onConfirm: () => {
-                    setUsers(prev => prev.filter(u => u.id !== userId));
-                    addAuditLog({
-                      type: 'user_deleted',
-                      description: `User deleted: ${userToDelete?.name || userId}`,
-                      user: currentUser?.name || 'Unknown',
-                      itemId: userId
-                    });
-                    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-                  }
-                });
-              }}
-              onBack={() => setCurrentView(VIEWS.ADMIN)}
-            />
-          </Suspense>
-        )}
+        <PermissionGate permission="admin_users">
+          {currentView === VIEWS.USERS && (
+            <Suspense fallback={<ViewLoading message="Loading Users..." />}>
+              <UsersPanel
+                users={users}
+                currentUserId={currentUser?.id}
+                onAddUser={() => openModal(MODALS.ADD_USER)}
+                onDeleteUser={(userId) => {
+                  const userToDelete = users.find(u => u.id === userId);
+                  setConfirmDialog({
+                    isOpen: true,
+                    title: 'Delete User',
+                    message: 'Are you sure you want to delete this user? This action cannot be undone.',
+                    onConfirm: () => {
+                      setUsers(prev => prev.filter(u => u.id !== userId));
+                      addAuditLog({
+                        type: 'user_deleted',
+                        description: `User deleted: ${userToDelete?.name || userId}`,
+                        user: currentUser?.name || 'Unknown',
+                        itemId: userId
+                      });
+                      setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                    }
+                  });
+                }}
+                onBack={() => setCurrentView(VIEWS.ADMIN)}
+              />
+            </Suspense>
+          )}
+        </PermissionGate>
 
-        {currentView === VIEWS.REPORTS && currentUser?.roleId === 'role_admin' && (
+        <PermissionGate permission="reports">
+          {currentView === VIEWS.REPORTS && (
           <Suspense fallback={<ViewLoading message="Loading Reports..." />}>
             <ReportsPanel
               inventory={inventory}
@@ -2033,68 +2044,81 @@ export default function App() {
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />
           </Suspense>
-        )}
+          )}
+        </PermissionGate>
 
-        {currentView === VIEWS.AUDIT_LOG && currentUser?.roleId === 'role_admin' && (
-          <Suspense fallback={<ViewLoading message="Loading Audit Log..." />}>
-            <AuditLogPanel 
-              auditLog={auditLog} 
-              onBack={() => setCurrentView(VIEWS.ADMIN)}
-            />
-          </Suspense>
-        )}
+        <PermissionGate permission="admin_audit">
+          {currentView === VIEWS.AUDIT_LOG && (
+            <Suspense fallback={<ViewLoading message="Loading Audit Log..." />}>
+              <AuditLogPanel 
+                auditLog={auditLog} 
+                onBack={() => setCurrentView(VIEWS.ADMIN)}
+              />
+            </Suspense>
+          )}
+        </PermissionGate>
 
-        {currentView === VIEWS.MAINTENANCE_REPORT && currentUser?.roleId === 'role_admin' && (
-          <Suspense fallback={<ViewLoading message="Loading Maintenance Report..." />}>
-            <MaintenanceReportPanel
-              inventory={inventory}
-              onViewItem={navigateToItem}
-              onBack={() => setCurrentView(VIEWS.ADMIN)}
-            />
-          </Suspense>
-        )}
+        <PermissionGate permission="reports">
+          {currentView === VIEWS.MAINTENANCE_REPORT && (
+            <Suspense fallback={<ViewLoading message="Loading Maintenance Report..." />}>
+              <MaintenanceReportPanel
+                inventory={inventory}
+                onViewItem={navigateToItem}
+                onBack={() => setCurrentView(VIEWS.ADMIN)}
+              />
+            </Suspense>
+          )}
+        </PermissionGate>
 
-        {currentView === VIEWS.INSURANCE_REPORT && currentUser?.roleId === 'role_admin' && (
-          <Suspense fallback={<ViewLoading message="Loading Insurance Report..." />}>
-            <InsuranceReportPanel
-              inventory={inventory}
-              categories={categories}
-              onViewItem={navigateToItem}
-              onBack={() => setCurrentView(VIEWS.ADMIN)}
-            />
-          </Suspense>
-        )}
+        <PermissionGate permission="reports">
+          {currentView === VIEWS.INSURANCE_REPORT && (
+            <Suspense fallback={<ViewLoading message="Loading Insurance Report..." />}>
+              <InsuranceReportPanel
+                inventory={inventory}
+                categories={categories}
+                onViewItem={navigateToItem}
+                onBack={() => setCurrentView(VIEWS.ADMIN)}
+              />
+            </Suspense>
+          )}
+        </PermissionGate>
 
-        {currentView === VIEWS.LOCATIONS_MANAGE && currentUser?.roleId === 'role_admin' && (
-          <Suspense fallback={<ViewLoading message="Loading Locations..." />}>
-            <LocationsManager
-              locations={locations}
-              inventory={inventory}
-              onSave={(newLocations) => setLocations(newLocations)}
-              onClose={() => setCurrentView(VIEWS.ADMIN)}
-            />
-          </Suspense>
-        )}
+        <PermissionGate permission="admin_locations">
+          {currentView === VIEWS.LOCATIONS_MANAGE && (
+            <Suspense fallback={<ViewLoading message="Loading Locations..." />}>
+              <LocationsManager
+                locations={locations}
+                inventory={inventory}
+                onSave={(newLocations) => setLocations(newLocations)}
+                onClose={() => setCurrentView(VIEWS.ADMIN)}
+              />
+            </Suspense>
+          )}
+        </PermissionGate>
 
-        {currentView === VIEWS.CHANGE_LOG && currentUser?.roleId === 'role_admin' && (
-          <Suspense fallback={<ViewLoading message="Loading Change Log..." />}>
-            <ChangeLog
-              changeLog={changeLog}
-              inventory={inventory}
-              packages={packages}
-              onViewItem={navigateToItem}
-              onBack={() => setCurrentView(VIEWS.ADMIN)}
-            />
-          </Suspense>
-        )}
+        <PermissionGate permission="admin_audit">
+          {currentView === VIEWS.CHANGE_LOG && (
+            <Suspense fallback={<ViewLoading message="Loading Change Log..." />}>
+              <ChangeLog
+                changeLog={changeLog}
+                inventory={inventory}
+                packages={packages}
+                onViewItem={navigateToItem}
+                onBack={() => setCurrentView(VIEWS.ADMIN)}
+              />
+            </Suspense>
+          )}
+        </PermissionGate>
 
-        {currentView === VIEWS.ROLES_MANAGE && currentUser?.roleId === 'role_admin' && (
-          <Suspense fallback={<ViewLoading message="Loading Roles..." />}>
-            <RolesManager
-              onBack={() => setCurrentView(VIEWS.ADMIN)}
-            />
-          </Suspense>
-        )}
+        <PermissionGate permission="admin_roles">
+          {currentView === VIEWS.ROLES_MANAGE && (
+            <Suspense fallback={<ViewLoading message="Loading Roles..." />}>
+              <RolesManager
+                onBack={() => setCurrentView(VIEWS.ADMIN)}
+              />
+            </Suspense>
+          )}
+        </PermissionGate>
 
         {currentView === VIEWS.NOTIFICATIONS && (
           <Suspense fallback={<ViewLoading message="Loading Notifications..." />}>

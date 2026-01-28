@@ -43,16 +43,17 @@ export const VIEW_PERMISSIONS = {
 export function PermissionsProvider({ children, currentUser, roles }) {
   // Get the user's role
   const userRole = useMemo(() => {
-    if (!currentUser || !roles) return null;
-    return roles.find(r => r.id === currentUser.roleId) || roles.find(r => r.id === 'role_admin');
+    if (!currentUser || !roles || roles.length === 0) return null;
+    // Find user's assigned role, or fall back to role_user (most restrictive standard role)
+    return roles.find(r => r.id === currentUser.roleId) || 
+           roles.find(r => r.id === 'role_user') || 
+           null;
   }, [currentUser, roles]);
 
   // Check if user has at least the specified permission level for a function
   const hasPermission = useCallback((functionId, requiredLevel = PERMISSION_LEVELS.VIEW) => {
-    // If no role found, deny access (except for admin users by legacy role)
+    // If no role found, deny all access
     if (!userRole) {
-      // Fallback for legacy 'admin' role string or roleId
-      if (currentUser?.roleId === 'role_admin') return true;
       return false;
     }
 
@@ -92,11 +93,10 @@ export function PermissionsProvider({ children, currentUser, roles }) {
   // Get the permission level for a function
   const getPermissionLevel = useCallback((functionId) => {
     if (!userRole) {
-      if (currentUser?.roleId === 'role_admin') return PERMISSION_LEVELS.EDIT;
       return PERMISSION_LEVELS.HIDE;
     }
     return userRole.permissions[functionId] || PERMISSION_LEVELS.HIDE;
-  }, [userRole, currentUser]);
+  }, [userRole]);
 
   // Get all visible functions
   const visibleFunctions = useMemo(() => {
