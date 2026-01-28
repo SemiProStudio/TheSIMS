@@ -98,47 +98,39 @@ export default function App() {
   const dataContext = useData();
   
   // ============================================================================
-  // Core Data State (demo mode uses local state, production uses context)
+  // Core Data State - synced from context
   // ============================================================================
-  const [inventory, setInventory] = useState(() => 
-    dataContext.isDemoMode ? [...initialInventory, ...initialKits] : []
-  );
-  const [packages, setPackages] = useState(() => 
-    dataContext.isDemoMode ? initialPackages : []
-  );
-  const [users, setUsers] = useState(() => 
-    dataContext.isDemoMode ? initialUsers : []
-  );
+  const [inventory, setInventory] = useState([]);
+  const [packages, setPackages] = useState([]);
+  const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState(DEFAULT_ROLES);
   const [specs, setSpecs] = useState(DEFAULT_SPECS);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [categorySettings, setCategorySettings] = useState(DEFAULT_CATEGORY_SETTINGS);
   const [locations, setLocations] = useState(DEFAULT_LOCATIONS);
-  const [auditLog, setAuditLog] = useState(() => 
-    dataContext.isDemoMode ? initialAuditLog : []
-  );
+  const [auditLog, setAuditLog] = useState([]);
   const [changeLog, setChangeLog] = useState([]);
-  const [packLists, setPackLists] = useState(() => 
-    dataContext.isDemoMode ? initialPackLists : []
-  );
-  const [clients, setClients] = useState(() => 
-    dataContext.isDemoMode ? (initialClients || []) : []
-  );
+  const [packLists, setPackLists] = useState([]);
+  const [clients, setClients] = useState([]);
   
-  // Sync with context data when not in demo mode
+  // Sync with context data
   useEffect(() => {
-    if (!dataContext.isDemoMode && !dataContext.loading) {
+    if (!dataContext.loading) {
       if (dataContext.inventory?.length) setInventory(dataContext.inventory);
       if (dataContext.packages?.length) setPackages(dataContext.packages);
       if (dataContext.clients?.length) setClients(dataContext.clients);
       if (dataContext.users?.length) setUsers(dataContext.users);
       if (dataContext.packLists?.length) setPackLists(dataContext.packLists);
       if (dataContext.auditLog?.length) setAuditLog(dataContext.auditLog);
+      if (dataContext.roles?.length) setRoles(dataContext.roles);
+      if (dataContext.locations?.length) setLocations(dataContext.locations);
+      if (dataContext.categories?.length) setCategories(dataContext.categories);
+      if (dataContext.specs && Object.keys(dataContext.specs).length) setSpecs(dataContext.specs);
     }
   }, [dataContext]);
 
   // ============================================================================
-  // Auth State (local state for demo mode, context for production)
+  // Auth State
   // ============================================================================
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -239,20 +231,6 @@ export default function App() {
     const { user, error } = await auth.signIn(loginForm.email, loginForm.password);
     
     if (error) {
-      // For demo mode, also check local users
-      if (auth.isDemoMode) {
-        const localUser = users.find(u => 
-          u.email === loginForm.email && u.password === loginForm.password
-        );
-        if (localUser) {
-          setIsLoggedIn(true);
-          setCurrentUser({
-            ...localUser,
-            layoutPrefs: localUser.layoutPrefs || DEFAULT_LAYOUT_PREFS,
-          });
-          return;
-        }
-      }
       console.error('Login failed:', error);
       return;
     }
@@ -264,7 +242,7 @@ export default function App() {
         layoutPrefs: user.layoutPrefs || DEFAULT_LAYOUT_PREFS,
       });
     }
-  }, [auth, users, loginForm]);
+  }, [auth, loginForm]);
 
   const handleLogout = useCallback(async () => {
     await auth.signOut();
@@ -1633,7 +1611,6 @@ export default function App() {
           onLogin={handleLogin}
           isLoading={auth.loading}
           error={auth.error?.message}
-          isDemoMode={auth.isDemoMode}
         />
       </div>
     );

@@ -1,10 +1,9 @@
 // =============================================================================
 // SIMS Data Context
-// Provides centralized state management with Supabase or demo mode support
+// Provides centralized state management with Supabase
 // =============================================================================
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { isDemoMode } from './supabase.js';
 import {
   inventoryService,
   reservationsService,
@@ -22,16 +21,6 @@ import {
   emailService
 } from './services.js';
 
-// Import demo data for offline/demo mode
-import { 
-  initialInventory, 
-  initialPackages, 
-  initialUsers, 
-  initialAuditLog, 
-  initialPackLists, 
-  initialKits, 
-  initialClients 
-} from '../data.js';
 import { DEFAULT_ROLES, DEFAULT_LOCATIONS, DEFAULT_SPECS } from '../constants.js';
 
 // =============================================================================
@@ -71,72 +60,44 @@ export function DataProvider({ children }) {
       setError(null);
 
       try {
-        if (isDemoMode) {
-          // Load demo data
-          const allInventory = [...initialInventory, ...initialKits];
-          setInventory(allInventory);
-          setPackages(initialPackages);
-          setPackLists(initialPackLists);
-          setClients(initialClients);
-          setUsers(initialUsers);
-          setRoles(DEFAULT_ROLES);
-          setLocations(DEFAULT_LOCATIONS);
-          setCategories(['Cameras', 'Lenses', 'Lighting', 'Audio', 'Support', 'Accessories', 'Storage', 'Grip', 'Monitors', 'Power']);
-          setSpecs(DEFAULT_SPECS);
-          setAuditLog(initialAuditLog);
-        } else {
-          // Load from Supabase
-          const [
-            inventoryData,
-            packagesData,
-            packListsData,
-            clientsData,
-            usersData,
-            rolesData,
-            locationsData,
-            categoriesData,
-            specsData,
-            auditLogData
-          ] = await Promise.all([
-            inventoryService.getAll(),
-            packagesService.getAll(),
-            packListsService.getAll(),
-            clientsService.getAll(),
-            usersService.getAll(),
-            rolesService.getAll(),
-            locationsService.getAll(),
-            categoriesService.getAll(),
-            specsService.getAll(),
-            auditLogService.getAll({ limit: 100 })
-          ]);
+        // Load from Supabase
+        const [
+          inventoryData,
+          packagesData,
+          packListsData,
+          clientsData,
+          usersData,
+          rolesData,
+          locationsData,
+          categoriesData,
+          specsData,
+          auditLogData
+        ] = await Promise.all([
+          inventoryService.getAll(),
+          packagesService.getAll(),
+          packListsService.getAll(),
+          clientsService.getAll(),
+          usersService.getAll(),
+          rolesService.getAll(),
+          locationsService.getAll(),
+          categoriesService.getAll(),
+          specsService.getAll(),
+          auditLogService.getAll({ limit: 100 })
+        ]);
 
-          setInventory(inventoryData || []);
-          setPackages(packagesData || []);
-          setPackLists(packListsData || []);
-          setClients(clientsData || []);
-          setUsers(usersData || []);
-          setRoles(rolesData || []);
-          setLocations(locationsData || []);
-          setCategories(categoriesData?.map(c => c.name) || []);
-          setSpecs(specsData || {});
-          setAuditLog(auditLogData || []);
-        }
+        setInventory(inventoryData || []);
+        setPackages(packagesData || []);
+        setPackLists(packListsData || []);
+        setClients(clientsData || []);
+        setUsers(usersData || []);
+        setRoles(rolesData || []);
+        setLocations(locationsData || []);
+        setCategories(categoriesData?.map(c => c.name) || []);
+        setSpecs(specsData || {});
+        setAuditLog(auditLogData || []);
       } catch (err) {
         console.error('Failed to load data:', err);
         setError(err);
-        
-        // Fall back to demo data on error
-        const allInventory = [...initialInventory, ...initialKits];
-        setInventory(allInventory);
-        setPackages(initialPackages);
-        setPackLists(initialPackLists);
-        setClients(initialClients);
-        setUsers(initialUsers);
-        setRoles(DEFAULT_ROLES);
-        setLocations(DEFAULT_LOCATIONS);
-        setCategories(['Cameras', 'Lenses', 'Lighting', 'Audio', 'Support', 'Accessories', 'Storage', 'Grip', 'Monitors', 'Power']);
-        setSpecs(DEFAULT_SPECS);
-        setAuditLog(initialAuditLog);
       } finally {
         setLoading(false);
       }
@@ -155,7 +116,7 @@ export function DataProvider({ children }) {
       timestamp: new Date().toISOString()
     };
 
-    if (!isDemoMode) {
+    
       try {
         await auditLogService.create(newEntry);
       } catch (err) {
@@ -175,7 +136,7 @@ export function DataProvider({ children }) {
   }, []);
 
   const updateItem = useCallback(async (id, updates) => {
-    if (!isDemoMode) {
+    
       try {
         await inventoryService.update(id, updates);
       } catch (err) {
@@ -192,7 +153,7 @@ export function DataProvider({ children }) {
   const createItem = useCallback(async (item) => {
     let newItem = item;
     
-    if (!isDemoMode) {
+    
       try {
         newItem = await inventoryService.create(item);
       } catch (err) {
@@ -206,7 +167,7 @@ export function DataProvider({ children }) {
   }, []);
 
   const deleteItem = useCallback(async (id) => {
-    if (!isDemoMode) {
+    
       try {
         await inventoryService.delete(id);
       } catch (err) {
@@ -220,11 +181,6 @@ export function DataProvider({ children }) {
 
   // Fetch item with all related data (notes, reminders, reservations, maintenance)
   const getItemWithDetails = useCallback(async (id) => {
-    if (isDemoMode) {
-      // In demo mode, return item from local state
-      return inventory.find(item => item.id === id) || null;
-    }
-    
     try {
       const itemWithDetails = await inventoryService.getByIdWithDetails(id);
       return itemWithDetails;
@@ -246,7 +202,7 @@ export function DataProvider({ children }) {
   const createPackage = useCallback(async (pkg) => {
     let newPackage = pkg;
     
-    if (!isDemoMode) {
+    
       try {
         newPackage = await packagesService.create(pkg);
       } catch (err) {
@@ -260,7 +216,7 @@ export function DataProvider({ children }) {
   }, []);
 
   const updatePackage = useCallback(async (id, updates) => {
-    if (!isDemoMode) {
+    
       try {
         await packagesService.update(id, updates);
       } catch (err) {
@@ -275,7 +231,7 @@ export function DataProvider({ children }) {
   }, []);
 
   const deletePackage = useCallback(async (id) => {
-    if (!isDemoMode) {
+    
       try {
         await packagesService.delete(id);
       } catch (err) {
@@ -298,7 +254,7 @@ export function DataProvider({ children }) {
   const createPackList = useCallback(async (packList) => {
     let newPackList = packList;
     
-    if (!isDemoMode) {
+    
       try {
         newPackList = await packListsService.create(packList);
       } catch (err) {
@@ -312,7 +268,7 @@ export function DataProvider({ children }) {
   }, []);
 
   const updatePackList = useCallback(async (id, updates) => {
-    if (!isDemoMode) {
+    
       try {
         await packListsService.update(id, updates);
       } catch (err) {
@@ -327,7 +283,7 @@ export function DataProvider({ children }) {
   }, []);
 
   const deletePackList = useCallback(async (id) => {
-    if (!isDemoMode) {
+    
       try {
         await packListsService.delete(id);
       } catch (err) {
@@ -350,7 +306,7 @@ export function DataProvider({ children }) {
   const createClient = useCallback(async (client) => {
     let newClient = client;
     
-    if (!isDemoMode) {
+    
       try {
         newClient = await clientsService.create(client);
       } catch (err) {
@@ -364,7 +320,7 @@ export function DataProvider({ children }) {
   }, []);
 
   const updateClient = useCallback(async (id, updates) => {
-    if (!isDemoMode) {
+    
       try {
         await clientsService.update(id, updates);
       } catch (err) {
@@ -379,7 +335,7 @@ export function DataProvider({ children }) {
   }, []);
 
   const deleteClient = useCallback(async (id) => {
-    if (!isDemoMode) {
+    
       try {
         await clientsService.delete(id);
       } catch (err) {
@@ -437,7 +393,7 @@ export function DataProvider({ children }) {
 
   // Save notification preferences
   const saveNotificationPreferences = useCallback(async (userId, preferences) => {
-    if (!isDemoMode) {
+    
       try {
         await notificationPreferencesService.upsert(userId, preferences);
       } catch (err) {
@@ -456,10 +412,6 @@ export function DataProvider({ children }) {
 
   // Get notification preferences for a user
   const getNotificationPreferences = useCallback(async (userId) => {
-    if (isDemoMode) {
-      return null;
-    }
-    
     try {
       return await notificationPreferencesService.getByUserId(userId);
     } catch (err) {
@@ -470,11 +422,6 @@ export function DataProvider({ children }) {
 
   // Send checkout confirmation email
   const sendCheckoutEmail = useCallback(async ({ borrowerEmail, borrowerName, item, checkoutDate, dueDate, project }) => {
-    if (isDemoMode) {
-      console.log('[Demo Mode] Would send checkout email to:', borrowerEmail);
-      return { success: true, demo: true };
-    }
-    
     try {
       return await emailService.sendCheckoutConfirmation({
         borrowerEmail,
@@ -493,11 +440,6 @@ export function DataProvider({ children }) {
 
   // Send checkin confirmation email
   const sendCheckinEmail = useCallback(async ({ borrowerEmail, borrowerName, item, returnDate }) => {
-    if (isDemoMode) {
-      console.log('[Demo Mode] Would send checkin email to:', borrowerEmail);
-      return { success: true, demo: true };
-    }
-    
     try {
       return await emailService.sendCheckinConfirmation({
         borrowerEmail,
@@ -513,11 +455,6 @@ export function DataProvider({ children }) {
 
   // Send reservation confirmation email
   const sendReservationEmail = useCallback(async ({ userEmail, userName, item, reservation }) => {
-    if (isDemoMode) {
-      console.log('[Demo Mode] Would send reservation email to:', userEmail);
-      return { success: true, demo: true };
-    }
-    
     try {
       return await emailService.sendReservationConfirmation({
         userEmail,
@@ -539,7 +476,6 @@ export function DataProvider({ children }) {
     // State
     loading,
     error,
-    isDemoMode,
     
     // Data
     inventory,

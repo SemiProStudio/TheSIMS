@@ -6,7 +6,7 @@ import React, { memo, useState } from 'react';
 import { colors, styles, spacing, borderRadius, typography } from './theme.js';
 import { Spinner } from './components/Loading.jsx';
 
-function Login({ loginForm, setLoginForm, onLogin, isLoading, error, isDemoMode }) {
+function Login({ loginForm, setLoginForm, onLogin, isLoading, error }) {
   const [showPassword, setShowPassword] = useState(false);
   
   return (
@@ -81,22 +81,6 @@ function Login({ loginForm, setLoginForm, onLogin, isLoading, error, isDemoMode 
           </div>
         </div>
         
-        {/* Demo Mode Banner */}
-        {isDemoMode && (
-          <div style={{
-            background: 'rgba(99, 102, 241, 0.1)',
-            border: '1px solid rgba(99, 102, 241, 0.3)',
-            borderRadius: borderRadius.md,
-            padding: spacing[3],
-            marginBottom: spacing[4],
-            fontSize: typography.fontSize.xs,
-            color: colors.accent,
-            textAlign: 'center',
-          }}>
-            <strong>Demo Mode</strong> - Data is stored locally only
-          </div>
-        )}
-        
         {/* Error Message */}
         {error && (
           <div style={{
@@ -120,7 +104,7 @@ function Login({ loginForm, setLoginForm, onLogin, isLoading, error, isDemoMode 
               type="email"
               value={loginForm.email}
               onChange={e => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
-              placeholder={isDemoMode ? "admin@demo.com" : "email@example.com"}
+              placeholder="email@example.com"
               style={styles.input}
               required
               disabled={isLoading}
@@ -135,7 +119,7 @@ function Login({ loginForm, setLoginForm, onLogin, isLoading, error, isDemoMode 
                 type={showPassword ? 'text' : 'password'}
                 value={loginForm.password}
                 onChange={e => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
-                placeholder={isDemoMode ? "demo" : "Enter password"}
+                placeholder="Enter password"
                 style={{ ...styles.input, paddingRight: 40 }}
                 required
                 disabled={isLoading}
@@ -196,17 +180,14 @@ function Login({ loginForm, setLoginForm, onLogin, isLoading, error, isDemoMode 
           </button>
         </form>
 
-        {/* Demo credentials */}
+        {/* Help text */}
         <p style={{
           textAlign: 'center',
           color: colors.textMuted,
           fontSize: typography.fontSize.xs,
           marginTop: spacing[6]
         }}>
-          {isDemoMode 
-            ? 'Demo: any email with password "demo"'
-            : 'Contact admin for access'
-          }
+          Contact admin for access
         </p>
       </div>
     </div>
