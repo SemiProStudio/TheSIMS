@@ -284,9 +284,7 @@ html, body, #root {
   height: 100%;
 }
 
-/* Prevent overscroll/bounce on mobile */
 html {
-  overflow: hidden;
   height: 100%;
 }
 
@@ -297,9 +295,12 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   height: 100%;
-  /* Prevent pull-to-refresh and overscroll */
-  overscroll-behavior: none;
+  /* Enable elastic/rubber-band scrolling on iOS */
   -webkit-overflow-scrolling: touch;
+  /* Allow bounce effect at scroll boundaries */
+  overscroll-behavior-y: auto;
+  /* Only prevent horizontal overscroll */
+  overscroll-behavior-x: none;
 }
 
 /* Ensure the app fills the viewport completely */
@@ -731,7 +732,7 @@ body {
 @media (max-width: 480px) {
   .app-main {
     padding: 12px;
-    padding-top: calc(60px + env(safe-area-inset-top, 0px)) !important;
+    padding-top: calc(72px + env(safe-area-inset-top, 0px)) !important;
   }
   
   /* Ensure cards/panels fit the screen */
@@ -792,7 +793,7 @@ body {
   
   /* Add padding to main content to account for fixed header */
   .app-main {
-    padding-top: calc(60px + env(safe-area-inset-top, 0px)) !important;
+    padding-top: calc(72px + env(safe-area-inset-top, 0px)) !important;
   }
   
   .sidebar-close-btn {
