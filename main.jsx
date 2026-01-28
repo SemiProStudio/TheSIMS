@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import App from './App.jsx'
 import { ThemeProvider } from './ThemeContext.jsx'
 import { AuthProvider } from './lib/AuthContext.jsx'
@@ -16,6 +17,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <AuthProvider>
             <DataProvider>
               <App />
+              <SpeedInsights />
             </DataProvider>
           </AuthProvider>
         </PWAProvider>
