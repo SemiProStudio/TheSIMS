@@ -6,7 +6,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { colors } from '../theme.js';
+import {colors, typography, borderRadius} from '../theme.js';
 import { ChevronDown } from 'lucide-react';
 
 export function Select({ 
@@ -176,7 +176,7 @@ export function Select({
         padding: 4,
         background: colors.bgMedium,
         border: `1px solid ${colors.border}`,
-        borderRadius: 10,
+        borderRadius: borderRadius.lg,
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
         zIndex: 99999,
         maxHeight: 200,
@@ -202,10 +202,10 @@ export function Select({
             onMouseEnter={() => setHighlightedIndex(index)}
             style={{
               padding: '10px 16px',
-              borderRadius: 8,
+              borderRadius: borderRadius.md,
               cursor: 'pointer',
               color: colors.textPrimary,
-              fontSize: 14,
+              fontSize: typography.fontSize.base,
               fontFamily: 'inherit',
               background: isHighlighted 
                 ? `rgba(106, 154, 184, 0.2)` 
@@ -244,9 +244,9 @@ export function Select({
           paddingRight: 40,
           background: 'var(--input-bg, rgba(106, 154, 184, 0.1))',
           border: `1px solid ${colors.border}`,
-          borderRadius: 10,
+          borderRadius: borderRadius.lg,
           color: selectedOption ? colors.textPrimary : colors.textMuted,
-          fontSize: 14,
+          fontSize: typography.fontSize.base,
           textAlign: 'left',
           cursor: disabled ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.6 : 1,

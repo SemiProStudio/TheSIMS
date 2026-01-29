@@ -496,7 +496,7 @@ const ClientDetailView = memo(function ClientDetailView({
               >
                 <Calendar size={16} color={colors.textMuted} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500, color: colors.textPrimary }}>
+                  <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
                     {project.project}
                   </div>
                   <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>

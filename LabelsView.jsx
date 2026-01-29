@@ -41,7 +41,7 @@ const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
       width={size} 
       height={size} 
       style={{ 
-        borderRadius: 2,
+        borderRadius: borderRadius.sm,
         display: 'block',
         backgroundColor: '#FFFFFF'
       }} 
@@ -155,9 +155,9 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
       }}>
         <QRCodeCanvas data={item.id} size={qrSize} />
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ fontSize: 14, fontWeight: 'bold', color: '#000', marginBottom: 4 }}>{item.id}</div>
-          <div style={{ fontSize: 13, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>{item.name}</div>
-          <div style={{ fontSize: 11, color: '#666' }}>{item.brand}</div>
+          <div style={{ fontSize: typography.fontSize.base, fontWeight: 'bold', color: '#000', marginBottom: 4 }}>{item.id}</div>
+          <div style={{ fontSize: typography.fontSize.base, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>{item.name}</div>
+          <div style={{ fontSize: typography.fontSize.sm, color: '#666' }}>{item.brand}</div>
         </div>
       </div>
     );
@@ -180,9 +180,9 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
         <div style={{ display: 'flex', gap: spacing[3], marginBottom: spacing[2] }}>
           <QRCodeCanvas data={item.id} size={qrSize} />
           <div style={{ flex: 1, overflow: 'hidden' }}>
-            <div style={{ fontSize: 16, fontWeight: 'bold', color: '#000', marginBottom: 2 }}>{item.id}</div>
-            <div style={{ fontSize: 14, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>{item.name}</div>
-            <div style={{ fontSize: 12, color: '#666' }}>{item.brand}</div>
+            <div style={{ fontSize: typography.fontSize.lg, fontWeight: 'bold', color: '#000', marginBottom: 2 }}>{item.id}</div>
+            <div style={{ fontSize: typography.fontSize.base, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>{item.name}</div>
+            <div style={{ fontSize: typography.fontSize.sm, color: '#666' }}>{item.brand}</div>
           </div>
         </div>
         
@@ -193,7 +193,7 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
             display: 'grid', 
             gridTemplateColumns: 'repeat(2, 1fr)', 
             gap: '4px 12px',
-            fontSize: 10,
+            fontSize: typography.fontSize.xs,
             borderTop: '1px solid #eee',
             paddingTop: spacing[2],
           }}>
@@ -229,12 +229,12 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
           <div style={{ flex: 1, overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
               {isKit ? <Layers size={12} color="#666" /> : <Package size={12} color="#666" />}
-              <span style={{ fontSize: 10, color: '#666', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: typography.fontSize.xs, color: '#666', textTransform: 'uppercase' }}>
                 {isKit ? 'Kit' : 'Package'}
               </span>
             </div>
-            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#000', marginBottom: 2 }}>{item.id}</div>
-            <div style={{ fontSize: 12, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+            <div style={{ fontSize: typography.fontSize.base, fontWeight: 'bold', color: '#000', marginBottom: 2 }}>{item.id}</div>
+            <div style={{ fontSize: typography.fontSize.sm, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
           </div>
         </div>
         
@@ -245,10 +245,10 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
           paddingTop: spacing[2],
           overflow: 'hidden',
         }}>
-          <div style={{ fontSize: 9, color: '#999', marginBottom: 4, textTransform: 'uppercase' }}>
+          <div style={{ fontSize: typography.fontSize.xs, color: '#999', marginBottom: 4, textTransform: 'uppercase' }}>
             Contains ({itemsList.length} items):
           </div>
-          <div style={{ fontSize: 9, color: '#333', lineHeight: 1.4 }}>
+          <div style={{ fontSize: typography.fontSize.xs, color: '#333', lineHeight: 1.4 }}>
             {itemsList.slice(0, 8).map((i, idx) => (
               <div key={idx} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 • {i.id} - {i.name}
@@ -282,9 +282,9 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
         <div style={{ display: 'flex', gap: spacing[3], marginBottom: spacing[2] }}>
           <QRCodeCanvas data={item.id} size={qrSize} />
           <div style={{ flex: 1, overflow: 'hidden' }}>
-            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#000', marginBottom: 2 }}>{item.id}</div>
-            <div style={{ fontSize: 12, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>{item.name}</div>
-            <div style={{ fontSize: 11, color: '#666' }}>{item.brand}</div>
+            <div style={{ fontSize: typography.fontSize.base, fontWeight: 'bold', color: '#000', marginBottom: 2 }}>{item.id}</div>
+            <div style={{ fontSize: typography.fontSize.sm, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>{item.name}</div>
+            <div style={{ fontSize: typography.fontSize.sm, color: '#666' }}>{item.brand}</div>
           </div>
         </div>
         
@@ -294,7 +294,7 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
             display: 'grid', 
             gridTemplateColumns: 'repeat(2, 1fr)', 
             gap: '4px 12px',
-            fontSize: 9,
+            fontSize: typography.fontSize.xs,
             marginBottom: spacing[2],
           }}>
             {itemSpecs.slice(0, 4).map((spec, idx) => (
@@ -321,7 +321,7 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
           
           <div style={{ flex: 1, overflow: 'hidden' }}>
             {profileFields.length > 0 ? (
-              <div style={{ fontSize: 9, color: '#666', lineHeight: 1.4 }}>
+              <div style={{ fontSize: typography.fontSize.xs, color: '#666', lineHeight: 1.4 }}>
                 {profileFields.map((field, idx) => (
                   <div key={idx} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {field.value}
@@ -329,7 +329,7 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
                 ))}
               </div>
             ) : (
-              <div style={{ fontSize: 9, color: '#999', fontStyle: 'italic' }}>
+              <div style={{ fontSize: typography.fontSize.xs, color: '#999', fontStyle: 'italic' }}>
                 No branding info configured. Update your profile settings.
               </div>
             )}

@@ -189,7 +189,7 @@ export function AccessDenied({ functionId, currentLevel, requiredLevel, message 
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
       </div>
-      <h3 style={{ margin: '0 0 8px', color: '#1f2937', fontSize: 18 }}>
+      <h3 style={{ margin: '0 0 8px', color: '#1f2937', fontSize: typography.fontSize.xl }}>
         Access Restricted
       </h3>
       <p style={{ margin: '0 0 16px', color: '#6b7280', maxWidth: 400 }}>
@@ -199,7 +199,7 @@ export function AccessDenied({ functionId, currentLevel, requiredLevel, message 
             : `You have ${currentLevel} access to ${funcInfo?.name || 'this feature'}, but ${levelMessages[requiredLevel]} access is required for this action.`
         )}
       </p>
-      <p style={{ margin: 0, color: '#9ca3af', fontSize: 14 }}>
+      <p style={{ margin: 0, color: '#9ca3af', fontSize: typography.fontSize.base }}>
         Contact your administrator if you need access.
       </p>
     </div>
@@ -216,14 +216,14 @@ export function ViewOnlyBanner({ functionId }) {
     <div style={{
       background: 'rgba(59, 130, 246, 0.1)',
       border: '1px solid rgba(59, 130, 246, 0.3)',
-      borderRadius: 8,
+      borderRadius: borderRadius.md,
       padding: '8px 16px',
       marginBottom: 16,
       display: 'flex',
       alignItems: 'center',
       gap: 8,
       color: '#3b82f6',
-      fontSize: 14,
+      fontSize: typography.fontSize.base,
     }}>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />

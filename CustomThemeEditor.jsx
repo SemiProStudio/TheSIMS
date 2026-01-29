@@ -77,7 +77,7 @@ const CategorySection = memo(function CategorySection({
         }}
       >
         {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        <span style={{ fontWeight: 500 }}>{category.label}</span>
+        <span style={{ fontWeight: typography.fontWeight.medium }}>{category.label}</span>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
           {category.colors.slice(0, 5).map(c => (
             <div key={c.key} style={{
@@ -147,19 +147,19 @@ const LivePreview = memo(function LivePreview({ themeColors }) {
         {/* Layout preview */}
         <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr', gap: spacing[2], marginBottom: spacing[3] }}>
           <div style={{ background: themeColors['--bg-medium'], borderRadius: borderRadius.sm, padding: spacing[2] }}>
-            <div style={{ height: 6, background: themeColors['--primary'], borderRadius: 2, marginBottom: 4 }} />
-            <div style={{ height: 4, background: themeColors['--text-muted'], borderRadius: 2, opacity: 0.5 }} />
+            <div style={{ height: 6, background: themeColors['--primary'], borderRadius: borderRadius.sm, marginBottom: 4 }} />
+            <div style={{ height: 4, background: themeColors['--text-muted'], borderRadius: borderRadius.sm, opacity: 0.5 }} />
           </div>
           <div style={{ background: themeColors['--bg-light'], borderRadius: borderRadius.sm, padding: spacing[2] }}>
-            <div style={{ color: themeColors['--text-primary'], fontSize: typography.fontSize.xs, fontWeight: 600 }}>Preview</div>
-            <div style={{ color: themeColors['--text-muted'], fontSize: 10 }}>Sample text</div>
+            <div style={{ color: themeColors['--text-primary'], fontSize: typography.fontSize.xs, fontWeight: typography.fontWeight.semibold }}>Preview</div>
+            <div style={{ color: themeColors['--text-muted'], fontSize: typography.fontSize.xs }}>Sample text</div>
           </div>
         </div>
         
         {/* Focus ring preview */}
         <div style={{ marginBottom: spacing[3] }}>
           <div style={{ 
-            fontSize: 10, 
+            fontSize: typography.fontSize.xs, 
             color: themeColors['--text-muted'], 
             marginBottom: spacing[1] 
           }}>
@@ -195,7 +195,7 @@ const LivePreview = memo(function LivePreview({ themeColors }) {
               background: themeColors[key],
               color: '#fff',
               borderRadius: borderRadius.sm,
-              fontSize: 10,
+              fontSize: typography.fontSize.xs,
             }}>
               {key.split('-').pop()}
             </div>
@@ -258,7 +258,7 @@ const ContrastChecker = memo(function ContrastChecker({ themeColors }) {
         aria-expanded={expanded}
       >
         <StatusIcon size={16} color={statusColor} />
-        <span style={{ fontSize: typography.fontSize.sm, fontWeight: 500, flex: 1, textAlign: 'left' }}>
+        <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium, flex: 1, textAlign: 'left' }}>
           Accessibility Check
         </span>
         <span style={{
@@ -267,7 +267,7 @@ const ContrastChecker = memo(function ContrastChecker({ themeColors }) {
           fontSize: typography.fontSize.xs,
           background: `${statusColor}20`,
           color: statusColor,
-          fontWeight: 600,
+          fontWeight: typography.fontWeight.semibold,
         }}>
           {summary.score}%
         </span>

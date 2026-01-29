@@ -733,10 +733,10 @@ function PackListsView({
               })}>
                 {item.quantity > 1 && (
                   <div style={{ 
-                    minWidth: 32, height: 32, borderRadius: 6,
+                    minWidth: 32, height: 32, borderRadius: borderRadius.md,
                     background: withOpacity(colors.primary, 20),
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: 600, color: colors.primary, fontSize: 13,
+                    fontWeight: typography.fontWeight.semibold, color: colors.primary, fontSize: typography.fontSize.base,
                   }}>
                     {item.quantity}x
                   </div>

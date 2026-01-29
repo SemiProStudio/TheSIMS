@@ -4,7 +4,7 @@
 
 import React, { useState, useCallback, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import { VIEWS, MODALS, STATUS, EMPTY_ITEM_FORM, EMPTY_RESERVATION_FORM, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_CATEGORY_SETTINGS, DEFAULT_LOCATIONS, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
-import { colors, spacing } from './theme.js';
+import {colors, spacing, typography, borderRadius} from './theme.js';
 import { generateItemCode, generateId, getTodayISO, updateById, removeById, findById, addReplyToNote, markNoteDeleted, findNoteById, getNextDueDate } from './utils.js';
 import { initialInventory, initialPackages, initialUsers, initialAuditLog, initialPackLists, initialKits, initialClients } from './data.js';
 import { useTheme } from './ThemeContext.jsx';
@@ -1761,7 +1761,7 @@ export default function App() {
             style={{
               background: 'transparent',
               border: 'none',
-              borderRadius: 8,
+              borderRadius: borderRadius.md,
               padding: '8px',
               cursor: 'pointer',
               display: 'flex',
@@ -1786,10 +1786,10 @@ export default function App() {
             <img 
               src="/moe.png" 
               alt="" 
-              style={{ width: 28, height: 28, borderRadius: 6 }}
+              style={{ width: 28, height: 28, borderRadius: borderRadius.md }}
               onError={(e) => e.target.style.display = 'none'}
             />
-            <span style={{ fontWeight: 600, fontSize: 16, color: colors.textPrimary }}>SIMS</span>
+            <span style={{ fontWeight: typography.fontWeight.semibold, fontSize: typography.fontSize.lg, color: colors.textPrimary }}>SIMS</span>
           </div>
           {currentUser && (
             <div style={{ position: 'relative' }}>
@@ -1805,8 +1805,8 @@ export default function App() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: colors.bgDark,
-                  fontWeight: 600,
-                  fontSize: 14,
+                  fontWeight: typography.fontWeight.semibold,
+                  fontSize: typography.fontSize.base,
                   cursor: 'pointer',
                 }}
                 aria-label="User menu"
@@ -1833,7 +1833,7 @@ export default function App() {
                     marginTop: 8,
                     background: colors.bgMedium,
                     border: `1px solid ${colors.border}`,
-                    borderRadius: 12,
+                    borderRadius: borderRadius.xl,
                     padding: spacing[2],
                     minWidth: 180,
                     zIndex: 1000,
@@ -1844,8 +1844,8 @@ export default function App() {
                       borderBottom: `1px solid ${colors.borderLight}`,
                       marginBottom: spacing[2],
                     }}>
-                      <div style={{ fontWeight: 600, color: colors.textPrimary }}>{currentUser.name}</div>
-                      <div style={{ fontSize: 12, color: colors.textMuted }}>{currentUser.email}</div>
+                      <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.textPrimary }}>{currentUser.name}</div>
+                      <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>{currentUser.email}</div>
                     </div>
                     <button
                       onClick={() => {
@@ -1857,7 +1857,7 @@ export default function App() {
                         padding: `${spacing[2]}px ${spacing[3]}px`,
                         background: 'transparent',
                         border: 'none',
-                        borderRadius: 8,
+                        borderRadius: borderRadius.md,
                         color: colors.textPrimary,
                         textAlign: 'left',
                         cursor: 'pointer',
@@ -1882,7 +1882,7 @@ export default function App() {
                         padding: `${spacing[2]}px ${spacing[3]}px`,
                         background: 'transparent',
                         border: 'none',
-                        borderRadius: 8,
+                        borderRadius: borderRadius.md,
                         color: colors.textPrimary,
                         textAlign: 'left',
                         cursor: 'pointer',
@@ -1912,7 +1912,7 @@ export default function App() {
                           padding: `${spacing[2]}px ${spacing[3]}px`,
                           background: 'transparent',
                           border: 'none',
-                          borderRadius: 8,
+                          borderRadius: borderRadius.md,
                           color: colors.danger,
                           textAlign: 'left',
                           cursor: 'pointer',
