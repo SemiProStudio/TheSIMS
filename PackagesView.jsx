@@ -8,6 +8,7 @@ import { Plus, Package, Trash2, ArrowLeft, ChevronRight, Edit2, AlertTriangle, L
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from './theme.js';
 import { formatMoney, getStatusColor } from './utils.js';
 import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog } from './components/ui.jsx';
+import { Select } from './components/Select.jsx';
 import { OptimizedImage } from './components/OptimizedImage.jsx';
 import { useData } from './lib/DataContext.jsx';
 
@@ -395,7 +396,13 @@ function PackagesView({
   // ============================================================================
   if (showCreate) {
     return (
-      <div className="view-container" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <div className="view-container" style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        height: '100%',
+        maxHeight: 'calc(100vh - 60px)', 
+        overflow: 'hidden' 
+      }}>
         <div className="page-header" style={{ flexShrink: 0 }}>
           <div>
             <h2 className="page-title">{editingPackage ? `Edit: ${formName}` : `Create: ${formName}`}</h2>
@@ -416,7 +423,14 @@ function PackagesView({
           </div>
         </div>
 
-        <Card padding={false} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+        <Card padding={false} style={{ 
+          flex: '1 1 auto', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          minHeight: 0, 
+          maxHeight: 'calc(100vh - 180px)',
+          overflow: 'hidden' 
+        }}>
           <div className="panel-header" style={{ flexShrink: 0, flexWrap: 'wrap', gap: spacing[2] }}>
             <div className="panel-header-title">
               <Package size={16} color={colors.primary} />
@@ -424,22 +438,15 @@ function PackagesView({
               <span className="panel-header-count">{formItems.length} selected</span>
             </div>
             <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center', flexWrap: 'wrap' }}>
-              <select
+              <Select
                 value={itemCategoryFilter}
                 onChange={e => setItemCategoryFilter(e.target.value)}
-                className="input"
-                style={{ 
-                  minWidth: '150px',
-                  padding: `${spacing[1]}px ${spacing[2]}px`,
-                  fontSize: typography.fontSize.sm
-                }}
-              >
-                {availableCategories.map(cat => (
-                  <option key={cat} value={cat}>
-                    {cat === 'all' ? 'All Categories' : cat}
-                  </option>
-                ))}
-              </select>
+                options={availableCategories.map(cat => ({
+                  value: cat,
+                  label: cat === 'all' ? 'All Categories' : cat
+                }))}
+                style={{ minWidth: '160px' }}
+              />
               <SearchInput 
                 value={itemSearch} 
                 onChange={setItemSearch} 
@@ -448,7 +455,7 @@ function PackagesView({
               />
             </div>
           </div>
-          <div className="selection-list" style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+          <div className="selection-list" style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
             {filteredItemsForSelect.length === 0 ? (
               <div style={{ padding: spacing[4], textAlign: 'center', color: colors.textMuted }}>
                 No items found{itemCategoryFilter !== 'all' ? ` in ${itemCategoryFilter}` : ''}
