@@ -316,6 +316,65 @@ export function DataProvider({ children }) {
   }, []);
 
   // =============================================================================
+  // RESERVATIONS OPERATIONS
+  // =============================================================================
+
+  const createReservation = useCallback(async (itemId, reservation) => {
+    try {
+      const dbReservation = {
+        // Don't pass id - let DB generate UUID
+        item_id: itemId,
+        client_id: reservation.clientId || null,
+        project: reservation.project,
+        project_type: reservation.projectType || 'Other',
+        start_date: reservation.start,
+        end_date: reservation.end,
+        status: reservation.status || 'confirmed',
+        contact_name: reservation.user,
+        contact_phone: reservation.contactPhone || '',
+        contact_email: reservation.contactEmail || '',
+        location: reservation.location || '',
+        notes: reservation.notes || ''
+      };
+      const result = await reservationsService.create(dbReservation);
+      return result;
+    } catch (err) {
+      console.error('Failed to create reservation:', err);
+      throw err;
+    }
+  }, []);
+
+  const updateReservation = useCallback(async (reservationId, updates) => {
+    try {
+      const dbUpdates = {};
+      if (updates.project !== undefined) dbUpdates.project = updates.project;
+      if (updates.projectType !== undefined) dbUpdates.project_type = updates.projectType;
+      if (updates.start !== undefined) dbUpdates.start_date = updates.start;
+      if (updates.end !== undefined) dbUpdates.end_date = updates.end;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.user !== undefined) dbUpdates.contact_name = updates.user;
+      if (updates.contactPhone !== undefined) dbUpdates.contact_phone = updates.contactPhone;
+      if (updates.contactEmail !== undefined) dbUpdates.contact_email = updates.contactEmail;
+      if (updates.location !== undefined) dbUpdates.location = updates.location;
+      if (updates.clientId !== undefined) dbUpdates.client_id = updates.clientId;
+      
+      await reservationsService.update(reservationId, dbUpdates);
+    } catch (err) {
+      console.error('Failed to update reservation:', err);
+      throw err;
+    }
+  }, []);
+
+  const deleteReservation = useCallback(async (reservationId) => {
+    try {
+      await reservationsService.delete(reservationId);
+    } catch (err) {
+      console.error('Failed to delete reservation:', err);
+      throw err;
+    }
+  }, []);
+
+  // =============================================================================
   // PACKAGES OPERATIONS
   // =============================================================================
 
@@ -619,6 +678,11 @@ export function DataProvider({ children }) {
     updateMaintenance,
     deleteMaintenance,
     
+    // Reservation Operations
+    createReservation,
+    updateReservation,
+    deleteReservation,
+    
     // Package Operations
     updatePackages,
     createPackage,
@@ -679,6 +743,9 @@ export function DataProvider({ children }) {
     addMaintenance,
     updateMaintenance,
     deleteMaintenance,
+    createReservation,
+    updateReservation,
+    deleteReservation,
     updatePackages,
     createPackage,
     updatePackage,

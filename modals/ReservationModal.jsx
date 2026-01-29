@@ -21,12 +21,16 @@ export const ReservationModal = memo(function ReservationModal({
   onSave, 
   onClose, 
   clients = [],
+  inventory = [],
   item = null,
   editingReservationId = null
 }) {
   const [touched, setTouched] = useState({});
   const [acknowledgedConflicts, setAcknowledgedConflicts] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  
+  // Selected item - from props or from form
+  const selectedItem = item || inventory.find(i => i.id === reservationForm.itemId);
   
   const handleChange = (field, value) => {
     setTouched(prev => ({ ...prev, [field]: true }));
@@ -74,27 +78,28 @@ export const ReservationModal = memo(function ReservationModal({
   // Run full validation
   const validation = useMemo(() => {
     return validateReservation(reservationForm, {
-      existingReservations: item?.reservations || [],
+      existingReservations: selectedItem?.reservations || [],
       editingId: editingReservationId,
     });
-  }, [reservationForm, item?.reservations, editingReservationId]);
+  }, [reservationForm, selectedItem?.reservations, editingReservationId]);
   
   // Conflict detection
   const conflicts = useMemo(() => {
-    if (!item || !reservationForm.start || !reservationForm.end) {
+    if (!selectedItem || !reservationForm.start || !reservationForm.end) {
       return { reservationConflicts: [], checkoutConflict: null, hasConflicts: false };
     }
     return getAllReservationConflicts(
-      item, 
+      selectedItem, 
       reservationForm.start, 
       reservationForm.end, 
       isEdit ? editingReservationId : null
     );
-  }, [item, reservationForm.start, reservationForm.end, isEdit, editingReservationId]);
+  }, [selectedItem, reservationForm.start, reservationForm.end, isEdit, editingReservationId]);
   
   // Validation - combine custom and validators.js
   const dateValid = reservationForm.start && reservationForm.end && reservationForm.end >= reservationForm.start;
-  const valid = reservationForm.project?.trim() && dateValid && reservationForm.user?.trim() && validation.isValid;
+  const hasItem = selectedItem || reservationForm.itemId;
+  const valid = hasItem && reservationForm.project?.trim() && dateValid && reservationForm.user?.trim() && validation.isValid;
   const dateError = reservationForm.start && reservationForm.end && reservationForm.end < reservationForm.start;
   
   // Can save if valid and either no conflicts or conflicts acknowledged
@@ -237,6 +242,52 @@ export const ReservationModal = memo(function ReservationModal({
               />
               I understand there are conflicts and want to proceed anyway
             </label>
+          </div>
+        )}
+        
+        {/* Item selector - show when no item is pre-selected and inventory available */}
+        {!item && inventory.length > 0 && (
+          <div style={{ marginBottom: spacing[3] }}>
+            <label style={{ ...styles.label, color: !reservationForm.itemId && !selectedItem ? colors.danger : undefined }}>
+              Item to Reserve <span style={{ color: colors.danger }}>*</span>
+            </label>
+            <Select 
+              value={reservationForm.itemId || ''} 
+              onChange={e => handleChange('itemId', e.target.value)} 
+              options={[
+                { value: '', label: '-- Select an item --' },
+                ...inventory
+                  .filter(i => i.status === 'available' || i.status === 'reserved')
+                  .map(i => ({ 
+                    value: i.id, 
+                    label: `${i.name} (${i.id})${i.status === 'reserved' ? ' - Has Reservations' : ''}` 
+                  }))
+              ]}
+              aria-label="Item to reserve"
+            />
+          </div>
+        )}
+        
+        {/* Show selected item info */}
+        {selectedItem && (
+          <div style={{ 
+            marginBottom: spacing[3], 
+            padding: spacing[3], 
+            background: `${withOpacity(colors.primary, 10)}`,
+            borderRadius: borderRadius.md,
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[3]
+          }}>
+            {selectedItem.image ? (
+              <img src={selectedItem.image} alt="" style={{ width: 48, height: 48, borderRadius: borderRadius.md, objectFit: 'cover' }} />
+            ) : (
+              <div style={{ width: 48, height: 48, borderRadius: borderRadius.md, background: colors.bgDark, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textMuted, fontSize: typography.fontSize.xs }}>No img</div>
+            )}
+            <div>
+              <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{selectedItem.name}</div>
+              <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>{selectedItem.brand} • {selectedItem.category}</div>
+            </div>
           </div>
         )}
         
@@ -429,6 +480,8 @@ ReservationModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   /** Available clients for selection */
   clients: PropTypes.arrayOf(clientShape),
+  /** Available inventory items for selection */
+  inventory: PropTypes.arrayOf(itemWithReservationsShape),
   /** Item the reservation is for (for conflict detection) */
   item: itemWithReservationsShape,
   /** ID of reservation being edited (for conflict exclusion) */

@@ -1101,24 +1101,20 @@ export default function App() {
       );
       
       // Use DataContext for Supabase persistence
-      if (dataContext?.updateItem) {
+      if (dataContext?.updateReservation) {
         try {
-          await dataContext.updateItem(selectedReservationItem.id, { reservations: updatedReservations });
+          await dataContext.updateReservation(editingReservationId, reservationForm);
         } catch (err) {
           console.error('Failed to update reservation:', err);
-          setInventory(prev => updateById(prev, selectedReservationItem.id, item => ({
-            reservations: (item.reservations || []).map(r => 
-              r.id === editingReservationId ? updatedReservation : r
-            )
-          })));
         }
-      } else {
-        setInventory(prev => updateById(prev, selectedReservationItem.id, item => ({
-          reservations: (item.reservations || []).map(r => 
-            r.id === editingReservationId ? updatedReservation : r
-          )
-        })));
       }
+      
+      // Update local state
+      setInventory(prev => updateById(prev, selectedReservationItem.id, item => ({
+        reservations: (item.reservations || []).map(r => 
+          r.id === editingReservationId ? updatedReservation : r
+        )
+      })));
 
       setSelectedReservation(updatedReservation);
       if (selectedItem?.id === selectedReservationItem.id) {
@@ -1143,6 +1139,14 @@ export default function App() {
       setEditingReservationId(null);
     } else {
       // Creating new reservation
+      const targetItemId = reservationForm.itemId || selectedItem?.id || selectedReservationItem?.id;
+      const targetItem = inventory.find(i => i.id === targetItemId) || selectedItem || selectedReservationItem;
+      
+      if (!targetItem) {
+        console.error('No item selected for reservation');
+        return;
+      }
+      
       const reservation = {
         id: generateId(),
         ...reservationForm,
@@ -1150,32 +1154,27 @@ export default function App() {
         dueBack: reservationForm.end
       };
 
-      const targetItemId = selectedItem?.id || selectedReservationItem?.id;
-      const targetItem = selectedItem || selectedReservationItem;
-      const updatedReservations = [...targetItem.reservations, reservation];
-      
       // Use DataContext for Supabase persistence
-      if (dataContext?.updateItem) {
+      if (dataContext?.createReservation) {
         try {
-          await dataContext.updateItem(targetItemId, { reservations: updatedReservations });
+          await dataContext.createReservation(targetItemId, reservationForm);
         } catch (err) {
           console.error('Failed to create reservation:', err);
-          setInventory(prev => updateById(prev, targetItemId, item => ({
-            reservations: [...item.reservations, reservation]
-          })));
         }
-      } else {
-        setInventory(prev => updateById(prev, targetItemId, item => ({
-          reservations: [...item.reservations, reservation]
-        })));
       }
+      
+      // Update local state
+      const updatedReservations = [...(targetItem.reservations || []), reservation];
+      setInventory(prev => updateById(prev, targetItemId, item => ({
+        reservations: [...(item.reservations || []), reservation]
+      })));
 
       const updatedItem = {
         ...targetItem,
         reservations: updatedReservations
       };
       
-      if (selectedItem) {
+      if (selectedItem?.id === targetItemId) {
         setSelectedItem(updatedItem);
       }
       
@@ -2438,6 +2437,10 @@ export default function App() {
           setReservationForm={setReservationForm}
           onSave={saveReservation}
           onClose={() => { closeModal(); setEditingReservationId(null); }}
+          clients={clients}
+          inventory={inventory}
+          item={selectedItem || selectedReservationItem}
+          editingReservationId={editingReservationId}
         />
       )}
 
