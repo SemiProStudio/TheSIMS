@@ -329,11 +329,9 @@ function PackListsView({
       setShowCreate(false);
       setSelectedList(updatedList);
     } else {
-      // Create new list
+      // Create new list - let DB generate the ID
       const newList = {
-        id: generateId(),
         name: listName.trim(),
-        createdAt: new Date().toISOString(),
         packages: [...selectedPackageIds],
         items: selectedItemIds.map(id => ({
           id,
@@ -344,28 +342,42 @@ function PackListsView({
       // Persist to Supabase via DataContext
       if (dataContext?.createPackList) {
         try {
-          await dataContext.createPackList(newList);
+          const createdList = await dataContext.createPackList(newList);
+          
+          // Log creation
+          if (addAuditLog) {
+            addAuditLog({
+              type: 'pack_list_created',
+              description: `Pack list "${createdList.name}" created with ${selectedItemIds.length} items`,
+              user: currentUser?.name || 'Unknown',
+              packListId: createdList.id
+            });
+          }
+          
+          resetForm();
+          setShowCreate(false);
+          setSelectedList(createdList);
         } catch (err) {
           console.error('Failed to create pack list:', err);
-          setPackLists(prev => [...prev, newList]);
         }
       } else {
-        setPackLists(prev => [...prev, newList]);
+        // Fallback for no DB - generate local ID
+        const localList = { ...newList, id: generateId(), createdAt: new Date().toISOString() };
+        setPackLists(prev => [...prev, localList]);
+        
+        if (addAuditLog) {
+          addAuditLog({
+            type: 'pack_list_created',
+            description: `Pack list "${localList.name}" created with ${selectedItemIds.length} items`,
+            user: currentUser?.name || 'Unknown',
+            packListId: localList.id
+          });
+        }
+        
+        resetForm();
+        setShowCreate(false);
+        setSelectedList(localList);
       }
-      
-      // Log creation
-      if (addAuditLog) {
-        addAuditLog({
-          type: 'pack_list_created',
-          description: `Pack list "${newList.name}" created with ${selectedItemIds.length} items`,
-          user: currentUser?.name || 'Unknown',
-          packListId: newList.id
-        });
-      }
-      
-      resetForm();
-      setShowCreate(false);
-      setSelectedList(newList);
     }
   }, [listName, selectedPackageIds, selectedItemIds, itemQuantities, setPackLists, resetForm, addAuditLog, currentUser, editingList, setSelectedList, dataContext]);
 
@@ -678,11 +690,17 @@ function PackListsView({
                 const showQuantity = hasQuantityTracking(item);
                 
                 return (
-                  <div key={item.id} className={`selection-item ${isSelected ? 'selected' : ''}`}>
+                  <div 
+                    key={item.id} 
+                    className={`selection-item ${isSelected ? 'selected' : ''}`}
+                    onClick={() => handleToggleItem(item.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <input
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => handleToggleItem(item.id)}
+                      onClick={e => e.stopPropagation()}
                     />
                     <div className="selection-item-info">
                       <div className="selection-item-name">{item.name}</div>
@@ -696,7 +714,7 @@ function PackListsView({
                       </div>
                     </div>
                     {showQuantity && isSelected && (
-                      <div className="quantity-input-wrapper">
+                      <div className="quantity-input-wrapper" onClick={e => e.stopPropagation()}>
                         <label>Qty:</label>
                         <input
                           type="number"
