@@ -9,7 +9,7 @@ import {
   ScanLine, Upload, Download, Bell, Palette, ChevronLeft, ChevronRight, Search
 } from 'lucide-react';
 import { VIEWS } from './constants.js';
-import { colors, spacing, borderRadius, typography, withOpacity, zIndex } from './theme.js';
+import { colors, spacing, borderRadius, typography, withOpacity } from './theme.js';
 import { useTheme } from './ThemeContext.jsx';
 import { usePermissions } from './PermissionsContext.jsx';
 import { announcePageChange } from './utils/accessibility.js';
@@ -163,7 +163,6 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
         borderRight: `1px solid ${colors.border}`,
         display: 'flex',
         flexDirection: 'column',
-        zIndex: zIndex.fixed
       }}
     >
       {/* Collapse toggle button */}

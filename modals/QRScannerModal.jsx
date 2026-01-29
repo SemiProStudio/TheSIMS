@@ -294,15 +294,22 @@ export const QRScannerModal = memo(function QRScannerModal({
               overflow: 'hidden',
               marginBottom: spacing[4]
             }}>
-              {scanning ? (
+              {/* Video element always rendered (hidden when not scanning) */}
+              <video
+                ref={videoRef}
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'cover',
+                  display: scanning ? 'block' : 'none'
+                }}
+                playsInline
+                muted
+              />
+              
+              {/* Scanning overlay - only show when scanning */}
+              {scanning && (
                 <>
-                  <video
-                    ref={videoRef}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    playsInline
-                    muted
-                  />
-                  {/* Scanning overlay */}
                   <div style={{
                     position: 'absolute',
                     inset: 0,
@@ -334,7 +341,10 @@ export const QRScannerModal = memo(function QRScannerModal({
                     Scanning...
                   </div>
                 </>
-              ) : (
+              )}
+              
+              {/* Camera not active placeholder - only show when not scanning */}
+              {!scanning && (
                 <div style={{
                   width: '100%',
                   height: '100%',
@@ -355,6 +365,7 @@ export const QRScannerModal = memo(function QRScannerModal({
                   </p>
                 </div>
               )}
+              
               <canvas ref={canvasRef} style={{ display: 'none' }} />
             </div>
             

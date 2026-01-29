@@ -208,13 +208,12 @@ export function DataProvider({ children }) {
   const addItemNote = useCallback(async (itemId, note) => {
     try {
       const dbNote = {
-        id: note.id,
+        // Don't pass id - let DB generate UUID
         item_id: itemId,
         user_name: note.user,
         text: note.text,
         parent_id: note.parentId || null,
-        deleted: false,
-        created_at: new Date().toISOString()
+        deleted: false
       };
       await itemNotesService.create(dbNote);
     } catch (err) {
@@ -238,16 +237,14 @@ export function DataProvider({ children }) {
   const addItemReminder = useCallback(async (itemId, reminder) => {
     try {
       const dbReminder = {
-        id: reminder.id,
+        // Don't pass id - let DB generate UUID
         item_id: itemId,
         title: reminder.title,
         description: reminder.description || '',
         due_date: reminder.dueDate,
-        priority: reminder.priority || 'medium',
-        type: reminder.type || 'general',
+        recurrence: reminder.recurrence || 'none',
         completed: false,
-        created_by_name: reminder.createdBy || 'Unknown',
-        created_at: new Date().toISOString()
+        created_by_name: reminder.createdBy || 'Unknown'
       };
       await itemRemindersService.create(dbReminder);
     } catch (err) {
@@ -284,16 +281,17 @@ export function DataProvider({ children }) {
   const addMaintenance = useCallback(async (itemId, record) => {
     try {
       const dbRecord = {
-        id: record.id,
+        // Don't pass id - let DB generate UUID
         item_id: itemId,
         type: record.type,
-        description: record.description,
-        date: record.date,
-        performed_by: record.performedBy,
+        description: record.description || '',
+        vendor: record.vendor || null,
         cost: record.cost || 0,
+        scheduled_date: record.date || record.scheduledDate || null,
+        completed_date: record.completedDate || null,
+        status: record.status || 'completed',
         notes: record.notes || '',
-        next_due: record.nextDue || null,
-        created_at: new Date().toISOString()
+        created_by_name: record.performedBy || 'Unknown'
       };
       await maintenanceService.create(dbRecord);
     } catch (err) {

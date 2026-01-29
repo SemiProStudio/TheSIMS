@@ -6,7 +6,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { colors, spacing, borderRadius, typography } from '../theme.js';
+import { colors } from '../theme.js';
 import { ChevronDown } from 'lucide-react';
 
 export function Select({ 
@@ -173,10 +173,10 @@ export function Select({
         top: dropdownPosition.top,
         left: dropdownPosition.left,
         width: dropdownPosition.width,
-        padding: spacing[1],
+        padding: 4,
         background: colors.bgMedium,
         border: `1px solid ${colors.border}`,
-        borderRadius: borderRadius.lg,
+        borderRadius: 10,
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
         zIndex: 99999,
         maxHeight: 200,
@@ -200,11 +200,11 @@ export function Select({
             onClick={() => handleSelect(opt)}
             onMouseEnter={() => setHighlightedIndex(index)}
             style={{
-              padding: `${spacing[2]}px ${spacing[3]}px`,
-              borderRadius: borderRadius.md,
+              padding: '10px 16px',
+              borderRadius: 8,
               cursor: 'pointer',
               color: colors.textPrimary,
-              fontSize: typography.fontSize.sm,
+              fontSize: 14,
               background: isHighlighted 
                 ? `rgba(106, 154, 184, 0.2)` 
                 : isSelected 
@@ -238,28 +238,34 @@ export function Select({
         aria-label={ariaLabel}
         style={{
           width: '100%',
-          padding: `${spacing[2]}px ${spacing[3]}px`,
-          paddingRight: spacing[8],
-          background: `rgba(106, 154, 184, 0.1)`,
+          padding: '12px 16px',
+          paddingRight: 40,
+          background: 'var(--input-bg, rgba(106, 154, 184, 0.1))',
           border: `1px solid ${colors.border}`,
-          borderRadius: borderRadius.lg,
+          borderRadius: 10,
           color: selectedOption ? colors.textPrimary : colors.textMuted,
-          fontSize: typography.fontSize.sm,
+          fontSize: 14,
           textAlign: 'left',
           cursor: disabled ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.6 : 1,
           position: 'relative',
-          minHeight: 36,
           display: 'flex',
           alignItems: 'center',
+          boxSizing: 'border-box',
+          transition: 'border-color 150ms ease, box-shadow 150ms ease',
+          outline: 'none',
+          ...(isOpen && { 
+            borderColor: colors.primary,
+            boxShadow: `0 0 0 2px rgba(106, 154, 184, 0.2)`
+          }),
         }}
       >
         {displayValue}
         <ChevronDown 
-          size={14} 
+          size={16} 
           style={{ 
             position: 'absolute', 
-            right: spacing[3], 
+            right: 12, 
             top: '50%', 
             transform: 'translateY(-50%)',
             color: colors.textMuted,
