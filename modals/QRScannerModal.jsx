@@ -5,6 +5,7 @@
 
 import React, { memo, useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import jsQR from 'jsqr';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { getStatusColor } from '../utils.js';
 import { Badge, Button } from '../components/ui.jsx';
@@ -88,10 +89,12 @@ export const QRScannerModal = memo(function QRScannerModal({
     animationRef.current = requestAnimationFrame(scanFrame);
   };
   
-  // Simple QR code decoder placeholder
-  // For production, use jsQR library for proper QR decoding
+  // Decode QR code from canvas image data using jsQR
   const decodeQRFromImageData = (imageData) => {
-    return null;
+    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'dontInvert',
+    });
+    return code ? code.data : null;
   };
   
   // Handle found code

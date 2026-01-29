@@ -770,6 +770,17 @@ export default function App() {
       });
     }
 
+    // Persist to Supabase
+    if (isEdit) {
+      if (dataContext?.updateMaintenance) {
+        dataContext.updateMaintenance(record.id, record);
+      }
+    } else {
+      if (dataContext?.addMaintenance) {
+        dataContext.addMaintenance(itemId, record);
+      }
+    }
+
     // Add audit log entry
     addAuditLog({
       type: isEdit ? 'maintenance_updated' : 'maintenance_added',
@@ -1319,6 +1330,11 @@ export default function App() {
 
         updateCollection(entity.id, () => updatedNotes);
         setEntity(prev => ({ ...prev, notes: updatedNotes }));
+        
+        // Persist to Supabase
+        if (entityType === 'item' && dataContext?.addItemNote) {
+          dataContext.addItemNote(entity.id, note);
+        }
       },
 
       reply: (parentId, text) => {
@@ -1331,12 +1347,18 @@ export default function App() {
           date: getTodayISO(),
           text: text.trim(),
           replies: [],
-          deleted: false
+          deleted: false,
+          parentId: parentId
         };
 
         const updatedNotes = addReplyToNote(entity.notes || [], parentId, reply);
         updateCollection(entity.id, () => updatedNotes);
         setEntity(prev => ({ ...prev, notes: updatedNotes }));
+        
+        // Persist reply to Supabase
+        if (entityType === 'item' && dataContext?.addItemNote) {
+          dataContext.addItemNote(entity.id, reply);
+        }
       },
 
       delete: (noteId) => {
@@ -1358,9 +1380,14 @@ export default function App() {
         const updatedNotes = markNoteDeleted(entity.notes || [], noteId);
         updateCollection(entity.id, () => updatedNotes);
         setEntity(prev => ({ ...prev, notes: updatedNotes }));
+        
+        // Persist delete to Supabase
+        if (entityType === 'item' && dataContext?.deleteItemNote) {
+          dataContext.deleteItemNote(noteId);
+        }
       }
     };
-  }, [selectedItem, selectedPackage, selectedReservation, selectedReservationItem, currentUser]);
+  }, [selectedItem, selectedPackage, selectedReservation, selectedReservationItem, currentUser, dataContext]);
 
   // Memoized note handlers
   const itemNoteHandlers = useMemo(() => createNoteHandler('item'), [createNoteHandler]);
@@ -1435,6 +1462,14 @@ export default function App() {
     })));
     setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
     
+    // Persist to Supabase
+    if (dataContext?.addItemReminder) {
+      dataContext.addItemReminder(selectedItem.id, {
+        ...reminder,
+        createdBy: currentUser.name
+      });
+    }
+    
     setAuditLog(prev => [...prev, {
       type: 'reminder_added',
       timestamp: new Date().toISOString(),
@@ -1442,7 +1477,7 @@ export default function App() {
       user: currentUser.name,
       itemId: selectedItem.id
     }]);
-  }, [selectedItem, currentUser]);
+  }, [selectedItem, currentUser, dataContext]);
 
   const completeReminder = useCallback((reminderId) => {
     if (!selectedItem) return;
@@ -1460,6 +1495,11 @@ export default function App() {
     })));
     setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
     
+    // Persist to Supabase
+    if (dataContext?.updateItemReminder) {
+      dataContext.updateItemReminder(reminderId, { completed: true, completedDate: getTodayISO() });
+    }
+    
     setAuditLog(prev => [...prev, {
       type: 'reminder_completed',
       timestamp: new Date().toISOString(),
@@ -1467,7 +1507,7 @@ export default function App() {
       user: currentUser.name,
       itemId: selectedItem.id
     }]);
-  }, [selectedItem, currentUser]);
+  }, [selectedItem, currentUser, dataContext]);
 
   const uncompleteReminder = useCallback((reminderId) => {
     if (!selectedItem) return;
@@ -1484,7 +1524,12 @@ export default function App() {
       reminders: updatedReminders
     })));
     setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
-  }, [selectedItem]);
+    
+    // Persist to Supabase
+    if (dataContext?.updateItemReminder) {
+      dataContext.updateItemReminder(reminderId, { completed: false, completedDate: null });
+    }
+  }, [selectedItem, dataContext]);
 
   const deleteReminder = useCallback((reminderId) => {
     if (!selectedItem) return;
@@ -1502,10 +1547,16 @@ export default function App() {
           reminders: updatedReminders
         })));
         setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
+        
+        // Persist to Supabase
+        if (dataContext?.deleteItemReminder) {
+          dataContext.deleteItemReminder(reminderId);
+        }
+        
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
       }
     });
-  }, [selectedItem]);
+  }, [selectedItem, dataContext]);
 
   // ============================================================================
   // Package Handlers

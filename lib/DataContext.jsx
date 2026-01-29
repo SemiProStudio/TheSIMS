@@ -8,6 +8,8 @@ import {
   inventoryService,
   reservationsService,
   maintenanceService,
+  itemNotesService,
+  itemRemindersService,
   clientsService,
   packagesService,
   packListsService,
@@ -198,6 +200,122 @@ export function DataProvider({ children }) {
       return inventory.find(item => item.id === id) || null;
     }
   }, [inventory]);
+
+  // =============================================================================
+  // ITEM NOTES OPERATIONS
+  // =============================================================================
+
+  const addItemNote = useCallback(async (itemId, note) => {
+    try {
+      const dbNote = {
+        id: note.id,
+        item_id: itemId,
+        user_name: note.user,
+        text: note.text,
+        parent_id: note.parentId || null,
+        deleted: false,
+        created_at: new Date().toISOString()
+      };
+      await itemNotesService.create(dbNote);
+    } catch (err) {
+      console.error('Failed to save note:', err);
+      // Continue with local state update even if DB fails
+    }
+  }, []);
+
+  const deleteItemNote = useCallback(async (noteId) => {
+    try {
+      await itemNotesService.softDelete(noteId);
+    } catch (err) {
+      console.error('Failed to delete note:', err);
+    }
+  }, []);
+
+  // =============================================================================
+  // ITEM REMINDERS OPERATIONS
+  // =============================================================================
+
+  const addItemReminder = useCallback(async (itemId, reminder) => {
+    try {
+      const dbReminder = {
+        id: reminder.id,
+        item_id: itemId,
+        title: reminder.title,
+        description: reminder.description || '',
+        due_date: reminder.dueDate,
+        priority: reminder.priority || 'medium',
+        type: reminder.type || 'general',
+        completed: false,
+        created_by_name: reminder.createdBy || 'Unknown',
+        created_at: new Date().toISOString()
+      };
+      await itemRemindersService.create(dbReminder);
+    } catch (err) {
+      console.error('Failed to save reminder:', err);
+    }
+  }, []);
+
+  const updateItemReminder = useCallback(async (reminderId, updates) => {
+    try {
+      const dbUpdates = {};
+      if (updates.completed !== undefined) dbUpdates.completed = updates.completed;
+      if (updates.completedDate !== undefined) dbUpdates.completed_at = updates.completedDate;
+      if (updates.title !== undefined) dbUpdates.title = updates.title;
+      if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
+      
+      await itemRemindersService.update(reminderId, dbUpdates);
+    } catch (err) {
+      console.error('Failed to update reminder:', err);
+    }
+  }, []);
+
+  const deleteItemReminder = useCallback(async (reminderId) => {
+    try {
+      await itemRemindersService.delete(reminderId);
+    } catch (err) {
+      console.error('Failed to delete reminder:', err);
+    }
+  }, []);
+
+  // =============================================================================
+  // MAINTENANCE OPERATIONS
+  // =============================================================================
+
+  const addMaintenance = useCallback(async (itemId, record) => {
+    try {
+      const dbRecord = {
+        id: record.id,
+        item_id: itemId,
+        type: record.type,
+        description: record.description,
+        date: record.date,
+        performed_by: record.performedBy,
+        cost: record.cost || 0,
+        notes: record.notes || '',
+        next_due: record.nextDue || null,
+        created_at: new Date().toISOString()
+      };
+      await maintenanceService.create(dbRecord);
+    } catch (err) {
+      console.error('Failed to save maintenance record:', err);
+    }
+  }, []);
+
+  const updateMaintenance = useCallback(async (recordId, updates) => {
+    try {
+      await maintenanceService.update(recordId, updates);
+    } catch (err) {
+      console.error('Failed to update maintenance record:', err);
+    }
+  }, []);
+
+  const deleteMaintenance = useCallback(async (recordId) => {
+    try {
+      await maintenanceService.delete(recordId);
+    } catch (err) {
+      console.error('Failed to delete maintenance record:', err);
+    }
+  }, []);
 
   // =============================================================================
   // PACKAGES OPERATIONS
@@ -489,6 +607,20 @@ export function DataProvider({ children }) {
     deleteItem,
     getItemWithDetails,
     
+    // Item Notes Operations
+    addItemNote,
+    deleteItemNote,
+    
+    // Item Reminders Operations
+    addItemReminder,
+    updateItemReminder,
+    deleteItemReminder,
+    
+    // Maintenance Operations
+    addMaintenance,
+    updateMaintenance,
+    deleteMaintenance,
+    
     // Package Operations
     updatePackages,
     createPackage,
@@ -541,6 +673,14 @@ export function DataProvider({ children }) {
     createItem,
     deleteItem,
     getItemWithDetails,
+    addItemNote,
+    deleteItemNote,
+    addItemReminder,
+    updateItemReminder,
+    deleteItemReminder,
+    addMaintenance,
+    updateMaintenance,
+    deleteMaintenance,
     updatePackages,
     createPackage,
     updatePackage,
