@@ -9,6 +9,7 @@ import { Plus, Package, Trash2, ArrowLeft, Download, Printer, Copy, Box, Layers,
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from './theme.js';
 import { formatDate, generateId, getStatusColor } from './utils.js';
 import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog } from './components/ui.jsx';
+import { Select } from './components/Select.jsx';
 import { useData } from './lib/DataContext.jsx';
 
 function PackListsView({ 
@@ -54,6 +55,7 @@ function PackListsView({
   const [itemQuantities, setItemQuantities] = useState({});
   const [packageSearch, setPackageSearch] = useState('');
   const [itemSearch, setItemSearch] = useState('');
+  const [itemCategoryFilter, setItemCategoryFilter] = useState('all');
   const [expandedPackages, setExpandedPackages] = useState(new Set());
   const [editingList, setEditingList] = useState(null);
   
@@ -64,6 +66,12 @@ function PackListsView({
 
   // Get individual items (non-kits)
   const individualItems = useMemo(() => inventory.filter(item => !item.isKit), [inventory]);
+
+  // Get unique categories for filter dropdown
+  const availableCategories = useMemo(() => {
+    const cats = new Set(individualItems.map(item => item.category).filter(Boolean));
+    return ['all', ...Array.from(cats).sort()];
+  }, [individualItems]);
 
   // Check if an item has quantity tracking
   const hasQuantityTracking = useCallback((item) => {
@@ -92,16 +100,27 @@ function PackListsView({
     );
   }, [packages, packageSearch]);
 
-  // Filter items - show ALL items
+  // Filter items - by category and search
   const filteredItems = useMemo(() => {
-    if (!itemSearch.trim()) return individualItems;
-    const q = itemSearch.toLowerCase();
-    return individualItems.filter(item => 
-      item.name.toLowerCase().includes(q) || 
-      item.id.toLowerCase().includes(q) ||
-      item.category.toLowerCase().includes(q)
-    );
-  }, [individualItems, itemSearch]);
+    let items = individualItems;
+    
+    // Filter by category first
+    if (itemCategoryFilter !== 'all') {
+      items = items.filter(item => item.category === itemCategoryFilter);
+    }
+    
+    // Then filter by search
+    if (itemSearch.trim()) {
+      const q = itemSearch.toLowerCase();
+      items = items.filter(item => 
+        item.name.toLowerCase().includes(q) || 
+        item.id.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q)
+      );
+    }
+    
+    return items;
+  }, [individualItems, itemSearch, itemCategoryFilter]);
 
   // Calculate package selection states
   const getPackageSelectionState = useCallback((pkgId) => {
@@ -200,6 +219,7 @@ function PackListsView({
     setItemQuantities({});
     setPackageSearch('');
     setItemSearch('');
+    setItemCategoryFilter('all');
     setExpandedPackages(new Set());
     setEditingList(null);
   }, []);
@@ -620,17 +640,39 @@ function PackListsView({
           </div>
 
           {/* Items Selection with Quantities */}
-          <div className="selection-panel">
-            <div className="panel-header">
+          <div className="selection-panel" style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            maxHeight: 'calc(100vh - 280px)',
+            overflow: 'hidden'
+          }}>
+            <div className="panel-header" style={{ flexShrink: 0, flexWrap: 'wrap', gap: spacing[2] }}>
               <div className="panel-header-title">
                 <Box size={16} color={colors.primary} />
                 <strong>Individual Items</strong>
                 <span className="panel-header-count">{selectedItemIds.length} selected</span>
               </div>
-              <SearchInput value={itemSearch} onChange={setItemSearch} onClear={() => setItemSearch('')} placeholder="Search items..." />
+              <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center', flexWrap: 'wrap' }}>
+                <Select
+                  value={itemCategoryFilter}
+                  onChange={e => setItemCategoryFilter(e.target.value)}
+                  options={availableCategories.map(cat => ({
+                    value: cat,
+                    label: cat === 'all' ? 'All Categories' : cat
+                  }))}
+                  style={{ minWidth: '160px' }}
+                />
+                <SearchInput value={itemSearch} onChange={setItemSearch} onClear={() => setItemSearch('')} placeholder="Search items..." />
+              </div>
             </div>
-            <div className="selection-list">
-              {filteredItems.map(item => {
+            <div className="selection-list" style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
+              {filteredItems.length === 0 ? (
+                <div style={{ padding: spacing[4], textAlign: 'center', color: colors.textMuted }}>
+                  No items found{itemCategoryFilter !== 'all' ? ` in ${itemCategoryFilter}` : ''}
+                  {itemSearch && ` matching "${itemSearch}"`}
+                </div>
+              ) : (
+                filteredItems.map(item => {
                 const isSelected = selectedItemIds.includes(item.id);
                 const itemPackages = getItemPackages(item.id);
                 const showQuantity = hasQuantityTracking(item);
@@ -667,9 +709,7 @@ function PackListsView({
                     )}
                   </div>
                 );
-              })}
-              {filteredItems.length === 0 && (
-                <p style={{ color: colors.textMuted, textAlign: 'center', padding: 16 }}>No items found</p>
+              })
               )}
             </div>
           </div>

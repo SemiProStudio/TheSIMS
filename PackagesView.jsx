@@ -239,17 +239,8 @@ function PackagesView({
       setEditingPackage(null);
       resetForm();
     } else {
-      // Generate simple sequential ID like PKG-001, PKG-002, etc.
-      const existingNumbers = packages
-        .map(p => p.id.match(/^PKG-(\d+)$/))
-        .filter(Boolean)
-        .map(m => parseInt(m[1], 10));
-      const nextNum = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
-      const newId = `PKG-${String(nextNum).padStart(3, '0')}`;
-      
-      // Create new
+      // Create new package - let DB generate the ID
       const newPackage = {
-        id: newId,
         name: formName.trim(),
         description: formDescription.trim(),
         category: formCategory.trim(),
@@ -260,20 +251,28 @@ function PackagesView({
       // Persist to Supabase via DataContext
       if (dataContext?.createPackage) {
         try {
-          await dataContext.createPackage(newPackage);
+          const createdPackage = await dataContext.createPackage(newPackage);
+          // Show the new package with DB-generated ID
+          setSelectedPackage(createdPackage);
+          setShowCreate(false);
+          resetForm();
         } catch (err) {
           console.error('Failed to create package:', err);
-          // Fallback to local state
-          setPackages(prev => [...prev, newPackage]);
         }
       } else {
-        setPackages(prev => [...prev, newPackage]);
+        // Fallback - generate local ID if no DB
+        const existingNumbers = packages
+          .map(p => p.id?.match?.(/^PKG-(\d+)$/))
+          .filter(Boolean)
+          .map(m => parseInt(m[1], 10));
+        const nextNum = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+        const localId = `PKG-${String(nextNum).padStart(3, '0')}`;
+        const localPackage = { ...newPackage, id: localId };
+        setPackages(prev => [...prev, localPackage]);
+        setSelectedPackage(localPackage);
+        setShowCreate(false);
+        resetForm();
       }
-      
-      // Show the new package
-      setSelectedPackage(newPackage);
-      setShowCreate(false);
-      resetForm();
     }
   }, [formName, formDescription, formCategory, formItems, editingPackage, setPackages, setSelectedPackage, resetForm, packages, dataContext]);
 
