@@ -300,7 +300,11 @@ export default function App() {
     if (item) {
       // Set basic item immediately for fast UI response
       setSelectedItem(item);
-      setInventory(prev => updateById(prev, id, { viewCount: (item.viewCount || 0) + 1 }));
+      // Increment view count - properly merge with existing item data
+      setInventory(prev => updateById(prev, id, existingItem => ({ 
+        ...existingItem,
+        viewCount: (existingItem.viewCount || 0) + 1 
+      })));
       setCurrentView(VIEWS.GEAR_DETAIL);
       setActiveModal(null);
       // Store back context if provided (e.g., from Packages view)
@@ -499,60 +503,55 @@ export default function App() {
   const processCheckout = useCallback(async (checkoutData) => {
     const { itemId, borrowerName, borrowerEmail, borrowerPhone, project, projectType, dueDate, notes, conditionAtCheckout, checkedOutDate, checkedOutTime } = checkoutData;
     
-    // Create checkout history entry
-    const historyEntry = {
-      id: generateId(),
-      type: 'checkout',
-      borrowerName,
-      borrowerEmail,
-      borrowerPhone,
-      project,
-      projectType,
-      dueDate,
-      conditionAtCheckout,
-      notes,
-      checkedOutDate,
-      checkedOutTime,
-      checkedOutBy: currentUser?.name || 'Unknown'
-    };
-    
     const currentItem = inventory.find(i => i.id === itemId);
-    const updates = {
-      status: STATUS.CHECKED_OUT,
-      checkedOutTo: borrowerName,
-      checkedOutDate: checkedOutDate,
-      dueBack: dueDate,
-      checkoutProject: project,
-      checkoutProjectType: projectType,
-      checkoutCount: (currentItem?.checkoutCount || 0) + 1,
-      checkoutHistory: [...(currentItem?.checkoutHistory || []), historyEntry]
-    };
     
-    // Use DataContext for Supabase persistence
-    if (dataContext?.updateItem) {
+    // Use DataContext checkOutItem for proper Supabase persistence
+    if (dataContext?.checkOutItem) {
       try {
-        await dataContext.updateItem(itemId, updates);
+        await dataContext.checkOutItem(itemId, {
+          userId: currentUser?.id,
+          userName: borrowerName,
+          clientId: null, // Could be added to checkout form if needed
+          clientName: null,
+          project: project,
+          dueBack: dueDate
+        });
       } catch (err) {
         console.error('Failed to save checkout:', err);
-        // Fallback to local state
+        // Fallback to local state only
         setInventory(prev => updateById(prev, itemId, item => ({
-          ...updates,
-          checkoutCount: item.checkoutCount + 1,
-          checkoutHistory: [...(item.checkoutHistory || []), historyEntry]
+          status: STATUS.CHECKED_OUT,
+          checkedOutTo: borrowerName,
+          checkedOutDate: checkedOutDate,
+          dueBack: dueDate,
+          checkoutProject: project,
+          checkoutProjectType: projectType,
+          checkoutCount: (item.checkoutCount || 0) + 1
         })));
       }
     } else {
+      // No DataContext available, update local state only
       setInventory(prev => updateById(prev, itemId, item => ({
-        ...updates,
-        checkoutCount: item.checkoutCount + 1,
-        checkoutHistory: [...(item.checkoutHistory || []), historyEntry]
+        status: STATUS.CHECKED_OUT,
+        checkedOutTo: borrowerName,
+        checkedOutDate: checkedOutDate,
+        dueBack: dueDate,
+        checkoutProject: project,
+        checkoutProjectType: projectType,
+        checkoutCount: (item.checkoutCount || 0) + 1
       })));
     }
     
     if (selectedItem?.id === itemId) {
       setSelectedItem(prev => ({ 
         ...prev, 
-        ...updates
+        status: STATUS.CHECKED_OUT,
+        checkedOutTo: borrowerName,
+        checkedOutDate: checkedOutDate,
+        dueBack: dueDate,
+        checkoutProject: project,
+        checkoutProjectType: projectType,
+        checkoutCount: (prev.checkoutCount || 0) + 1
       }));
     }
     
@@ -598,86 +597,56 @@ export default function App() {
   const processCheckin = useCallback(async (checkinData) => {
     const { itemId, returnedBy, condition, conditionChanged, conditionAtCheckout, conditionNotes, returnNotes, damageReported, damageDescription, returnDate, returnTime } = checkinData;
     
-    // Create checkout history entry for return
-    const historyEntry = {
-      id: generateId(),
-      type: 'checkin',
-      returnedBy,
-      conditionAtReturn: condition,
-      conditionAtCheckout,
-      conditionChanged,
-      conditionNotes,
-      returnNotes,
-      damageReported,
-      damageDescription,
-      returnDate,
-      returnTime,
-      processedBy: currentUser?.name || 'Unknown'
-    };
+    const currentItem = inventory.find(i => i.id === itemId);
     
     // Determine new status based on damage
     const newStatus = damageReported ? STATUS.NEEDS_ATTENTION : STATUS.AVAILABLE;
     
-    const currentItem = inventory.find(i => i.id === itemId);
-    const updates = {
-      status: newStatus,
-      condition: condition,
-      checkedOutTo: null,
-      checkedOutDate: null,
-      dueBack: null,
-      checkoutProject: null,
-      checkoutProjectType: null,
-      checkoutHistory: [...(currentItem?.checkoutHistory || []), historyEntry],
-      // Add a note if there was damage
-      notes: damageReported ? [...(currentItem?.notes || []), {
-        id: generateId(),
-        user: currentUser?.name || 'System',
-        date: returnDate,
-        text: `⚠️ Damage reported: ${damageDescription}`,
-        replies: [],
-        deleted: false
-      }] : currentItem?.notes
-    };
-    
-    // Use DataContext for Supabase persistence
-    if (dataContext?.updateItem) {
+    // Use DataContext checkInItem for proper Supabase persistence
+    if (dataContext?.checkInItem) {
       try {
-        await dataContext.updateItem(itemId, updates);
+        await dataContext.checkInItem(itemId, {
+          returnedBy,
+          userId: currentUser?.id,
+          condition,
+          conditionNotes,
+          returnNotes,
+          damageReported,
+          damageDescription
+        });
       } catch (err) {
         console.error('Failed to save checkin:', err);
-        // Fallback to local state
+        // Fallback to local state only
         setInventory(prev => updateById(prev, itemId, item => ({
-          ...updates,
-          checkoutHistory: [...(item.checkoutHistory || []), historyEntry],
-          notes: damageReported ? [...(item.notes || []), {
-            id: generateId(),
-            user: currentUser?.name || 'System',
-            date: returnDate,
-            text: `⚠️ Damage reported: ${damageDescription}`,
-            replies: [],
-            deleted: false
-          }] : item.notes
+          status: newStatus,
+          condition: condition,
+          checkedOutTo: null,
+          checkedOutDate: null,
+          dueBack: null,
+          checkoutProject: null
         })));
       }
     } else {
+      // No DataContext available, update local state only
       setInventory(prev => updateById(prev, itemId, item => ({
-        ...updates,
-        checkoutHistory: [...(item.checkoutHistory || []), historyEntry],
-        notes: damageReported ? [...(item.notes || []), {
-          id: generateId(),
-          user: currentUser?.name || 'System',
-          date: returnDate,
-          text: `⚠️ Damage reported: ${damageDescription}`,
-          replies: [],
-          deleted: false
-        }] : item.notes
+        status: newStatus,
+        condition: condition,
+        checkedOutTo: null,
+        checkedOutDate: null,
+        dueBack: null,
+        checkoutProject: null
       })));
     }
     
     if (selectedItem?.id === itemId) {
       setSelectedItem(prev => ({ 
         ...prev, 
-        ...updates
+        status: newStatus,
+        condition: condition,
+        checkedOutTo: null,
+        checkedOutDate: null,
+        dueBack: null,
+        checkoutProject: null
       }));
     }
     
@@ -1243,18 +1212,29 @@ export default function App() {
   }, [openModal]);
 
   const deleteReservation = useCallback((itemId, resId) => {
+    console.log('[deleteReservation] Called with:', { itemId, resId });
+    
     const item = inventory.find(i => i.id === itemId);
     const reservation = item?.reservations?.find(r => r.id === resId);
+    
+    console.log('[deleteReservation] Found item:', item?.id, 'Found reservation:', reservation?.id);
+    
+    if (!itemId || !resId) {
+      console.error('[deleteReservation] Missing itemId or resId:', { itemId, resId });
+      return;
+    }
     
     setConfirmDialog({
       isOpen: true,
       title: 'Cancel Reservation',
       message: 'Are you sure you want to cancel this reservation? This action cannot be undone.',
       onConfirm: async () => {
+        console.log('[deleteReservation] Confirmed, deleting...');
         // Use DataContext deleteReservation for Supabase persistence
         if (dataContext?.deleteReservation) {
           try {
             await dataContext.deleteReservation(resId);
+            console.log('[deleteReservation] DB delete successful');
           } catch (err) {
             console.error('Failed to delete reservation:', err);
           }
@@ -2142,14 +2122,19 @@ export default function App() {
               onBack={() => setCurrentView(selectedItem ? VIEWS.GEAR_DETAIL : VIEWS.SCHEDULE)}
               onEdit={() => openEditReservation(selectedReservation)}
               onDelete={() => {
-                if (selectedReservationItem) {
-                  deleteReservation(selectedReservationItem.id, selectedReservation.id);
+                // For multi-item reservations, items[0] is the first item
+                const itemForDelete = selectedReservationItem || selectedReservation?.items?.[0];
+                if (itemForDelete && selectedReservation?.id) {
+                  deleteReservation(itemForDelete.id, selectedReservation.id);
+                } else {
+                  console.error('Cannot delete: missing item or reservation ID', { selectedReservationItem, selectedReservation });
                 }
               }}
               onAddNote={reservationNoteHandlers.add}
               onReplyNote={reservationNoteHandlers.reply}
               onDeleteNote={reservationNoteHandlers.delete}
               user={currentUser}
+              onViewItem={navigateToItem}
             />
           </Suspense>
         )}

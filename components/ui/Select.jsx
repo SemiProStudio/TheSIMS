@@ -6,7 +6,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { colors } from '../../theme.js';
+import { colors } from '../theme.js';
 import { ChevronDown } from 'lucide-react';
 
 export function Select({ 

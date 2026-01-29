@@ -237,6 +237,7 @@ export const styles = {
     borderRadius: borderRadius.lg,
     color: colors.textPrimary,
     fontSize: typography.fontSize.base,
+    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     outline: 'none',
     boxSizing: 'border-box',
   },

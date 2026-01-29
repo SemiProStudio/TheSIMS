@@ -236,7 +236,8 @@ function ScheduleView({
           {scheduleDates.map((dt, idx) => {
             const ds = dt.toISOString().split('T')[0];
             const isToday = ds === today;
-            const events = (inventory || []).flatMap(i => (i.reservations || []).filter(r => r.start <= ds && r.end >= ds).map(r => ({ ...r, item: i })));
+            // Use grouped reservations for consistency with list view
+            const events = groupedReservations.filter(r => r.start <= ds && r.end >= ds);
 
             return (
               <Card key={idx} padding={false} style={{ 
@@ -263,8 +264,8 @@ function ScheduleView({
                   {events.map((e, i) => (
                     <div 
                       key={i} 
-                      onClick={() => onViewReservation(e, e.item)} 
-                      title={`${e.item.name}${e.project ? ` - ${e.project}` : ''}`}
+                      onClick={() => onViewReservation(e, e.items[0])} 
+                      title={`${e.itemCount > 1 ? `${e.itemCount} items` : e.items[0]?.name}${e.project ? ` - ${e.project}` : ''}`}
                       style={{ 
                         background: `${withOpacity(colors.primary, 20)}`, 
                         borderLeft: `3px solid ${colors.primary}`, 
@@ -283,7 +284,7 @@ function ScheduleView({
                         textOverflow: 'ellipsis', 
                         whiteSpace: 'nowrap',
                       }}>
-                        {e.item.name}
+                        {e.itemCount > 1 ? `${e.itemCount} items` : e.items[0]?.name}
                       </div>
                       {!isMonth && (
                         <div style={{ 

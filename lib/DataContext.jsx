@@ -20,7 +20,8 @@ import {
   rolesService,
   auditLogService,
   notificationPreferencesService,
-  emailService
+  emailService,
+  checkoutHistoryService
 } from './services.js';
 
 import { DEFAULT_ROLES, DEFAULT_LOCATIONS, DEFAULT_SPECS } from '../constants.js';
@@ -392,6 +393,93 @@ export function DataProvider({ children }) {
   }, []);
 
   // =============================================================================
+  // CHECK IN/OUT OPERATIONS
+  // =============================================================================
+
+  const checkOutItem = useCallback(async (itemId, checkoutData) => {
+    try {
+      const result = await inventoryService.checkOut(itemId, checkoutData);
+      
+      // Update local state
+      setInventory(prev => prev.map(item => 
+        item.id === itemId ? { 
+          ...item, 
+          status: 'checked-out',
+          checkedOutTo: checkoutData.userName,
+          checkedOutToUserId: checkoutData.userId,
+          checkedOutDate: new Date().toISOString().split('T')[0],
+          dueBack: checkoutData.dueBack,
+          checkoutProject: checkoutData.project,
+          checkoutClientId: checkoutData.clientId
+        } : item
+      ));
+      
+      return result;
+    } catch (err) {
+      console.error('Failed to check out item:', err);
+      throw err;
+    }
+  }, []);
+
+  const checkInItem = useCallback(async (itemId, checkinData) => {
+    try {
+      const { 
+        returnedBy, 
+        userId,
+        condition, 
+        conditionNotes, 
+        returnNotes, 
+        damageReported, 
+        damageDescription 
+      } = checkinData;
+      
+      // Use the dedicated checkIn service method
+      const result = await inventoryService.checkIn(itemId, {
+        userId: userId,
+        userName: returnedBy,
+        notes: returnNotes || conditionNotes,
+        condition: condition
+      });
+      
+      // Determine new status based on damage
+      const newStatus = damageReported ? 'needs-attention' : 'available';
+      
+      // Update local state
+      setInventory(prev => prev.map(item => 
+        item.id === itemId ? { 
+          ...item, 
+          status: newStatus,
+          condition: condition,
+          checkedOutTo: null,
+          checkedOutToUserId: null,
+          checkedOutDate: null,
+          dueBack: null,
+          checkoutProject: null,
+          checkoutClientId: null
+        } : item
+      ));
+      
+      // If damage reported, add a note
+      if (damageReported && damageDescription) {
+        try {
+          await itemNotesService.create({
+            item_id: itemId,
+            user_name: returnedBy || 'System',
+            text: `⚠️ Damage reported: ${damageDescription}`
+          });
+        } catch (noteErr) {
+          console.error('Failed to add damage note:', noteErr);
+        }
+      }
+      
+      return result;
+    } catch (err) {
+      console.error('Failed to check in item:', err);
+      throw err;
+    }
+  }, []);
+
+  // =============================================================================
   // PACKAGES OPERATIONS
   // =============================================================================
 
@@ -700,6 +788,10 @@ export function DataProvider({ children }) {
     updateReservation,
     deleteReservation,
     
+    // Check In/Out Operations
+    checkOutItem,
+    checkInItem,
+    
     // Package Operations
     updatePackages,
     createPackage,
@@ -763,6 +855,8 @@ export function DataProvider({ children }) {
     createReservation,
     updateReservation,
     deleteReservation,
+    checkOutItem,
+    checkInItem,
     updatePackages,
     createPackage,
     updatePackage,
