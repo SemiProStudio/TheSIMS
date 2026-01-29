@@ -210,7 +210,7 @@ export function Select({
             border: `1px solid ${colors.border}`,
             borderRadius: borderRadius.lg,
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-            zIndex: 1000,
+            zIndex: 9999,
             maxHeight: 200,
             overflowY: 'auto',
             listStyle: 'none',
