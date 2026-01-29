@@ -340,6 +340,8 @@ body {
 .app-wrapper select {
   background-color: var(--bg-light);
   color: var(--text-primary);
+  /* Force browser to use dark mode styling for native dropdown */
+  color-scheme: dark;
 }
 
 .app-wrapper select option {
@@ -994,6 +996,8 @@ body {
   background-position: right 12px center;
   min-height: 42px;
   transition: border-color 150ms ease, box-shadow 150ms ease;
+  /* Force browser to use dark mode styling for native dropdown */
+  color-scheme: dark;
 }
 
 .select:focus {
