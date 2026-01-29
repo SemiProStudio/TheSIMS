@@ -336,6 +336,23 @@ body {
   cursor: var(--theme-cursor);
 }
 
+/* Global select and option styling for proper contrast */
+.app-wrapper select {
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+}
+
+.app-wrapper select option {
+  background-color: var(--bg-medium);
+  color: var(--text-primary);
+  padding: 8px 12px;
+}
+
+.app-wrapper select option:checked {
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+}
+
 /* ============================================================================
    Responsive Layout Utilities
    ============================================================================ */
@@ -987,6 +1004,25 @@ body {
 .select:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Option styling for proper contrast in dropdown lists */
+.select option,
+select option {
+  background-color: var(--bg-medium);
+  color: var(--text-primary);
+  padding: 8px 12px;
+}
+
+.select option:checked,
+select option:checked {
+  background-color: var(--bg-light);
+  color: var(--text-primary);
+}
+
+.select option:hover,
+select option:hover {
+  background-color: var(--bg-light);
 }
 
 /* Textarea */
