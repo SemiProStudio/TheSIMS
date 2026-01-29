@@ -456,6 +456,7 @@ export function useModals() {
     
     // Confirm dialog
     confirmDialog,
+    setConfirmDialog,
     showConfirm,
     showDeleteConfirm,
     closeConfirm,

@@ -219,7 +219,6 @@ export default function App() {
     itemForm, setItemForm,
     reservationForm, setReservationForm,
     confirmDialog,
-    setConfirmDialog,
     showConfirm,
     showDeleteConfirm,
     closeConfirm,
@@ -426,7 +425,7 @@ export default function App() {
     setCurrentView,
     setAuditLog,
     setChangeLog,
-    setConfirmDialog,
+    showConfirm,
     
     // Current state
     inventory,
@@ -1231,10 +1230,13 @@ export default function App() {
     const currentSelectedItemId = selectedItem?.id;
     const currentSelectedResId = selectedReservation?.id;
     
-    setConfirmDialog({
-      isOpen: true,
+    // Use showConfirm which has stable setConfirmDialog reference
+    showConfirm({
       title: 'Cancel Reservation',
       message: 'Are you sure you want to cancel this reservation? This action cannot be undone.',
+      confirmText: 'Cancel Reservation',
+      cancelText: 'Keep',
+      variant: 'danger',
       onConfirm: async () => {
         console.log('[deleteReservation] Confirmed, deleting...');
         // Use DataContext deleteReservation for Supabase persistence
@@ -1277,7 +1279,7 @@ export default function App() {
         // Note: Dialog closing is handled by handleConfirm in ConfirmDialog
       }
     });
-  }, [inventory, addChangeLog, dataContext, selectedItem?.id, selectedReservation?.id, setConfirmDialog, setCurrentView, setInventory, setSelectedItem, setSelectedReservation]);
+  }, [inventory, addChangeLog, dataContext, selectedItem?.id, selectedReservation?.id, showConfirm, setCurrentView, setInventory, setSelectedItem, setSelectedReservation]);
 
   // ============================================================================
   // Note Handlers - Generic factory for items/packages/reservations
@@ -1539,10 +1541,11 @@ export default function App() {
     
     const reminder = (selectedItem.reminders || []).find(r => r.id === reminderId);
     
-    setConfirmDialog({
-      isOpen: true,
+    showConfirm({
       title: 'Delete Reminder',
       message: `Are you sure you want to delete "${reminder?.title || 'this reminder'}"?`,
+      confirmText: 'Delete',
+      variant: 'danger',
       onConfirm: () => {
         const updatedReminders = (selectedItem.reminders || []).filter(r => r.id !== reminderId);
         
@@ -1555,29 +1558,28 @@ export default function App() {
         if (dataContext?.deleteItemReminder) {
           dataContext.deleteItemReminder(reminderId);
         }
-        // Note: Dialog closing handled by handleConfirm
       }
     });
-  }, [selectedItem, dataContext]);
+  }, [selectedItem, dataContext, showConfirm, setInventory, setSelectedItem]);
 
   // ============================================================================
   // Package Handlers
   // ============================================================================
   const deletePackage = useCallback((id) => {
-    setConfirmDialog({
-      isOpen: true,
+    showConfirm({
       title: 'Delete Package',
       message: 'Are you sure you want to delete this package? This action cannot be undone.',
+      confirmText: 'Delete',
+      variant: 'danger',
       onConfirm: () => {
         setPackages(prev => removeById(prev, id));
         if (selectedPackage?.id === id) {
           setSelectedPackage(null);
           setCurrentView(VIEWS.PACKAGES);
         }
-        // Note: Dialog closing handled by handleConfirm
       }
     });
-  }, [selectedPackage]);
+  }, [selectedPackage, showConfirm, setPackages, setSelectedPackage, setCurrentView]);
 
   const addItemToPackage = useCallback((packageId, itemId) => {
     const pkg = packages.find(p => p.id === packageId);
@@ -2244,10 +2246,11 @@ export default function App() {
                 onAddUser={() => openModal(MODALS.ADD_USER)}
                 onDeleteUser={(userId) => {
                   const userToDelete = users.find(u => u.id === userId);
-                  setConfirmDialog({
-                    isOpen: true,
+                  showConfirm({
                     title: 'Delete User',
                     message: 'Are you sure you want to delete this user? This action cannot be undone.',
+                    confirmText: 'Delete',
+                    variant: 'danger',
                     onConfirm: () => {
                       setUsers(prev => prev.filter(u => u.id !== userId));
                       addAuditLog({
@@ -2256,7 +2259,6 @@ export default function App() {
                         user: currentUser?.name || 'Unknown',
                         itemId: userId
                       });
-                      // Note: Dialog closing handled by handleConfirm
                     }
                   });
                 }}
