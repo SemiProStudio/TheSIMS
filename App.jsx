@@ -1251,23 +1251,20 @@ export default function App() {
       title: 'Cancel Reservation',
       message: 'Are you sure you want to cancel this reservation? This action cannot be undone.',
       onConfirm: async () => {
-        const updatedReservations = (item.reservations || []).filter(r => r.id !== resId);
-        
-        // Use DataContext for Supabase persistence
-        if (dataContext?.updateItem) {
+        // Use DataContext deleteReservation for Supabase persistence
+        if (dataContext?.deleteReservation) {
           try {
-            await dataContext.updateItem(itemId, { reservations: updatedReservations });
+            await dataContext.deleteReservation(resId);
           } catch (err) {
             console.error('Failed to delete reservation:', err);
-            setInventory(prev => updateById(prev, itemId, item => ({
-              reservations: (item.reservations || []).filter(r => r.id !== resId)
-            })));
           }
-        } else {
-          setInventory(prev => updateById(prev, itemId, item => ({
-            reservations: (item.reservations || []).filter(r => r.id !== resId)
-          })));
         }
+        
+        // Update local state
+        const updatedReservations = (item?.reservations || []).filter(r => r.id !== resId);
+        setInventory(prev => updateById(prev, itemId, itm => ({
+          reservations: (itm.reservations || []).filter(r => r.id !== resId)
+        })));
         
         if (selectedItem?.id === itemId) {
           setSelectedItem(prev => ({
@@ -2453,6 +2450,7 @@ export default function App() {
 
       {activeModal === MODALS.ADD_RESERVATION && (
         <ReservationModal
+          key={editingReservationId || 'new-reservation'}
           isEdit={!!editingReservationId}
           reservationForm={reservationForm}
           setReservationForm={setReservationForm}
@@ -2460,7 +2458,7 @@ export default function App() {
           onClose={() => { closeModal(); setEditingReservationId(null); }}
           clients={clients}
           inventory={inventory}
-          item={selectedItem || selectedReservationItem}
+          item={editingReservationId ? (selectedItem || selectedReservationItem) : null}
           editingReservationId={editingReservationId}
         />
       )}

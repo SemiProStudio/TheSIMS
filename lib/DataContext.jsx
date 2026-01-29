@@ -73,7 +73,8 @@ export function DataProvider({ children }) {
         locationsData,
         categoriesData,
         specsData,
-        auditLogData
+        auditLogData,
+        reservationsData
       ] = await Promise.all([
         inventoryService.getAll(),
         packagesService.getAll(),
@@ -84,8 +85,23 @@ export function DataProvider({ children }) {
         locationsService.getAll(),
         categoriesService.getAll(),
         specsService.getAll(),
-        auditLogService.getAll({ limit: 100 })
+        auditLogService.getAll({ limit: 100 }),
+        reservationsService.getAll()
       ]);
+
+      // Merge reservations into inventory items
+      const reservationsByItemId = {};
+      (reservationsData || []).forEach(res => {
+        if (!reservationsByItemId[res.itemId]) {
+          reservationsByItemId[res.itemId] = [];
+        }
+        reservationsByItemId[res.itemId].push(res);
+      });
+      
+      const inventoryWithReservations = (inventoryData || []).map(item => ({
+        ...item,
+        reservations: reservationsByItemId[item.id] || []
+      }));
 
       console.log('[DataContext] Data loaded:', {
         inventory: inventoryData?.length || 0,
@@ -95,10 +111,11 @@ export function DataProvider({ children }) {
         users: usersData?.length || 0,
         roles: rolesData?.length || 0,
         locations: locationsData?.length || 0,
-        categories: categoriesData?.length || 0
+        categories: categoriesData?.length || 0,
+        reservations: reservationsData?.length || 0
       });
 
-      setInventory(inventoryData || []);
+      setInventory(inventoryWithReservations || []);
       setPackages(packagesData || []);
       setPackLists(packListsData || []);
       setClients(clientsData || []);

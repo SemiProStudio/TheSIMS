@@ -6,7 +6,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { colors } from '../theme.js';
+import { colors } from '../../theme.js';
 import { ChevronDown } from 'lucide-react';
 
 export function Select({ 
@@ -183,6 +183,7 @@ export function Select({
         overflowY: 'auto',
         listStyle: 'none',
         margin: 0,
+        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
       {options.map((opt, index) => {
@@ -205,6 +206,7 @@ export function Select({
               cursor: 'pointer',
               color: colors.textPrimary,
               fontSize: 14,
+              fontFamily: 'inherit',
               background: isHighlighted 
                 ? `rgba(106, 154, 184, 0.2)` 
                 : isSelected 
