@@ -462,12 +462,12 @@ export const ReservationModal = memo(function ReservationModal({
             gap: spacing[2]
           }}>
             <Package size={16} />
-            Select Items to Reserve
+            {item ? 'Item to Reserve' : 'Select Items to Reserve'}
             {selectedItems.length === 0 && <span style={{ color: colors.danger }}>*</span>}
           </label>
           
-          {/* Search Input - only show when not editing single item */}
-          {!isEdit && (
+          {/* Search Input - only show when not in single-item mode and not editing */}
+          {!isEdit && !item && (
             <ItemSearch
               inventory={inventory}
               selectedItemIds={selectedItems.map(i => i.id)}
@@ -483,21 +483,26 @@ export const ReservationModal = memo(function ReservationModal({
               flexDirection: 'column',
               gap: spacing[2]
             }}>
-              <div style={{ 
-                fontSize: typography.fontSize.sm, 
-                color: colors.textMuted,
-                marginBottom: spacing[1]
-              }}>
-                {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} selected:
-              </div>
+              {/* Only show count when multiple items */}
+              {!item && selectedItems.length > 1 && (
+                <div style={{ 
+                  fontSize: typography.fontSize.sm, 
+                  color: colors.textMuted,
+                  marginBottom: spacing[1]
+                }}>
+                  {selectedItems.length} items selected:
+                </div>
+              )}
               {selectedItems.map(selectedItem => (
                 <SelectedItemCard
                   key={selectedItem.id}
                   item={selectedItem}
-                  onRemove={isEdit ? null : handleRemoveItem}
+                  onRemove={isEdit || item ? null : handleRemoveItem}
                   conflicts={itemConflicts[selectedItem.id]}
                 />
               ))}
+            </div>
+          )}
             </div>
           )}
           
