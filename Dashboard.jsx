@@ -29,6 +29,7 @@ function Dashboard({
   categorySettings = {},
   layoutPrefs,
   onViewItem,
+  onViewReservation,
   onFilteredView,
   onViewAlerts,
   onViewOverdue,
@@ -527,7 +528,7 @@ function Dashboard({
                   {upcomingReservations.map(r => (
                     <div
                       key={r.id}
-                      onClick={() => onViewItem(r.item.id)}
+                      onClick={() => onViewReservation ? onViewReservation(r, r.item) : onViewItem(r.item.id)}
                       style={{
                         display: 'flex',
                         alignItems: 'center',

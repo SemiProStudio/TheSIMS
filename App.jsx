@@ -1224,6 +1224,12 @@ export default function App() {
       return;
     }
     
+    // Store values in closure to avoid stale references
+    const itemName = item?.name || itemId;
+    const projectName = reservation?.project || 'Unknown';
+    const currentSelectedItemId = selectedItem?.id;
+    const currentSelectedResId = selectedReservation?.id;
+    
     setConfirmDialog({
       isOpen: true,
       title: 'Cancel Reservation',
@@ -1241,12 +1247,11 @@ export default function App() {
         }
         
         // Update local state
-        const updatedReservations = (item?.reservations || []).filter(r => r.id !== resId);
         setInventory(prev => updateById(prev, itemId, itm => ({
           reservations: (itm.reservations || []).filter(r => r.id !== resId)
         })));
         
-        if (selectedItem?.id === itemId) {
+        if (currentSelectedItemId === itemId) {
           setSelectedItem(prev => ({
             ...prev,
             reservations: (prev.reservations || []).filter(r => r.id !== resId)
@@ -1258,20 +1263,22 @@ export default function App() {
           type: 'reservation_removed',
           itemId: itemId,
           itemType: 'item',
-          itemName: item?.name || itemId,
-          description: `Cancelled reservation: ${reservation?.project || 'Unknown'}`,
-          changes: [{ field: 'reservation', oldValue: reservation?.project }]
+          itemName: itemName,
+          description: `Cancelled reservation: ${projectName}`,
+          changes: [{ field: 'reservation', oldValue: projectName }]
         });
         
         // Navigate back if we were viewing this reservation
-        if (selectedReservation?.id === resId) {
+        if (currentSelectedResId === resId) {
           setSelectedReservation(null);
-          setCurrentView(selectedItem ? VIEWS.GEAR_DETAIL : VIEWS.SCHEDULE);
+          setCurrentView(VIEWS.SCHEDULE);
         }
-        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        
+        // Close the dialog using closeConfirm from useModals
+        closeConfirm();
       }
     });
-  }, [selectedItem, selectedReservation, inventory, addChangeLog, dataContext, setConfirmDialog, setCurrentView, setInventory, setSelectedItem, setSelectedReservation]);
+  }, [inventory, addChangeLog, dataContext, selectedItem?.id, selectedReservation?.id, setConfirmDialog, closeConfirm, setCurrentView, setInventory, setSelectedItem, setSelectedReservation]);
 
   // ============================================================================
   // Note Handlers - Generic factory for items/packages/reservations
@@ -1936,6 +1943,7 @@ export default function App() {
             categorySettings={categorySettings}
             layoutPrefs={currentUser?.layoutPrefs?.dashboard}
             onViewItem={navigateToItem}
+            onViewReservation={navigateToReservation}
             onFilteredView={navigateToFilteredSearch}
             onViewAlerts={navigateToAlerts}
             onViewOverdue={navigateToOverdue}
