@@ -1271,7 +1271,7 @@ export default function App() {
         setConfirmDialog(prev => ({ ...prev, isOpen: false }));
       }
     });
-  }, [selectedItem, selectedReservation, inventory, addChangeLog, dataContext]);
+  }, [selectedItem, selectedReservation, inventory, addChangeLog, dataContext, setConfirmDialog, setCurrentView, setInventory, setSelectedItem, setSelectedReservation]);
 
   // ============================================================================
   // Note Handlers - Generic factory for items/packages/reservations
