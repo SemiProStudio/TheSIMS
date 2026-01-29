@@ -223,6 +223,7 @@ export default function App() {
     showConfirm,
     showDeleteConfirm,
     closeConfirm,
+    handleConfirm,
     openAddItemModal,
     openEditItemModal,
     closeItemModal,
@@ -1273,12 +1274,10 @@ export default function App() {
           setSelectedReservation(null);
           setCurrentView(VIEWS.SCHEDULE);
         }
-        
-        // Close the dialog using closeConfirm from useModals
-        closeConfirm();
+        // Note: Dialog closing is handled by handleConfirm in ConfirmDialog
       }
     });
-  }, [inventory, addChangeLog, dataContext, selectedItem?.id, selectedReservation?.id, setConfirmDialog, closeConfirm, setCurrentView, setInventory, setSelectedItem, setSelectedReservation]);
+  }, [inventory, addChangeLog, dataContext, selectedItem?.id, selectedReservation?.id, setConfirmDialog, setCurrentView, setInventory, setSelectedItem, setSelectedReservation]);
 
   // ============================================================================
   // Note Handlers - Generic factory for items/packages/reservations
@@ -1556,8 +1555,7 @@ export default function App() {
         if (dataContext?.deleteItemReminder) {
           dataContext.deleteItemReminder(reminderId);
         }
-        
-        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        // Note: Dialog closing handled by handleConfirm
       }
     });
   }, [selectedItem, dataContext]);
@@ -1576,7 +1574,7 @@ export default function App() {
           setSelectedPackage(null);
           setCurrentView(VIEWS.PACKAGES);
         }
-        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        // Note: Dialog closing handled by handleConfirm
       }
     });
   }, [selectedPackage]);
@@ -2258,7 +2256,7 @@ export default function App() {
                         user: currentUser?.name || 'Unknown',
                         itemId: userId
                       });
-                      setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                      // Note: Dialog closing handled by handleConfirm
                     }
                   });
                 }}
@@ -2631,8 +2629,9 @@ export default function App() {
         isOpen={confirmDialog.isOpen}
         title={confirmDialog.title}
         message={confirmDialog.message}
-        onConfirm={confirmDialog.onConfirm}
-        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={handleConfirm}
+        onCancel={closeConfirm}
+      />
       />
     </div>
     </PermissionsProvider>
