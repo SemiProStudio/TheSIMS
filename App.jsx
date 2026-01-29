@@ -4,7 +4,7 @@
 
 import React, { useState, useCallback, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import { VIEWS, MODALS, STATUS, EMPTY_ITEM_FORM, EMPTY_RESERVATION_FORM, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_CATEGORY_SETTINGS, DEFAULT_LOCATIONS, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
-import { colors } from './theme.js';
+import { colors, spacing } from './theme.js';
 import { generateItemCode, generateId, getTodayISO, updateById, removeById, findById, addReplyToNote, markNoteDeleted, findNoteById, getNextDueDate } from './utils.js';
 import { initialInventory, initialPackages, initialUsers, initialAuditLog, initialPackLists, initialKits, initialClients } from './data.js';
 import { useTheme } from './ThemeContext.jsx';
