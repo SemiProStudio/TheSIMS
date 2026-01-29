@@ -1,9 +1,11 @@
 // ============================================================================
 // Custom Select Component
 // Styled dropdown that works consistently across browsers
+// Uses React Portal to escape stacking context issues (e.g., backdrop-filter)
 // ============================================================================
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { colors, spacing, borderRadius, typography } from '../theme.js';
 import { ChevronDown } from 'lucide-react';
 
@@ -18,7 +20,7 @@ export function Select({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const [openDirection, setOpenDirection] = useState('down'); // 'down' or 'up'
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0, direction: 'down' });
   const containerRef = useRef(null);
   const listRef = useRef(null);
 
@@ -31,20 +33,24 @@ export function Select({
     ? (typeof selectedOption === 'object' ? selectedOption.label : selectedOption)
     : placeholder;
 
-  // Determine if dropdown should open up or down based on available space
-  const calculateOpenDirection = useCallback(() => {
-    if (!containerRef.current) return 'down';
+  // Calculate dropdown position relative to viewport
+  const updateDropdownPosition = useCallback(() => {
+    if (!containerRef.current) return;
     
     const rect = containerRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const dropdownHeight = Math.min(options.length * 36 + 8, 200); // Estimate height
+    const dropdownHeight = Math.min(options.length * 36 + 8, 200);
     
     // Open upward if not enough space below but enough above
-    if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
-      return 'up';
-    }
-    return 'down';
+    const direction = (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) ? 'up' : 'down';
+    
+    setDropdownPosition({
+      top: direction === 'down' ? rect.bottom + 4 : rect.top - dropdownHeight - 4,
+      left: rect.left,
+      width: rect.width,
+      direction
+    });
   }, [options.length]);
 
   // Close on click outside
@@ -53,6 +59,10 @@ export function Select({
     
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
+        // Also check if click is in the portal dropdown
+        if (listRef.current && listRef.current.contains(e.target)) {
+          return;
+        }
         setIsOpen(false);
       }
     };
@@ -61,12 +71,21 @@ export function Select({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Calculate direction when opening
+  // Update position when opening and on scroll/resize
   useEffect(() => {
     if (isOpen) {
-      setOpenDirection(calculateOpenDirection());
+      updateDropdownPosition();
+      
+      const handleScrollOrResize = () => updateDropdownPosition();
+      window.addEventListener('scroll', handleScrollOrResize, true);
+      window.addEventListener('resize', handleScrollOrResize);
+      
+      return () => {
+        window.removeEventListener('scroll', handleScrollOrResize, true);
+        window.removeEventListener('resize', handleScrollOrResize);
+      };
     }
-  }, [isOpen, calculateOpenDirection]);
+  }, [isOpen, updateDropdownPosition]);
 
   // Keyboard navigation
   const handleKeyDown = useCallback((e) => {
@@ -143,6 +162,66 @@ export function Select({
     setIsOpen(false);
   };
 
+  // Render dropdown via portal to escape stacking context
+  const dropdown = isOpen && createPortal(
+    <ul
+      ref={listRef}
+      role="listbox"
+      aria-activedescendant={highlightedIndex >= 0 ? `option-${highlightedIndex}` : undefined}
+      style={{
+        position: 'fixed',
+        top: dropdownPosition.top,
+        left: dropdownPosition.left,
+        width: dropdownPosition.width,
+        padding: spacing[1],
+        background: colors.bgMedium,
+        border: `1px solid ${colors.border}`,
+        borderRadius: borderRadius.lg,
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+        zIndex: 99999,
+        maxHeight: 200,
+        overflowY: 'auto',
+        listStyle: 'none',
+        margin: 0,
+      }}
+    >
+      {options.map((opt, index) => {
+        const optValue = typeof opt === 'object' ? opt.value : opt;
+        const optLabel = typeof opt === 'object' ? opt.label : opt;
+        const isSelected = optValue === value;
+        const isHighlighted = index === highlightedIndex;
+        
+        return (
+          <li
+            key={optValue}
+            id={`option-${index}`}
+            role="option"
+            aria-selected={isSelected}
+            onClick={() => handleSelect(opt)}
+            onMouseEnter={() => setHighlightedIndex(index)}
+            style={{
+              padding: `${spacing[2]}px ${spacing[3]}px`,
+              borderRadius: borderRadius.md,
+              cursor: 'pointer',
+              color: colors.textPrimary,
+              fontSize: typography.fontSize.sm,
+              background: isHighlighted 
+                ? `rgba(106, 154, 184, 0.2)` 
+                : isSelected 
+                  ? `rgba(106, 154, 184, 0.1)` 
+                  : 'transparent',
+              fontWeight: isSelected ? 600 : 400,
+              transition: 'background 0.15s ease',
+            }}
+          >
+            {optLabel}
+          </li>
+        );
+      })}
+    </ul>,
+    document.body
+  );
+
   return (
     <div 
       ref={containerRef}
@@ -190,68 +269,8 @@ export function Select({
         />
       </button>
 
-      {/* Dropdown list */}
-      {isOpen && (
-        <ul
-          ref={listRef}
-          role="listbox"
-          aria-activedescendant={highlightedIndex >= 0 ? `option-${highlightedIndex}` : undefined}
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            // Dynamic positioning based on available space
-            ...(openDirection === 'down' 
-              ? { top: '100%', marginTop: spacing[1] }
-              : { bottom: '100%', marginBottom: spacing[1] }
-            ),
-            padding: spacing[1],
-            background: colors.bgMedium,
-            border: `1px solid ${colors.border}`,
-            borderRadius: borderRadius.lg,
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-            zIndex: 9999,
-            maxHeight: 200,
-            overflowY: 'auto',
-            listStyle: 'none',
-            margin: 0,
-          }}
-        >
-          {options.map((opt, index) => {
-            const optValue = typeof opt === 'object' ? opt.value : opt;
-            const optLabel = typeof opt === 'object' ? opt.label : opt;
-            const isSelected = optValue === value;
-            const isHighlighted = index === highlightedIndex;
-            
-            return (
-              <li
-                key={optValue}
-                id={`option-${index}`}
-                role="option"
-                aria-selected={isSelected}
-                onClick={() => handleSelect(opt)}
-                onMouseEnter={() => setHighlightedIndex(index)}
-                style={{
-                  padding: `${spacing[2]}px ${spacing[3]}px`,
-                  borderRadius: borderRadius.md,
-                  cursor: 'pointer',
-                  color: colors.textPrimary,
-                  fontSize: typography.fontSize.sm,
-                  background: isHighlighted 
-                    ? `rgba(106, 154, 184, 0.2)` 
-                    : isSelected 
-                      ? `rgba(106, 154, 184, 0.1)` 
-                      : 'transparent',
-                  fontWeight: isSelected ? 600 : 400,
-                  transition: 'background 0.15s ease',
-                }}
-              >
-                {optLabel}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      {/* Dropdown rendered via portal */}
+      {dropdown}
     </div>
   );
 }
