@@ -13,6 +13,7 @@ import { formatMoney } from './utils.js';
 import { Card, Button, SearchInput, Badge, ConfirmDialog, CollapsibleSection } from './components/ui.jsx';
 import { Select } from './components/Select.jsx';
 import NotesSection from './NotesSection.jsx';
+import { useData } from './lib/DataContext.jsx';
 
 // Client type options
 const CLIENT_TYPES = ['Individual', 'Company', 'Agency', 'Non-Profit', 'Government', 'Other'];
@@ -531,6 +532,7 @@ function ClientsView({
   user,
   addAuditLog,
 }) {
+  const dataContext = useData();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
   const [editingClient, setEditingClient] = useState(null);
@@ -608,23 +610,53 @@ function ClientsView({
   }, [clients, searchQuery, filterType]);
   
   // Handlers
-  const handleSaveClient = useCallback((clientData) => {
+  const handleSaveClient = useCallback(async (clientData) => {
     const exists = clients.find(c => c.id === clientData.id);
     if (exists) {
-      onUpdateClients(clients.map(c => c.id === clientData.id ? clientData : c));
+      // Update existing client
+      if (dataContext?.updateClient) {
+        try {
+          await dataContext.updateClient(clientData.id, clientData);
+        } catch (err) {
+          console.error('Failed to update client:', err);
+          onUpdateClients(clients.map(c => c.id === clientData.id ? clientData : c));
+        }
+      } else {
+        onUpdateClients(clients.map(c => c.id === clientData.id ? clientData : c));
+      }
     } else {
-      // New client - add to list and navigate to their detail page
-      onUpdateClients([...clients, clientData]);
+      // New client - create in database
+      if (dataContext?.createClient) {
+        try {
+          await dataContext.createClient(clientData);
+        } catch (err) {
+          console.error('Failed to create client:', err);
+          onUpdateClients([...clients, clientData]);
+        }
+      } else {
+        onUpdateClients([...clients, clientData]);
+      }
       setSelectedClient(clientData);
     }
     setShowAddModal(false);
     setEditingClient(null);
-  }, [clients, onUpdateClients]);
+  }, [clients, onUpdateClients, dataContext]);
   
-  const handleDeleteClient = useCallback(() => {
+  const handleDeleteClient = useCallback(async () => {
     if (deleteConfirm.client) {
       const clientToDelete = deleteConfirm.client;
-      onUpdateClients(clients.filter(c => c.id !== clientToDelete.id));
+      
+      // Delete from database
+      if (dataContext?.deleteClient) {
+        try {
+          await dataContext.deleteClient(clientToDelete.id);
+        } catch (err) {
+          console.error('Failed to delete client:', err);
+          onUpdateClients(clients.filter(c => c.id !== clientToDelete.id));
+        }
+      } else {
+        onUpdateClients(clients.filter(c => c.id !== clientToDelete.id));
+      }
       
       // Log deletion
       if (addAuditLog) {
@@ -637,7 +669,7 @@ function ClientsView({
       }
     }
     setDeleteConfirm({ isOpen: false, client: null });
-  }, [clients, onUpdateClients, deleteConfirm.client, addAuditLog, user]);
+  }, [clients, onUpdateClients, deleteConfirm.client, addAuditLog, user, dataContext]);
   
   // Detail view
   if (selectedClient) {

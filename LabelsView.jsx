@@ -4,11 +4,12 @@
 
 import React, { memo, useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Search, Printer, Download, Check, Package, Layers } from 'lucide-react';
+import QRCode from 'qrcode';
 import { LABEL_FORMATS } from './constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { Card, CardHeader, Button, SearchInput, Badge } from './components/ui.jsx';
 
-// Proper QR Code Generator Component
+// Real QR Code Generator Component using qrcode library
 const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
   const canvasRef = useRef(null);
   
@@ -16,75 +17,20 @@ const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
     const canvas = canvasRef.current;
     if (!canvas || !data) return;
     
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    // QR code version 1 is 21x21 modules
-    const modules = 21;
-    const moduleSize = size / modules;
-    
-    // Clear canvas with white background
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = '#000000';
-    
-    // Helper to draw a module
-    const drawModule = (x, y) => {
-      ctx.fillRect(
-        Math.floor(x * moduleSize), 
-        Math.floor(y * moduleSize), 
-        Math.ceil(moduleSize), 
-        Math.ceil(moduleSize)
-      );
-    };
-    
-    // Draw finder patterns (the three big squares in corners)
-    const drawFinderPattern = (startX, startY) => {
-      // Outer 7x7 black square border
-      for (let i = 0; i < 7; i++) {
-        drawModule(startX + i, startY);
-        drawModule(startX + i, startY + 6);
-        drawModule(startX, startY + i);
-        drawModule(startX + 6, startY + i);
+    // Generate real QR code using qrcode library
+    QRCode.toCanvas(canvas, String(data), {
+      width: size,
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      },
+      errorCorrectionLevel: 'M'
+    }, (error) => {
+      if (error) {
+        console.error('QR Code generation error:', error);
       }
-      // Inner 3x3 black square
-      for (let y = 2; y <= 4; y++) {
-        for (let x = 2; x <= 4; x++) {
-          drawModule(startX + x, startY + y);
-        }
-      }
-    };
-    
-    // Draw the three finder patterns
-    drawFinderPattern(0, 0);
-    drawFinderPattern(modules - 7, 0);
-    drawFinderPattern(0, modules - 7);
-    
-    // Draw timing patterns
-    for (let i = 8; i < modules - 8; i += 2) {
-      drawModule(i, 6);
-      drawModule(6, i);
-    }
-    
-    // Generate deterministic data pattern from input string
-    const dataStr = String(data);
-    const seed = dataStr.split('').reduce((acc, char, i) => acc + char.charCodeAt(0) * (i + 1), 0);
-    const seededRandom = (x, y) => {
-      const n = Math.sin(seed * 12.9898 + x * 78.233 + y * 45.164) * 43758.5453;
-      return n - Math.floor(n);
-    };
-    
-    // Fill data area (avoid finder patterns and timing)
-    for (let y = 0; y < modules; y++) {
-      for (let x = 0; x < modules; x++) {
-        // Skip finder pattern areas (top-left, top-right, bottom-left)
-        if ((x < 8 && y < 8) || (x >= modules - 8 && y < 8) || (x < 8 && y >= modules - 8)) continue;
-        // Skip timing patterns
-        if (x === 6 || y === 6) continue;
-        // Draw module based on seeded random
-        if (seededRandom(x, y) > 0.5) drawModule(x, y);
-      }
-    }
+    });
   }, [data, size]);
   
   if (!data) return null;

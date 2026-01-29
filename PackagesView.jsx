@@ -9,6 +9,7 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity } from '
 import { formatMoney, getStatusColor } from './utils.js';
 import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog } from './components/ui.jsx';
 import { OptimizedImage } from './components/OptimizedImage.jsx';
+import { useData } from './lib/DataContext.jsx';
 
 function PackagesView({ 
   packages, 
@@ -18,6 +19,7 @@ function PackagesView({
   initialSelectedPackage = null,
   onPackageSelect,
 }) {
+  const dataContext = useData();
   const [selectedPackage, setSelectedPackageInternal] = useState(initialSelectedPackage);
   const [showCreate, setShowCreate] = useState(false);
   const [showDetailsPrompt, setShowDetailsPrompt] = useState(false); // Details popup
@@ -183,23 +185,34 @@ function PackagesView({
   }, []);
 
   // Save package (create or update)
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!formName.trim() || formItems.length === 0) return;
 
     if (editingPackage) {
       // Update existing
-      const updatedPkg = { 
-        ...editingPackage, 
+      const updates = { 
         name: formName.trim(), 
         description: formDescription.trim(), 
         category: formCategory.trim(), 
         items: formItems 
       };
-      setPackages(prev => prev.map(pkg => 
-        pkg.id === editingPackage.id ? updatedPkg : pkg
-      ));
+      
+      // Persist to Supabase via DataContext
+      if (dataContext?.updatePackage) {
+        try {
+          await dataContext.updatePackage(editingPackage.id, updates);
+        } catch (err) {
+          console.error('Failed to update package:', err);
+        }
+      } else {
+        // Fallback to local state
+        setPackages(prev => prev.map(pkg => 
+          pkg.id === editingPackage.id ? { ...pkg, ...updates } : pkg
+        ));
+      }
+      
       // Return to the updated package detail
-      setSelectedPackage(updatedPkg);
+      setSelectedPackage({ ...editingPackage, ...updates });
       setShowCreate(false);
       setEditingPackage(null);
       resetForm();
@@ -221,25 +234,51 @@ function PackagesView({
         items: formItems,
         notes: [],
       };
-      setPackages(prev => [...prev, newPackage]);
+      
+      // Persist to Supabase via DataContext
+      if (dataContext?.createPackage) {
+        try {
+          await dataContext.createPackage(newPackage);
+        } catch (err) {
+          console.error('Failed to create package:', err);
+          // Fallback to local state
+          setPackages(prev => [...prev, newPackage]);
+        }
+      } else {
+        setPackages(prev => [...prev, newPackage]);
+      }
+      
       // Show the new package
       setSelectedPackage(newPackage);
       setShowCreate(false);
       resetForm();
     }
-  }, [formName, formDescription, formCategory, formItems, editingPackage, setPackages, setSelectedPackage, resetForm, packages]);
+  }, [formName, formDescription, formCategory, formItems, editingPackage, setPackages, setSelectedPackage, resetForm, packages, dataContext]);
 
   // Delete package - close detail first, then show confirm
   const handleDeleteClick = useCallback((pkg) => {
     setConfirmDelete({ isOpen: true, id: pkg.id, name: pkg.name });
   }, []);
 
-  const handleDeleteConfirm = useCallback(() => {
+  const handleDeleteConfirm = useCallback(async () => {
     const { id } = confirmDelete;
-    setPackages(prev => prev.filter(p => p.id !== id));
+    
+    // Persist to Supabase via DataContext
+    if (dataContext?.deletePackage) {
+      try {
+        await dataContext.deletePackage(id);
+      } catch (err) {
+        console.error('Failed to delete package:', err);
+        // Fallback to local state
+        setPackages(prev => prev.filter(p => p.id !== id));
+      }
+    } else {
+      setPackages(prev => prev.filter(p => p.id !== id));
+    }
+    
     setSelectedPackage(null);
     setConfirmDelete({ isOpen: false, id: null, name: '' });
-  }, [confirmDelete, setPackages, setSelectedPackage]);
+  }, [confirmDelete, setPackages, setSelectedPackage, dataContext]);
 
   // Add suggested accessory to package
   const handleAddSuggested = useCallback((itemId) => {

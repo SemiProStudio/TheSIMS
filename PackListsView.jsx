@@ -9,6 +9,7 @@ import { Plus, Package, Trash2, ArrowLeft, Download, Printer, Copy, Box, Layers,
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from './theme.js';
 import { formatDate, generateId, getStatusColor } from './utils.js';
 import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog } from './components/ui.jsx';
+import { useData } from './lib/DataContext.jsx';
 
 function PackListsView({ 
   packLists, 
@@ -22,6 +23,7 @@ function PackListsView({
   initialSelectedList = null,
   onListSelect,
 }) {
+  const dataContext = useData();
   const [selectedListInternal, setSelectedListInternal] = useState(initialSelectedList);
   const [showCreate, setShowCreate] = useState(false);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
@@ -265,7 +267,7 @@ function PackListsView({
   }, [setSelectedList]);
 
   // Save pack list (create or update)
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!listName.trim() || selectedItemIds.length === 0) return;
 
     if (editingList) {
@@ -281,7 +283,17 @@ function PackListsView({
         updatedAt: new Date().toISOString(),
       };
 
-      setPackLists(prev => prev.map(pl => pl.id === editingList.id ? updatedList : pl));
+      // Persist to Supabase via DataContext
+      if (dataContext?.updatePackList) {
+        try {
+          await dataContext.updatePackList(editingList.id, updatedList);
+        } catch (err) {
+          console.error('Failed to update pack list:', err);
+          setPackLists(prev => prev.map(pl => pl.id === editingList.id ? updatedList : pl));
+        }
+      } else {
+        setPackLists(prev => prev.map(pl => pl.id === editingList.id ? updatedList : pl));
+      }
       
       // Log update
       if (addAuditLog) {
@@ -309,7 +321,17 @@ function PackListsView({
         })),
       };
 
-      setPackLists(prev => [...prev, newList]);
+      // Persist to Supabase via DataContext
+      if (dataContext?.createPackList) {
+        try {
+          await dataContext.createPackList(newList);
+        } catch (err) {
+          console.error('Failed to create pack list:', err);
+          setPackLists(prev => [...prev, newList]);
+        }
+      } else {
+        setPackLists(prev => [...prev, newList]);
+      }
       
       // Log creation
       if (addAuditLog) {
@@ -325,12 +347,23 @@ function PackListsView({
       setShowCreate(false);
       setSelectedList(newList);
     }
-  }, [listName, selectedPackageIds, selectedItemIds, itemQuantities, setPackLists, resetForm, addAuditLog, currentUser, editingList, setSelectedList]);
+  }, [listName, selectedPackageIds, selectedItemIds, itemQuantities, setPackLists, resetForm, addAuditLog, currentUser, editingList, setSelectedList, dataContext]);
 
   // Delete pack list with audit logging
-  const handleDelete = useCallback((id) => {
+  const handleDelete = useCallback(async (id) => {
     const list = packLists.find(pl => pl.id === id);
-    setPackLists(prev => prev.filter(pl => pl.id !== id));
+    
+    // Persist to Supabase via DataContext
+    if (dataContext?.deletePackList) {
+      try {
+        await dataContext.deletePackList(id);
+      } catch (err) {
+        console.error('Failed to delete pack list:', err);
+        setPackLists(prev => prev.filter(pl => pl.id !== id));
+      }
+    } else {
+      setPackLists(prev => prev.filter(pl => pl.id !== id));
+    }
     
     // Log deletion
     if (addAuditLog && list) {
@@ -344,7 +377,7 @@ function PackListsView({
     
     if (selectedList?.id === id) setSelectedList(null);
     setConfirmDelete({ isOpen: false, id: null, name: '' });
-  }, [setPackLists, selectedList, addAuditLog, currentUser, packLists]);
+  }, [setPackLists, selectedList, addAuditLog, currentUser, packLists, dataContext]);
 
   // Get items for a pack list
   const getListItems = useCallback((list) => {
