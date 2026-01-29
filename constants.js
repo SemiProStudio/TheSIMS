@@ -260,7 +260,8 @@ export const CATEGORIES = [
   'Storage',
   'Grip',
   'Monitors',
-  'Power'
+  'Power',
+  'Consumables'
 ];
 
 // Category code prefixes for ID generation
@@ -275,29 +276,33 @@ export const CATEGORY_PREFIXES = {
   Grip: 'GR',
   Monitors: 'MO',
   Power: 'PW',
+  Consumables: 'CO',
 };
 
 // Default category settings - controls per-category behavior
 // trackQuantity: whether items in this category have a quantity field (for consumables/non-serialized items)
 // trackSerialNumbers: whether items require serial numbers
+// trackReorderPoint: whether to show reorder point field (only for consumables)
 // defaultLocation: default storage location for new items in this category
 export const DEFAULT_CATEGORY_SETTINGS = {
-  Cameras: { trackQuantity: false, trackSerialNumbers: true, lowStockThreshold: 0 },
-  Lenses: { trackQuantity: false, trackSerialNumbers: true, lowStockThreshold: 0 },
-  Lighting: { trackQuantity: true, trackSerialNumbers: false, lowStockThreshold: 2 },
-  Audio: { trackQuantity: true, trackSerialNumbers: false, lowStockThreshold: 2 },
-  Support: { trackQuantity: true, trackSerialNumbers: false, lowStockThreshold: 1 },
-  Accessories: { trackQuantity: true, trackSerialNumbers: false, lowStockThreshold: 3 },
-  Storage: { trackQuantity: true, trackSerialNumbers: false, lowStockThreshold: 5 },
-  Grip: { trackQuantity: true, trackSerialNumbers: false, lowStockThreshold: 2 },
-  Monitors: { trackQuantity: false, trackSerialNumbers: true, lowStockThreshold: 0 },
-  Power: { trackQuantity: true, trackSerialNumbers: false, lowStockThreshold: 3 },
+  Cameras: { trackQuantity: false, trackSerialNumbers: true, trackReorderPoint: false, lowStockThreshold: 0 },
+  Lenses: { trackQuantity: false, trackSerialNumbers: true, trackReorderPoint: false, lowStockThreshold: 0 },
+  Lighting: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 2 },
+  Audio: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 2 },
+  Support: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 1 },
+  Accessories: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 3 },
+  Storage: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 5 },
+  Grip: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 2 },
+  Monitors: { trackQuantity: false, trackSerialNumbers: true, trackReorderPoint: false, lowStockThreshold: 0 },
+  Power: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 3 },
+  Consumables: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: true, lowStockThreshold: 5 },
 };
 
 // Default settings for new categories
 export const DEFAULT_NEW_CATEGORY_SETTINGS = {
   trackQuantity: false,
   trackSerialNumbers: true,
+  trackReorderPoint: false,
   lowStockThreshold: 0,
 };
 
@@ -633,6 +638,20 @@ export const DEFAULT_SPECS = {
     // Safety
     { name: 'Protection Circuits', required: false },
     { name: 'Airline Approved', required: false }
+  ],
+  Consumables: [
+    // Basic Info
+    { name: 'Type', required: true },
+    { name: 'Size/Dimensions', required: false },
+    { name: 'Color', required: false },
+    // Quantity
+    { name: 'Unit of Measure', required: false },
+    { name: 'Units per Package', required: false },
+    // Usage
+    { name: 'Compatible With', required: false },
+    { name: 'Expiration Date', required: false },
+    // Storage
+    { name: 'Storage Requirements', required: false }
   ]
 };
 

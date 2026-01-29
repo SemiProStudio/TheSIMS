@@ -601,48 +601,44 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
             </div>
           </div>
           
-          {/* Quantity fields - only if category tracks quantity */}
+          {/* Quantity field - only if category tracks quantity */}
           {currentCategorySettings.trackQuantity && (
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: '1fr 1fr', 
-              gap: spacing[3], 
-              marginBottom: spacing[3],
-              padding: spacing[3],
-              background: `${withOpacity(colors.accent2, 10)}`,
-              borderRadius: borderRadius.md,
-              border: `1px solid ${withOpacity(colors.accent2, 30)}`,
-            }}>
-              <div>
-                <label style={styles.label}>
-                  Quantity
-                  <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.normal, marginLeft: spacing[1] }}>
-                    (this category tracks quantities)
-                  </span>
-                </label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={itemForm.quantity || 1} 
-                  onChange={e => handleChange('quantity', Math.max(0, parseInt(e.target.value) || 0))} 
-                  style={styles.input} 
-                />
-              </div>
-              <div>
-                <label style={styles.label}>
-                  Reorder Point
-                  <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.normal, marginLeft: spacing[1] }}>
-                    (alert when below)
-                  </span>
-                </label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={itemForm.reorderPoint || 0} 
-                  onChange={e => handleChange('reorderPoint', Math.max(0, parseInt(e.target.value) || 0))} 
-                  style={styles.input} 
-                />
-              </div>
+            <div style={{ marginBottom: spacing[3] }}>
+              <label style={styles.label}>
+                Quantity
+              </label>
+              <input 
+                type="number" 
+                min="0"
+                value={itemForm.quantity || 1} 
+                onChange={e => handleChange('quantity', Math.max(0, parseInt(e.target.value) || 0))} 
+                style={{
+                  ...styles.input,
+                  maxWidth: '150px'
+                }} 
+              />
+            </div>
+          )}
+          
+          {/* Reorder Point field - only for Consumables category */}
+          {currentCategorySettings.trackReorderPoint && (
+            <div style={{ marginBottom: spacing[3] }}>
+              <label style={styles.label}>
+                Reorder Point
+                <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.normal, marginLeft: spacing[2] }}>
+                  (alert when quantity falls below this)
+                </span>
+              </label>
+              <input 
+                type="number" 
+                min="0"
+                value={itemForm.reorderPoint || 0} 
+                onChange={e => handleChange('reorderPoint', Math.max(0, parseInt(e.target.value) || 0))} 
+                style={{
+                  ...styles.input,
+                  maxWidth: '150px'
+                }} 
+              />
             </div>
           )}
           
