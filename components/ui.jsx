@@ -1532,7 +1532,7 @@ Input.propTypes = {
   disabled: PropTypes.bool,
 };
 
-Select.propTypes = {
+SelectInput.propTypes = {
   /** Label text */
   label: PropTypes.string,
   /** Error message */
