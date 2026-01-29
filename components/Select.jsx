@@ -18,6 +18,7 @@ export function Select({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [openDirection, setOpenDirection] = useState('down'); // 'down' or 'up'
   const containerRef = useRef(null);
   const listRef = useRef(null);
 
@@ -29,6 +30,22 @@ export function Select({
   const displayValue = selectedOption 
     ? (typeof selectedOption === 'object' ? selectedOption.label : selectedOption)
     : placeholder;
+
+  // Determine if dropdown should open up or down based on available space
+  const calculateOpenDirection = useCallback(() => {
+    if (!containerRef.current) return 'down';
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const dropdownHeight = Math.min(options.length * 36 + 8, 200); // Estimate height
+    
+    // Open upward if not enough space below but enough above
+    if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
+      return 'up';
+    }
+    return 'down';
+  }, [options.length]);
 
   // Close on click outside
   useEffect(() => {
@@ -43,6 +60,13 @@ export function Select({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
+
+  // Calculate direction when opening
+  useEffect(() => {
+    if (isOpen) {
+      setOpenDirection(calculateOpenDirection());
+    }
+  }, [isOpen, calculateOpenDirection]);
 
   // Keyboard navigation
   const handleKeyDown = useCallback((e) => {
@@ -141,7 +165,7 @@ export function Select({
           cursor: disabled ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.6 : 1,
           position: 'relative',
-          minHeight: 42,
+          minHeight: 36,
           display: 'flex',
           alignItems: 'center',
         }}
@@ -169,10 +193,13 @@ export function Select({
           aria-activedescendant={highlightedIndex >= 0 ? `option-${highlightedIndex}` : undefined}
           style={{
             position: 'absolute',
-            top: '100%',
             left: 0,
             right: 0,
-            marginTop: spacing[1],
+            // Dynamic positioning based on available space
+            ...(openDirection === 'down' 
+              ? { top: '100%', marginTop: spacing[1] }
+              : { bottom: '100%', marginBottom: spacing[1] }
+            ),
             padding: spacing[1],
             background: colors.bgMedium,
             border: `1px solid ${colors.border}`,
@@ -182,6 +209,7 @@ export function Select({
             maxHeight: 200,
             overflowY: 'auto',
             listStyle: 'none',
+            margin: 0,
           }}
         >
           {options.map((opt, index) => {
@@ -203,6 +231,7 @@ export function Select({
                   borderRadius: borderRadius.md,
                   cursor: 'pointer',
                   color: colors.textPrimary,
+                  fontSize: typography.fontSize.sm,
                   background: isHighlighted 
                     ? `rgba(106, 154, 184, 0.2)` 
                     : isSelected 
