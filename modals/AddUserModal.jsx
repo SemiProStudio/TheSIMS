@@ -8,6 +8,7 @@ import PropTypes from 'prop-types';
 import { Plus } from 'lucide-react';
 import { colors, styles, spacing, typography } from '../theme.js';
 import { Button } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
 export const AddUserModal = memo(function AddUserModal({ onSave, onClose, existingEmails = [] }) {
@@ -92,14 +93,15 @@ export const AddUserModal = memo(function AddUserModal({ onSave, onClose, existi
         
         <div style={{ marginBottom: spacing[4] }}>
           <label style={styles.label}>Role</label>
-          <select
+          <Select
             value={form.role}
             onChange={e => setForm(prev => ({ ...prev, role: e.target.value }))}
-            style={styles.select}
-          >
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-          </select>
+            options={[
+              { value: 'user', label: 'User' },
+              { value: 'admin', label: 'Admin' },
+            ]}
+            aria-label="Role"
+          />
         </div>
         
         <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>

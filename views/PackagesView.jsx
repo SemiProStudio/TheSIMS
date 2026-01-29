@@ -8,6 +8,7 @@ import { Plus, CheckCircle, Trash2, Tag } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatMoney, getStatusColor } from '../utils.js';
 import { Badge, Card, CardHeader, Button, BackButton } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
 import NotesSection from '../NotesSection.jsx';
 
 // ============================================================================
@@ -31,10 +32,16 @@ export const PackagesList = memo(function PackagesList({
         <Button onClick={onAddPackage} icon={Plus}>Create Kit/Package</Button>
       </div>
       <div style={{ marginBottom: spacing[5] }}>
-        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ ...styles.input, width: 'auto' }}>
-          <option value="all">All Categories</option>
-          {categories.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
+        <Select 
+          value={categoryFilter} 
+          onChange={e => setCategoryFilter(e.target.value)} 
+          options={[
+            { value: 'all', label: 'All Categories' },
+            ...categories.map(c => ({ value: c, label: c }))
+          ]}
+          style={{ width: 180 }}
+          aria-label="Filter by category"
+        />
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: spacing[5] }}>
         {filtered.map(pkg => {

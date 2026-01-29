@@ -10,6 +10,7 @@ import { STATUS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { flattenLocations } from '../utils.js';
 import { Button } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
 // ============================================================================
@@ -53,15 +54,12 @@ export const BulkStatusModal = memo(function BulkStatusModal({ selectedIds = [],
         
         <div style={{ marginBottom: spacing[4] }}>
           <label style={styles.label}>New Status</label>
-          <select
+          <Select
             value={newStatus}
             onChange={e => setNewStatus(e.target.value)}
-            style={styles.select}
-          >
-            {statusOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+            options={statusOptions}
+            aria-label="New status"
+          />
         </div>
         
         <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
@@ -123,15 +121,12 @@ export const BulkLocationModal = memo(function BulkLocationModal({ selectedIds =
         
         <div style={{ marginBottom: spacing[4] }}>
           <label style={styles.label}>New Location</label>
-          <select
+          <Select
             value={newLocation}
             onChange={e => setNewLocation(e.target.value)}
-            style={styles.select}
-          >
-            {locationList.map(loc => (
-              <option key={loc} value={loc}>{loc}</option>
-            ))}
-          </select>
+            options={locationList.map(loc => ({ value: loc, label: loc }))}
+            aria-label="New location"
+          />
         </div>
         
         <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
@@ -196,15 +191,12 @@ export const BulkCategoryModal = memo(function BulkCategoryModal({ selectedIds =
         
         <div style={{ marginBottom: spacing[4] }}>
           <label style={styles.label}>New Category</label>
-          <select
+          <Select
             value={newCategory}
             onChange={e => setNewCategory(e.target.value)}
-            style={styles.select}
-          >
-            {categoryList.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+            options={categoryList.map(cat => ({ value: cat, label: cat }))}
+            aria-label="New category"
+          />
         </div>
         
         <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>

@@ -7,6 +7,7 @@ import { Plus, Save, Trash2, GripVertical, Search } from 'lucide-react';
 import { CONDITION, DEFAULT_NEW_CATEGORY_SETTINGS } from './constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { Card, Badge, Button, PageHeader } from './components/ui.jsx';
+import { Select } from './components/Select.jsx';
 import { useItemForm } from './ItemForm.jsx';
 
 // ============================================================================
@@ -116,15 +117,21 @@ export const ItemFormPage = memo(function ItemFormPage({
             <div className="responsive-form-grid" style={{ marginBottom: spacing[4] }}>
               <div>
                 <label style={styles.label}>Category</label>
-                <select value={itemForm.category} onChange={e => handleChange('category', e.target.value)} style={styles.select}>
-                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <Select 
+                  value={itemForm.category} 
+                  onChange={e => handleChange('category', e.target.value)} 
+                  options={categories.map(c => ({ value: c, label: c }))}
+                  aria-label="Category"
+                />
               </div>
               <div>
                 <label style={styles.label}>Condition</label>
-                <select value={itemForm.condition} onChange={e => handleChange('condition', e.target.value)} style={styles.select}>
-                  {Object.values(CONDITION).map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <Select 
+                  value={itemForm.condition} 
+                  onChange={e => handleChange('condition', e.target.value)} 
+                  options={Object.values(CONDITION).map(c => ({ value: c, label: c }))}
+                  aria-label="Condition"
+                />
               </div>
             </div>
             
@@ -193,12 +200,15 @@ export const ItemFormPage = memo(function ItemFormPage({
               <div>
                 <label style={styles.label}>Location</label>
                 {flattenedLocations.length > 0 ? (
-                  <select value={itemForm.location || ''} onChange={e => handleChange('location', e.target.value)} style={styles.select}>
-                    <option value="">Select location...</option>
-                    {flattenedLocations.map(loc => (
-                      <option key={loc.id} value={loc.fullPath}>{loc.fullPath}</option>
-                    ))}
-                  </select>
+                  <Select 
+                    value={itemForm.location || ''} 
+                    onChange={e => handleChange('location', e.target.value)} 
+                    options={[
+                      { value: '', label: 'Select location...' },
+                      ...flattenedLocations.map(loc => ({ value: loc.fullPath, label: loc.fullPath }))
+                    ]}
+                    aria-label="Location"
+                  />
                 ) : (
                   <input value={itemForm.location} onChange={e => handleChange('location', e.target.value)} placeholder="e.g., Shelf A-1" style={styles.input} />
                 )}
@@ -474,15 +484,15 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: spacing[3], marginBottom: spacing[4] }}>
               <div>
                 <label style={styles.label}>Category</label>
-                <select 
+                <Select 
                   value={selectedCategory} 
                   onChange={e => { setSelectedCategory(e.target.value); setSearchFilter(''); }}
-                  style={styles.input}
-                >
-                  {Object.keys(editSpecs).map(cat => (
-                    <option key={cat} value={cat}>{cat} ({editSpecs[cat]?.length || 0} fields)</option>
-                  ))}
-                </select>
+                  options={Object.keys(editSpecs).map(cat => ({ 
+                    value: cat, 
+                    label: `${cat} (${editSpecs[cat]?.length || 0} fields)` 
+                  }))}
+                  aria-label="Category"
+                />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                 <div style={{ padding: `${spacing[2]}px ${spacing[3]}px`, background: colors.bgLight, borderRadius: borderRadius.md, fontSize: typography.fontSize.sm, color: colors.textSecondary }}>

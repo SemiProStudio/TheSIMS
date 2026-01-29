@@ -11,6 +11,7 @@ import {
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { formatMoney } from './utils.js';
 import { Card, Button, SearchInput, Badge, ConfirmDialog, CollapsibleSection } from './components/ui.jsx';
+import { Select } from './components/Select.jsx';
 import NotesSection from './NotesSection.jsx';
 
 // Client type options
@@ -199,13 +200,12 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
           {/* Type */}
           <div className="form-section">
             <label className="form-label">Type</label>
-            <select
+            <Select
               value={formData.type}
               onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-              className="select"
-            >
-              {CLIENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+              options={CLIENT_TYPES.map(t => ({ value: t, label: t }))}
+              aria-label="Client type"
+            />
           </div>
           
           {/* Company (if Individual) */}
@@ -713,31 +713,17 @@ function ClientsView({
               placeholder="Search clients..."
             />
           </div>
-          <select
+          <Select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            style={{
-              padding: `${spacing[2]}px ${spacing[3]}px`,
-              paddingRight: `${spacing[8]}px`,
-              background: colors.bgDark,
-              border: `1px solid ${colors.border}`,
-              borderRadius: borderRadius.md,
-              color: colors.textPrimary,
-              fontSize: typography.fontSize.sm,
-              cursor: 'pointer',
-              appearance: 'none',
-              WebkitAppearance: 'none',
-              MozAppearance: 'none',
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: `right ${spacing[3]}px center`,
-              minHeight: '38px',
-            }}
-          >
-            <option value="all">All Types</option>
-            <option value="favorites">★ Favorites</option>
-            {CLIENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
+            options={[
+              { value: 'all', label: 'All Types' },
+              { value: 'favorites', label: '★ Favorites' },
+              ...CLIENT_TYPES.map(t => ({ value: t, label: t }))
+            ]}
+            style={{ minWidth: 140 }}
+            aria-label="Filter by type"
+          />
         </div>
       </Card>
       

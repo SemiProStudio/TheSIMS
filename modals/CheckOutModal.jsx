@@ -7,6 +7,7 @@ import React, { memo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Badge, Button } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
 export const CheckOutModal = memo(function CheckOutModal({ 
@@ -179,15 +180,12 @@ export const CheckOutModal = memo(function CheckOutModal({
             </div>
             <div>
               <label style={styles.label}>Type</label>
-              <select
+              <Select
                 value={formData.projectType}
                 onChange={e => handleChange('projectType', e.target.value)}
-                style={styles.select}
-              >
-                {projectTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
+                options={projectTypes.map(type => ({ value: type, label: type }))}
+                aria-label="Project type"
+              />
             </div>
           </div>
         </div>

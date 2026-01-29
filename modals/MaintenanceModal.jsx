@@ -9,6 +9,7 @@ import { Save } from 'lucide-react';
 import { MAINTENANCE_TYPES } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
 export const MaintenanceModal = memo(function MaintenanceModal({
@@ -153,18 +154,12 @@ export const MaintenanceModal = memo(function MaintenanceModal({
             <label style={{ ...styles.label, color: !formData.type || errors.type ? colors.danger : undefined }}>
               Maintenance Type <span style={{ color: colors.danger }}>*</span>
             </label>
-            <select
+            <Select
               value={formData.type}
               onChange={e => handleChange('type', e.target.value)}
-              style={{ 
-                ...styles.select, 
-                borderColor: !formData.type || errors.type ? colors.danger : colors.border 
-              }}
-            >
-              {MAINTENANCE_TYPES.map(type => (
-                <option key={type} value={type}>{type}</option>
-              ))}
-            </select>
+              options={MAINTENANCE_TYPES.map(type => ({ value: type, label: type }))}
+              aria-label="Maintenance type"
+            />
             {errors.type && (
               <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>
                 {errors.type}
@@ -174,16 +169,17 @@ export const MaintenanceModal = memo(function MaintenanceModal({
           
           <div>
             <label style={styles.label}>Status</label>
-            <select
+            <Select
               value={formData.status}
               onChange={e => handleChange('status', e.target.value)}
-              style={styles.select}
-            >
-              <option value="scheduled">Scheduled</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+              options={[
+                { value: 'scheduled', label: 'Scheduled' },
+                { value: 'in-progress', label: 'In Progress' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'cancelled', label: 'Cancelled' },
+              ]}
+              aria-label="Status"
+            />
           </div>
         </div>
 

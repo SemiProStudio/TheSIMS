@@ -8,6 +8,7 @@ import { Bell, Plus, Trash2, Calendar, RefreshCw, AlertTriangle, CheckCircle } f
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { formatDate, generateId, getTodayISO, getNextDueDate, isReminderDue } from './utils.js';
 import { Button } from './components/ui.jsx';
+import { Select } from './components/Select.jsx';
 
 // Recurrence options
 const RECURRENCE_OPTIONS = [
@@ -278,15 +279,12 @@ const AddReminderForm = memo(function AddReminderForm({ onAdd, onCancel }) {
         
         <div>
           <label style={styles.label}>Recurrence</label>
-          <select
+          <Select
             value={form.recurrence}
             onChange={e => handleChange('recurrence', e.target.value)}
-            style={styles.input}
-          >
-            {RECURRENCE_OPTIONS.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+            options={RECURRENCE_OPTIONS}
+            aria-label="Recurrence"
+          />
         </div>
       </div>
       

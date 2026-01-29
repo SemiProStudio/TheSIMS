@@ -11,6 +11,7 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity } from '
 import { getAllReservationConflicts, formatDate } from '../utils.js';
 import { validateReservation, isValidEmail } from '../lib/validators.js';
 import { Button } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
 export const ReservationModal = memo(function ReservationModal({ 
@@ -243,18 +244,18 @@ export const ReservationModal = memo(function ReservationModal({
         {clients.length > 0 && (
           <div style={{ marginBottom: spacing[3] }}>
             <label style={styles.label}>Client (Optional)</label>
-            <select 
+            <Select 
               value={reservationForm.clientId || ''} 
               onChange={e => handleChange('clientId', e.target.value)} 
-              style={styles.select}
-            >
-              <option value="">-- Select a client --</option>
-              {clients.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.name}{c.company ? ` (${c.company})` : ''}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: '-- Select a client --' },
+                ...clients.map(c => ({ 
+                  value: c.id, 
+                  label: c.name + (c.company ? ` (${c.company})` : '') 
+                }))
+              ]}
+              aria-label="Client"
+            />
           </div>
         )}
         
@@ -274,13 +275,12 @@ export const ReservationModal = memo(function ReservationModal({
           </div>
           <div>
             <label style={styles.label}>Project Type</label>
-            <select 
+            <Select 
               value={reservationForm.projectType || 'Other'} 
               onChange={e => handleChange('projectType', e.target.value)} 
-              style={styles.select}
-            >
-              {PROJECT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
+              options={PROJECT_TYPES.map(t => ({ value: t, label: t }))}
+              aria-label="Project type"
+            />
           </div>
         </div>
         

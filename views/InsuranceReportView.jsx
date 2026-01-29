@@ -9,6 +9,7 @@ import { Download, DollarSign, TrendingDown, Package } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
 import { formatMoney } from '../utils.js';
 import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
 
 export const InsuranceReportPanel = memo(function InsuranceReportPanel({ 
   inventory, 
@@ -142,27 +143,29 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
             title="Inventory Schedule" 
             action={
               <div style={{ display: 'flex', gap: spacing[2] }}>
-                <select
+                <Select
                   value={selectedCategory}
                   onChange={e => setSelectedCategory(e.target.value)}
-                  style={{ ...styles.input, width: 'auto', padding: `${spacing[1]}px ${spacing[2]}px`, fontSize: typography.fontSize.xs }}
-                >
-                  <option value="all">All Categories</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                <select
+                  options={[
+                    { value: 'all', label: 'All Categories' },
+                    ...categories.map(cat => ({ value: cat, label: cat }))
+                  ]}
+                  style={{ width: 140 }}
+                  aria-label="Filter by category"
+                />
+                <Select
                   value={sortBy}
                   onChange={e => setSortBy(e.target.value)}
-                  style={{ ...styles.input, width: 'auto', padding: `${spacing[1]}px ${spacing[2]}px`, fontSize: typography.fontSize.xs }}
-                >
-                  <option value="value-desc">Value (High to Low)</option>
-                  <option value="value-asc">Value (Low to High)</option>
-                  <option value="purchase-desc">Purchase Price</option>
-                  <option value="name">Name</option>
-                  <option value="category">Category</option>
-                </select>
+                  options={[
+                    { value: 'value-desc', label: 'Value (High to Low)' },
+                    { value: 'value-asc', label: 'Value (Low to High)' },
+                    { value: 'purchase-desc', label: 'Purchase Price' },
+                    { value: 'name', label: 'Name' },
+                    { value: 'category', label: 'Category' },
+                  ]}
+                  style={{ width: 160 }}
+                  aria-label="Sort by"
+                />
               </div>
             }
           />

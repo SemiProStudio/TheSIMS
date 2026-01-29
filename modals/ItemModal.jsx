@@ -9,6 +9,7 @@ import { Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { CONDITION } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Badge, Button } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
 import { useItemForm } from '../ItemForm.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
@@ -582,15 +583,21 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
             <div>
               <label style={styles.label}>Category</label>
-              <select value={itemForm.category} onChange={e => handleChange('category', e.target.value)} style={styles.select}>
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <Select 
+                value={itemForm.category} 
+                onChange={e => handleChange('category', e.target.value)} 
+                options={categories.map(c => ({ value: c, label: c }))}
+                aria-label="Category"
+              />
             </div>
             <div>
               <label style={styles.label}>Condition</label>
-              <select value={itemForm.condition} onChange={e => handleChange('condition', e.target.value)} style={styles.select}>
-                {Object.values(CONDITION).map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <Select 
+                value={itemForm.condition} 
+                onChange={e => handleChange('condition', e.target.value)} 
+                options={Object.values(CONDITION).map(c => ({ value: c, label: c }))}
+                aria-label="Condition"
+              />
             </div>
           </div>
           
@@ -656,16 +663,15 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
             <div>
               <label style={styles.label}>Location</label>
               {flattenedLocations.length > 0 ? (
-                <select
+                <Select
                   value={itemForm.location || ''}
                   onChange={e => handleChange('location', e.target.value)}
-                  style={styles.select}
-                >
-                  <option value="">Select location...</option>
-                  {flattenedLocations.map(loc => (
-                    <option key={loc.id} value={loc.fullPath}>{loc.fullPath}</option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Select location...' },
+                    ...flattenedLocations.map(loc => ({ value: loc.fullPath, label: loc.fullPath }))
+                  ]}
+                  aria-label="Location"
+                />
               ) : (
                 <input value={itemForm.location} onChange={e => handleChange('location', e.target.value)} placeholder="e.g., Shelf A-1" style={styles.input} />
               )}

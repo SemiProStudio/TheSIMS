@@ -11,6 +11,7 @@ import {
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { formatDate, formatDateTime, formatMoney } from './utils.js';
 import { Badge, Card, CardHeader, Button } from './components/ui.jsx';
+import { Select } from './components/Select.jsx';
 
 // Event type configuration
 const EVENT_TYPES = {
@@ -365,20 +366,13 @@ function ItemTimeline({ item }) {
         title="Item Timeline"
         icon={Clock}
         action={
-          <select
+          <Select
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            style={{
-              ...styles.input,
-              padding: `${spacing[1]}px ${spacing[2]}px`,
-              fontSize: typography.fontSize.xs,
-              width: 'auto',
-            }}
-          >
-            {filterOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+            options={filterOptions}
+            style={{ width: 120 }}
+            aria-label="Filter timeline"
+          />
         }
       />
       <div style={{ padding: spacing[4] }}>

@@ -10,6 +10,7 @@ import { formatDate, formatMoney, getStatusColor, getConditionColor } from './ut
 import { ITEM_DETAIL_SECTIONS } from './constants.js';
 import { Badge, Card, Button, CollapsibleSection, BackButton } from './components/ui.jsx';
 import { OptimizedImage } from './components/OptimizedImage.jsx';
+import { Select } from './components/Select.jsx';
 import NotesSection from './NotesSection.jsx';
 import RemindersSection from './RemindersSection.jsx';
 import MaintenanceSection from './MaintenanceSection.jsx';
@@ -125,19 +126,20 @@ const AddToKitSection = memo(function AddToKitSection({ item, packages, onAddToP
           }}>
             Add to a kit or package:
           </div>
-          <div style={{ display: 'flex', gap: spacing[2] }}>
-            <select
+          <div style={{ display: 'flex', gap: spacing[2], alignItems: 'flex-start' }}>
+            <Select
               value={selectedPackageId}
               onChange={(e) => setSelectedPackageId(e.target.value)}
-              style={{ ...styles.input, flex: 1 }}
-            >
-              <option value="">Select a kit/package...</option>
-              {availablePackages.map(pkg => (
-                <option key={pkg.id} value={pkg.id}>
-                  {pkg.name} ({pkg.items?.length || 0} items)
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'Select a kit/package...' },
+                ...availablePackages.map(pkg => ({ 
+                  value: pkg.id, 
+                  label: `${pkg.name} (${pkg.items?.length || 0} items)` 
+                }))
+              ]}
+              style={{ flex: 1 }}
+              aria-label="Select kit or package"
+            />
             <Button onClick={handleAddToPackage} disabled={!selectedPackageId} icon={Plus}>
               Add
             </Button>

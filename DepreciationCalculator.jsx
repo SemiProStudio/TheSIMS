@@ -8,6 +8,7 @@ import { TrendingDown, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { formatMoney, calculateDepreciation, DEFAULT_USEFUL_LIFE, DEPRECIATION_METHODS } from './utils.js';
 import { Badge, Card, CardHeader, Button } from './components/ui.jsx';
+import { Select } from './components/Select.jsx';
 
 // Depreciation Calculator Component
 function DepreciationCalculator({ item, onUpdateValue }) {
@@ -99,15 +100,12 @@ function DepreciationCalculator({ item, onUpdateValue }) {
         <div className="responsive-three-col" style={{ display: 'grid', gap: spacing[3], marginBottom: spacing[4] }}>
           <div>
             <label style={{ ...styles.label, fontSize: typography.fontSize.xs }}>Method</label>
-            <select
+            <Select
               value={method}
               onChange={e => setMethod(e.target.value)}
-              style={{ ...styles.select, fontSize: typography.fontSize.sm, padding: spacing[2], paddingRight: spacing[6] }}
-            >
-              {Object.entries(methodLabels).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
+              options={Object.entries(methodLabels).map(([value, label]) => ({ value, label }))}
+              aria-label="Depreciation method"
+            />
           </div>
           <div>
             <label style={{ ...styles.label, fontSize: typography.fontSize.xs }}>Useful Life (years)</label>

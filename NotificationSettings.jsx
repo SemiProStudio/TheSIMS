@@ -7,6 +7,7 @@ import React, { memo, useState, useCallback } from 'react';
 import { Mail, Calendar, Clock, AlertTriangle, CheckCircle, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { Card, Button } from './components/ui.jsx';
+import { Select } from './components/Select.jsx';
 import { usePermissions } from './PermissionsContext.jsx';
 
 // Toggle switch component
@@ -383,16 +384,18 @@ function NotificationSettings({
                 <label style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>
                   Remind me
                 </label>
-                <select
+                <Select
                   value={settings.reservation_reminder_days}
                   onChange={(e) => updateSetting('reservation_reminder_days', parseInt(e.target.value))}
-                  style={{ ...styles.input, width: 'auto', padding: `${spacing[1]}px ${spacing[2]}px` }}
-                >
-                  <option value={1}>1 day</option>
-                  <option value={2}>2 days</option>
-                  <option value={3}>3 days</option>
-                  <option value={7}>1 week</option>
-                </select>
+                  options={[
+                    { value: 1, label: '1 day' },
+                    { value: 2, label: '2 days' },
+                    { value: 3, label: '3 days' },
+                    { value: 7, label: '1 week' },
+                  ]}
+                  style={{ width: 100 }}
+                  aria-label="Reminder days"
+                />
                 <label style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>
                   before
                 </label>
@@ -452,14 +455,16 @@ function NotificationSettings({
                   <label style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>
                     Frequency:
                   </label>
-                  <select
+                  <Select
                     value={settings.admin_overdue_summary_frequency}
                     onChange={(e) => updateSetting('admin_overdue_summary_frequency', e.target.value)}
-                    style={{ ...styles.input, width: 'auto', padding: `${spacing[1]}px ${spacing[2]}px` }}
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                  </select>
+                    options={[
+                      { value: 'daily', label: 'Daily' },
+                      { value: 'weekly', label: 'Weekly' },
+                    ]}
+                    style={{ width: 100 }}
+                    aria-label="Summary frequency"
+                  />
                 </div>
               </SettingRow>
               

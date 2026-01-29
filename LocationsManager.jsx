@@ -13,6 +13,7 @@ import { LOCATION_TYPES } from './constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { flattenLocations } from './utils.js';
 import { Badge, Card, CardHeader, Button, SearchInput, PageHeader } from './components/ui.jsx';
+import { Select } from './components/Select.jsx';
 
 // Get icon for location type
 const getLocationIcon = (type) => {
@@ -235,15 +236,12 @@ const LocationEditForm = memo(function LocationEditForm({
         </div>
         <div>
           <label style={styles.label}>Type</label>
-          <select
+          <Select
             value={type}
             onChange={e => setType(e.target.value)}
-            style={styles.input}
-          >
-            {LOCATION_TYPES.map(t => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
-          </select>
+            options={LOCATION_TYPES}
+            aria-label="Location type"
+          />
         </div>
       </div>
 
