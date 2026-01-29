@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React, { memo, useMemo, useCallback } from 'react';
-import { ArrowLeft, ArrowRight, Calendar, List, Clock, MapPin, Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calendar, List, Clock, MapPin, Plus, Package } from 'lucide-react';
 import { SCHEDULE_MODES, SCHEDULE_PERIODS } from './constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { formatDate } from './utils.js';
@@ -28,6 +28,26 @@ function ScheduleView({
       .sort((a, b) => new Date(a.start) - new Date(b.start));
   }, [inventory]);
 
+  // Group reservations by project+dates (multi-item reservations)
+  const groupedReservations = useMemo(() => {
+    const groups = {};
+    allReservations.forEach(r => {
+      // Create a key based on project name, start date, and end date
+      const key = `${r.project || 'unnamed'}_${r.start}_${r.end}`;
+      if (!groups[key]) {
+        groups[key] = {
+          ...r,
+          items: [r.item],
+          itemCount: 1
+        };
+      } else {
+        groups[key].items.push(r.item);
+        groups[key].itemCount++;
+      }
+    });
+    return Object.values(groups).sort((a, b) => new Date(a.start) - new Date(b.start));
+  }, [allReservations]);
+
   // Get dates for current view
   const scheduleDates = useMemo(() => {
     const base = new Date(scheduleDate);
@@ -49,12 +69,12 @@ function ScheduleView({
     return days;
   }, [scheduleDate, scheduleView]);
 
-  // Filter reservations for current date range
+  // Filter grouped reservations for current date range
   const filteredReservations = useMemo(() => {
     const startRange = scheduleDates[0].toISOString().split('T')[0];
     const endRange = scheduleDates[scheduleDates.length - 1].toISOString().split('T')[0];
-    return allReservations.filter(r => r.start <= endRange && r.end >= startRange);
-  }, [allReservations, scheduleDates]);
+    return groupedReservations.filter(r => r.start <= endRange && r.end >= startRange);
+  }, [groupedReservations, scheduleDates]);
 
   const navigate = useCallback((dir) => {
     const d = new Date(scheduleDate);
@@ -158,20 +178,43 @@ function ScheduleView({
           <div style={{ maxHeight: 'calc(100vh - 280px)', overflowY: 'auto' }}>
             {filteredReservations.length === 0 ? (
               <div style={{ padding: spacing[10], textAlign: 'center', color: colors.textMuted }}>No reservations in this period</div>
-            ) : filteredReservations.map(r => (
-              <div key={r.id} onClick={() => onViewReservation(r, r.item)} style={{ display: 'flex', alignItems: 'center', gap: spacing[4], padding: `${spacing[4]}px ${spacing[4]}px`, borderBottom: `1px solid ${colors.borderLight}`, cursor: 'pointer' }}>
-                {r.item.image ? (
-                  <img src={r.item.image} alt="" style={{ width: 50, height: 50, borderRadius: borderRadius.md, objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ width: 50, height: 50, borderRadius: borderRadius.md, background: `${withOpacity(colors.primary, 15)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textMuted, fontSize: typography.fontSize.xs }}>No img</div>
-                )}
+            ) : filteredReservations.map((r, idx) => (
+              <div key={`${r.project}-${r.start}-${idx}`} onClick={() => onViewReservation(r, r.items[0])} style={{ display: 'flex', alignItems: 'center', gap: spacing[4], padding: `${spacing[4]}px ${spacing[4]}px`, borderBottom: `1px solid ${colors.borderLight}`, cursor: 'pointer' }}>
+                {/* Show stacked images for multi-item reservations */}
+                <div style={{ position: 'relative', width: 50, height: 50, flexShrink: 0 }}>
+                  {r.items.slice(0, Math.min(3, r.itemCount)).map((itm, i) => (
+                    <div key={itm.id} style={{ 
+                      position: i === 0 ? 'relative' : 'absolute',
+                      top: i * 4,
+                      left: i * 4,
+                      zIndex: 3 - i,
+                    }}>
+                      {itm.image ? (
+                        <img src={itm.image} alt="" style={{ width: 46 - i * 4, height: 46 - i * 4, borderRadius: borderRadius.md, objectFit: 'cover', border: `2px solid ${colors.bgMedium}` }} />
+                      ) : (
+                        <div style={{ width: 46 - i * 4, height: 46 - i * 4, borderRadius: borderRadius.md, background: withOpacity(colors.primary, 15), display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textMuted, border: `2px solid ${colors.bgMedium}` }}>
+                          <Package size={14} />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[1], flexWrap: 'wrap' }}>
-                    <Badge text={r.item.id} color={colors.primary} />
+                    {r.itemCount > 1 ? (
+                      <Badge text={`${r.itemCount} items`} color={colors.primary} />
+                    ) : (
+                      <Badge text={r.items[0]?.id || 'N/A'} color={colors.primary} />
+                    )}
                     <Badge text={r.projectType || 'Project'} color={colors.accent2} />
                   </div>
                   <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, marginBottom: spacing[1] }}>{r.project}</div>
-                  <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>{r.item.name} • {r.user}</div>
+                  <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
+                    {r.itemCount > 1 
+                      ? `${r.items[0]?.name || 'Unknown'}${r.itemCount > 1 ? ` + ${r.itemCount - 1} more` : ''}`
+                      : `${r.items[0]?.name || 'Unknown'} • ${r.user}`
+                    }
+                  </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1], fontSize: typography.fontSize.sm, color: colors.primary, marginBottom: spacing[1] }}><Clock size={12} />{formatDate(r.start)} - {formatDate(r.end)}</div>

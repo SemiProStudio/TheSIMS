@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React, { memo } from 'react';
-import { ArrowLeft, Calendar, MapPin, Phone, Mail, User, FileText, Edit, Trash2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Phone, Mail, User, FileText, Edit, Trash2, MessageSquare, Package } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { formatDate, getStatusColor, getTodayISO } from './utils.js';
 import { Badge, Card, CardHeader, Button } from './components/ui.jsx';
@@ -79,9 +79,13 @@ const MapWidget = memo(function MapWidget({ location }) {
   );
 }); 
 
-function ReservationDetail({ reservation, item, onBack, onEdit, onDelete, onAddNote, onReplyNote, onDeleteNote, user }) {
+function ReservationDetail({ reservation, item, onBack, onEdit, onDelete, onAddNote, onReplyNote, onDeleteNote, user, onViewItem }) {
   if (!reservation || !item) return null;
 
+  // Get all items in this reservation (for multi-item reservations)
+  const items = reservation.items || [item];
+  const itemCount = reservation.itemCount || 1;
+  
   const isOverdue = reservation.dueBack && reservation.dueBack < getTodayISO() && item.status === 'checked-out';
 
   return (
@@ -96,12 +100,21 @@ function ReservationDetail({ reservation, item, onBack, onEdit, onDelete, onAddN
           {/* Header */}
           <Card style={{ marginBottom: spacing[5] }}>
             <div style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[3], flexWrap: 'wrap' }}>
-              <Badge text={item.id} color={colors.primary} />
+              {itemCount > 1 ? (
+                <Badge text={`${itemCount} items`} color={colors.primary} />
+              ) : (
+                <Badge text={item.id} color={colors.primary} />
+              )}
               <Badge text={reservation.projectType || 'Project'} color={colors.accent2} />
               {isOverdue && <Badge text="OVERDUE" color={colors.danger} />}
             </div>
             <h1 style={{ margin: `0 0 ${spacing[2]}px`, fontSize: typography.fontSize['3xl'], color: colors.textPrimary }}>{reservation.project}</h1>
-            <p style={{ color: colors.textSecondary, margin: `0 0 ${spacing[4]}px` }}>{item.name} - {item.brand}</p>
+            <p style={{ color: colors.textSecondary, margin: `0 0 ${spacing[4]}px` }}>
+              {itemCount > 1 
+                ? `${itemCount} items reserved`
+                : `${item.name} - ${item.brand}`
+              }
+            </p>
             <div style={{ display: 'flex', gap: spacing[3] }}>
               <Button variant="secondary" onClick={onEdit} icon={Edit}>Edit Reservation</Button>
               <Button variant="secondary" danger onClick={onDelete} icon={Trash2}>Cancel</Button>
@@ -153,16 +166,39 @@ function ReservationDetail({ reservation, item, onBack, onEdit, onDelete, onAddN
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
           {/* Equipment */}
           <Card padding={false}>
-            <CardHeader title="Equipment" />
-            <div style={{ padding: spacing[4] }}>
-              {item.image ? (
-                <img src={item.image} alt="" style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: borderRadius.lg, marginBottom: spacing[3] }} />
-              ) : (
-                <div style={{ width: '100%', height: 120, background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.lg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textMuted, marginBottom: spacing[3] }}>No Image</div>
-              )}
-              <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, marginBottom: spacing[1] }}>{item.name}</div>
-              <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted, marginBottom: spacing[2] }}>{item.brand} • {item.category}</div>
-              <Badge text={item.status} color={getStatusColor(item.status)} />
+            <CardHeader title={itemCount > 1 ? `Equipment (${itemCount})` : "Equipment"} icon={Package} />
+            <div style={{ padding: spacing[4], display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
+              {items.map((itm, idx) => (
+                <div 
+                  key={itm.id} 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: spacing[3],
+                    padding: spacing[3],
+                    background: withOpacity(colors.primary, 8),
+                    borderRadius: borderRadius.lg,
+                    cursor: onViewItem ? 'pointer' : 'default'
+                  }}
+                  onClick={() => onViewItem && onViewItem(itm.id)}
+                >
+                  {itm.image ? (
+                    <img src={itm.image} alt="" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: borderRadius.md }} />
+                  ) : (
+                    <div style={{ width: 60, height: 60, background: withOpacity(colors.primary, 15), borderRadius: borderRadius.md, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textMuted }}>
+                      <Package size={24} />
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, marginBottom: spacing[1] }}>{itm.name}</div>
+                    <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted, marginBottom: spacing[1] }}>{itm.brand} • {itm.category}</div>
+                    <div style={{ display: 'flex', gap: spacing[1] }}>
+                      <Badge text={itm.id} color={colors.primary} size="sm" />
+                      <Badge text={itm.status} color={getStatusColor(itm.status)} size="sm" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </Card>
 

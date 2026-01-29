@@ -683,7 +683,10 @@ export const EMPTY_RESERVATION_FORM = {
   contactPhone: '',
   contactEmail: '',
   location: '',
-  notes: []
+  notes: [],
+  itemId: '',
+  itemIds: [],
+  clientId: ''
 };
 
 // ============================================================================

@@ -313,17 +313,22 @@ export const ReservationModal = memo(function ReservationModal({
   const [acknowledgedConflicts, setAcknowledgedConflicts] = useState(false);
   
   // Selected items - from props (single item) or from form (multiple)
-  const [selectedItems, setSelectedItems] = useState(() => {
-    if (item) return [item];
-    if (reservationForm.itemIds?.length) {
-      return inventory.filter(i => reservationForm.itemIds.includes(i.id));
-    }
-    if (reservationForm.itemId) {
+  // Selected items - sync with props and form
+  const [selectedItems, setSelectedItems] = useState([]);
+  
+  // Reset selected items when modal opens/form resets
+  useEffect(() => {
+    if (item) {
+      setSelectedItems([item]);
+    } else if (reservationForm.itemIds?.length) {
+      setSelectedItems(inventory.filter(i => reservationForm.itemIds.includes(i.id)));
+    } else if (reservationForm.itemId) {
       const found = inventory.find(i => i.id === reservationForm.itemId);
-      return found ? [found] : [];
+      setSelectedItems(found ? [found] : []);
+    } else {
+      setSelectedItems([]);
     }
-    return [];
-  });
+  }, [item, reservationForm.itemIds, reservationForm.itemId, inventory]);
   
   // Add item to selection
   const handleAddItem = useCallback((newItem) => {
