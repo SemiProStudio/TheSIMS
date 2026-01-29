@@ -587,10 +587,22 @@ function PackListsView({
         </div>
 
         {/* Panels with fixed height and scroll */}
-        <div className="two-panel-grid" style={{ flex: 1, minHeight: 0 }}>
+        <div className="two-panel-grid" style={{ 
+          flex: 1, 
+          minHeight: 0,
+          maxHeight: 'calc(100vh - 180px)',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: spacing[4]
+        }}>
           {/* Packages Selection */}
-          <div className="selection-panel">
-            <div className="panel-header">
+          <div className="selection-panel" style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            overflow: 'hidden',
+            minHeight: 0
+          }}>
+            <div className="panel-header" style={{ flexShrink: 0 }}>
               <div className="panel-header-title">
                 <Layers size={16} color={colors.primary} />
                 <strong>Packages</strong>
@@ -598,7 +610,7 @@ function PackListsView({
               </div>
               <SearchInput value={packageSearch} onChange={setPackageSearch} onClear={() => setPackageSearch('')} placeholder="Search packages..." />
             </div>
-            <div className="selection-list">
+            <div className="selection-list" style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
               {filteredPackages.map(pkg => {
                 const selectionState = getPackageSelectionState(pkg.id);
                 const isExpanded = expandedPackages.has(pkg.id);
@@ -655,8 +667,8 @@ function PackListsView({
           <div className="selection-panel" style={{ 
             display: 'flex', 
             flexDirection: 'column', 
-            maxHeight: 'calc(100vh - 280px)',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            minHeight: 0
           }}>
             <div className="panel-header" style={{ flexShrink: 0, flexWrap: 'wrap', gap: spacing[2] }}>
               <div className="panel-header-title">
