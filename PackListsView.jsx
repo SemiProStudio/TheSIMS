@@ -569,9 +569,15 @@ function PackListsView({
   if (showCreate) {
     const isEditing = editingList !== null;
     return (
-      <div className="view-container">
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        height: 'calc(100vh - 60px)',
+        overflow: 'hidden',
+        padding: spacing[4]
+      }}>
         {/* Header with create/save button and tally at top */}
-        <div className="page-header">
+        <div className="page-header" style={{ flexShrink: 0, marginBottom: spacing[4] }}>
           <div>
             <h2 className="page-title">{isEditing ? 'Edit' : 'Create'} Pack List: {listName}</h2>
             <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted, marginTop: 4 }}>
@@ -587,10 +593,9 @@ function PackListsView({
         </div>
 
         {/* Panels with fixed height and scroll */}
-        <div className="two-panel-grid" style={{ 
-          flex: 1, 
+        <div style={{ 
+          flex: 1,
           minHeight: 0,
-          maxHeight: 'calc(100vh - 180px)',
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: spacing[4]
