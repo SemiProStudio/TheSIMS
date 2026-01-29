@@ -62,16 +62,36 @@ function PackagesView({
     );
   }, [packages, packageSearch]);
 
-  // Filter items for selection
+  // Get unique categories from inventory for filter dropdown
+  const availableCategories = useMemo(() => {
+    const cats = new Set(individualItems.map(item => item.category).filter(Boolean));
+    return ['all', ...Array.from(cats).sort()];
+  }, [individualItems]);
+
+  // Category filter state for item selection
+  const [itemCategoryFilter, setItemCategoryFilter] = useState('all');
+
+  // Filter items for selection (by search AND category)
   const filteredItemsForSelect = useMemo(() => {
-    if (!itemSearch.trim()) return individualItems;
-    const q = itemSearch.toLowerCase();
-    return individualItems.filter(item => 
-      item.name.toLowerCase().includes(q) || 
-      item.id.toLowerCase().includes(q) ||
-      item.category.toLowerCase().includes(q)
-    );
-  }, [individualItems, itemSearch]);
+    let items = individualItems;
+    
+    // Filter by category first
+    if (itemCategoryFilter !== 'all') {
+      items = items.filter(item => item.category === itemCategoryFilter);
+    }
+    
+    // Then filter by search
+    if (itemSearch.trim()) {
+      const q = itemSearch.toLowerCase();
+      items = items.filter(item => 
+        item.name.toLowerCase().includes(q) || 
+        item.id.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q)
+      );
+    }
+    
+    return items;
+  }, [individualItems, itemSearch, itemCategoryFilter]);
 
   // Get items for a package
   const getPackageItems = useCallback((pkg) => {
@@ -120,6 +140,7 @@ function PackagesView({
     setFormCategory('');
     setFormItems([]);
     setItemSearch('');
+    setItemCategoryFilter('all');
     setNameError('');
   }, []);
 
@@ -374,8 +395,8 @@ function PackagesView({
   // ============================================================================
   if (showCreate) {
     return (
-      <div className="view-container">
-        <div className="page-header">
+      <div className="view-container" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+        <div className="page-header" style={{ flexShrink: 0 }}>
           <div>
             <h2 className="page-title">{editingPackage ? `Edit: ${formName}` : `Create: ${formName}`}</h2>
             <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted, marginTop: 4 }}>
@@ -396,39 +417,64 @@ function PackagesView({
         </div>
 
         <Card padding={false} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-          <div className="panel-header">
+          <div className="panel-header" style={{ flexShrink: 0, flexWrap: 'wrap', gap: spacing[2] }}>
             <div className="panel-header-title">
               <Package size={16} color={colors.primary} />
               <strong>Select Items</strong>
               <span className="panel-header-count">{formItems.length} selected</span>
             </div>
-            <SearchInput 
-              value={itemSearch} 
-              onChange={setItemSearch} 
-              onClear={() => setItemSearch('')}
-              placeholder="Search items..." 
-            />
-          </div>
-          <div className="selection-list">
-            {filteredItemsForSelect.map(item => (
-              <div 
-                key={item.id}
-                className={`selection-item ${formItems.includes(item.id) ? 'selected' : ''}`}
-                onClick={() => handleToggleItem(item.id)}
-                style={{ cursor: 'pointer' }}
+            <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center', flexWrap: 'wrap' }}>
+              <select
+                value={itemCategoryFilter}
+                onChange={e => setItemCategoryFilter(e.target.value)}
+                className="input"
+                style={{ 
+                  minWidth: '150px',
+                  padding: `${spacing[1]}px ${spacing[2]}px`,
+                  fontSize: typography.fontSize.sm
+                }}
               >
-                <input
-                  type="checkbox"
-                  checked={formItems.includes(item.id)}
-                  onChange={() => handleToggleItem(item.id)}
-                />
-                <div className="selection-item-info">
-                  <div className="selection-item-name">{item.name}</div>
-                  <div className="selection-item-meta">{item.id} • {item.category}</div>
-                </div>
-                <Badge text={item.status} color={getStatusColor(item.status)} size="sm" />
+                {availableCategories.map(cat => (
+                  <option key={cat} value={cat}>
+                    {cat === 'all' ? 'All Categories' : cat}
+                  </option>
+                ))}
+              </select>
+              <SearchInput 
+                value={itemSearch} 
+                onChange={setItemSearch} 
+                onClear={() => setItemSearch('')}
+                placeholder="Search items..." 
+              />
+            </div>
+          </div>
+          <div className="selection-list" style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+            {filteredItemsForSelect.length === 0 ? (
+              <div style={{ padding: spacing[4], textAlign: 'center', color: colors.textMuted }}>
+                No items found{itemCategoryFilter !== 'all' ? ` in ${itemCategoryFilter}` : ''}
+                {itemSearch && ` matching "${itemSearch}"`}
               </div>
-            ))}
+            ) : (
+              filteredItemsForSelect.map(item => (
+                <div 
+                  key={item.id}
+                  className={`selection-item ${formItems.includes(item.id) ? 'selected' : ''}`}
+                  onClick={() => handleToggleItem(item.id)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={formItems.includes(item.id)}
+                    onChange={() => handleToggleItem(item.id)}
+                  />
+                  <div className="selection-item-info">
+                    <div className="selection-item-name">{item.name}</div>
+                    <div className="selection-item-meta">{item.id} • {item.category}</div>
+                  </div>
+                  <Badge text={item.status} color={getStatusColor(item.status)} size="sm" />
+                </div>
+              ))
+            )}
           </div>
         </Card>
       </div>
