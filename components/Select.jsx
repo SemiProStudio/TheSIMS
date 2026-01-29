@@ -93,6 +93,7 @@ export function Select({
         if (!isOpen) {
           setIsOpen(true);
         } else {
+          setIsKeyboardNav(true);
           setHighlightedIndex(prev => 
             prev < options.length - 1 ? prev + 1 : 0
           );
@@ -101,6 +102,7 @@ export function Select({
       case 'ArrowUp':
         e.preventDefault();
         if (isOpen) {
+          setIsKeyboardNav(true);
           setHighlightedIndex(prev => 
             prev > 0 ? prev - 1 : options.length - 1
           );
@@ -112,15 +114,18 @@ export function Select({
     }
   }, [isOpen, highlightedIndex, options, onChange, disabled]);
 
-  // Scroll highlighted option into view
+  // Scroll highlighted option into view (only for keyboard navigation)
+  const [isKeyboardNav, setIsKeyboardNav] = useState(false);
+  
   useEffect(() => {
-    if (isOpen && highlightedIndex >= 0 && listRef.current) {
+    if (isOpen && highlightedIndex >= 0 && listRef.current && isKeyboardNav) {
       const highlightedEl = listRef.current.children[highlightedIndex];
       if (highlightedEl) {
         highlightedEl.scrollIntoView({ block: 'nearest' });
       }
+      setIsKeyboardNav(false);
     }
-  }, [highlightedIndex, isOpen]);
+  }, [highlightedIndex, isOpen, isKeyboardNav]);
 
   // Reset highlighted index when opening
   useEffect(() => {
