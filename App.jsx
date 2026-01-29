@@ -1224,6 +1224,14 @@ export default function App() {
       return;
     }
     
+    // Store these values for the callback - they won't change
+    const projectName = reservation?.project || 'Unknown';
+    const startDate = reservation?.start;
+    const endDate = reservation?.end;
+    const itemName = item?.name || itemId;
+    const currentSelectedItemId = selectedItem?.id;
+    const currentSelectedResId = selectedReservation?.id;
+    
     // Find ALL reservations that are part of this multi-item reservation
     // They share the same project, start date, and end date
     const relatedReservations = [];
@@ -1232,9 +1240,9 @@ export default function App() {
     if (reservation) {
       inventory.forEach(invItem => {
         (invItem.reservations || []).forEach(r => {
-          if (r.project === reservation.project && 
-              r.start === reservation.start && 
-              r.end === reservation.end) {
+          if (r.project === projectName && 
+              r.start === startDate && 
+              r.end === endDate) {
             relatedReservations.push({ itemId: invItem.id, reservationId: r.id });
             if (!affectedItemIds.includes(invItem.id)) {
               affectedItemIds.push(invItem.id);
@@ -1245,14 +1253,16 @@ export default function App() {
     }
     
     const itemCount = relatedReservations.length;
-    const projectName = reservation?.project || 'Unknown';
-    const currentSelectedItemId = selectedItem?.id;
-    const currentSelectedResId = selectedReservation?.id;
+    console.log('[deleteReservation] Found related reservations:', { itemCount, relatedReservations, affectedItemIds });
     
     // Customize message based on item count
     const message = itemCount > 1 
       ? `Are you sure you want to cancel this reservation for ${itemCount} items? This action cannot be undone.`
       : 'Are you sure you want to cancel this reservation? This action cannot be undone.';
+    
+    // Store reservation IDs to delete (copy to avoid closure issues)
+    const reservationIdsToDelete = relatedReservations.map(r => r.reservationId);
+    const itemIdsAffected = [...affectedItemIds];
     
     // Use showConfirm which has stable setConfirmDialog reference
     showConfirm({
@@ -1262,46 +1272,62 @@ export default function App() {
       cancelText: 'Keep',
       variant: 'danger',
       onConfirm: async () => {
-        console.log('[deleteReservation] Confirmed, deleting...', { relatedReservations });
+        console.log('[deleteReservation] onConfirm STARTED', { reservationIdsToDelete, itemIdsAffected });
         
         // Delete all related reservations from database
         if (dataContext?.deleteReservation) {
           try {
+            console.log('[deleteReservation] Calling dataContext.deleteReservation for each ID...');
             // Delete each related reservation
-            await Promise.all(
-              relatedReservations.map(({ reservationId }) => 
-                dataContext.deleteReservation(reservationId)
-              )
-            );
-            console.log('[deleteReservation] DB delete successful for all', itemCount, 'reservations');
+            for (const resIdToDelete of reservationIdsToDelete) {
+              console.log('[deleteReservation] Deleting:', resIdToDelete);
+              await dataContext.deleteReservation(resIdToDelete);
+              console.log('[deleteReservation] Deleted:', resIdToDelete);
+            }
+            console.log('[deleteReservation] DB delete successful for all', reservationIdsToDelete.length, 'reservations');
           } catch (err) {
-            console.error('Failed to delete reservations:', err);
+            console.error('[deleteReservation] Failed to delete reservations:', err);
           }
+        } else {
+          console.warn('[deleteReservation] No dataContext.deleteReservation available');
         }
         
         // Update local state - remove reservations from all affected items
-        setInventory(prev => prev.map(invItem => {
-          if (affectedItemIds.includes(invItem.id)) {
-            const resIdsToRemove = relatedReservations
-              .filter(r => r.itemId === invItem.id)
-              .map(r => r.reservationId);
-            return {
-              ...invItem,
-              reservations: (invItem.reservations || []).filter(r => !resIdsToRemove.includes(r.id))
-            };
-          }
-          return invItem;
-        }));
+        console.log('[deleteReservation] Updating inventory state...');
+        setInventory(prev => {
+          const updated = prev.map(invItem => {
+            if (itemIdsAffected.includes(invItem.id)) {
+              const filteredReservations = (invItem.reservations || []).filter(r => !reservationIdsToDelete.includes(r.id));
+              console.log('[deleteReservation] Filtering item', invItem.id, '- before:', invItem.reservations?.length, 'after:', filteredReservations.length);
+              return {
+                ...invItem,
+                reservations: filteredReservations
+              };
+            }
+            return invItem;
+          });
+          return updated;
+        });
         
         // Update selectedItem if it was affected
-        if (affectedItemIds.includes(currentSelectedItemId)) {
-          const resIdsToRemove = relatedReservations
-            .filter(r => r.itemId === currentSelectedItemId)
-            .map(r => r.reservationId);
-          setSelectedItem(prev => ({
-            ...prev,
-            reservations: (prev.reservations || []).filter(r => !resIdsToRemove.includes(r.id))
-          }));
+        if (itemIdsAffected.includes(currentSelectedItemId)) {
+          console.log('[deleteReservation] Updating selectedItem...');
+          setSelectedItem(prev => {
+            if (!prev) return prev;
+            const filteredReservations = (prev.reservations || []).filter(r => !reservationIdsToDelete.includes(r.id));
+            console.log('[deleteReservation] selectedItem reservations - before:', prev.reservations?.length, 'after:', filteredReservations.length);
+            return {
+              ...prev,
+              reservations: filteredReservations
+            };
+          });
+        }
+        
+        // Update selectedReservation if it was deleted
+        if (reservationIdsToDelete.includes(currentSelectedResId)) {
+          console.log('[deleteReservation] Clearing selectedReservation and navigating to schedule...');
+          setSelectedReservation(null);
+          setCurrentView(VIEWS.SCHEDULE);
         }
         
         // Log reservation removal
@@ -1309,18 +1335,12 @@ export default function App() {
           type: 'reservation_removed',
           itemId: itemId,
           itemType: 'item',
-          itemName: itemCount > 1 ? `${itemCount} items` : (item?.name || itemId),
+          itemName: itemCount > 1 ? `${itemCount} items` : itemName,
           description: `Cancelled reservation: ${projectName}`,
           changes: [{ field: 'reservation', oldValue: projectName }]
         });
         
-        // Navigate back if we were viewing this reservation
-        const deletedResIds = relatedReservations.map(r => r.reservationId);
-        if (deletedResIds.includes(currentSelectedResId)) {
-          setSelectedReservation(null);
-          setCurrentView(VIEWS.SCHEDULE);
-        }
-        // Note: Dialog closing is handled by handleConfirm in ConfirmDialog
+        console.log('[deleteReservation] onConfirm COMPLETED');
       }
     });
   }, [inventory, addChangeLog, dataContext, selectedItem?.id, selectedReservation?.id, showConfirm, setCurrentView, setInventory, setSelectedItem, setSelectedReservation]);
