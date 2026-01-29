@@ -1,19 +1,303 @@
 // ============================================================================
 // Reservation Modal
-// Add and edit reservations with conflict detection
+// Add and edit reservations with multi-item search selection
 // ============================================================================
 
-import React, { memo, useState, useMemo, useCallback } from 'react';
+import React, { memo, useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Plus, Save, AlertTriangle } from 'lucide-react';
+import { Plus, Save, AlertTriangle, Search, X, Package } from 'lucide-react';
 import { PROJECT_TYPES } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { getAllReservationConflicts, formatDate } from '../utils.js';
-import { validateReservation, isValidEmail } from '../lib/validators.js';
-import { Button } from '../components/ui.jsx';
+import { getAllReservationConflicts } from '../utils.js';
+import { Button, Badge } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
+// ============================================================================
+// Item Search Component
+// ============================================================================
+const ItemSearch = memo(function ItemSearch({ 
+  inventory, 
+  selectedItemIds, 
+  onAddItem,
+  placeholder = "Search items by name, ID, or brand..."
+}) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const inputRef = useRef(null);
+  const dropdownRef = useRef(null);
+  
+  // Filter inventory based on search
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return inventory
+      .filter(item => 
+        !selectedItemIds.includes(item.id) && // Exclude already selected
+        (item.status === 'available' || item.status === 'reserved') && // Only available/reserved items
+        (
+          item.name?.toLowerCase().includes(q) ||
+          item.id?.toLowerCase().includes(q) ||
+          item.brand?.toLowerCase().includes(q) ||
+          item.category?.toLowerCase().includes(q)
+        )
+      )
+      .slice(0, 10); // Limit results
+  }, [searchQuery, inventory, selectedItemIds]);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target) &&
+          inputRef.current && !inputRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+  
+  const handleSelect = (item) => {
+    onAddItem(item);
+    setSearchQuery('');
+    setIsOpen(false);
+    inputRef.current?.focus();
+  };
+  
+  return (
+    <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative' }}>
+        <Search 
+          size={16} 
+          style={{ 
+            position: 'absolute', 
+            left: 12, 
+            top: '50%', 
+            transform: 'translateY(-50%)',
+            color: colors.textMuted 
+          }} 
+        />
+        <input
+          ref={inputRef}
+          type="text"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
+          placeholder={placeholder}
+          style={{
+            ...styles.input,
+            paddingLeft: 40,
+          }}
+        />
+      </div>
+      
+      {/* Search Results Dropdown */}
+      {isOpen && searchQuery.trim() && (
+        <div
+          ref={dropdownRef}
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            marginTop: 4,
+            background: colors.bgMedium,
+            border: `1px solid ${colors.border}`,
+            borderRadius: borderRadius.lg,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            zIndex: 100,
+            maxHeight: 300,
+            overflowY: 'auto',
+          }}
+        >
+          {searchResults.length === 0 ? (
+            <div style={{ 
+              padding: spacing[4], 
+              textAlign: 'center', 
+              color: colors.textMuted,
+              fontSize: typography.fontSize.sm 
+            }}>
+              No items found matching "{searchQuery}"
+            </div>
+          ) : (
+            searchResults.map(item => (
+              <div
+                key={item.id}
+                onClick={() => handleSelect(item)}
+                style={{
+                  padding: spacing[3],
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: spacing[3],
+                  cursor: 'pointer',
+                  borderBottom: `1px solid ${colors.borderLight}`,
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = withOpacity(colors.primary, 15)}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                {item.image ? (
+                  <img 
+                    src={item.image} 
+                    alt="" 
+                    style={{ 
+                      width: 40, 
+                      height: 40, 
+                      borderRadius: borderRadius.md, 
+                      objectFit: 'cover' 
+                    }} 
+                  />
+                ) : (
+                  <div style={{ 
+                    width: 40, 
+                    height: 40, 
+                    borderRadius: borderRadius.md, 
+                    background: withOpacity(colors.primary, 15),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: colors.textMuted,
+                    fontSize: typography.fontSize.xs
+                  }}>
+                    <Package size={16} />
+                  </div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ 
+                    fontWeight: typography.fontWeight.medium, 
+                    color: colors.textPrimary,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {item.name}
+                  </div>
+                  <div style={{ 
+                    fontSize: typography.fontSize.sm, 
+                    color: colors.textMuted,
+                    display: 'flex',
+                    gap: spacing[2],
+                    alignItems: 'center'
+                  }}>
+                    <Badge text={item.id} color={colors.primary} />
+                    <span>{item.brand}</span>
+                    {item.status === 'reserved' && (
+                      <Badge text="Has Reservations" color={colors.warning} />
+                    )}
+                  </div>
+                </div>
+                <Plus size={18} style={{ color: colors.primary }} />
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+});
+
+// ============================================================================
+// Selected Item Card
+// ============================================================================
+const SelectedItemCard = memo(function SelectedItemCard({ item, onRemove, conflicts }) {
+  const hasConflict = conflicts?.hasConflicts;
+  
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: spacing[3],
+      padding: spacing[3],
+      background: hasConflict 
+        ? withOpacity(colors.warning, 10) 
+        : withOpacity(colors.primary, 10),
+      border: `1px solid ${hasConflict ? colors.warning : withOpacity(colors.primary, 30)}`,
+      borderRadius: borderRadius.md,
+    }}>
+      {item.image ? (
+        <img 
+          src={item.image} 
+          alt="" 
+          style={{ width: 48, height: 48, borderRadius: borderRadius.md, objectFit: 'cover' }} 
+        />
+      ) : (
+        <div style={{ 
+          width: 48, 
+          height: 48, 
+          borderRadius: borderRadius.md, 
+          background: colors.bgDark,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: colors.textMuted
+        }}>
+          <Package size={20} />
+        </div>
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ 
+          fontWeight: typography.fontWeight.medium, 
+          color: colors.textPrimary,
+          marginBottom: 2
+        }}>
+          {item.name}
+        </div>
+        <div style={{ 
+          fontSize: typography.fontSize.sm, 
+          color: colors.textMuted,
+          display: 'flex',
+          gap: spacing[2],
+          alignItems: 'center',
+          flexWrap: 'wrap'
+        }}>
+          <Badge text={item.id} color={colors.primary} />
+          <span>{item.brand} • {item.category}</span>
+        </div>
+        {hasConflict && (
+          <div style={{ 
+            marginTop: spacing[1],
+            fontSize: typography.fontSize.xs,
+            color: colors.warning,
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[1]
+          }}>
+            <AlertTriangle size={12} />
+            {conflicts.reservationConflicts?.length > 0 
+              ? `${conflicts.reservationConflicts.length} scheduling conflict(s)`
+              : 'Item currently checked out'}
+          </div>
+        )}
+      </div>
+      {onRemove && (
+        <button
+          onClick={() => onRemove(item.id)}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            padding: spacing[1],
+            cursor: 'pointer',
+            color: colors.textMuted,
+            borderRadius: borderRadius.md,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          title="Remove item"
+        >
+          <X size={18} />
+        </button>
+      )}
+    </div>
+  );
+});
+
+// ============================================================================
+// Main ReservationModal Component
+// ============================================================================
 export const ReservationModal = memo(function ReservationModal({ 
   isEdit, 
   reservationForm, 
@@ -27,26 +311,52 @@ export const ReservationModal = memo(function ReservationModal({
 }) {
   const [touched, setTouched] = useState({});
   const [acknowledgedConflicts, setAcknowledgedConflicts] = useState(false);
-  const [validationErrors, setValidationErrors] = useState({});
   
-  // Selected item - from props or from form
-  const selectedItem = item || inventory.find(i => i.id === reservationForm.itemId);
+  // Selected items - from props (single item) or from form (multiple)
+  const [selectedItems, setSelectedItems] = useState(() => {
+    if (item) return [item];
+    if (reservationForm.itemIds?.length) {
+      return inventory.filter(i => reservationForm.itemIds.includes(i.id));
+    }
+    if (reservationForm.itemId) {
+      const found = inventory.find(i => i.id === reservationForm.itemId);
+      return found ? [found] : [];
+    }
+    return [];
+  });
+  
+  // Add item to selection
+  const handleAddItem = useCallback((newItem) => {
+    setSelectedItems(prev => [...prev, newItem]);
+    // Update form with item IDs
+    setReservationForm(prev => ({
+      ...prev,
+      itemIds: [...(prev.itemIds || []), newItem.id],
+      itemId: newItem.id // Keep single itemId for backwards compatibility
+    }));
+  }, [setReservationForm]);
+  
+  // Remove item from selection
+  const handleRemoveItem = useCallback((itemId) => {
+    setSelectedItems(prev => prev.filter(i => i.id !== itemId));
+    setReservationForm(prev => {
+      const newItemIds = (prev.itemIds || []).filter(id => id !== itemId);
+      return {
+        ...prev,
+        itemIds: newItemIds,
+        itemId: newItemIds[0] || ''
+      };
+    });
+  }, [setReservationForm]);
   
   const handleChange = (field, value) => {
     setTouched(prev => ({ ...prev, [field]: true }));
-    // Clear validation error on change
-    if (validationErrors[field]) {
-      setValidationErrors(prev => ({ ...prev, [field]: null }));
-    }
-    // Reset conflict acknowledgment when dates change
     if (field === 'start' || field === 'end') {
       setAcknowledgedConflicts(false);
     }
-    // If changing start date and end date is before it, update end date too
     if (field === 'start' && reservationForm.end && value > reservationForm.end) {
       setReservationForm(prev => ({ ...prev, start: value, end: value }));
     } else if (field === 'clientId' && value) {
-      // Auto-fill contact info from client
       const client = clients.find(c => c.id === value);
       if (client) {
         setReservationForm(prev => ({ 
@@ -65,49 +375,38 @@ export const ReservationModal = memo(function ReservationModal({
 
   const handleBlur = (field) => {
     setTouched(prev => ({ ...prev, [field]: true }));
-    // Validate on blur
-    const validation = validateReservation(reservationForm, {
-      existingReservations: item?.reservations || [],
-      editingId: editingReservationId,
-    });
-    if (validation.errors[field]) {
-      setValidationErrors(prev => ({ ...prev, [field]: validation.errors[field] }));
-    }
   };
   
-  // Run full validation
-  const validation = useMemo(() => {
-    return validateReservation(reservationForm, {
-      existingReservations: selectedItem?.reservations || [],
-      editingId: editingReservationId,
-    });
-  }, [reservationForm, selectedItem?.reservations, editingReservationId]);
-  
-  // Conflict detection
-  const conflicts = useMemo(() => {
-    if (!selectedItem || !reservationForm.start || !reservationForm.end) {
-      return { reservationConflicts: [], checkoutConflict: null, hasConflicts: false };
+  // Get conflicts for each selected item
+  const itemConflicts = useMemo(() => {
+    const conflicts = {};
+    if (reservationForm.start && reservationForm.end) {
+      selectedItems.forEach(selectedItem => {
+        conflicts[selectedItem.id] = getAllReservationConflicts(
+          selectedItem,
+          reservationForm.start,
+          reservationForm.end,
+          isEdit ? editingReservationId : null
+        );
+      });
     }
-    return getAllReservationConflicts(
-      selectedItem, 
-      reservationForm.start, 
-      reservationForm.end, 
-      isEdit ? editingReservationId : null
-    );
-  }, [selectedItem, reservationForm.start, reservationForm.end, isEdit, editingReservationId]);
+    return conflicts;
+  }, [selectedItems, reservationForm.start, reservationForm.end, isEdit, editingReservationId]);
   
-  // Validation - combine custom and validators.js
+  // Check if any item has conflicts
+  const hasAnyConflicts = useMemo(() => {
+    return Object.values(itemConflicts).some(c => c.hasConflicts);
+  }, [itemConflicts]);
+  
+  // Validation
   const dateValid = reservationForm.start && reservationForm.end && reservationForm.end >= reservationForm.start;
-  const hasItem = selectedItem || reservationForm.itemId;
-  const valid = hasItem && reservationForm.project?.trim() && dateValid && reservationForm.user?.trim() && validation.isValid;
+  const hasItems = selectedItems.length > 0;
+  const valid = hasItems && reservationForm.project?.trim() && dateValid && reservationForm.user?.trim();
   const dateError = reservationForm.start && reservationForm.end && reservationForm.end < reservationForm.start;
   
-  // Can save if valid and either no conflicts or conflicts acknowledged
-  const canSave = valid && (!conflicts.hasConflicts || acknowledgedConflicts);
+  const canSave = valid && (!hasAnyConflicts || acknowledgedConflicts);
   
-  // Handle save with validation
   const handleSave = useCallback(() => {
-    // Mark all fields as touched
     setTouched({
       project: true,
       start: true,
@@ -116,33 +415,22 @@ export const ReservationModal = memo(function ReservationModal({
       contactEmail: true,
     });
     
-    if (!validation.isValid) {
-      setValidationErrors(validation.errors);
-      // Focus first error field
-      const firstError = Object.keys(validation.errors)[0];
-      if (firstError) {
-        const element = document.querySelector(`[name="${firstError}"]`);
-        element?.focus();
-      }
-      return;
-    }
-    
     if (canSave) {
+      // Update form with selected item IDs before saving
+      const itemIds = selectedItems.map(i => i.id);
+      setReservationForm(prev => ({
+        ...prev,
+        itemIds,
+        itemId: itemIds[0] || ''
+      }));
       onSave();
     }
-  }, [validation, canSave, onSave]);
-  
-  // Field error states (only show after touched)
-  const getFieldError = (field) => {
-    if (!touched[field]) return null;
-    return validationErrors[field] || validation.errors[field] || null;
-  };
+  }, [canSave, onSave, selectedItems, setReservationForm]);
   
   const showProjectError = touched.project && !reservationForm.project;
   const showStartError = touched.start && !reservationForm.start;
   const showEndError = touched.end && (!reservationForm.end || dateError);
   const showUserError = touched.user && !reservationForm.user;
-  const showEmailError = touched.contactEmail && reservationForm.contactEmail && !isValidEmail(reservationForm.contactEmail);
 
   const getInputStyle = (hasError, isEmpty) => ({
     ...styles.input,
@@ -151,13 +439,81 @@ export const ReservationModal = memo(function ReservationModal({
   });
 
   return (
-    <Modal onClose={onClose} maxWidth={550}>
+    <Modal onClose={onClose} maxWidth={600}>
       <ModalHeader title={isEdit ? "Edit Reservation" : "Add Reservation"} onClose={onClose} />
-      <div style={{ padding: spacing[4], maxHeight: '70vh', overflowY: 'auto' }}>
+      <div style={{ padding: spacing[4], maxHeight: '75vh', overflowY: 'auto' }}>
+        
+        {/* ============ SECTION 1: ITEM SELECTION ============ */}
+        <div style={{ 
+          marginBottom: spacing[4],
+          paddingBottom: spacing[4],
+          borderBottom: `1px solid ${colors.borderLight}`
+        }}>
+          <label style={{ 
+            ...styles.label, 
+            marginBottom: spacing[2],
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[2]
+          }}>
+            <Package size={16} />
+            Select Items to Reserve
+            {selectedItems.length === 0 && <span style={{ color: colors.danger }}>*</span>}
+          </label>
+          
+          {/* Search Input - only show when not editing single item */}
+          {!isEdit && (
+            <ItemSearch
+              inventory={inventory}
+              selectedItemIds={selectedItems.map(i => i.id)}
+              onAddItem={handleAddItem}
+            />
+          )}
+          
+          {/* Selected Items */}
+          {selectedItems.length > 0 && (
+            <div style={{ 
+              marginTop: spacing[3],
+              display: 'flex',
+              flexDirection: 'column',
+              gap: spacing[2]
+            }}>
+              <div style={{ 
+                fontSize: typography.fontSize.sm, 
+                color: colors.textMuted,
+                marginBottom: spacing[1]
+              }}>
+                {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} selected:
+              </div>
+              {selectedItems.map(selectedItem => (
+                <SelectedItemCard
+                  key={selectedItem.id}
+                  item={selectedItem}
+                  onRemove={isEdit ? null : handleRemoveItem}
+                  conflicts={itemConflicts[selectedItem.id]}
+                />
+              ))}
+            </div>
+          )}
+          
+          {/* No items selected warning */}
+          {selectedItems.length === 0 && touched.project && (
+            <p style={{ 
+              color: colors.danger, 
+              fontSize: typography.fontSize.sm, 
+              marginTop: spacing[2] 
+            }}>
+              Please select at least one item to reserve
+            </p>
+          )}
+        </div>
+        
+        {/* ============ SECTION 2: RESERVATION DETAILS ============ */}
+        
         {/* Conflict Warning Banner */}
-        {conflicts.hasConflicts && (
+        {hasAnyConflicts && (
           <div style={{
-            background: `${withOpacity(colors.warning, 15)}`,
+            background: withOpacity(colors.warning, 15),
             border: `1px solid ${colors.warning}`,
             borderRadius: borderRadius.lg,
             padding: spacing[3],
@@ -172,64 +528,20 @@ export const ReservationModal = memo(function ReservationModal({
               fontWeight: typography.fontWeight.semibold,
             }}>
               <AlertTriangle size={18} />
-              <span>Scheduling Conflict Detected</span>
+              <span>Scheduling Conflicts Detected</span>
             </div>
-            
-            {/* Checkout conflict */}
-            {conflicts.checkoutConflict && (
-              <div style={{ 
-                fontSize: typography.fontSize.sm, 
-                color: colors.textPrimary,
-                marginBottom: spacing[2],
-                padding: spacing[2],
-                background: colors.bgDark,
-                borderRadius: borderRadius.md,
-              }}>
-                <strong style={{ color: colors.checkedOut }}>Currently Checked Out:</strong>
-                <div style={{ marginTop: spacing[1] }}>
-                  {conflicts.checkoutConflict.message}
-                </div>
-              </div>
-            )}
-            
-            {/* Reservation conflicts */}
-            {conflicts.reservationConflicts.length > 0 && (
-              <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
-                <strong style={{ color: colors.reserved }}>
-                  {conflicts.reservationConflicts.length} Overlapping Reservation{conflicts.reservationConflicts.length > 1 ? 's' : ''}:
-                </strong>
-                <div style={{ marginTop: spacing[2], display: 'flex', flexDirection: 'column', gap: spacing[1] }}>
-                  {conflicts.reservationConflicts.slice(0, 3).map((res, idx) => (
-                    <div 
-                      key={res.id || idx}
-                      style={{
-                        padding: spacing[2],
-                        background: colors.bgDark,
-                        borderRadius: borderRadius.md,
-                        borderLeft: `3px solid ${colors.reserved}`,
-                      }}
-                    >
-                      <div style={{ fontWeight: typography.fontWeight.medium }}>{res.project}</div>
-                      <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                        {formatDate(res.start)} - {formatDate(res.end)} • {res.user}
-                      </div>
-                    </div>
-                  ))}
-                  {conflicts.reservationConflicts.length > 3 && (
-                    <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, fontStyle: 'italic' }}>
-                      ...and {conflicts.reservationConflicts.length - 3} more
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* Acknowledge checkbox */}
+            <p style={{ 
+              fontSize: typography.fontSize.sm, 
+              color: colors.textSecondary,
+              marginBottom: spacing[2]
+            }}>
+              One or more selected items have scheduling conflicts for the selected dates.
+              You can still proceed if needed.
+            </p>
             <label style={{ 
               display: 'flex', 
               alignItems: 'center', 
               gap: spacing[2], 
-              marginTop: spacing[3],
               cursor: 'pointer',
               fontSize: typography.fontSize.sm,
               color: colors.textSecondary,
@@ -240,54 +552,8 @@ export const ReservationModal = memo(function ReservationModal({
                 onChange={(e) => setAcknowledgedConflicts(e.target.checked)}
                 style={{ width: 16, height: 16 }}
               />
-              I understand there are conflicts and want to proceed anyway
+              I understand and want to proceed anyway
             </label>
-          </div>
-        )}
-        
-        {/* Item selector - show when no item is pre-selected and inventory available */}
-        {!item && inventory.length > 0 && (
-          <div style={{ marginBottom: spacing[3] }}>
-            <label style={{ ...styles.label, color: !reservationForm.itemId && !selectedItem ? colors.danger : undefined }}>
-              Item to Reserve <span style={{ color: colors.danger }}>*</span>
-            </label>
-            <Select 
-              value={reservationForm.itemId || ''} 
-              onChange={e => handleChange('itemId', e.target.value)} 
-              options={[
-                { value: '', label: '-- Select an item --' },
-                ...inventory
-                  .filter(i => i.status === 'available' || i.status === 'reserved')
-                  .map(i => ({ 
-                    value: i.id, 
-                    label: `${i.name} (${i.id})${i.status === 'reserved' ? ' - Has Reservations' : ''}` 
-                  }))
-              ]}
-              aria-label="Item to reserve"
-            />
-          </div>
-        )}
-        
-        {/* Show selected item info */}
-        {selectedItem && (
-          <div style={{ 
-            marginBottom: spacing[3], 
-            padding: spacing[3], 
-            background: `${withOpacity(colors.primary, 10)}`,
-            borderRadius: borderRadius.md,
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[3]
-          }}>
-            {selectedItem.image ? (
-              <img src={selectedItem.image} alt="" style={{ width: 48, height: 48, borderRadius: borderRadius.md, objectFit: 'cover' }} />
-            ) : (
-              <div style={{ width: 48, height: 48, borderRadius: borderRadius.md, background: colors.bgDark, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textMuted, fontSize: typography.fontSize.xs }}>No img</div>
-            )}
-            <div>
-              <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{selectedItem.name}</div>
-              <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>{selectedItem.brand} • {selectedItem.category}</div>
-            </div>
           </div>
         )}
         
@@ -312,11 +578,11 @@ export const ReservationModal = memo(function ReservationModal({
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
           <div>
-            <label style={{ ...styles.label, color: !reservationForm.project ? colors.danger : undefined }}>
+            <label style={{ ...styles.label, color: showProjectError ? colors.danger : undefined }}>
               Project Name <span style={{ color: colors.danger }}>*</span>
             </label>
             <input 
-              value={reservationForm.project} 
+              value={reservationForm.project || ''} 
               onChange={e => handleChange('project', e.target.value)} 
               onBlur={() => handleBlur('project')}
               placeholder="e.g., Wedding - Smith/Jones"
@@ -337,12 +603,12 @@ export const ReservationModal = memo(function ReservationModal({
         
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
           <div>
-            <label style={{ ...styles.label, color: !reservationForm.start ? colors.danger : undefined }}>
+            <label style={{ ...styles.label, color: showStartError ? colors.danger : undefined }}>
               Start Date <span style={{ color: colors.danger }}>*</span>
             </label>
             <input 
               type="date" 
-              value={reservationForm.start} 
+              value={reservationForm.start || ''} 
               onChange={e => handleChange('start', e.target.value)} 
               onBlur={() => handleBlur('start')}
               style={getInputStyle(showStartError, !reservationForm.start)} 
@@ -350,12 +616,12 @@ export const ReservationModal = memo(function ReservationModal({
             {showStartError && <p style={{ color: colors.danger, fontSize: typography.fontSize.xs, margin: `${spacing[1]}px 0 0` }}>Required</p>}
           </div>
           <div>
-            <label style={{ ...styles.label, color: !reservationForm.end ? colors.danger : undefined }}>
+            <label style={{ ...styles.label, color: showEndError ? colors.danger : undefined }}>
               End Date / Due Back <span style={{ color: colors.danger }}>*</span>
             </label>
             <input 
               type="date" 
-              value={reservationForm.end} 
+              value={reservationForm.end || ''} 
               onChange={e => handleChange('end', e.target.value)} 
               onBlur={() => handleBlur('end')}
               min={reservationForm.start || undefined}
@@ -366,16 +632,15 @@ export const ReservationModal = memo(function ReservationModal({
                 End date must be on or after start date
               </p>
             )}
-            {showEndError && !dateError && <p style={{ color: colors.danger, fontSize: typography.fontSize.xs, margin: `${spacing[1]}px 0 0` }}>Required</p>}
           </div>
         </div>
         
         <div style={{ marginBottom: spacing[3] }}>
-          <label style={{ ...styles.label, color: !reservationForm.user ? colors.danger : undefined }}>
+          <label style={{ ...styles.label, color: showUserError ? colors.danger : undefined }}>
             Reserved By <span style={{ color: colors.danger }}>*</span>
           </label>
           <input 
-            value={reservationForm.user} 
+            value={reservationForm.user || ''} 
             onChange={e => handleChange('user', e.target.value)} 
             onBlur={() => handleBlur('user')}
             placeholder="e.g., John Smith"
@@ -417,15 +682,21 @@ export const ReservationModal = memo(function ReservationModal({
           />
         </div>
         
+        {/* Action Buttons */}
         <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button 
             onClick={handleSave} 
             disabled={!canSave} 
             icon={isEdit ? Save : Plus}
-            style={conflicts.hasConflicts && acknowledgedConflicts ? { background: colors.warning } : undefined}
+            style={hasAnyConflicts && acknowledgedConflicts ? { background: colors.warning } : undefined}
           >
-            {isEdit ? 'Save Changes' : (conflicts.hasConflicts && acknowledgedConflicts ? 'Save Anyway' : 'Add Reservation')}
+            {isEdit 
+              ? 'Save Changes' 
+              : hasAnyConflicts && acknowledgedConflicts 
+                ? 'Save Anyway' 
+                : `Add Reservation${selectedItems.length > 1 ? ` (${selectedItems.length} items)` : ''}`
+            }
           </Button>
         </div>
       </div>
@@ -437,7 +708,6 @@ export const ReservationModal = memo(function ReservationModal({
 // PropTypes
 // ============================================================================
 
-/** Shape for reservation form data */
 const reservationFormShape = PropTypes.shape({
   project: PropTypes.string,
   projectType: PropTypes.string,
@@ -448,9 +718,10 @@ const reservationFormShape = PropTypes.shape({
   contactPhone: PropTypes.string,
   contactEmail: PropTypes.string,
   location: PropTypes.string,
+  itemId: PropTypes.string,
+  itemIds: PropTypes.arrayOf(PropTypes.string),
 });
 
-/** Shape for client */
 const clientShape = PropTypes.shape({
   id: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
@@ -459,31 +730,24 @@ const clientShape = PropTypes.shape({
   email: PropTypes.string,
 });
 
-/** Shape for item with reservations */
-const itemWithReservationsShape = PropTypes.shape({
+const itemShape = PropTypes.shape({
   id: PropTypes.string.isRequired,
+  name: PropTypes.string,
+  brand: PropTypes.string,
+  category: PropTypes.string,
+  image: PropTypes.string,
   status: PropTypes.string,
-  checkout: PropTypes.object,
   reservations: PropTypes.array,
 });
 
 ReservationModal.propTypes = {
-  /** Whether this is editing an existing reservation */
   isEdit: PropTypes.bool,
-  /** Current reservation form data */
   reservationForm: reservationFormShape.isRequired,
-  /** Setter for reservation form data */
   setReservationForm: PropTypes.func.isRequired,
-  /** Callback when save is clicked */
   onSave: PropTypes.func.isRequired,
-  /** Callback to close modal */
   onClose: PropTypes.func.isRequired,
-  /** Available clients for selection */
   clients: PropTypes.arrayOf(clientShape),
-  /** Available inventory items for selection */
-  inventory: PropTypes.arrayOf(itemWithReservationsShape),
-  /** Item the reservation is for (for conflict detection) */
-  item: itemWithReservationsShape,
-  /** ID of reservation being edited (for conflict exclusion) */
+  inventory: PropTypes.arrayOf(itemShape),
+  item: itemShape,
   editingReservationId: PropTypes.string,
 };

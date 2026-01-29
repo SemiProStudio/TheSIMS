@@ -1138,68 +1138,89 @@ export default function App() {
       
       setEditingReservationId(null);
     } else {
-      // Creating new reservation
-      const targetItemId = reservationForm.itemId || selectedItem?.id || selectedReservationItem?.id;
-      const targetItem = inventory.find(i => i.id === targetItemId) || selectedItem || selectedReservationItem;
+      // Creating new reservation(s) - support multiple items
+      const itemIds = reservationForm.itemIds?.length 
+        ? reservationForm.itemIds 
+        : (reservationForm.itemId ? [reservationForm.itemId] : [selectedItem?.id || selectedReservationItem?.id].filter(Boolean));
       
-      if (!targetItem) {
-        console.error('No item selected for reservation');
+      if (itemIds.length === 0) {
+        console.error('No items selected for reservation');
         return;
       }
       
-      const reservation = {
-        id: generateId(),
-        ...reservationForm,
-        notes: [],
-        dueBack: reservationForm.end
-      };
-
-      // Use DataContext for Supabase persistence
-      if (dataContext?.createReservation) {
-        try {
-          await dataContext.createReservation(targetItemId, reservationForm);
-        } catch (err) {
-          console.error('Failed to create reservation:', err);
+      // Create a reservation for each selected item
+      for (const targetItemId of itemIds) {
+        const targetItem = inventory.find(i => i.id === targetItemId);
+        if (!targetItem) {
+          console.error('Item not found:', targetItemId);
+          continue;
         }
-      }
-      
-      // Update local state
-      const updatedReservations = [...(targetItem.reservations || []), reservation];
-      setInventory(prev => updateById(prev, targetItemId, item => ({
-        reservations: [...(item.reservations || []), reservation]
-      })));
+        
+        const reservation = {
+          id: generateId(),
+          ...reservationForm,
+          notes: [],
+          dueBack: reservationForm.end
+        };
 
-      const updatedItem = {
-        ...targetItem,
-        reservations: updatedReservations
-      };
-      
-      if (selectedItem?.id === targetItemId) {
-        setSelectedItem(updatedItem);
+        // Use DataContext for Supabase persistence
+        if (dataContext?.createReservation) {
+          try {
+            await dataContext.createReservation(targetItemId, reservationForm);
+          } catch (err) {
+            console.error('Failed to create reservation for', targetItemId, err);
+          }
+        }
+        
+        // Update local state
+        setInventory(prev => updateById(prev, targetItemId, item => ({
+          reservations: [...(item.reservations || []), reservation]
+        })));
+
+        if (selectedItem?.id === targetItemId) {
+          setSelectedItem(prev => ({
+            ...prev,
+            reservations: [...(prev.reservations || []), reservation]
+          }));
+        }
+        
+        // Log reservation creation
+        addChangeLog({
+          type: 'reservation_added',
+          itemId: targetItemId,
+          itemType: 'item',
+          itemName: targetItem.name,
+          description: `New reservation: ${reservationForm.project} (${reservationForm.start} - ${reservationForm.end})`,
+          changes: [{ field: 'reservation', newValue: reservationForm.project }]
+        });
       }
       
-      // Log reservation creation
-      addChangeLog({
-        type: 'reservation_added',
-        itemId: targetItemId,
-        itemType: 'item',
-        itemName: targetItem.name,
-        description: `New reservation: ${reservationForm.project} (${reservationForm.start} - ${reservationForm.end})`,
-        changes: [{ field: 'reservation', newValue: reservationForm.project }]
-      });
-      
-      // Send reservation confirmation email (non-blocking)
+      // Send reservation confirmation email (non-blocking) - send once for all items
       const userEmail = reservationForm.contactEmail;
-      if (userEmail && dataContext?.sendReservationEmail) {
+      const firstItemId = itemIds[0];
+      const firstItem = inventory.find(i => i.id === firstItemId);
+      if (userEmail && dataContext?.sendReservationEmail && firstItem) {
         dataContext.sendReservationEmail({
           userEmail,
           userName: reservationForm.user,
-          item: targetItem,
-          reservation
+          item: firstItem,
+          reservation: {
+            ...reservationForm,
+            itemCount: itemIds.length
+          }
         }).catch(err => console.error('Email send failed:', err));
       }
       
-      navigateToReservation(reservation, updatedItem);
+      // Navigate to the first item's reservation
+      if (firstItem) {
+        const reservation = {
+          id: generateId(),
+          ...reservationForm,
+          notes: [],
+          dueBack: reservationForm.end
+        };
+        navigateToReservation(reservation, firstItem);
+      }
     }
     
     closeModal();

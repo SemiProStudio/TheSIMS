@@ -334,7 +334,7 @@ export function DataProvider({ children }) {
         contact_phone: reservation.contactPhone || '',
         contact_email: reservation.contactEmail || '',
         location: reservation.location || '',
-        notes: reservation.notes || ''
+        notes: JSON.stringify(reservation.notes || [])
       };
       const result = await reservationsService.create(dbReservation);
       return result;
