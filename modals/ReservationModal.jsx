@@ -503,8 +503,6 @@ export const ReservationModal = memo(function ReservationModal({
               ))}
             </div>
           )}
-            </div>
-          )}
           
           {/* No items selected warning */}
           {selectedItems.length === 0 && touched.project && (

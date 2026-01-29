@@ -2678,7 +2678,6 @@ export default function App() {
         onConfirm={handleConfirm}
         onCancel={closeConfirm}
       />
-      />
     </div>
     </PermissionsProvider>
   );
