@@ -11,6 +11,7 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity, zIndex 
 import { getStatusColor, filterBySearch, filterByCategory, filterByStatus, generateId } from './utils.js';
 import { Badge, Card, Button, SearchInput, Pagination } from './components/ui.jsx';
 import { OptimizedImage } from './components/OptimizedImage.jsx';
+import { Select } from './components/Select.jsx';
 import { useDebounce, usePagination } from './hooks.js';
 import { usePermissions, ViewOnlyBanner } from './PermissionsContext.jsx';
 
@@ -762,32 +763,34 @@ function GearList({
         </div>
 
         {/* Category Filter */}
-        <select
+        <Select
           value={categoryFilter}
           onChange={e => setCategoryFilter(e.target.value)}
-          style={{ ...styles.select, width: 'auto', minWidth: '150px' }}
-        >
-          <option value="all">All Categories</option>
-          {categories.map(c => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+          options={[
+            { value: 'all', label: 'All Categories' },
+            ...categories.map(c => ({ value: c, label: c }))
+          ]}
+          style={{ minWidth: 150 }}
+          aria-label="Filter by category"
+        />
 
         {/* Status Filter */}
-        <select
+        <Select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          style={{ ...styles.select, width: 'auto', minWidth: '140px' }}
-        >
-          <option value="all">All Status</option>
-          <option value="available">Available</option>
-          <option value="checked-out">Checked Out</option>
-          <option value="reserved">Reserved</option>
-          <option value="needs-attention">Needs Attention</option>
-          <option value="missing">Missing</option>
-          <option value="overdue">Overdue</option>
-          <option value="low-stock">Low Stock</option>
-        </select>
+          options={[
+            { value: 'all', label: 'All Status' },
+            { value: 'available', label: 'Available' },
+            { value: 'checked-out', label: 'Checked Out' },
+            { value: 'reserved', label: 'Reserved' },
+            { value: 'needs-attention', label: 'Needs Attention' },
+            { value: 'missing', label: 'Missing' },
+            { value: 'overdue', label: 'Overdue' },
+            { value: 'low-stock', label: 'Low Stock' },
+          ]}
+          style={{ minWidth: 140 }}
+          aria-label="Filter by status"
+        />
 
         {/* Clear Filters Button */}
         {hasActiveFilters && (
@@ -902,22 +905,13 @@ function GearList({
           {/* Page size selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
             <span style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>Show:</span>
-            <select
+            <Select
               value={pageSize}
               onChange={e => setPageSize(parseInt(e.target.value, 10))}
-              style={{ 
-                ...styles.select, 
-                width: 'auto',
-                padding: `${spacing[2]}px ${spacing[3]}px`,
-                paddingRight: `${spacing[6]}px`,
-                fontSize: typography.fontSize.sm,
-                minHeight: 'auto',
-              }}
-            >
-              {PAGE_SIZE_OPTIONS.map(size => (
-                <option key={size} value={size}>{size}</option>
-              ))}
-            </select>
+              options={PAGE_SIZE_OPTIONS.map(size => ({ value: size, label: String(size) }))}
+              style={{ width: 80 }}
+              aria-label="Items per page"
+            />
             <span style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>items</span>
           </div>
 
