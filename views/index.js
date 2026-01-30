@@ -3,9 +3,6 @@
 // Central export point for all view components
 // ============================================================================
 
-// Package views
-export { PackagesList, PackageDetail } from './PackagesView.jsx';
-
 // Admin views
 export { AdminPanel } from './AdminView.jsx';
 export { UsersPanel } from './UsersView.jsx';

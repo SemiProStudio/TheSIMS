@@ -14,7 +14,6 @@ export { Button, IconButton } from './Button.jsx';
 export { Card, CardHeader, CardBody, CardFooter, StatsCard, EmptyStateCard, CardGrid } from './Card.jsx';
 export { Badge } from './Badge.jsx';
 export { Input } from './Input.jsx';
-export { Select } from './Select.jsx';
 export { Modal, ModalHeader, ModalBody, ModalFooter, ConfirmDialog, ModalAlert } from './Modal.jsx';
 export { SearchInput } from './SearchInput.jsx';
 export { StatCard } from './StatCard.jsx';
