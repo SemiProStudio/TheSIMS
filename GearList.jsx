@@ -827,6 +827,7 @@ function GearList({
             style={{
               ...styles.btnSec,
               border: 'none',
+              padding: '12px 14px',
               background: isGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
               color: isGridView ? colors.primary : colors.textSecondary,
             }}
@@ -838,6 +839,7 @@ function GearList({
             style={{
               ...styles.btnSec,
               border: 'none',
+              padding: '12px 14px',
               background: !isGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
               color: !isGridView ? colors.primary : colors.textSecondary,
             }}
