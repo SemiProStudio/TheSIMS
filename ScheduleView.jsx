@@ -60,22 +60,19 @@ function ScheduleView({
         return d;
       });
     }
-    // Month - pad to complete weeks
+    // Month - always show 6 complete weeks (42 days) for consistent height
     const firstOfMonth = new Date(base.getFullYear(), base.getMonth(), 1);
-    const lastOfMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0);
     
     // Start from the Sunday of the week containing the 1st
     const start = new Date(firstOfMonth);
     start.setDate(start.getDate() - start.getDay());
     
-    // End on the Saturday of the week containing the last day
-    const end = new Date(lastOfMonth);
-    const daysUntilSaturday = 6 - end.getDay();
-    end.setDate(end.getDate() + daysUntilSaturday);
-    
+    // Always generate exactly 42 days (6 weeks)
     const days = [];
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      days.push(new Date(d));
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      days.push(d);
     }
     return days;
   }, [scheduleDate, scheduleView]);
