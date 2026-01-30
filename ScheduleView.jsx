@@ -94,11 +94,24 @@ function ScheduleView({
   const isMonth = scheduleView === SCHEDULE_PERIODS.MONTH;
   const isDay = scheduleView === SCHEDULE_PERIODS.DAY;
 
+  // Go back to month view for the current date
+  const goToMonthView = useCallback(() => {
+    setScheduleView(SCHEDULE_PERIODS.MONTH);
+  }, [setScheduleView]);
+
   return (
     <>
       {/* Header */}
       <div className="page-header" style={{ marginBottom: spacing[4], flexWrap: 'wrap', gap: spacing[3] }}>
-        <h2 className="page-title">Schedule</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
+          {/* Back to Month button - show when in Day view with Calendar mode */}
+          {isDay && scheduleMode === SCHEDULE_MODES.CALENDAR && (
+            <Button variant="secondary" onClick={goToMonthView} icon={ArrowLeft} size="sm">
+              Month
+            </Button>
+          )}
+          <h2 className="page-title">Schedule</h2>
+        </div>
 
         <div style={{ display: 'flex', gap: spacing[4], alignItems: 'center', flexWrap: 'wrap' }}>
           {/* New Reservation Button */}
@@ -245,25 +258,41 @@ function ScheduleView({
             // Use grouped reservations for consistency with list view
             const events = groupedReservations.filter(r => r.start <= ds && r.end >= ds);
 
+            // Click handler to navigate to day view
+            const handleDateClick = () => {
+              if (isMonth) {
+                setScheduleDate(ds);
+                setScheduleView(SCHEDULE_PERIODS.DAY);
+              }
+            };
+
             return (
               <Card key={idx} padding={false} style={{ 
                 minHeight: isMonth ? 80 : isDay ? 300 : 'auto', 
                 borderColor: isToday ? colors.primary : undefined,
                 overflow: 'hidden',
               }}>
-                <div style={{ 
-                  padding: isMonth ? `${spacing[1]}px ${spacing[2]}px` : `${spacing[2]}px ${spacing[3]}px`, 
-                  borderBottom: `1px solid ${colors.borderLight}`, 
-                  display: 'flex', 
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  background: isToday ? `${withOpacity(colors.primary, 15)}` : undefined 
-                }}>
+                <div 
+                  onClick={handleDateClick}
+                  style={{ 
+                    padding: isMonth ? `${spacing[1]}px ${spacing[2]}px` : `${spacing[2]}px ${spacing[3]}px`, 
+                    borderBottom: `1px solid ${colors.borderLight}`, 
+                    display: 'flex', 
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    background: isToday ? `${withOpacity(colors.primary, 15)}` : undefined,
+                    cursor: isMonth ? 'pointer' : 'default',
+                    transition: 'background 150ms ease',
+                  }}
+                  onMouseEnter={isMonth ? (e) => { if (!isToday) e.currentTarget.style.background = `${withOpacity(colors.primary, 10)}`; } : undefined}
+                  onMouseLeave={isMonth ? (e) => { if (!isToday) e.currentTarget.style.background = 'transparent'; } : undefined}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
                     <span style={{ fontSize: isMonth ? typography.fontSize.xs : typography.fontSize.base, fontWeight: typography.fontWeight.semibold, color: isToday ? colors.primary : colors.textPrimary }}>{dt.toLocaleDateString('en-US', { weekday: isMonth ? 'short' : 'long' })}</span>
-                    <span style={{ fontSize: isMonth ? typography.fontSize.sm : typography.fontSize.base, color: colors.textMuted }}>{dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                    <span style={{ fontSize: isMonth ? typography.fontSize.sm : typography.fontSize.base, color: isToday ? colors.primary : colors.textMuted }}>{dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                   </div>
-                  {events.length > 0 && (
+                  {/* Only show badge in non-month views */}
+                  {!isMonth && events.length > 0 && (
                     <Badge text={`${events.length} reservation${events.length > 1 ? 's' : ''}`} color={colors.primary} size="sm" />
                   )}
                 </div>
