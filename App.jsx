@@ -398,8 +398,14 @@ export default function App() {
     if (viewId === VIEWS.PACK_LISTS) {
       setSelectedPackList(null);
     }
+    // Reset schedule date to today when navigating to Schedule view
+    if (viewId === VIEWS.SCHEDULE) {
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      setScheduleDate(todayStr);
+    }
     setCurrentView(viewId);
-  }, []);
+  }, [setScheduleDate]);
 
   // ============================================================================
   // Form Handlers
