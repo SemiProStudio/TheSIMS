@@ -92,15 +92,8 @@ function ScheduleView({
   return (
     <>
       {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: spacing[4], 
-        flexWrap: 'wrap', 
-        gap: spacing[3] 
-      }}>
-        <h2 style={{ margin: 0, color: colors.textPrimary }}>Schedule</h2>
+      <div className="page-header" style={{ marginBottom: spacing[4], flexWrap: 'wrap', gap: spacing[3] }}>
+        <h2 className="page-title">Schedule</h2>
 
         <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center', flexWrap: 'wrap' }}>
           {/* New Reservation Button */}
@@ -238,7 +231,7 @@ function ScheduleView({
       {scheduleMode === SCHEDULE_MODES.CALENDAR && (
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: isMonth ? 'repeat(7, minmax(0, 1fr))' : isDay ? '1fr' : 'repeat(7, minmax(0, 1fr))', 
+          gridTemplateColumns: isMonth ? 'repeat(7, minmax(0, 1fr))' : '1fr', 
           gap: isMonth ? spacing[1] : spacing[3],
         }}>
           {scheduleDates.map((dt, idx) => {
@@ -249,7 +242,7 @@ function ScheduleView({
 
             return (
               <Card key={idx} padding={false} style={{ 
-                minHeight: isMonth ? 80 : isDay ? 300 : 160, 
+                minHeight: isMonth ? 80 : isDay ? 300 : 'auto', 
                 borderColor: isToday ? colors.primary : undefined,
                 overflow: 'hidden',
               }}>
@@ -257,17 +250,26 @@ function ScheduleView({
                   padding: isMonth ? `${spacing[1]}px ${spacing[2]}px` : `${spacing[2]}px ${spacing[3]}px`, 
                   borderBottom: `1px solid ${colors.borderLight}`, 
                   display: 'flex', 
-                  justifyContent: 'space-between', 
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                   background: isToday ? `${withOpacity(colors.primary, 15)}` : undefined 
                 }}>
-                  <span style={{ fontSize: isMonth ? typography.fontSize.xs : typography.fontSize.sm, color: colors.textMuted, textTransform: 'uppercase' }}>{dt.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                  <span style={{ fontSize: isMonth ? typography.fontSize.sm : typography.fontSize.md, fontWeight: typography.fontWeight.semibold, color: isToday ? colors.primary : colors.textPrimary }}>{dt.getDate()}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                    <span style={{ fontSize: isMonth ? typography.fontSize.xs : typography.fontSize.base, fontWeight: typography.fontWeight.semibold, color: isToday ? colors.primary : colors.textPrimary }}>{dt.toLocaleDateString('en-US', { weekday: isMonth ? 'short' : 'long' })}</span>
+                    <span style={{ fontSize: isMonth ? typography.fontSize.sm : typography.fontSize.base, color: colors.textMuted }}>{dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                  {events.length > 0 && (
+                    <Badge text={`${events.length} reservation${events.length > 1 ? 's' : ''}`} color={colors.primary} size="sm" />
+                  )}
                 </div>
                 <div style={{ 
                   padding: isMonth ? spacing[1] : spacing[2], 
                   overflowY: 'auto', 
                   overflowX: 'hidden',
-                  maxHeight: isDay ? 260 : isMonth ? 50 : 110 
+                  maxHeight: isDay ? 260 : isMonth ? 50 : 'none',
+                  display: isMonth ? 'block' : 'flex',
+                  flexWrap: 'wrap',
+                  gap: isMonth ? 0 : spacing[2],
                 }}>
                   {events.map((e, i) => (
                     <div 

@@ -47,6 +47,9 @@ function PackListsView({
   // Alias for internal use
   const selectedList = selectedListInternal;
   
+  // List search state
+  const [packListSearch, setPackListSearch] = useState('');
+  
   // Create form state
   const [listName, setListName] = useState('');
   const [nameError, setNameError] = useState('');
@@ -885,22 +888,38 @@ function PackListsView({
   // ============================================================================
   // Pack Lists List View
   // ============================================================================
+  
+  // Filter pack lists by search
+  const filteredPackLists = useMemo(() => {
+    if (!packListSearch.trim()) return packLists;
+    const q = packListSearch.toLowerCase();
+    return packLists.filter(list => 
+      list.name.toLowerCase().includes(q)
+    );
+  }, [packLists, packListSearch]);
+  
   return (
     <>
       <div className="page-header">
         <h2 className="page-title">Pack Lists</h2>
         <Button onClick={handleStartCreate} icon={Plus}>Create Pack List</Button>
       </div>
+
+      <div style={{ marginBottom: spacing[4], maxWidth: 300 }}>
+        <SearchInput value={packListSearch} onChange={setPackListSearch} onClear={() => setPackListSearch('')} placeholder="Search pack lists..." />
+      </div>
+
+      <div style={{ borderBottom: `1px solid ${colors.border}`, marginBottom: spacing[4] }} />
       
-      {packLists.length === 0 ? (
+      {filteredPackLists.length === 0 ? (
         <EmptyState 
           icon={Box} 
-          title="No Pack Lists Yet" 
-          description="Create a pack list to build a checklist of packages and items for a specific job or project." 
+          title={packLists.length === 0 ? "No Pack Lists Yet" : "No Pack Lists Found"}
+          description={packLists.length === 0 ? "Create a pack list to build a checklist of packages and items for a specific job or project." : "No pack lists match your search."} 
         />
       ) : (
         <div className="card-grid">
-          {packLists.map(list => {
+          {filteredPackLists.map(list => {
             const listItems = getListItems(list);
             const listPackages = (list.packages || []).map(id => packages.find(p => p.id === id)).filter(Boolean);
             

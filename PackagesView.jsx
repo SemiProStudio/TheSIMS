@@ -614,6 +614,8 @@ function PackagesView({
       <div style={{ marginBottom: spacing[4], maxWidth: 300 }}>
         <SearchInput value={packageSearch} onChange={setPackageSearch} onClear={() => setPackageSearch('')} placeholder="Search packages..." />
       </div>
+
+      <div style={{ borderBottom: `1px solid ${colors.border}`, marginBottom: spacing[4] }} />
       
       {filteredPackages.length === 0 ? (
         <EmptyState 

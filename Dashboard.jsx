@@ -594,13 +594,8 @@ function Dashboard({
   return (
     <>
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: spacing[6]
-      }}>
-        <h2 style={{ margin: 0, color: colors.textPrimary }}>Dashboard</h2>
+      <div className="page-header" style={{ marginBottom: spacing[6] }}>
+        <h2 className="page-title">Dashboard</h2>
         {onCustomizeLayout && (
           <Button variant="secondary" size="sm" onClick={onCustomizeLayout} icon={Layout}>
             Customize

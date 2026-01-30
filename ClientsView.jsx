@@ -716,14 +716,9 @@ function ClientsView({
   return (
     <div>
       {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: spacing[4],
-      }}>
+      <div className="page-header" style={{ marginBottom: spacing[4] }}>
         <div>
-          <h2 style={{ margin: 0, color: colors.textPrimary, display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+          <h2 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
             <Users size={24} /> Clients
           </h2>
           <p style={{ margin: `${spacing[1]}px 0 0`, color: colors.textMuted, fontSize: typography.fontSize.sm }}>

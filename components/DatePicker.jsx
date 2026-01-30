@@ -343,7 +343,7 @@ const DatePicker = memo(function DatePicker({
 
   const handleInputClick = useCallback(() => {
     if (!disabled) {
-      setIsOpen(true);
+      setIsOpen(prev => !prev);
     }
   }, [disabled]);
 
