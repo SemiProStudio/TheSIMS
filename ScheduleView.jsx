@@ -127,7 +127,8 @@ function ScheduleView({
           )}
 
           {/* List/Calendar Toggle */}
-          <div style={{ display: 'flex', background: `${withOpacity(colors.primary, 15)}`, borderRadius: borderRadius.lg }}>\n            <button 
+          <div style={{ display: 'flex', background: `${withOpacity(colors.primary, 15)}`, borderRadius: borderRadius.lg }}>
+            <button 
               onClick={() => setScheduleMode(SCHEDULE_MODES.LIST)} 
               title="List View" 
               style={{ 
