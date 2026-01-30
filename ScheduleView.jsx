@@ -127,8 +127,7 @@ function ScheduleView({
           )}
 
           {/* List/Calendar Toggle */}
-          <div style={{ display: 'flex', background: `${withOpacity(colors.primary, 15)}`, borderRadius: borderRadius.lg }}>
-            <button 
+          <div style={{ display: 'flex', background: `${withOpacity(colors.primary, 15)}`, borderRadius: borderRadius.lg }}>\n            <button 
               onClick={() => setScheduleMode(SCHEDULE_MODES.LIST)} 
               title="List View" 
               style={{ 
@@ -136,7 +135,7 @@ function ScheduleView({
                 border: 'none', 
                 background: scheduleMode === SCHEDULE_MODES.LIST ? `${withOpacity(colors.primary, 30)}` : 'transparent', 
                 color: scheduleMode === SCHEDULE_MODES.LIST ? colors.primary : colors.textSecondary,
-                padding: `${spacing[2]}px ${spacing[3]}px` 
+                padding: '12px 14px'
               }}
             >
               <List size={16} />
@@ -149,7 +148,7 @@ function ScheduleView({
                 border: 'none', 
                 background: scheduleMode === SCHEDULE_MODES.CALENDAR ? `${withOpacity(colors.primary, 30)}` : 'transparent', 
                 color: scheduleMode === SCHEDULE_MODES.CALENDAR ? colors.primary : colors.textSecondary,
-                padding: `${spacing[2]}px ${spacing[3]}px` 
+                padding: '12px 14px'
               }}
             >
               <Calendar size={16} />
@@ -170,7 +169,7 @@ function ScheduleView({
                   fontWeight: scheduleView === v ? typography.fontWeight.medium : typography.fontWeight.normal,
                   textTransform: 'capitalize', 
                   fontSize: typography.fontSize.sm, 
-                  padding: `${spacing[2]}px ${spacing[3]}px` 
+                  padding: '12px 14px'
                 }}
               >
                 {v}
@@ -180,7 +179,7 @@ function ScheduleView({
 
           {/* Navigation */}
           <div style={{ display: 'flex', gap: spacing[1], alignItems: 'center' }}>
-            <Button variant="secondary" onClick={() => navigate(-1)} icon={ArrowLeft} size="sm" />
+            <Button variant="secondary" onClick={() => navigate(-1)} icon={ArrowLeft} style={{ padding: '12px 14px' }} />
             <DatePicker 
               value={scheduleDate} 
               onChange={e => setScheduleDate(e.target.value)} 
@@ -189,7 +188,7 @@ function ScheduleView({
               clearable={false}
               aria-label="Schedule date"
             />
-            <Button variant="secondary" onClick={() => navigate(1)} icon={ArrowRight} size="sm" />
+            <Button variant="secondary" onClick={() => navigate(1)} icon={ArrowRight} style={{ padding: '12px 14px' }} />
           </div>
         </div>
       </div>
