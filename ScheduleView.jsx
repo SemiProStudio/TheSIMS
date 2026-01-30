@@ -52,7 +52,7 @@ function ScheduleView({
   // Get dates for current view
   const scheduleDates = useMemo(() => {
     const base = new Date(scheduleDate);
-    if (scheduleView === SCHEDULE_PERIODS.DAY) return [base];\
+    if (scheduleView === SCHEDULE_PERIODS.DAY) return [base];
     if (scheduleView === SCHEDULE_PERIODS.WEEK) {
       return [...Array(7)].map((_, i) => {
         const d = new Date(base);
