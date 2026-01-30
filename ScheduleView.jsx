@@ -52,7 +52,7 @@ function ScheduleView({
   // Get dates for current view
   const scheduleDates = useMemo(() => {
     const base = new Date(scheduleDate);
-    if (scheduleView === SCHEDULE_PERIODS.DAY) return [base];
+    if (scheduleView === SCHEDULE_PERIODS.DAY) return [base];\
     if (scheduleView === SCHEDULE_PERIODS.WEEK) {
       return [...Array(7)].map((_, i) => {
         const d = new Date(base);
@@ -60,9 +60,19 @@ function ScheduleView({
         return d;
       });
     }
-    // Month
-    const start = new Date(base.getFullYear(), base.getMonth(), 1);
-    const end = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+    // Month - pad to complete weeks
+    const firstOfMonth = new Date(base.getFullYear(), base.getMonth(), 1);
+    const lastOfMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+    
+    // Start from the Sunday of the week containing the 1st
+    const start = new Date(firstOfMonth);
+    start.setDate(start.getDate() - start.getDay());
+    
+    // End on the Saturday of the week containing the last day
+    const end = new Date(lastOfMonth);
+    const daysUntilSaturday = 6 - end.getDay();
+    end.setDate(end.getDate() + daysUntilSaturday);
+    
     const days = [];
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       days.push(new Date(d));
@@ -246,7 +256,11 @@ function ScheduleView({
       )}
 
       {/* Calendar View */}
-      {scheduleMode === SCHEDULE_MODES.CALENDAR && (
+      {scheduleMode === SCHEDULE_MODES.CALENDAR && (() => {
+        // Get current month for comparison (to dim days outside current month)
+        const currentMonth = new Date(scheduleDate).getMonth();
+        
+        return (
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: isMonth ? 'repeat(7, minmax(0, 1fr))' : '1fr', 
@@ -256,6 +270,7 @@ function ScheduleView({
           {scheduleDates.map((dt, idx) => {
             const ds = formatDateStr(dt);
             const isToday = ds === todayStr;
+            const isOutsideMonth = isMonth && dt.getMonth() !== currentMonth;
             // Use grouped reservations for consistency with list view
             const events = groupedReservations.filter(r => r.start <= ds && r.end >= ds);
 
@@ -273,6 +288,7 @@ function ScheduleView({
                 borderColor: isToday ? colors.primary : undefined,
                 overflow: 'hidden',
                 display: 'flex',
+                opacity: isOutsideMonth ? 0.4 : 1,
                 flexDirection: 'column',
               }}>
                 <div 
@@ -352,7 +368,8 @@ function ScheduleView({
             );
           })}
         </div>
-      )}
+        );
+      })()}
     </>
   );
 }
