@@ -139,6 +139,10 @@ const styles = {
     top: 'auto',
     bottom: 'calc(100% + 4px)',
   },
+  popupLeft: {
+    left: 'auto',
+    right: 0,
+  },
   header: {
     display: 'flex',
     alignItems: 'center',
@@ -280,6 +284,7 @@ const DatePicker = memo(function DatePicker({
   const [hoveredNav, setHoveredNav] = useState(null);
   const [isFocused, setIsFocused] = useState(false);
   const [openAbove, setOpenAbove] = useState(false);
+  const [openLeft, setOpenLeft] = useState(false);
   
   const containerRef = useRef(null);
   const inputRef = useRef(null);
@@ -287,13 +292,17 @@ const DatePicker = memo(function DatePicker({
 
   const selectedDate = value ? parseDate(value) : null;
 
-  // Check if popup should open above
+  // Check if popup should open above or to the left
   useEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
+      const spaceRight = window.innerWidth - rect.left;
+      
       setOpenAbove(spaceBelow < 350 && spaceAbove > spaceBelow);
+      // Popup is ~300px wide, check if it would overflow
+      setOpenLeft(spaceRight < 320);
     }
   }, [isOpen]);
 
@@ -523,7 +532,7 @@ const DatePicker = memo(function DatePicker({
       {isOpen && (
         <div 
           ref={popupRef}
-          style={{ ...styles.popup, ...(openAbove ? styles.popupAbove : {}) }}
+          style={{ ...styles.popup, ...(openAbove ? styles.popupAbove : {}), ...(openLeft ? styles.popupLeft : {}) }}
           role="dialog"
           aria-label="Choose date"
         >
