@@ -703,12 +703,12 @@ function GearList({
             </p>
           </div>
           {canEditGearList && (
-            <Button onClick={onAddItem} icon={Plus} style={{ marginLeft: spacing[4] }}>
+            <Button onClick={onAddItem} icon={Plus} style={{ marginLeft: spacing[4], alignSelf: 'flex-start' }}>
               Add Item
             </Button>
           )}
         </div>
-        <div style={{ display: 'flex', gap: spacing[2] }}>
+        <div style={{ display: 'flex', gap: spacing[2], alignItems: 'flex-start' }}>
           {/* Saved Views Dropdown */}
           <SavedViewsDropdown
             savedViews={savedViews}
