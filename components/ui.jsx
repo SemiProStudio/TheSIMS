@@ -904,6 +904,7 @@ export const SearchInput = memo(function SearchInput({
   ...props 
 }) {
   const inputId = id || `search-input-${Math.random().toString(36).substr(2, 9)}`;
+  const [isFocused, setIsFocused] = useState(false);
   
   return (
     <div
@@ -913,7 +914,11 @@ export const SearchInput = memo(function SearchInput({
         alignItems: 'center',
         gap: spacing[2],
         ...styles.input,
-        padding: `${spacing[3]}px ${spacing[4]}px`,
+        padding: '12px 16px',
+        ...(isFocused && {
+          borderColor: colors.primary,
+          boxShadow: `0 0 0 2px color-mix(in srgb, ${colors.primary} 20%, transparent)`,
+        }),
         ...customStyle,
       }}
     >
@@ -936,6 +941,8 @@ export const SearchInput = memo(function SearchInput({
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         aria-label={ariaLabel}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         style={{
           background: 'none',
           border: 'none',
@@ -943,10 +950,13 @@ export const SearchInput = memo(function SearchInput({
           flex: 1,
           outline: 'none',
           fontSize: typography.fontSize.base,
+          padding: 0,
+          margin: 0,
           // Hide any native styling
           WebkitAppearance: 'none',
           MozAppearance: 'none',
           appearance: 'none',
+          boxShadow: 'none',
         }}
         {...props}
       />
