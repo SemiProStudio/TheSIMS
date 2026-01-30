@@ -1029,6 +1029,132 @@ select option:hover {
   background-color: var(--bg-light);
 }
 
+/* ============================================================================
+   Date Input Styling
+   ============================================================================ */
+
+/* Base date input styles */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+  width: 100%;
+  padding: 12px 16px;
+  padding-right: 44px; /* Space for calendar icon */
+  background: var(--input-bg, color-mix(in srgb, var(--primary) 10%, transparent));
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 15px; /* Slightly larger for readability */
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  color-scheme: dark;
+  min-height: 46px;
+  cursor: pointer;
+}
+
+input[type="date"]:focus,
+input[type="datetime-local"]:focus,
+input[type="time"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+input[type="date"]:disabled,
+input[type="datetime-local"]:disabled,
+input[type="time"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* WebKit (Chrome, Safari, Edge) date picker button - LARGER touch target */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 8px;
+  margin-right: -8px;
+  width: 24px;
+  height: 24px;
+  /* Tint the icon to match primary color */
+  filter: invert(0.6) sepia(1) saturate(3) hue-rotate(175deg) brightness(1.2);
+  opacity: 0.9;
+  transition: opacity 150ms ease, transform 150ms ease;
+  background-color: transparent;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+/* Date input clear button */
+input[type="date"]::-webkit-clear-button,
+input[type="datetime-local"]::-webkit-clear-button {
+  filter: invert(0.7);
+  margin-right: 4px;
+}
+
+/* Inner spin button (time inputs) */
+input[type="date"]::-webkit-inner-spin-button,
+input[type="datetime-local"]::-webkit-inner-spin-button,
+input[type="time"]::-webkit-inner-spin-button {
+  display: none;
+}
+
+/* WebKit date/time text styling */
+input[type="date"]::-webkit-datetime-edit,
+input[type="datetime-local"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit {
+  padding: 0;
+}
+
+input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper,
+input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="datetime-local"]::-webkit-datetime-edit-text {
+  color: var(--text-muted);
+  padding: 0 4px;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field,
+input[type="datetime-local"]::-webkit-datetime-edit-month-field,
+input[type="datetime-local"]::-webkit-datetime-edit-day-field,
+input[type="datetime-local"]::-webkit-datetime-edit-year-field,
+input[type="time"]::-webkit-datetime-edit-hour-field,
+input[type="time"]::-webkit-datetime-edit-minute-field {
+  color: var(--text-primary);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field:focus,
+input[type="date"]::-webkit-datetime-edit-day-field:focus,
+input[type="date"]::-webkit-datetime-edit-year-field:focus,
+input[type="datetime-local"]::-webkit-datetime-edit-month-field:focus,
+input[type="datetime-local"]::-webkit-datetime-edit-day-field:focus,
+input[type="datetime-local"]::-webkit-datetime-edit-year-field:focus,
+input[type="time"]::-webkit-datetime-edit-hour-field:focus,
+input[type="time"]::-webkit-datetime-edit-minute-field:focus {
+  background: color-mix(in srgb, var(--primary) 30%, transparent);
+  outline: none;
+}
+
+/* Firefox date picker */
+input[type="date"]::-moz-calendar-picker-indicator {
+  filter: invert(0.7);
+}
+
 /* Textarea */
 .textarea {
   width: 100%;
