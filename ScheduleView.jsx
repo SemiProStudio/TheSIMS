@@ -70,22 +70,27 @@ function ScheduleView({
     return days;
   }, [scheduleDate, scheduleView]);
 
+  // Helper to format date consistently (avoiding timezone issues)
+  const formatDateStr = useCallback((date) => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }, []);
+
   // Filter grouped reservations for current date range
   const filteredReservations = useMemo(() => {
-    const startRange = scheduleDates[0].toISOString().split('T')[0];
-    const endRange = scheduleDates[scheduleDates.length - 1].toISOString().split('T')[0];
+    const startRange = formatDateStr(scheduleDates[0]);
+    const endRange = formatDateStr(scheduleDates[scheduleDates.length - 1]);
     return groupedReservations.filter(r => r.start <= endRange && r.end >= startRange);
-  }, [groupedReservations, scheduleDates]);
+  }, [groupedReservations, scheduleDates, formatDateStr]);
 
   const navigate = useCallback((dir) => {
     const d = new Date(scheduleDate);
     if (scheduleView === SCHEDULE_PERIODS.DAY) d.setDate(d.getDate() + dir);
     else if (scheduleView === SCHEDULE_PERIODS.WEEK) d.setDate(d.getDate() + dir * 7);
     else d.setMonth(d.getMonth() + dir);
-    setScheduleDate(d.toISOString().split('T')[0]);
-  }, [scheduleDate, scheduleView, setScheduleDate]);
+    setScheduleDate(formatDateStr(d));
+  }, [scheduleDate, scheduleView, setScheduleDate, formatDateStr]);
 
-  const today = new Date().toISOString().split('T')[0];
+  const todayStr = formatDateStr(new Date());
   const isMonth = scheduleView === SCHEDULE_PERIODS.MONTH;
   const isDay = scheduleView === SCHEDULE_PERIODS.DAY;
 
@@ -95,10 +100,10 @@ function ScheduleView({
       <div className="page-header" style={{ marginBottom: spacing[4], flexWrap: 'wrap', gap: spacing[3] }}>
         <h2 className="page-title">Schedule</h2>
 
-        <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: spacing[4], alignItems: 'center', flexWrap: 'wrap' }}>
           {/* New Reservation Button */}
           {onAddReservation && (
-            <Button onClick={onAddReservation} icon={Plus}>New</Button>
+            <Button onClick={onAddReservation} icon={Plus} style={{ marginRight: spacing[2] }}>New</Button>
           )}
 
           {/* List/Calendar Toggle */}
@@ -235,8 +240,8 @@ function ScheduleView({
           gap: isMonth ? spacing[1] : spacing[3],
         }}>
           {scheduleDates.map((dt, idx) => {
-            const ds = dt.toISOString().split('T')[0];
-            const isToday = ds === today;
+            const ds = formatDateStr(dt);
+            const isToday = ds === todayStr;
             // Use grouped reservations for consistency with list view
             const events = groupedReservations.filter(r => r.start <= ds && r.end >= ds);
 
