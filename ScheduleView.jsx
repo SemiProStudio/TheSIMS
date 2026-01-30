@@ -250,7 +250,7 @@ function ScheduleView({
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: isMonth ? 'repeat(7, minmax(0, 1fr))' : '1fr', 
-          gridAutoRows: isMonth ? 'minmax(100px, 1fr)' : 'auto',
+          gridAutoRows: isMonth ? '110px' : 'auto',
           gap: isMonth ? spacing[1] : spacing[3],
         }}>
           {scheduleDates.map((dt, idx) => {
@@ -269,8 +269,7 @@ function ScheduleView({
 
             return (
               <Card key={idx} padding={false} style={{ 
-                minHeight: isMonth ? 'auto' : isDay ? 300 : 'auto',
-                height: isMonth ? '100%' : 'auto',
+                height: isMonth ? '100%' : isDay ? 300 : 'auto',
                 borderColor: isToday ? colors.primary : undefined,
                 overflow: 'hidden',
                 display: 'flex',
