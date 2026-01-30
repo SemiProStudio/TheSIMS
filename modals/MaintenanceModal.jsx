@@ -10,6 +10,7 @@ import { MAINTENANCE_TYPES } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
+import { DatePicker } from '../components/DatePicker.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
 export const MaintenanceModal = memo(function MaintenanceModal({
@@ -276,22 +277,22 @@ export const MaintenanceModal = memo(function MaintenanceModal({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[4] }}>
           <div>
             <label style={styles.label}>Scheduled Date</label>
-            <input
-              type="date"
+            <DatePicker
               value={formData.scheduledDate}
               onChange={e => handleChange('scheduledDate', e.target.value)}
-              style={styles.input}
+              placeholder="Select scheduled date"
+              aria-label="Scheduled date"
             />
           </div>
           
           <div>
             <label style={styles.label}>Completed Date</label>
-            <input
-              type="date"
+            <DatePicker
               value={formData.completedDate}
               onChange={e => handleChange('completedDate', e.target.value)}
-              style={styles.input}
               disabled={formData.status === 'scheduled'}
+              placeholder="Select completed date"
+              aria-label="Completed date"
             />
           </div>
         </div>

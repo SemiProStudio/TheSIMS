@@ -8,6 +8,7 @@ import { CONDITION, DEFAULT_NEW_CATEGORY_SETTINGS } from './constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { Card, Badge, Button, PageHeader } from './components/ui.jsx';
 import { Select } from './components/Select.jsx';
+import { DatePicker } from './components/DatePicker.jsx';
 import { useItemForm } from './ItemForm.jsx';
 
 // ============================================================================
@@ -241,7 +242,12 @@ export const ItemFormPage = memo(function ItemFormPage({
             {/* Purchase Date */}
             <div style={{ marginBottom: spacing[4] }}>
               <label style={styles.label}>Purchase Date</label>
-              <input type="date" value={itemForm.purchaseDate} onChange={e => handleChange('purchaseDate', e.target.value)} style={styles.input} />
+              <DatePicker 
+                value={itemForm.purchaseDate} 
+                onChange={e => handleChange('purchaseDate', e.target.value)} 
+                placeholder="Select purchase date"
+                aria-label="Purchase date"
+              />
             </div>
 
             {/* Action Buttons */}

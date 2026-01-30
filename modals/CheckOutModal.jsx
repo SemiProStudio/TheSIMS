@@ -8,6 +8,7 @@ import PropTypes from 'prop-types';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Badge, Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
+import { DatePicker } from '../components/DatePicker.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
 export const CheckOutModal = memo(function CheckOutModal({ 
@@ -219,12 +220,13 @@ export const CheckOutModal = memo(function CheckOutModal({
             <label style={{ ...styles.label, color: !formData.dueDate || errors.dueDate ? colors.danger : undefined }}>
               Due Date <span style={{ color: colors.danger }}>*</span>
             </label>
-            <input
-              type="date"
+            <DatePicker
               value={formData.dueDate}
               onChange={e => handleChange('dueDate', e.target.value)}
               min={new Date().toISOString().split('T')[0]}
-              style={{ ...styles.input, borderColor: !formData.dueDate || errors.dueDate ? colors.danger : colors.border }}
+              error={!formData.dueDate || errors.dueDate}
+              placeholder="Select due date"
+              aria-label="Due date"
             />
             {errors.dueDate && <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>{errors.dueDate}</span>}
           </div>

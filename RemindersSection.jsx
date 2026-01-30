@@ -9,6 +9,7 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity} from '.
 import { formatDate, generateId, getTodayISO, getNextDueDate, isReminderDue } from './utils.js';
 import { Button } from './components/ui.jsx';
 import { Select } from './components/Select.jsx';
+import { DatePicker } from './components/DatePicker.jsx';
 
 // Recurrence options
 const RECURRENCE_OPTIONS = [
@@ -264,16 +265,13 @@ const AddReminderForm = memo(function AddReminderForm({ onAdd, onCancel }) {
           <label style={{ ...styles.label, color: showDateError ? colors.danger : undefined }}>
             Due Date *
           </label>
-          <input
-            type="date"
+          <DatePicker
             value={form.dueDate}
             onChange={e => handleChange('dueDate', e.target.value)}
-            onBlur={() => setTouched(prev => ({ ...prev, dueDate: true }))}
             min={getTodayISO()}
-            style={{
-              ...styles.input,
-              borderColor: showDateError ? colors.danger : undefined
-            }}
+            error={showDateError}
+            placeholder="Select due date"
+            aria-label="Due date"
           />
         </div>
         

@@ -10,6 +10,7 @@ import { CONDITION } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Badge, Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
+import { DatePicker } from '../components/DatePicker.jsx';
 import { useItemForm } from '../ItemForm.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
@@ -702,7 +703,12 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
           {/* Purchase Date */}
           <div style={{ marginBottom: spacing[3] }}>
             <label style={styles.label}>Purchase Date</label>
-            <input type="date" value={itemForm.purchaseDate} onChange={e => handleChange('purchaseDate', e.target.value)} style={styles.input} />
+            <DatePicker 
+              value={itemForm.purchaseDate} 
+              onChange={e => handleChange('purchaseDate', e.target.value)} 
+              placeholder="Select purchase date"
+              aria-label="Purchase date"
+            />
           </div>
           
           {/* Specifications */}

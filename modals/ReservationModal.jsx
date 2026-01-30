@@ -11,6 +11,7 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity } from '
 import { getAllReservationConflicts } from '../utils.js';
 import { Button, Badge } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
+import { DatePicker } from '../components/DatePicker.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
 // ============================================================================
@@ -614,12 +615,12 @@ export const ReservationModal = memo(function ReservationModal({
             <label style={{ ...styles.label, color: showStartError ? colors.danger : undefined }}>
               Start Date <span style={{ color: colors.danger }}>*</span>
             </label>
-            <input 
-              type="date" 
+            <DatePicker
               value={reservationForm.start || ''} 
               onChange={e => handleChange('start', e.target.value)} 
-              onBlur={() => handleBlur('start')}
-              style={getInputStyle(showStartError, !reservationForm.start)} 
+              error={showStartError}
+              placeholder="Select start date"
+              aria-label="Start date"
             />
             {showStartError && <p style={{ color: colors.danger, fontSize: typography.fontSize.xs, margin: `${spacing[1]}px 0 0` }}>Required</p>}
           </div>
@@ -627,13 +628,13 @@ export const ReservationModal = memo(function ReservationModal({
             <label style={{ ...styles.label, color: showEndError ? colors.danger : undefined }}>
               End Date / Due Back <span style={{ color: colors.danger }}>*</span>
             </label>
-            <input 
-              type="date" 
+            <DatePicker
               value={reservationForm.end || ''} 
               onChange={e => handleChange('end', e.target.value)} 
-              onBlur={() => handleBlur('end')}
               min={reservationForm.start || undefined}
-              style={getInputStyle(showEndError, !reservationForm.end)} 
+              error={showEndError}
+              placeholder="Select end date"
+              aria-label="End date"
             />
             {dateError && (
               <p style={{ color: colors.danger, fontSize: typography.fontSize.xs, margin: `${spacing[1]}px 0 0` }}>

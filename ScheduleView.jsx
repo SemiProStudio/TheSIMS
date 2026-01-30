@@ -8,6 +8,7 @@ import { SCHEDULE_MODES, SCHEDULE_PERIODS } from './constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { formatDate } from './utils.js';
 import { Badge, Card, Button } from './components/ui.jsx';
+import { DatePicker } from './components/DatePicker.jsx';
 
 function ScheduleView({
   inventory,
@@ -162,7 +163,14 @@ function ScheduleView({
           {/* Navigation */}
           <div style={{ display: 'flex', gap: spacing[1], alignItems: 'center' }}>
             <Button variant="secondary" onClick={() => navigate(-1)} icon={ArrowLeft} size="sm" />
-            <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} style={{ ...styles.input, width: 'auto', padding: `${spacing[2]}px ${spacing[2]}px` }} />
+            <DatePicker 
+              value={scheduleDate} 
+              onChange={e => setScheduleDate(e.target.value)} 
+              style={{ width: '160px' }}
+              showTodayButton={false}
+              clearable={false}
+              aria-label="Schedule date"
+            />
             <Button variant="secondary" onClick={() => navigate(1)} icon={ArrowRight} size="sm" />
           </div>
         </div>
