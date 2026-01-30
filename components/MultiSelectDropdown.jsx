@@ -4,9 +4,10 @@
 // =============================================================================
 
 import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
 import { ChevronDown, Check, X } from 'lucide-react';
-import { colors, spacing, borderRadius, typography, zIndex } from '../theme.js';
+import { colors, spacing, borderRadius, typography } from '../theme.js';
 
 const MultiSelectDropdown = memo(function MultiSelectDropdown({
   label,
@@ -19,7 +20,26 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
   style = {},
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  // Calculate dropdown position
+  const updateDropdownPosition = useCallback(() => {
+    if (!containerRef.current) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const dropdownHeight = Math.min(options.length * 40 + 8, 280);
+    
+    const direction = spaceBelow < dropdownHeight ? 'up' : 'down';
+    
+    setDropdownPosition({
+      top: direction === 'down' ? rect.bottom + 4 : rect.top - dropdownHeight - 4,
+      left: rect.left,
+      width: rect.width,
+    });
+  }, [options.length]);
 
   // Close on outside click
   useEffect(() => {
@@ -27,6 +47,9 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
     
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
+        if (dropdownRef.current && dropdownRef.current.contains(e.target)) {
+          return;
+        }
         setIsOpen(false);
       }
     };
@@ -44,6 +67,22 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
       document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen]);
+
+  // Update position when open
+  useEffect(() => {
+    if (isOpen) {
+      updateDropdownPosition();
+      
+      const handleScrollOrResize = () => updateDropdownPosition();
+      window.addEventListener('scroll', handleScrollOrResize, true);
+      window.addEventListener('resize', handleScrollOrResize);
+      
+      return () => {
+        window.removeEventListener('scroll', handleScrollOrResize, true);
+        window.removeEventListener('resize', handleScrollOrResize);
+      };
+    }
+  }, [isOpen, updateDropdownPosition]);
 
   const toggleOption = useCallback((value) => {
     if (selectedValues.includes(value)) {
@@ -76,11 +115,12 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
       gap: spacing[2],
       width: '100%',
       padding: `${spacing[2]}px ${spacing[3]}px`,
-      background: `color-mix(in srgb, ${colors.primary} 10%, transparent)`,
+      background: colors.bgLight,
       border: `1px solid ${colors.border}`,
       borderRadius: borderRadius.lg,
       color: selectedValues.length > 0 ? colors.textPrimary : colors.textMuted,
       fontSize: typography.fontSize.sm,
+      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       cursor: 'pointer',
       minHeight: '40px',
       transition: 'border-color 150ms ease, box-shadow 150ms ease',
@@ -112,20 +152,22 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
       transition: 'transform 150ms ease',
       transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
       flexShrink: 0,
+      color: colors.textMuted,
     },
     dropdown: {
-      position: 'absolute',
-      top: 'calc(100% + 4px)',
-      left: 0,
-      right: 0,
-      zIndex: zIndex.dropdown,
-      background: colors.bgCard,
+      position: 'fixed',
+      top: dropdownPosition.top,
+      left: dropdownPosition.left,
+      width: dropdownPosition.width,
+      padding: 4,
+      background: colors.bgMedium,
       border: `1px solid ${colors.border}`,
       borderRadius: borderRadius.lg,
-      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.4)',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
       maxHeight: '280px',
       overflowY: 'auto',
-      padding: spacing[1],
+      zIndex: 99999,
+      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     },
     option: {
       display: 'flex',
@@ -138,9 +180,6 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
       color: colors.textPrimary,
       fontSize: typography.fontSize.sm,
     },
-    optionHover: {
-      background: `color-mix(in srgb, ${colors.primary} 15%, transparent)`,
-    },
     checkbox: {
       width: '18px',
       height: '18px',
@@ -151,6 +190,7 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
       justifyContent: 'center',
       flexShrink: 0,
       transition: 'all 150ms ease',
+      background: 'transparent',
     },
     checkboxChecked: {
       background: colors.primary,
@@ -164,6 +204,32 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
       color: colors.textSecondary,
     },
   };
+
+  // Render dropdown via portal to escape stacking context
+  const dropdown = isOpen && createPortal(
+    <div ref={dropdownRef} style={styles.dropdown}>
+      {options.map((option) => {
+        const isSelected = selectedValues.includes(option.value);
+        return (
+          <div
+            key={option.value}
+            onClick={() => toggleOption(option.value)}
+            style={styles.option}
+            onMouseEnter={(e) => e.currentTarget.style.background = `color-mix(in srgb, ${colors.primary} 15%, transparent)`}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <div style={{ ...styles.checkbox, ...(isSelected ? styles.checkboxChecked : {}) }}>
+              {isSelected && <Check size={12} color="#fff" />}
+            </div>
+            {renderOption ? renderOption(option) : (
+              <span>{option.label}</span>
+            )}
+          </div>
+        );
+      })}
+    </div>,
+    document.body
+  );
 
   return (
     <div ref={containerRef} style={styles.container} className={className}>
@@ -182,8 +248,8 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
             type="button"
             style={styles.clearButton}
             onClick={clearAll}
-            onMouseEnter={(e) => e.target.style.color = colors.danger}
-            onMouseLeave={(e) => e.target.style.color = colors.textMuted}
+            onMouseEnter={(e) => e.currentTarget.style.color = colors.danger}
+            onMouseLeave={(e) => e.currentTarget.style.color = colors.textMuted}
             aria-label="Clear selection"
           >
             <X size={14} />
@@ -192,29 +258,7 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
         <ChevronDown size={16} style={styles.chevron} />
       </button>
 
-      {isOpen && (
-        <div style={styles.dropdown}>
-          {options.map((option) => {
-            const isSelected = selectedValues.includes(option.value);
-            return (
-              <div
-                key={option.value}
-                onClick={() => toggleOption(option.value)}
-                style={styles.option}
-                onMouseEnter={(e) => e.currentTarget.style.background = `color-mix(in srgb, ${colors.primary} 15%, transparent)`}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                <div style={{ ...styles.checkbox, ...(isSelected ? styles.checkboxChecked : {}) }}>
-                  {isSelected && <Check size={12} color="#fff" />}
-                </div>
-                {renderOption ? renderOption(option) : (
-                  <span>{option.label}</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {dropdown}
     </div>
   );
 });

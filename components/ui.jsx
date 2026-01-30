@@ -929,7 +929,7 @@ export const SearchInput = memo(function SearchInput({
       </svg>
       <input
         id={inputId}
-        type="search"
+        type="text"
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
@@ -941,6 +941,10 @@ export const SearchInput = memo(function SearchInput({
           flex: 1,
           outline: 'none',
           fontSize: typography.fontSize.base,
+          // Hide any native styling
+          WebkitAppearance: 'none',
+          MozAppearance: 'none',
+          appearance: 'none',
         }}
         {...props}
       />
