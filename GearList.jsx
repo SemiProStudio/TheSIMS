@@ -91,14 +91,14 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
     <div ref={dropdownRef} style={{ position: 'relative' }}>
       <button
         onClick={() => setIsOpen(!isOpen)}
+        className="btn-secondary"
         style={{
-          ...styles.input,
           display: 'flex',
           alignItems: 'center',
           gap: spacing[2],
           cursor: 'pointer',
-          background: colors.bgLight,
           minWidth: 140,
+          fontWeight: 500,
         }}
       >
         <Bookmark size={16} />
@@ -703,7 +703,7 @@ function GearList({
             </p>
           </div>
           {canEditGearList && (
-            <Button onClick={onAddItem} icon={Plus}>
+            <Button onClick={onAddItem} icon={Plus} style={{ marginLeft: spacing[4] }}>
               Add Item
             </Button>
           )}
