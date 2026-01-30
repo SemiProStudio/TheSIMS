@@ -12,7 +12,7 @@ import { getStatusColor, filterBySearch, filterByCategory, filterByStatus, gener
 import { Badge, Card, Button, SearchInput, Pagination } from './components/ui.jsx';
 import { OptimizedImage } from './components/OptimizedImage.jsx';
 import { Select } from './components/Select.jsx';
-import { useDebounce, usePagination } from './hooks.js';
+import { useDebounce, usePagination } from './hooks/index.js';
 import { usePermissions, ViewOnlyBanner } from './PermissionsContext.jsx';
 
 // Items per page options
