@@ -250,6 +250,7 @@ function ScheduleView({
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: isMonth ? 'repeat(7, minmax(0, 1fr))' : '1fr', 
+          gridAutoRows: isMonth ? 'minmax(100px, 1fr)' : 'auto',
           gap: isMonth ? spacing[1] : spacing[3],
         }}>
           {scheduleDates.map((dt, idx) => {
@@ -268,9 +269,12 @@ function ScheduleView({
 
             return (
               <Card key={idx} padding={false} style={{ 
-                minHeight: isMonth ? 80 : isDay ? 300 : 'auto', 
+                minHeight: isMonth ? 'auto' : isDay ? 300 : 'auto',
+                height: isMonth ? '100%' : 'auto',
                 borderColor: isToday ? colors.primary : undefined,
                 overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
               }}>
                 <div 
                   onClick={handleDateClick}
@@ -300,7 +304,8 @@ function ScheduleView({
                   padding: isMonth ? spacing[1] : spacing[2], 
                   overflowY: 'auto', 
                   overflowX: 'hidden',
-                  maxHeight: isDay ? 260 : isMonth ? 50 : 'none',
+                  maxHeight: isDay ? 260 : isMonth ? 60 : 'none',
+                  flex: isMonth ? 1 : 'none',
                   display: isMonth ? 'block' : 'flex',
                   flexWrap: 'wrap',
                   gap: isMonth ? 0 : spacing[2],
