@@ -103,6 +103,15 @@ function PackListsView({
     );
   }, [packages, packageSearch]);
 
+  // Filter pack lists by search
+  const filteredPackLists = useMemo(() => {
+    if (!packListSearch.trim()) return packLists;
+    const q = packListSearch.toLowerCase();
+    return packLists.filter(list => 
+      list.name.toLowerCase().includes(q)
+    );
+  }, [packLists, packListSearch]);
+
   // Filter items - by category and search
   const filteredItems = useMemo(() => {
     let items = individualItems;
@@ -888,15 +897,6 @@ function PackListsView({
   // ============================================================================
   // Pack Lists List View
   // ============================================================================
-  
-  // Filter pack lists by search
-  const filteredPackLists = useMemo(() => {
-    if (!packListSearch.trim()) return packLists;
-    const q = packListSearch.toLowerCase();
-    return packLists.filter(list => 
-      list.name.toLowerCase().includes(q)
-    );
-  }, [packLists, packListSearch]);
   
   return (
     <>
