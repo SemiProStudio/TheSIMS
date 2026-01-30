@@ -759,6 +759,7 @@ function GearList({
             onChange={setSearchQuery}
             onClear={() => setSearchQuery('')}
             placeholder="Search items..."
+            style={{ height: '100%', minHeight: 46 }}
           />
         </div>
 

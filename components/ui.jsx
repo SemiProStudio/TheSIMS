@@ -900,6 +900,7 @@ export const SearchInput = memo(function SearchInput({
   onClear,
   'aria-label': ariaLabel = 'Search',
   id,
+  style: customStyle = {},
   ...props 
 }) {
   const inputId = id || `search-input-${Math.random().toString(36).substr(2, 9)}`;
@@ -912,7 +913,8 @@ export const SearchInput = memo(function SearchInput({
         alignItems: 'center',
         gap: spacing[2],
         ...styles.input,
-        padding: `${spacing[2]}px ${spacing[4]}px`,
+        padding: `${spacing[3]}px ${spacing[4]}px`,
+        ...customStyle,
       }}
     >
       <svg 

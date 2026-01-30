@@ -114,16 +114,20 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
       justifyContent: 'space-between',
       gap: spacing[2],
       width: '100%',
-      padding: `${spacing[2]}px ${spacing[3]}px`,
-      background: colors.bgLight,
+      padding: '12px 16px',
+      paddingRight: 40,
+      background: 'var(--input-bg, rgba(106, 154, 184, 0.1))',
       border: `1px solid ${colors.border}`,
       borderRadius: borderRadius.lg,
       color: selectedValues.length > 0 ? colors.textPrimary : colors.textMuted,
-      fontSize: typography.fontSize.sm,
+      fontSize: typography.fontSize.base,
       fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       cursor: 'pointer',
-      minHeight: '40px',
+      textAlign: 'left',
+      position: 'relative',
+      boxSizing: 'border-box',
       transition: 'border-color 150ms ease, box-shadow 150ms ease',
+      outline: 'none',
     },
     triggerOpen: {
       borderColor: colors.primary,
@@ -147,11 +151,19 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
       color: colors.textMuted,
       cursor: 'pointer',
       transition: 'color 150ms ease',
+      position: 'absolute',
+      right: 36,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      zIndex: 1,
     },
-    chevron: {
+    chevronWrapper: {
+      position: 'absolute',
+      right: 12,
+      top: '50%',
+      transform: `translateY(-50%) ${isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}`,
       transition: 'transform 150ms ease',
-      transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-      flexShrink: 0,
+      pointerEvents: 'none',
       color: colors.textMuted,
     },
     dropdown: {
@@ -255,7 +267,9 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
             <X size={14} />
           </button>
         )}
-        <ChevronDown size={16} style={styles.chevron} />
+        <span style={styles.chevronWrapper}>
+          <ChevronDown size={16} />
+        </span>
       </button>
 
       {dropdown}
