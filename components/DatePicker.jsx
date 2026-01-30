@@ -500,7 +500,7 @@ const DatePicker = memo(function DatePicker({
   const displayValue = formatDisplayDate(value);
 
   return (
-    <div ref={containerRef} style={styles.container} className={className}>
+    <div ref={containerRef} style={{ ...styles.container, ...style }} className={className}>
       <div style={styles.inputWrapper}>
         <input
           ref={inputRef}
