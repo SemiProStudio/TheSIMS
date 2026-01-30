@@ -109,18 +109,18 @@ function ScheduleView({
   return (
     <>
       {/* Header */}
-      <div className="page-header" style={{ marginBottom: spacing[4], flexWrap: 'wrap', gap: spacing[3] }}>
+      <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
           {/* Back to Month button - show when in Day view with Calendar mode */}
           {isDay && scheduleMode === SCHEDULE_MODES.CALENDAR && (
-            <Button variant="secondary" onClick={goToMonthView} icon={ArrowLeft} size="sm">
+            <Button variant="secondary" onClick={goToMonthView} icon={ArrowLeft}>
               Month
             </Button>
           )}
           <h2 className="page-title">Schedule</h2>
         </div>
 
-        <div style={{ display: 'flex', gap: spacing[4], alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: spacing[3], alignItems: 'center', flexWrap: 'wrap' }}>
           {/* New Reservation Button */}
           {onAddReservation && (
             <Button onClick={onAddReservation} icon={Plus} style={{ marginRight: spacing[2] }}>New</Button>

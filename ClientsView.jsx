@@ -716,7 +716,7 @@ function ClientsView({
   return (
     <div>
       {/* Header */}
-      <div className="page-header" style={{ marginBottom: spacing[4] }}>
+      <div className="page-header">
         <div>
           <h2 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
             <Users size={24} /> Clients

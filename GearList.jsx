@@ -686,29 +686,22 @@ function GearList({
       {!canEditGearList && <ViewOnlyBanner functionId="gear_list" />}
 
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: spacing[6],
-        gap: spacing[3],
-        flexWrap: 'wrap',
-      }}>
+      <div className="page-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
           <div>
-            <h2 style={{ margin: 0, color: colors.textPrimary }}>Gear List</h2>
+            <h2 className="page-title">Gear List</h2>
             <p style={{ margin: `${spacing[1]}px 0 0`, color: colors.textMuted, fontSize: typography.fontSize.sm }}>
               {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'} 
               {hasActiveFilters && ` (filtered)`}
             </p>
           </div>
           {canEditGearList && (
-            <Button onClick={onAddItem} icon={Plus} style={{ marginLeft: spacing[4], alignSelf: 'flex-start' }}>
+            <Button onClick={onAddItem} icon={Plus}>
               Add Item
             </Button>
           )}
         </div>
-        <div style={{ display: 'flex', gap: spacing[2], alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
           {/* Saved Views Dropdown */}
           <SavedViewsDropdown
             savedViews={savedViews}

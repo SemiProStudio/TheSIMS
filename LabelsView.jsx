@@ -767,8 +767,8 @@ function LabelsView({ inventory, packages = [], user }) {
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[6] }}>
-        <h2 style={{ margin: 0, color: colors.textPrimary }}>Labels</h2>
+      <div className="page-header">
+        <h2 className="page-title">Labels</h2>
         <div style={{ display: 'flex', gap: spacing[2] }}>
           <Button variant="secondary" onClick={handlePrint} disabled={selectedItems.length === 0} icon={Printer}>Print ({selectedItems.length})</Button>
           <Button onClick={handleDownload} disabled={selectedItems.length === 0} icon={Download}>Download</Button>

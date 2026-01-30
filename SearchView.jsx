@@ -82,12 +82,12 @@ function SearchView({
 
   return (
     <>
-      <div className="page-header" style={{ marginBottom: spacing[4] }}>
+      <div className="page-header">
         <h2 className="page-title">Search</h2>
         {selectedIds.length > 0 && (
           <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
             <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>{selectedIds.length} selected</span>
-            <Button variant="secondary" onClick={() => setSelectedIds([])} size="sm">Clear</Button>
+            <Button variant="secondary" onClick={() => setSelectedIds([])}>Clear</Button>
           </div>
         )}
       </div>

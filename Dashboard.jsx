@@ -594,10 +594,10 @@ function Dashboard({
   return (
     <>
       {/* Header */}
-      <div className="page-header" style={{ marginBottom: spacing[6] }}>
+      <div className="page-header">
         <h2 className="page-title">Dashboard</h2>
         {onCustomizeLayout && (
-          <Button variant="secondary" size="sm" onClick={onCustomizeLayout} icon={Layout}>
+          <Button variant="secondary" onClick={onCustomizeLayout} icon={Layout}>
             Customize
           </Button>
         )}
