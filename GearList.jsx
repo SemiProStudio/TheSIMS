@@ -746,7 +746,7 @@ function GearList({
         alignItems: 'center',
       }}>
         {/* Search */}
-        <div style={{ flex: 1, minWidth: 200 }}>
+        <div style={{ flex: 1, minWidth: 200, maxWidth: 400 }}>
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}
@@ -798,7 +798,7 @@ function GearList({
               display: 'flex',
               alignItems: 'center',
               gap: spacing[1],
-              padding: `${spacing[2]}px ${spacing[3]}px`,
+              padding: '12px 14px',
               fontSize: typography.fontSize.sm,
               color: colors.textMuted,
             }}
