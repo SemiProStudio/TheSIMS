@@ -5,7 +5,7 @@
 
 import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Upload, FileText, ChevronDown, ChevronUp, AlertCircle, Check, X as XIcon, Edit2, AlertTriangle, Clock, Columns, ArrowRight, Link2, Layers, GitCompare } from 'lucide-react';
+import { Upload, FileText, ChevronDown, ChevronUp, AlertCircle, Check, X as XIcon, Edit2, AlertTriangle, Clock, Columns, ArrowRight, Link2, Layers, RefreshCw } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
@@ -1796,7 +1796,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
               alignItems: 'center',
               gap: spacing[1],
             }}>
-              <GitCompare size={12} />
+              <RefreshCw size={12} />
               Spec Changes ({diffResults.filter(d => d.status !== 'unchanged').length} differences)
             </div>
             {diffResults.map(({ specName, status, oldValue, newValue }) => {
@@ -1866,7 +1866,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
               }}
               title="Compare parsed specs against existing item values"
             >
-              <GitCompare size={12} /> Compare with existing
+              <RefreshCw size={12} /> Compare with existing
             </button>
           )}
           {diffResults && (
