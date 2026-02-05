@@ -38,3 +38,13 @@ export {
   useAnnounceModal,
   useAnnounceError,
 } from './useAnnounce.js';
+
+// =============================================================================
+// Context Hooks (preferred for components that need shared state)
+// These subscribe to state via React Context instead of creating local state.
+// Use these when you want changes to be isolated from the App.jsx render cycle.
+// =============================================================================
+export { useNavigationContext } from '../contexts/NavigationContext.jsx';
+export { useFilterContext } from '../contexts/FilterContext.jsx';
+export { useModalContext } from '../contexts/ModalContext.jsx';
+export { useSidebarContext } from '../contexts/SidebarContext.jsx';

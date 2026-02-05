@@ -14,8 +14,14 @@ import { useData } from './lib/DataContext.jsx';
 import { SectionErrorBoundary } from './components/ErrorBoundary.jsx';
 import { FullPageLoading, ContentLoading, ViewLoading, ModalLoading } from './components/Loading.jsx';
 
-// Custom hooks for state management
-import { useNavigation, useFilters, useModals, useSidebar, useInventoryActions } from './hooks/index.js';
+// Custom hooks for state management (remaining hooks still used directly)
+import { useInventoryActions } from './hooks/index.js';
+
+// Contexts — state now lives outside App, so changes here don't re-render App
+import { useNavigationContext } from './contexts/NavigationContext.jsx';
+import { useFilterContext } from './contexts/FilterContext.jsx';
+import { useModalContext } from './contexts/ModalContext.jsx';
+import { useSidebarContext } from './contexts/SidebarContext.jsx';
 
 // ============================================================================
 // Core Components (always needed, loaded eagerly)
@@ -139,9 +145,9 @@ export default function App() {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   
   // ============================================================================
-  // Custom Hooks - Navigation, Filters, Modals, Sidebar
+  // Custom Hooks → Now from Contexts (state lives outside App)
   // ============================================================================
-  const sidebar = useSidebar();
+  const sidebar = useSidebarContext();
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed, toggleSidebarCollapsed } = sidebar;
   
   // Mobile user menu state
@@ -163,13 +169,9 @@ export default function App() {
   }, [auth.isAuthenticated, auth.userProfile, auth.loading]);
 
   // ============================================================================
-  // Navigation State - Using custom hook
+  // Navigation State - From Context
   // ============================================================================
-  const navigation = useNavigation({ 
-    isLoggedIn, 
-    inventory, 
-    packages 
-  });
+  const navigation = useNavigationContext();
   
   // Destructure navigation for compatibility with existing code
   const {
@@ -183,9 +185,9 @@ export default function App() {
   } = navigation;
 
   // ============================================================================
-  // Filter State - Using custom hook
+  // Filter State - From Context
   // ============================================================================
-  const filters = useFilters();
+  const filters = useFilterContext();
   
   // Destructure filters for compatibility with existing code
   const {
@@ -205,9 +207,9 @@ export default function App() {
   } = filters;
 
   // ============================================================================
-  // Modal State - Using custom hook
+  // Modal State - From Context
   // ============================================================================
-  const modals = useModals();
+  const modals = useModalContext();
   
   // Destructure modals for compatibility with existing code
   const {
