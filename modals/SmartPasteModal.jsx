@@ -14,6 +14,7 @@ import {
   buildApplyPayload,
   readTextFile,
   readPdfFile,
+  cleanInputText,
 } from '../lib/smartPasteParser.js';
 
 // ============================================================================
@@ -244,8 +245,12 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
   const [importStatus, setImportStatus] = useState('');
   const [showUnmatched, setShowUnmatched] = useState(false);
   const [showEmptyFields, setShowEmptyFields] = useState(true);
+  const [confidenceMode, setConfidenceMode] = useState('balanced'); // 'strict' | 'balanced' | 'aggressive'
+  const [manualMappings, setManualMappings] = useState({}); // { unmatchedIndex: specName }
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  const confidenceThresholds = { strict: 85, balanced: 60, aggressive: 50 };
 
   useEffect(() => {
     if (inputMode === 'paste') textareaRef.current?.focus();
@@ -281,6 +286,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     const result = parseProductText(inputText, specs);
     setParseResult(result);
     setSelectedValues({});
+    setManualMappings({});
     setImportStatus('');
   }, [inputText, specs]);
 
@@ -312,6 +318,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
       const result = parseProductText(text, specs);
       setParseResult(result);
       setSelectedValues({});
+      setManualMappings({});
     } catch (err) {
       console.error('File import error:', err);
       setImportStatus(`error:${err.message || 'Failed to read file'}`);
@@ -328,6 +335,58 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     setSelectedValues(prev => ({ ...prev, [specName]: '' }));
   }, []);
 
+  // Manual mapping handler (1.1)
+  const handleManualMapping = useCallback((unmatchedIdx, specName, value) => {
+    setManualMappings(prev => {
+      const next = { ...prev };
+      if (!specName) {
+        delete next[unmatchedIdx];
+      } else {
+        next[unmatchedIdx] = specName;
+      }
+      return next;
+    });
+    // Also store the value in selectedValues under _manualMappings
+    setSelectedValues(prev => {
+      const mappings = { ...(prev._manualMappings || {}) };
+      if (!specName) {
+        // Find and remove old mapping for this index
+        for (const [key, val] of Object.entries(prev)) {
+          if (key === '_manualMappings') continue;
+        }
+      } else {
+        mappings[specName] = value;
+      }
+      return { ...prev, _manualMappings: mappings };
+    });
+  }, []);
+
+  // Clipboard HTML preservation (2.2) — intercept paste and prefer text/html
+  const handlePaste = useCallback((e) => {
+    const clipboardData = e.clipboardData;
+    if (!clipboardData) return;
+
+    // Check if HTML is available (browser copy often includes rich HTML)
+    if (clipboardData.types.includes('text/html')) {
+      e.preventDefault();
+      const html = clipboardData.getData('text/html');
+      const cleaned = cleanInputText(html);
+      // If HTML cleaning produced more structured content, use it
+      const plainText = clipboardData.getData('text/plain');
+      const htmlLines = cleaned.split('\n').filter(l => l.trim()).length;
+      const plainLines = plainText.split('\n').filter(l => l.trim()).length;
+      // Use HTML version if it has more structure (more tab-separated lines)
+      const htmlTabLines = cleaned.split('\n').filter(l => l.includes('\t')).length;
+      const plainTabLines = plainText.split('\n').filter(l => l.includes('\t')).length;
+      const useHtml = htmlTabLines > plainTabLines || htmlLines >= plainLines;
+      const text = useHtml ? cleaned : plainText;
+      setInputText(text);
+      setParseResult(null);
+      setImportStatus(useHtml ? 'HTML table structure preserved from clipboard' : '');
+    }
+    // Otherwise, let the default paste behavior happen
+  }, []);
+
   const handleApply = useCallback(() => {
     if (!parseResult) return;
     const payload = buildApplyPayload(parseResult, selectedValues);
@@ -338,11 +397,18 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
   // -------------------------------------------------------------------------
   // Derived data
   // -------------------------------------------------------------------------
-  const matchedCount = parseResult ? [...parseResult.fields.values()].filter(f => f.value).length : 0;
+  const threshold = confidenceThresholds[confidenceMode] || 60;
+
+  // Filter fields by confidence threshold (3.1)
+  const filteredFields = parseResult ? new Map(
+    [...parseResult.fields.entries()].filter(([, data]) => data.confidence >= threshold)
+  ) : new Map();
+
+  const matchedCount = filteredFields.size + Object.keys(manualMappings).length;
   const totalExtracted = parseResult ? parseResult.rawExtracted.length : 0;
   const unmatchedCount = parseResult ? parseResult.unmatchedPairs.length : 0;
   const altsCount = parseResult
-    ? [...parseResult.fields.values()].filter(f => f.alternatives && f.alternatives.length > 1).length
+    ? [...filteredFields.values()].filter(f => f.alternatives && f.alternatives.length > 1).length
     : 0;
 
   // Get category-specific spec fields if category detected
@@ -355,7 +421,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
 
   if (categorySpecFields.length > 0) {
     for (const spec of categorySpecFields) {
-      const field = parseResult?.fields.get(spec.name);
+      const field = filteredFields.get(spec.name);
       orderedFields.push({
         specName: spec.name,
         data: field || null,
@@ -367,7 +433,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
 
   // Add any matched fields not in the detected category
   if (parseResult) {
-    for (const [specName, data] of parseResult.fields) {
+    for (const [specName, data] of filteredFields) {
       if (!addedNames.has(specName) && data.value) {
         orderedFields.push({ specName, data, isRequired: false });
         addedNames.add(specName);
@@ -386,6 +452,13 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     const val = override !== undefined ? override : f.data?.value;
     return !val || !val.trim();
   });
+
+  // Build list of spec fields available for manual mapping (1.1)
+  const mappedSpecNames = new Set([
+    ...matchedFields.map(f => f.specName),
+    ...Object.values(manualMappings),
+  ]);
+  const unmappedSpecOptions = allSpecFields.filter(name => !mappedSpecNames.has(name)).sort();
 
   // -------------------------------------------------------------------------
   // Render
@@ -513,8 +586,9 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
           <textarea
             ref={textareaRef}
             value={inputText}
-            onChange={e => { setInputText(e.target.value); setParseResult(null); setImportStatus(''); }}
-            placeholder={`Paste product specifications here...\n\nSupported formats:\n  Key: Value\n  Key → Value\n  Key\tValue  (tab-separated)\n  Key = Value\n  Key | Value\n\nHTML table content is automatically cleaned.`}
+            onChange={e => { setInputText(e.target.value); setParseResult(null); setImportStatus(''); setManualMappings({}); }}
+            onPaste={handlePaste}
+            placeholder={`Paste product specifications here...\n\nSupported formats:\n  Key: Value\n  Key → Value\n  Key\tValue  (tab-separated)\n  Key = Value\n  Key | Value\n\nHTML table content is automatically cleaned.\nTip: Copy from a web page to preserve table structure.`}
             style={{
               ...styles.input,
               width: '100%',
@@ -636,6 +710,52 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
           )}
         </div>
 
+        {/* Confidence threshold control (3.1) */}
+        {parseResult && (
+          <div style={{
+            display: 'flex',
+            gap: spacing[1],
+            marginBottom: spacing[3],
+            alignItems: 'center',
+          }}>
+            <span style={{
+              fontSize: typography.fontSize.xs,
+              fontWeight: 600,
+              color: colors.textMuted,
+              marginRight: spacing[1],
+            }}>
+              Match Confidence:
+            </span>
+            {[
+              { key: 'strict', label: 'Strict', desc: '≥85 — only high-confidence matches' },
+              { key: 'balanced', label: 'Balanced', desc: '≥60 — recommended for most input' },
+              { key: 'aggressive', label: 'Aggressive', desc: '≥50 — catch more at lower accuracy' },
+            ].map(mode => {
+              const isActive = confidenceMode === mode.key;
+              return (
+                <button
+                  key={mode.key}
+                  onClick={() => setConfidenceMode(mode.key)}
+                  title={mode.desc}
+                  style={{
+                    padding: `3px ${spacing[2]}px`,
+                    fontSize: typography.fontSize.xs,
+                    fontWeight: isActive ? 700 : 500,
+                    border: `1px solid ${isActive ? colors.primary : withOpacity(colors.border, 50)}`,
+                    borderRadius: borderRadius.sm,
+                    background: isActive ? withOpacity(colors.primary, 15) : 'transparent',
+                    color: isActive ? colors.primary : colors.textMuted,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {mode.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* ================================================================= */}
         {/* Results */}
         {/* ================================================================= */}
@@ -667,7 +787,9 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
                 { label: 'Name', value: parseResult.name, key: 'name' },
                 { label: 'Brand', value: parseResult.brand, key: 'brand' },
                 { label: 'Category', value: parseResult.category, key: 'category' },
-                { label: 'Price', value: parseResult.purchasePrice ? `$${parseResult.purchasePrice}` : '', key: 'price' },
+                { label: 'Price', value: parseResult.purchasePrice ? `$${parseResult.purchasePrice}${parseResult.priceNote ? ` (${parseResult.priceNote})` : ''}` : '', key: 'price' },
+                ...(parseResult.modelNumber ? [{ label: 'Model #', value: parseResult.modelNumber, key: 'model' }] : []),
+                ...(parseResult.serialNumber ? [{ label: 'Serial #', value: parseResult.serialNumber, key: 'serial' }] : []),
               ].map(item => (
                 <div key={item.key} style={{
                   display: 'grid',
@@ -765,7 +887,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
               </div>
             )}
 
-            {/* Unmatched pairs */}
+            {/* Unmatched pairs with manual mapping (1.1) */}
             {parseResult.unmatchedPairs.length > 0 && (
               <div style={{
                 padding: `${spacing[2]}px ${spacing[3]}px`,
@@ -788,7 +910,20 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
                 >
                   <AlertCircle size={12} />
                   {showUnmatched ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                  {parseResult.unmatchedPairs.length} extracted but not matched to any spec
+                  {parseResult.unmatchedPairs.length} extracted but not matched
+                  {Object.keys(manualMappings).length > 0 && (
+                    <span style={{
+                      marginLeft: 6,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      padding: '1px 6px',
+                      borderRadius: 4,
+                      background: withOpacity(colors.primary, 15),
+                      color: colors.primary,
+                    }}>
+                      {Object.keys(manualMappings).length} mapped
+                    </span>
+                  )}
                 </button>
                 {showUnmatched && (
                   <div style={{
@@ -797,17 +932,46 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
                     color: colors.textMuted,
                     lineHeight: 1.6,
                   }}>
-                    {parseResult.unmatchedPairs.map((pair, i) => (
-                      <div key={i} style={{
-                        padding: `3px 0`,
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1.5fr',
-                        gap: spacing[2],
-                      }}>
-                        <span style={{ fontWeight: 600, color: colors.textSecondary }}>{pair.key}</span>
-                        <span style={{ color: withOpacity(colors.textMuted, 70) }}>{pair.value}</span>
-                      </div>
-                    ))}
+                    <div style={{
+                      fontSize: typography.fontSize.xs,
+                      color: withOpacity(colors.textMuted, 60),
+                      marginBottom: spacing[2],
+                      fontStyle: 'italic',
+                    }}>
+                      Use the dropdowns to manually assign unmatched pairs to spec fields.
+                    </div>
+                    {parseResult.unmatchedPairs.map((pair, i) => {
+                      const mappedTo = manualMappings[i];
+                      return (
+                        <div key={i} style={{
+                          padding: `4px 0`,
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1.2fr 1fr',
+                          gap: spacing[2],
+                          alignItems: 'center',
+                          borderBottom: `1px solid ${withOpacity(colors.border, 20)}`,
+                        }}>
+                          <span style={{ fontWeight: 600, color: colors.textSecondary }}>{pair.key}</span>
+                          <span style={{ color: withOpacity(colors.textMuted, 70) }}>{pair.value}</span>
+                          <select
+                            value={mappedTo || ''}
+                            onChange={e => handleManualMapping(i, e.target.value, pair.value)}
+                            style={{
+                              ...styles.input,
+                              fontSize: typography.fontSize.xs,
+                              padding: `2px ${spacing[1]}px`,
+                              color: mappedTo ? colors.primary : colors.textMuted,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <option value="">— Assign to field —</option>
+                            {unmappedSpecOptions.map(name => (
+                              <option key={name} value={name}>{name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

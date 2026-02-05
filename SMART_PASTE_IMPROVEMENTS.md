@@ -6,29 +6,50 @@ This document tracks planned enhancements for the Smart Paste feature, which imp
 
 ---
 
-## Current Capabilities (v2)
+## Current Capabilities (v3)
 
-- **Text input**: Paste text tab with monospace textarea
+- **Text input**: Paste text tab with monospace textarea + clipboard HTML interception
 - **File import**: Drag-and-drop zone for PDF, TXT, CSV, TSV, Markdown, RTF
 - **Extraction patterns**: `Key: Value`, `Key\tValue`, `Key | Value`, `Key = Value`, `Key → Value`, `Key – Value`, consecutive-line detection
 - **HTML cleaning**: Table-to-tab conversion, definition list handling, non-text element stripping (images, SVGs, scripts, nav, footer, buttons, comments)
+- **Clipboard HTML preservation** *(v3)*: Intercepts paste events to prefer `text/html` from clipboard for better table structure
 - **PDF parsing**: pdf.js (CDN-loaded) with line grouping by Y-position and gap-based tab insertion
 - **Matching strategies**: Direct alias map lookup → abbreviation expansion → Levenshtein fuzzy matching → token overlap scoring
+- **Manual mapping** *(v3)*: Unmatched pairs can be manually assigned to any spec field via dropdown
+- **Confidence threshold** *(v3)*: Three modes — Strict (≥85), Balanced (≥60), Aggressive (≥50) — filter which matches are displayed
 - **Result display**: Category-aware field ordering, confidence badges (Direct/Likely/Fuzzy), alternative selection dropdowns, required field indicators, matched-from source hints
-- **Brand/category/price detection**: 120+ known brands, 11 category keyword sets, regex price extraction
+- **Brand/category/price detection**: 120+ known brands, 11 category keyword sets, multi-currency price extraction with ranges and labeled prices *(improved in v3)*
+- **Serial/model extraction** *(v3)*: Detects serial number, model number, SKU, UPC, EAN, ASIN, part number patterns
 
 ---
 
-## Planned Improvements
+## Implemented Improvements (v3)
+
+### ✅ 1.1 Manual mapping for unmatched pairs
+Each unmatched pair now has a dropdown allowing the user to assign it to any available spec field. Manual mappings flow through `buildApplyPayload` and are included when applying to the form.
+
+### ✅ 1.3 Improved price detection
+- Non-USD currencies (€, £, ¥) with currency note
+- Price ranges ("$2,498.00 - $2,798.00") → uses lower value, shows range note
+- Labeled prices: "Sale Price", "MSRP", "List Price", etc. — prefers sale/street price
+- Bare numbers in key-value pairs (e.g., "Price: 2498") without dollar sign
+
+### ✅ 1.4 Serial number / model number extraction
+Detects common patterns: "Model: XYZ-123", "SKU: ABC456", "Part #: 12345", "Serial Number: ...", "UPC: ...", "ASIN: ..." and maps them to dedicated result fields displayed in the Basic Information section.
+
+### ✅ 2.2 Clipboard paste with HTML preservation
+When pasting from a browser, the `onPaste` handler checks for `text/html` in the clipboard. If HTML content has more table structure (tab-separated lines), it uses the cleaned HTML version for better spec extraction from retailer pages.
+
+### ✅ 3.1 Confidence threshold control
+Three-button mode selector (Strict/Balanced/Aggressive) filters which matches are displayed. Strict mode (≥85) shows only high-confidence direct matches; Aggressive (≥50) shows everything the fuzzy matcher found.
+
+---
+
+## Remaining Planned Improvements
 
 ### Phase 1 — Matching Quality
 
-**1.1 Manual mapping for unmatched pairs**
-Currently, extracted pairs that don't match any spec field are displayed in a read-only "unmatched" list. Add a dropdown on each unmatched pair allowing the user to manually assign it to any spec field. This captures data the fuzzy matcher missed.
-
-- Add a Select dropdown per unmatched pair with all spec field names as options
-- When an unmatched pair is assigned, move it from the unmatched list to the matched results
-- Store manual assignments in selectedValues state so they flow through buildApplyPayload
+**~~1.1 Manual mapping for unmatched pairs~~** ✅ Implemented in v3
 
 **1.2 Multi-value field merging**
 Some specs appear multiple times with different values (e.g., "Video Resolution: 4K 60p" and "Video Resolution: 1080p 120p"). The parser should detect these and concatenate rather than picking just one.
@@ -37,15 +58,9 @@ Some specs appear multiple times with different values (e.g., "Video Resolution:
 - Only merge when confidence levels are similar (within 10 points)
 - Present merged values with a badge indicating "Combined from N sources"
 
-**1.3 Improved price detection**
-Current regex only catches `$X,XXX.XX` format. Extend to handle:
-- Non-USD currencies (€, £, ¥) with conversion note
-- Price ranges ("$2,498.00 - $2,798.00" → use lower value)
-- "MSRP", "List Price", "Sale Price" labels — prefer sale price
-- Prices in key-value pairs (e.g., "Price: 2498") without dollar sign
+**~~1.3 Improved price detection~~** ✅ Implemented in v3
 
-**1.4 Serial number / model number extraction**
-Detect common patterns like "Model: XYZ-123", "SKU: ABC456", "Part #: 12345" and map them to the item's serial number or model fields if present, rather than filtering these as noise.
+**~~1.4 Serial number / model number extraction~~** ✅ Implemented in v3
 
 ---
 
@@ -59,13 +74,7 @@ Add a third tab "Import from URL" that accepts a product page URL and fetches th
 - Auto-parse after fetch completes
 - Show the source URL in the results for reference
 
-**2.2 Clipboard paste with HTML preservation**
-When pasting from a browser, the clipboard often contains rich HTML. Intercept the paste event and prefer `text/html` from the clipboard over `text/plain`, then run it through cleanInputText for better table structure preservation.
-
-- Add `onPaste` handler to the textarea
-- Check `clipboardData.types` for `text/html`
-- If present, use the HTML version through cleanInputText
-- Fall back to plain text if no HTML available
+**~~2.2 Clipboard paste with HTML preservation~~** ✅ Implemented in v3
 
 **2.3 Image-to-text (OCR) for spec sheet photos**
 For photographed spec sheets or screenshots, add basic OCR capability.
@@ -79,13 +88,7 @@ For photographed spec sheets or screenshots, add basic OCR capability.
 
 ### Phase 3 — UI/UX Refinements
 
-**3.1 Confidence threshold control**
-Add a slider or toggle for "Strict" (only ≥85 confidence) vs "Balanced" (≥60) vs "Aggressive" (≥50) matching modes. Users with clean input (retailer spec tables) can use strict; users with messy PDF text can use aggressive.
-
-- Add a mode selector above the results
-- Filter displayed results by the selected threshold
-- Default to "Balanced" (≥60)
-- Remember preference in localStorage
+**~~3.1 Confidence threshold control~~** ✅ Implemented in v3
 
 **3.2 Editable brand/category override**
 If the user manually corrects the detected brand or category in the results panel, the UI should re-filter which spec fields are shown and potentially re-run category-aware matching.
@@ -173,23 +176,23 @@ Allow the system to learn from user corrections. When a user manually maps an un
 
 ## Priority Order
 
-| Priority | Item | Effort | Impact |
-|----------|------|--------|--------|
-| 1 | 1.1 Manual mapping for unmatched | Low | High |
-| 2 | 2.2 Clipboard HTML preservation | Low | High |
-| 3 | 3.1 Confidence threshold control | Low | Medium |
-| 4 | 3.2 Editable brand/category | Medium | High |
-| 5 | 1.2 Multi-value merging | Medium | Medium |
-| 6 | 1.3 Improved price detection | Low | Medium |
-| 7 | 4.3 Duplicate field detection | Medium | Medium |
-| 8 | 1.4 Serial/model extraction | Low | Medium |
-| 9 | 3.3 Side-by-side source view | Medium | Medium |
-| 10 | 4.1 Unit normalization | Medium | Medium |
-| 11 | 4.4 Smart field type coercion | Medium | Medium |
-| 12 | 2.1 URL paste + fetch | High | High |
-| 13 | 4.2 Value range validation | Low | Low |
-| 14 | 3.4 Paste history | Low | Low |
-| 15 | 2.3 Image OCR | High | Medium |
-| 16 | 5.1 Batch import | High | Medium |
-| 17 | 5.2 Re-import workflow | High | Medium |
-| 18 | 5.3 Community alias database | High | Low |
+| Priority | Item | Effort | Impact | Status |
+|----------|------|--------|--------|--------|
+| ~~1~~ | ~~1.1 Manual mapping for unmatched~~ | ~~Low~~ | ~~High~~ | ✅ Done |
+| ~~2~~ | ~~2.2 Clipboard HTML preservation~~ | ~~Low~~ | ~~High~~ | ✅ Done |
+| ~~3~~ | ~~3.1 Confidence threshold control~~ | ~~Low~~ | ~~Medium~~ | ✅ Done |
+| 4 | 3.2 Editable brand/category | Medium | High | |
+| 5 | 1.2 Multi-value merging | Medium | Medium | |
+| ~~6~~ | ~~1.3 Improved price detection~~ | ~~Low~~ | ~~Medium~~ | ✅ Done |
+| 7 | 4.3 Duplicate field detection | Medium | Medium | |
+| ~~8~~ | ~~1.4 Serial/model extraction~~ | ~~Low~~ | ~~Medium~~ | ✅ Done |
+| 9 | 3.3 Side-by-side source view | Medium | Medium | |
+| 10 | 4.1 Unit normalization | Medium | Medium | |
+| 11 | 4.4 Smart field type coercion | Medium | Medium | |
+| 12 | 2.1 URL paste + fetch | High | High | |
+| 13 | 4.2 Value range validation | Low | Low | |
+| 14 | 3.4 Paste history | Low | Low | |
+| 15 | 2.3 Image OCR | High | Medium | |
+| 16 | 5.1 Batch import | High | Medium | |
+| 17 | 5.2 Re-import workflow | High | Medium | |
+| 18 | 5.3 Community alias database | High | Low | |
