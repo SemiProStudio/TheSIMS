@@ -79,6 +79,9 @@ A `diffSpecs()` engine compares new parse results against existing item specs, c
 ### ✅ 5.3 Community alias database
 `recordAlias()` fires automatically when a user manually maps an unmatched field, recording the source key → spec name mapping via Supabase RPC. `fetchCommunityAliases()` loads on modal mount and injects community-learned aliases into the parser's Pass 1 lookup at priority 55–75 (scaling with usage count). SQL migration includes the `smart_paste_aliases` table with upsert RPC, RLS policies, and a cleanup function for pruning stale low-usage aliases.
 
+### ✅ 2.3 Image-to-text (OCR) for spec sheet photos
+Tesseract.js v5 is dynamically imported from CDN on first use — zero bundle impact until a user actually drops an image. Supports PNG, JPEG, WebP, TIFF, and BMP. Images are pre-processed with grayscale conversion and contrast enhancement (S-curve at 1.5x) via OffscreenCanvas before recognition. A progress bar shows loading/recognition status. OCR artifacts are cleaned (pipe→I correction, whitespace collapse). The worker is terminated on modal unmount to free memory. Confidence level is reported as high/medium/low.
+
 ---
 
 ## Remaining Planned Improvements
@@ -106,8 +109,7 @@ Some specs appear multiple times with different values (e.g., "Video Resolution:
 
 **~~2.2 Clipboard paste with HTML preservation~~** ✅ Implemented in v3
 
-**~~2.3 Image-to-text (OCR) for spec sheet photos~~**
-⏳ Deferred — requires Tesseract.js WASM bundle (~2MB). Client-side architecture planned but not yet integrated.
+**~~2.3 Image-to-text (OCR) for spec sheet photos~~** ✅ Implemented in v3.5
 
 ---
 
@@ -163,7 +165,7 @@ Some specs appear multiple times with different values (e.g., "Video Resolution:
 | ~~12~~ | ~~2.1 URL paste + fetch~~ | ~~High~~ | ~~High~~ | ✅ v3.4 |
 | ~~13~~ | ~~4.2 Value range validation~~ | ~~Low~~ | ~~Low~~ | ✅ v3.1 |
 | ~~14~~ | ~~3.4 Paste history~~ | ~~Low~~ | ~~Low~~ | ✅ v3.2 |
-| 15 | 2.3 Image OCR | High | Medium | ⏳ Deferred |
+| ~~15~~ | ~~2.3 Image OCR~~ | ~~High~~ | ~~Medium~~ | ✅ v3.5 |
 | ~~16~~ | ~~5.1 Batch import~~ | ~~High~~ | ~~Medium~~ | ✅ v3.3 |
 | ~~17~~ | ~~5.2 Re-import workflow~~ | ~~High~~ | ~~Medium~~ | ✅ v3.3 |
 | ~~18~~ | ~~5.3 Community alias database~~ | ~~High~~ | ~~Low~~ | ✅ v3.4 |

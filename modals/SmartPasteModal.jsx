@@ -23,6 +23,8 @@ import {
   diffSpecs,
   recordAlias,
   fetchCommunityAliases,
+  ocrImage,
+  terminateOCR,
 } from '../lib/smartPasteParser.js';
 import { getSupabase } from '../lib/supabase.js';
 
@@ -385,6 +387,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
   const [urlLoading, setUrlLoading] = useState(false);
   const [diffResults, setDiffResults] = useState(null); // re-import diff (5.2)
   const [communityAliases, setCommunityAliases] = useState(null); // Map from fetchCommunityAliases (5.3)
+  const [ocrProgress, setOcrProgress] = useState(null); // null = idle, 0-1 = in progress (2.3)
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const sourceRef = useRef(null);
@@ -426,7 +429,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     if (inputMode === 'paste') textareaRef.current?.focus();
   }, [inputMode]);
 
-  // Load community aliases on mount (5.3)
+  // Load community aliases on mount (5.3) + cleanup OCR on unmount (2.3)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -438,7 +441,10 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
         // Community aliases not available — parser works fine without them
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      terminateOCR(); // Free OCR worker memory on unmount
+    };
   }, []);
 
   // Build full list of spec field names across all categories
@@ -507,6 +513,8 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     setPasteHistory(getPasteHistory());
   }, [inputText, specs, communityAliases, savePasteHistory, getPasteHistory]);
 
+  const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'tiff', 'tif', 'bmp'];
+
   const handleFileImport = useCallback(async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -516,7 +524,28 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
       let text;
       const ext = file.name.toLowerCase().split('.').pop();
 
-      if (ext === 'pdf') {
+      if (IMAGE_EXTENSIONS.includes(ext)) {
+        // OCR path (2.3)
+        setOcrProgress(0);
+        setImportStatus('ocr:Running OCR — loading engine...');
+        try {
+          const ocrResult = await ocrImage(file, (progress) => {
+            setOcrProgress(progress);
+            if (progress < 0.2) {
+              setImportStatus('ocr:Loading OCR engine...');
+            } else if (progress < 0.9) {
+              setImportStatus(`ocr:Recognizing text... ${Math.round(progress * 100)}%`);
+            } else {
+              setImportStatus('ocr:Finishing up...');
+            }
+          });
+          text = ocrResult.text;
+          const confLabel = ocrResult.confidence >= 80 ? 'high' : ocrResult.confidence >= 50 ? 'medium' : 'low';
+          setImportStatus(`success:OCR complete — ${confLabel} confidence (${Math.round(ocrResult.confidence)}%), ${text.split('\n').length} lines`);
+        } finally {
+          setOcrProgress(null);
+        }
+      } else if (ext === 'pdf') {
         text = await readPdfFile(file);
       } else if (['txt', 'text', 'csv', 'tsv', 'md', 'rtf'].includes(ext)) {
         text = await readTextFile(file);
@@ -530,7 +559,9 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
       }
 
       setInputText(text);
-      setImportStatus(`success:Imported ${file.name} (${text.split('\n').length} lines)`);
+      if (!IMAGE_EXTENSIONS.includes(ext)) {
+        setImportStatus(`success:Imported ${file.name} (${text.split('\n').length} lines)`);
+      }
 
       const result = parseProductText(text, specs, communityAliases ? { communityAliases } : {});
       setParseResult(result);
@@ -541,10 +572,11 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     } catch (err) {
       console.error('File import error:', err);
       setImportStatus(`error:${err.message || 'Failed to read file'}`);
+      setOcrProgress(null);
     }
 
     if (fileInputRef.current) fileInputRef.current.value = '';
-  }, [specs]);
+  }, [specs, communityAliases]);
 
   const handleSelectValue = useCallback((specName, value) => {
     setSelectedValues(prev => ({ ...prev, [specName]: value }));
@@ -883,7 +915,27 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
           }}>
             {importStatus.startsWith('loading') ? '⏳ Reading file...' :
              importStatus.startsWith('error:') ? `⚠ ${importStatus.slice(6)}` :
-             importStatus.startsWith('success:') ? `✓ ${importStatus.slice(8)}` : importStatus}
+             importStatus.startsWith('success:') ? `✓ ${importStatus.slice(8)}` :
+             importStatus.startsWith('ocr:') ? `🔍 ${importStatus.slice(4)}` :
+             importStatus}
+            {/* OCR progress bar (2.3) */}
+            {ocrProgress !== null && (
+              <div style={{
+                marginTop: spacing[1],
+                height: 4,
+                borderRadius: 2,
+                background: withOpacity(colors.primary, 20),
+                overflow: 'hidden',
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${Math.round(ocrProgress * 100)}%`,
+                  background: colors.primary,
+                  borderRadius: 2,
+                  transition: 'width 0.3s ease',
+                }} />
+              </div>
+            )}
           </div>
         )}
 
@@ -1008,13 +1060,13 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
                 fontSize: typography.fontSize.sm,
                 color: colors.textMuted,
               }}>
-                PDF, TXT, CSV, TSV, Markdown, or RTF
+                PDF, TXT, CSV, TSV, Markdown, RTF, or Images (OCR)
               </div>
             </div>
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.txt,.text,.csv,.tsv,.md,.rtf"
+              accept=".pdf,.txt,.text,.csv,.tsv,.md,.rtf,.png,.jpg,.jpeg,.webp,.tiff,.tif,.bmp"
               onChange={handleFileImport}
               style={{ display: 'none' }}
             />
