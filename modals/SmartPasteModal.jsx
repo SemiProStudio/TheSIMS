@@ -5,7 +5,7 @@
 
 import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Upload, FileText, ChevronDown, ChevronUp, AlertCircle, Check, X as XIcon, Edit2, AlertTriangle, Clock, Columns, ArrowRight, Link2, Layers, RefreshCw } from 'lucide-react';
+import { Upload, FileText, ChevronDown, ChevronUp, AlertCircle, Check, X as XIcon } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
@@ -174,7 +174,7 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
                   whiteSpace: 'nowrap',
                   flexShrink: 0,
                 }}>
-                  <AlertTriangle size={9} /> Conflict
+                  ⚠ Conflict
                 </span>
               )}
               {/* Merged badge (1.2) */}
@@ -239,7 +239,7 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
                 alignItems: 'center',
                 gap: 4,
               }}>
-                <AlertTriangle size={10} />
+                ⚠
                 <span>{fieldData.validationWarning}</span>
               </div>
             )}
@@ -263,7 +263,7 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
                 alignItems: 'center',
                 gap: 4,
               }}>
-                <ArrowRight size={9} />
+                →
                 <span>normalized: <strong>{unitInfo.normalized}</strong></span>
               </div>
             )}
@@ -277,7 +277,7 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
                 alignItems: 'center',
                 gap: 4,
               }}>
-                <ArrowRight size={9} />
+                →
                 <span>suggestion: <strong>{coercionInfo.coerced}</strong></span>
               </div>
             )}
@@ -960,7 +960,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
                   gap: spacing[1],
                   marginBottom: spacing[1],
                 }}>
-                  <Clock size={11} />
+                  🕐
                   Recent Imports
                 </div>
                 {pasteHistory.map((entry, i) => (
@@ -1131,7 +1131,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
                 variant="secondary"
                 onClick={handleUrlFetch}
                 disabled={!urlInput.trim() || urlLoading}
-                icon={Link2}
+                icon={FileText}
               >
                 {urlLoading ? 'Fetching...' : 'Fetch'}
               </Button>
@@ -1147,7 +1147,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
           {/* Batch results indicator (5.1) */}
           {batchResults && (
             <span style={{ fontSize: typography.fontSize.sm, color: colors.primary, fontWeight: 600 }}>
-              <Layers size={13} style={{ verticalAlign: -2, marginRight: 4 }} />
+              ⊞
               {batchResults.length} products detected
             </span>
           )}
@@ -1252,7 +1252,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
                 whiteSpace: 'nowrap',
               }}
             >
-              <Columns size={11} /> Source
+              ▥ Source
             </button>
           </div>
         )}
@@ -1285,7 +1285,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
                 alignItems: 'center',
                 gap: spacing[1],
               }}>
-                <Layers size={12} />
+                ⊞
                 Detected Products ({batchResults.length})
               </div>
               <div style={{ display: 'flex', gap: spacing[1] }}>
@@ -1796,7 +1796,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
               alignItems: 'center',
               gap: spacing[1],
             }}>
-              <RefreshCw size={12} />
+              ⇄
               Spec Changes ({diffResults.filter(d => d.status !== 'unchanged').length} differences)
             </div>
             {diffResults.map(({ specName, status, oldValue, newValue }) => {
@@ -1866,7 +1866,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
               }}
               title="Compare parsed specs against existing item values"
             >
-              <RefreshCw size={12} /> Compare with existing
+              ⇄ Compare with existing
             </button>
           )}
           {diffResults && (
