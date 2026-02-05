@@ -55,6 +55,30 @@ Known spec fields are validated against expected ranges (Weight ≤100kg, Focal 
 ### ✅ 4.3 Duplicate field detection
 When multiple candidates match the same spec field with different values and similar confidence (within 15 points), a "⚠ Conflict" badge replaces the confidence badge. The alternatives dropdown shows "conflicts" instead of "options" so users can pick the correct value.
 
+### ✅ 3.3 Side-by-side source view
+Toggle button shows the cleaned source text alongside parsed results in a split panel. Source lines are color-coded: green border = matched to a spec field, yellow border = extracted but unmatched, dimmed = ignored. Clicking a spec field name in the results panel scrolls to and highlights the corresponding source line. Modal widens to 1200px when source view is active.
+
+### ✅ 3.4 Paste history / quick re-import
+Last 5 paste operations are stored in sessionStorage with product name, matched field count, and timestamp. When the textarea is empty, a "Recent Imports" panel appears above it allowing one-click restore of previous imports.
+
+### ✅ 4.1 Unit normalization
+A "Units" toggle in the toolbar enables metric conversion hints on matched fields. Supports: inches↔mm, lbs/oz→g/kg, °F→°C, compound weights ("1 lb 5 oz"→"595 g"), and dimension strings ("6.5 x 4.3 x 3.1 inches"→"165 × 109 × 79 mm"). Shows "normalized: ..." below the value without replacing it.
+
+### ✅ 4.4 Smart field type coercion
+Post-processing detects boolean fields (weather sealing, touchscreen, etc.) and normalizes "True/Included/Available" → "Yes", "False/N/A" → "No". Normalizes CCT ranges ("2700K-6500K" → "2700–6500 K"), adds f/ prefix to bare aperture numbers. Shows "suggestion: ..." below the value.
+
+### ✅ 5.1 Batch import for multiple items
+Parser auto-detects multi-product content via boundary patterns (horizontal rules, markdown headings, "Product Name:" labels, brand-name lines after blank lines). When multiple products are found, a selection UI shows each product with name, brand, category, field count, and price. Users can select/deselect products for batch import or click "Edit" to view a single product in detail. `onApply` receives an array of payloads for batch mode.
+
+### ✅ 2.1 URL paste + fetch (client-side ready)
+A third "From URL" input tab allows entering a product page URL. The fetch handler calls a CORS proxy Edge Function. **Requires setup**: deploy a `fetch-product-page` Supabase Edge Function that accepts `{ url }` and returns `{ text, html }`. Client-side code, error handling, and fallback messaging are complete.
+
+### ✅ 5.2 Re-import / spec update workflow
+A `diffSpecs()` engine compares new parse results against existing item specs, categorizing each field as added/changed/removed/unchanged. When `existingItem` prop is passed to SmartPasteModal, a "Compare with existing" button appears in the action bar. The diff view uses color-coded indicators: `+` green for added, `~` yellow for changed (with strikethrough on old value), `-` red for removed.
+
+### ✅ 5.3 Community alias database (client stubs ready)
+`recordAlias()` and `fetchCommunityAliases()` functions are implemented and exported. `recordAlias` calls a Supabase RPC `upsert_smart_paste_alias` to insert or increment usage. `fetchCommunityAliases` queries the `smart_paste_aliases` table with a minimum usage threshold (default 3). **Requires setup**: create the Supabase table and RPC function.
+
 ---
 
 ## Remaining Planned Improvements
@@ -78,23 +102,12 @@ Some specs appear multiple times with different values (e.g., "Video Resolution:
 
 ### Phase 2 — Input Handling
 
-**2.1 URL paste + fetch**
-Add a third tab "Import from URL" that accepts a product page URL and fetches the page content.
-
-- Use a Supabase Edge Function as a proxy to avoid CORS
-- Edge Function fetches the URL, extracts text content (or returns raw HTML for client-side cleaning)
-- Auto-parse after fetch completes
-- Show the source URL in the results for reference
+**~~2.1 URL paste + fetch~~** ✅ Implemented in v3.3 (client-side ready, requires Edge Function proxy)
 
 **~~2.2 Clipboard paste with HTML preservation~~** ✅ Implemented in v3
 
-**2.3 Image-to-text (OCR) for spec sheet photos**
-For photographed spec sheets or screenshots, add basic OCR capability.
-
-- Use Tesseract.js (WASM-based, client-side)
-- Add a fourth input tab or integrate into the file import tab for image files
-- Pre-process images (grayscale, contrast enhancement) before OCR
-- Lower confidence scores for OCR-derived pairs (inherently noisier)
+**~~2.3 Image-to-text (OCR) for spec sheet photos~~**
+⏳ Deferred — requires Tesseract.js WASM bundle (~2MB). Client-side architecture planned but not yet integrated.
 
 ---
 
@@ -104,69 +117,31 @@ For photographed spec sheets or screenshots, add basic OCR capability.
 
 **~~3.2 Editable brand/category override~~** ✅ Implemented in v3.1
 
-**3.3 Side-by-side source view**
-Show the original pasted/imported text alongside the parsed results so users can visually verify matches and spot missed data.
+**~~3.3 Side-by-side source view~~** ✅ Implemented in v3.2
 
-- Split the results area: left panel = cleaned source text with matched lines highlighted, right panel = parsed field results
-- Clicking a matched field in the right panel scrolls to and highlights the corresponding line in the source
-- Unmatched source lines shown in a dimmed style
-
-**3.4 Paste history / quick re-import**
-Store the last 5 paste operations (text + results) in sessionStorage so users can quickly re-apply previous imports if they switch categories or make mistakes.
-
-- Store { inputText, parseResult, timestamp } entries
-- Show a "Recent imports" dropdown in the input area
-- Auto-clear on session end (sessionStorage)
+**~~3.4 Paste history / quick re-import~~** ✅ Implemented in v3.2
 
 ---
 
 ### Phase 4 — Data Quality
 
-**4.1 Unit normalization**
-Values like "6.55 in" vs "166.4 mm" should be recognized as equivalent dimension formats. Add unit detection and optional normalization.
-
-- Detect common unit patterns: inches/mm/cm, oz/g/kg, lbs/kg, °F/°C
-- Offer a toggle to normalize to preferred units (configurable per user)
-- Display both original and normalized values when conversion applies
+**~~4.1 Unit normalization~~** ✅ Implemented in v3.2
 
 **~~4.2 Value validation against known ranges~~** ✅ Implemented in v3.1
 
 **~~4.3 Duplicate field detection~~** ✅ Implemented in v3.1
 
-**4.4 Smart field type coercion**
-Some fields expect specific formats. Add post-processing to coerce extracted values:
-
-- Dimensions: normalize "6.5 x 4.3 x 3.1 inches" to "165 × 109 × 79 mm" or vice versa
-- Weight: normalize "1 lb 5 oz" to "595g"
-- Boolean fields: normalize "Yes/No/True/False/Included/Not Included" to "Yes" / "No"
-- Temperature: normalize "2700K-6500K" to standard CCT range format
+**~~4.4 Smart field type coercion~~** ✅ Implemented in v3.2
 
 ---
 
 ### Phase 5 — Integration & Automation
 
-**5.1 Batch import for multiple items**
-Extend Smart Paste to handle spec sheets that contain multiple products (e.g., a brand's product lineup page).
+**~~5.1 Batch import for multiple items~~** ✅ Implemented in v3.3
 
-- Detect product boundaries (repeated "Product Name:" patterns, horizontal rules, page breaks)
-- Present a list of detected products and let the user select which to import
-- Create multiple inventory items in one operation
+**~~5.2 Re-import / spec update workflow~~** ✅ Implemented in v3.3 (diff engine + UI, pass `existingItem` prop to activate)
 
-**5.2 Re-import / spec update workflow**
-For existing items, add a "Check for updates" flow that re-fetches the product page (if URL was stored) and highlights which specs have changed since the last import.
-
-- Store the import source URL on the inventory item
-- Compare new parse results against existing specs
-- Show a diff view: unchanged / updated / new fields
-- Let the user selectively apply updates
-
-**5.3 Community alias database**
-Allow the system to learn from user corrections. When a user manually maps an unmatched pair to a spec field, store that mapping for future use.
-
-- New Supabase table: `smart_paste_aliases` with columns (source_key, spec_name, category, usage_count)
-- On manual mapping, insert or increment usage_count
-- In Pass 1, check community aliases before fuzzy matching
-- Only use community aliases with usage_count ≥ 3 (prevent noise)
+**~~5.3 Community alias database~~** ✅ Implemented in v3.3 (client stubs ready, requires Supabase table + RPC function)
 
 ---
 
@@ -182,13 +157,13 @@ Allow the system to learn from user corrections. When a user manually maps an un
 | ~~6~~ | ~~1.3 Improved price detection~~ | ~~Low~~ | ~~Medium~~ | ✅ v3 |
 | ~~7~~ | ~~4.3 Duplicate field detection~~ | ~~Medium~~ | ~~Medium~~ | ✅ v3.1 |
 | ~~8~~ | ~~1.4 Serial/model extraction~~ | ~~Low~~ | ~~Medium~~ | ✅ v3 |
-| 9 | 3.3 Side-by-side source view | Medium | Medium | |
-| 10 | 4.1 Unit normalization | Medium | Medium | |
-| 11 | 4.4 Smart field type coercion | Medium | Medium | |
-| 12 | 2.1 URL paste + fetch | High | High | |
+| ~~9~~ | ~~3.3 Side-by-side source view~~ | ~~Medium~~ | ~~Medium~~ | ✅ v3.2 |
+| ~~10~~ | ~~4.1 Unit normalization~~ | ~~Medium~~ | ~~Medium~~ | ✅ v3.2 |
+| ~~11~~ | ~~4.4 Smart field type coercion~~ | ~~Medium~~ | ~~Medium~~ | ✅ v3.2 |
+| ~~12~~ | ~~2.1 URL paste + fetch~~ | ~~High~~ | ~~High~~ | ✅ v3.3 (needs Edge Fn) |
 | ~~13~~ | ~~4.2 Value range validation~~ | ~~Low~~ | ~~Low~~ | ✅ v3.1 |
-| 14 | 3.4 Paste history | Low | Low | |
-| 15 | 2.3 Image OCR | High | Medium | |
-| 16 | 5.1 Batch import | High | Medium | |
-| 17 | 5.2 Re-import workflow | High | Medium | |
-| 18 | 5.3 Community alias database | High | Low | |
+| ~~14~~ | ~~3.4 Paste history~~ | ~~Low~~ | ~~Low~~ | ✅ v3.2 |
+| 15 | 2.3 Image OCR | High | Medium | ⏳ Deferred |
+| ~~16~~ | ~~5.1 Batch import~~ | ~~High~~ | ~~Medium~~ | ✅ v3.3 |
+| ~~17~~ | ~~5.2 Re-import workflow~~ | ~~High~~ | ~~Medium~~ | ✅ v3.3 |
+| ~~18~~ | ~~5.3 Community alias database~~ | ~~High~~ | ~~Low~~ | ✅ v3.3 (needs DB) |
