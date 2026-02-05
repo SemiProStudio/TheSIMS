@@ -10,6 +10,7 @@ import { Card, Badge, Button, PageHeader } from './components/ui.jsx';
 import { Select } from './components/Select.jsx';
 import { DatePicker } from './components/DatePicker.jsx';
 import { useItemForm } from './ItemForm.jsx';
+import { SmartPasteModal } from './modals/ItemModal.jsx';
 
 // ============================================================================
 // Add/Edit Item Page
@@ -26,9 +27,10 @@ export const ItemFormPage = memo(function ItemFormPage({
   inventory, 
   onSave, 
   onBack,
-  onOpenSmartPaste,
   editingItemId
 }) {
+  const [showSmartPaste, setShowSmartPaste] = useState(false);
+
   // Use the shared ItemForm hook for validation and computed values
   const {
     isValid,
@@ -50,6 +52,18 @@ export const ItemFormPage = memo(function ItemFormPage({
     inventory,
   });
 
+  const handleSmartPasteApply = (parsed) => {
+    setItemForm(prev => ({
+      ...prev,
+      name: parsed.name || prev.name,
+      brand: parsed.brand || prev.brand,
+      category: parsed.category || prev.category,
+      purchasePrice: parsed.purchasePrice || prev.purchasePrice,
+      currentValue: parsed.purchasePrice || prev.currentValue,
+      specs: { ...prev.specs, ...parsed.specs }
+    }));
+  };
+
   return (
     <>
       <PageHeader 
@@ -59,22 +73,20 @@ export const ItemFormPage = memo(function ItemFormPage({
         backLabel="Back to Gear List"
       />
 
-      <div className="responsive-two-col">
+      <div className="responsive-two-col" style={{ paddingBottom: spacing[6] }}>
         {/* Main Form */}
         <Card>
           <div style={{ padding: spacing[5] }}>
             {/* Smart Paste Button */}
-            {onOpenSmartPaste && (
-              <div style={{ marginBottom: spacing[5] }}>
-                <Button 
-                  variant="secondary" 
-                  onClick={onOpenSmartPaste}
-                  style={{ width: '100%', justifyContent: 'center' }}
-                >
-                  📋 Smart Paste - {isEdit ? 'Update from Product Page' : 'Import from Product Page'}
-                </Button>
-              </div>
-            )}
+            <div style={{ marginBottom: spacing[5] }}>
+              <Button 
+                variant="secondary" 
+                onClick={() => setShowSmartPaste(true)}
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                📋 Smart Paste - {isEdit ? 'Update from Product Page' : 'Import from Product Page'}
+              </Button>
+            </div>
             
             {/* Preview Code Badge */}
             {!isEdit && previewCode && (
@@ -321,6 +333,14 @@ export const ItemFormPage = memo(function ItemFormPage({
           )}
         </div>
       </div>
+
+      {showSmartPaste && (
+        <SmartPasteModal
+          specs={specs}
+          onApply={handleSmartPasteApply}
+          onClose={() => setShowSmartPaste(false)}
+        />
+      )}
     </>
   );
 });

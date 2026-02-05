@@ -199,7 +199,7 @@ const parseProductText = (text, specsConfig) => {
 // ============================================================================
 // Smart Paste Modal Component
 // ============================================================================
-const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, onClose }) {
+export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, onClose }) {
   const [pastedText, setPastedText] = useState('');
   const [preview, setPreview] = useState(null);
   const textareaRef = useRef(null);
