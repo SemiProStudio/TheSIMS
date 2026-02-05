@@ -70,14 +70,14 @@ Post-processing detects boolean fields (weather sealing, touchscreen, etc.) and 
 ### ✅ 5.1 Batch import for multiple items
 Parser auto-detects multi-product content via boundary patterns (horizontal rules, markdown headings, "Product Name:" labels, brand-name lines after blank lines). When multiple products are found, a selection UI shows each product with name, brand, category, field count, and price. Users can select/deselect products for batch import or click "Edit" to view a single product in detail. `onApply` receives an array of payloads for batch mode.
 
-### ✅ 2.1 URL paste + fetch (client-side ready)
-A third "From URL" input tab allows entering a product page URL. The fetch handler calls a CORS proxy Edge Function. **Requires setup**: deploy a `fetch-product-page` Supabase Edge Function that accepts `{ url }` and returns `{ text, html }`. Client-side code, error handling, and fallback messaging are complete.
+### ✅ 2.1 URL paste + fetch
+A third "From URL" input tab allows entering a product page URL. The modal auto-constructs the Edge Function URL from `VITE_SUPABASE_URL`. The `fetch-product-page` Edge Function handles CORS, extracts JSON-LD structured data and Open Graph metadata before falling back to full HTML-to-text conversion. Supports domain allowlisting, timeout, and content size limits. Converts HTML tables to tab-separated values for optimal parser compatibility.
 
 ### ✅ 5.2 Re-import / spec update workflow
 A `diffSpecs()` engine compares new parse results against existing item specs, categorizing each field as added/changed/removed/unchanged. When `existingItem` prop is passed to SmartPasteModal, a "Compare with existing" button appears in the action bar. The diff view uses color-coded indicators: `+` green for added, `~` yellow for changed (with strikethrough on old value), `-` red for removed.
 
-### ✅ 5.3 Community alias database (client stubs ready)
-`recordAlias()` and `fetchCommunityAliases()` functions are implemented and exported. `recordAlias` calls a Supabase RPC `upsert_smart_paste_alias` to insert or increment usage. `fetchCommunityAliases` queries the `smart_paste_aliases` table with a minimum usage threshold (default 3). **Requires setup**: create the Supabase table and RPC function.
+### ✅ 5.3 Community alias database
+`recordAlias()` fires automatically when a user manually maps an unmatched field, recording the source key → spec name mapping via Supabase RPC. `fetchCommunityAliases()` loads on modal mount and injects community-learned aliases into the parser's Pass 1 lookup at priority 55–75 (scaling with usage count). SQL migration includes the `smart_paste_aliases` table with upsert RPC, RLS policies, and a cleanup function for pruning stale low-usage aliases.
 
 ---
 
@@ -160,10 +160,10 @@ Some specs appear multiple times with different values (e.g., "Video Resolution:
 | ~~9~~ | ~~3.3 Side-by-side source view~~ | ~~Medium~~ | ~~Medium~~ | ✅ v3.2 |
 | ~~10~~ | ~~4.1 Unit normalization~~ | ~~Medium~~ | ~~Medium~~ | ✅ v3.2 |
 | ~~11~~ | ~~4.4 Smart field type coercion~~ | ~~Medium~~ | ~~Medium~~ | ✅ v3.2 |
-| ~~12~~ | ~~2.1 URL paste + fetch~~ | ~~High~~ | ~~High~~ | ✅ v3.3 (needs Edge Fn) |
+| ~~12~~ | ~~2.1 URL paste + fetch~~ | ~~High~~ | ~~High~~ | ✅ v3.4 |
 | ~~13~~ | ~~4.2 Value range validation~~ | ~~Low~~ | ~~Low~~ | ✅ v3.1 |
 | ~~14~~ | ~~3.4 Paste history~~ | ~~Low~~ | ~~Low~~ | ✅ v3.2 |
 | 15 | 2.3 Image OCR | High | Medium | ⏳ Deferred |
 | ~~16~~ | ~~5.1 Batch import~~ | ~~High~~ | ~~Medium~~ | ✅ v3.3 |
 | ~~17~~ | ~~5.2 Re-import workflow~~ | ~~High~~ | ~~Medium~~ | ✅ v3.3 |
-| ~~18~~ | ~~5.3 Community alias database~~ | ~~High~~ | ~~Low~~ | ✅ v3.3 (needs DB) |
+| ~~18~~ | ~~5.3 Community alias database~~ | ~~High~~ | ~~Low~~ | ✅ v3.4 |

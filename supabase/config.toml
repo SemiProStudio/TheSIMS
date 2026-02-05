@@ -20,6 +20,11 @@ verify_jwt = true
 [functions.due-date-reminder]
 verify_jwt = false
 
+# Fetch Product Page Function
+# CORS proxy for Smart Paste URL import — fetches product pages for spec extraction
+[functions.fetch-product-page]
+verify_jwt = true
+
 # =============================================================================
 # Scheduled Functions (Cron Jobs)
 # =============================================================================

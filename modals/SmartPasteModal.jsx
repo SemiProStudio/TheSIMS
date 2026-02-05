@@ -22,7 +22,9 @@ import {
   fetchProductPage,
   diffSpecs,
   recordAlias,
+  fetchCommunityAliases,
 } from '../lib/smartPasteParser.js';
+import { getSupabase } from '../lib/supabase.js';
 
 // ============================================================================
 // Confidence Badge
@@ -382,6 +384,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
   const [urlInput, setUrlInput] = useState(''); // URL import (2.1)
   const [urlLoading, setUrlLoading] = useState(false);
   const [diffResults, setDiffResults] = useState(null); // re-import diff (5.2)
+  const [communityAliases, setCommunityAliases] = useState(null); // Map from fetchCommunityAliases (5.3)
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const sourceRef = useRef(null);
@@ -423,6 +426,21 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     if (inputMode === 'paste') textareaRef.current?.focus();
   }, [inputMode]);
 
+  // Load community aliases on mount (5.3)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const supabase = await getSupabase();
+        const aliases = await fetchCommunityAliases(supabase);
+        if (!cancelled) setCommunityAliases(aliases);
+      } catch {
+        // Community aliases not available — parser works fine without them
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // Build full list of spec field names across all categories
   const allSpecFields = specs ? [...new Set(
     Object.values(specs).flatMap(specList =>
@@ -453,11 +471,12 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
   // -------------------------------------------------------------------------
   const handleParse = useCallback(() => {
     if (!inputText.trim()) return;
+    const parseOpts = communityAliases ? { communityAliases } : {};
 
     // Check for multi-product content (5.1)
     const segments = detectProductBoundaries(inputText);
     if (segments.length > 1) {
-      const batch = parseBatchProducts(inputText, specs);
+      const batch = parseBatchProducts(inputText, specs, parseOpts);
       setBatchResults(batch);
       setBatchSelected(new Set(batch.map((_, i) => i)));
       setParseResult(null);
@@ -474,7 +493,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     // Single product
     setBatchResults(null);
     setDiffResults(null);
-    const result = parseProductText(inputText, specs);
+    const result = parseProductText(inputText, specs, parseOpts);
     setParseResult(result);
     setSelectedValues({});
     setManualMappings({});
@@ -486,7 +505,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     const matchCount = [...result.fields.values()].filter(f => f.value).length;
     savePasteHistory(inputText, { matchedCount: matchCount, name: result.name });
     setPasteHistory(getPasteHistory());
-  }, [inputText, specs, savePasteHistory, getPasteHistory]);
+  }, [inputText, specs, communityAliases, savePasteHistory, getPasteHistory]);
 
   const handleFileImport = useCallback(async (e) => {
     const file = e.target.files?.[0];
@@ -513,7 +532,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
       setInputText(text);
       setImportStatus(`success:Imported ${file.name} (${text.split('\n').length} lines)`);
 
-      const result = parseProductText(text, specs);
+      const result = parseProductText(text, specs, communityAliases ? { communityAliases } : {});
       setParseResult(result);
       setSelectedValues({});
       setManualMappings({});
@@ -559,7 +578,16 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
       }
       return { ...prev, _manualMappings: mappings };
     });
-  }, []);
+
+    // Record community alias (5.3) — async, fire and forget
+    if (specName && parseResult?.unmatchedPairs?.[unmatchedIdx]) {
+      const sourceKey = parseResult.unmatchedPairs[unmatchedIdx].key;
+      const category = categoryOverride || parseResult?.category || null;
+      getSupabase()
+        .then(supabase => recordAlias(supabase, sourceKey, specName, category))
+        .catch(() => {}); // Silent fail — community aliases are optional
+    }
+  }, [parseResult, categoryOverride]);
 
   // Restore from paste history (3.4)
   const handleRestoreHistory = useCallback((entry) => {
@@ -651,9 +679,8 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     setUrlLoading(true);
     setImportStatus('');
     try {
-      // Attempt to use the Edge Function proxy
-      // For now this will fail gracefully if not configured
-      const proxyUrl = null; // TODO: Configure from environment/settings
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const proxyUrl = supabaseUrl ? `${supabaseUrl}/functions/v1/fetch-product-page` : null;
       const { text } = await fetchProductPage(urlInput, proxyUrl);
       setInputText(text);
       setInputMode('paste');
@@ -1032,11 +1059,8 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
               color: colors.textMuted,
               marginBottom: spacing[2],
             }}>
-              Enter a product page URL to fetch specs automatically.
-              <br />
-              <span style={{ color: withOpacity(colors.accent1 || '#facc15', 80) }}>
-                ⚠ Requires CORS proxy Edge Function (not yet configured)
-              </span>
+              Enter a product page URL to fetch and parse specs automatically.
+              Supported sites include B&H, Adorama, manufacturer pages, and Amazon.
             </div>
             <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
               <input
