@@ -1694,9 +1694,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
               </div>
             )}
           </div>
-          {/* end results panel */}
           </div>
-          {/* end grid wrapper */}
         )}
 
         {/* ================================================================= */}
