@@ -16,6 +16,8 @@ import { Modal, ModalHeader } from './ModalBase.jsx';
 
 // Re-export SmartPasteModal from its new dedicated module
 export { SmartPasteModal } from './SmartPasteModal.jsx';
+// Also import locally for use within this file
+import { SmartPasteModal } from './SmartPasteModal.jsx';
 
 // ============================================================================
 // Item Modal (Add/Edit)
