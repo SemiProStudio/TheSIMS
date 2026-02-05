@@ -13,9 +13,10 @@ import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 import { useItemForm } from '../ItemForm.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
+import { SmartPasteModal } from './SmartPasteModal.jsx';
 
-// Re-export SmartPasteModal from its new dedicated module
-export { SmartPasteModal } from './SmartPasteModal.jsx';
+// Re-export SmartPasteModal for consumers who import from ItemModal
+export { SmartPasteModal };
 
 // ============================================================================
 // Item Modal (Add/Edit)
