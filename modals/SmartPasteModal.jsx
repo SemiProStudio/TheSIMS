@@ -26,15 +26,7 @@ import {
   ocrImage,
   terminateOCR,
 } from '../lib/smartPasteParser.js';
-// getSupabase imported lazily to avoid module evaluation issues
-let _getSupabase = null;
-async function getSupabaseLazy() {
-  if (!_getSupabase) {
-    const mod = await import(/* @vite-ignore */ '../lib/supabase.js');
-    _getSupabase = mod.getSupabase;
-  }
-  return _getSupabase();
-}
+import { getSupabase } from '../lib/supabase.js';
 
 // ============================================================================
 // Confidence Badge
@@ -442,7 +434,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     let cancelled = false;
     (async () => {
       try {
-        const supabase = await getSupabaseLazy();
+        const supabase = await getSupabase();
         const aliases = await fetchCommunityAliases(supabase);
         if (!cancelled) setCommunityAliases(aliases);
       } catch {
@@ -623,7 +615,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     if (specName && parseResult?.unmatchedPairs?.[unmatchedIdx]) {
       const sourceKey = parseResult.unmatchedPairs[unmatchedIdx].key;
       const category = categoryOverride || parseResult?.category || null;
-      getSupabaseLazy()
+      getSupabase()
         .then(supabase => recordAlias(supabase, sourceKey, specName, category))
         .catch(() => {}); // Silent fail — community aliases are optional
     }
