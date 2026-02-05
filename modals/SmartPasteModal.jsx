@@ -5,7 +5,7 @@
 
 import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Upload, FileText, ChevronDown, ChevronUp, AlertCircle, Check, X as XIcon } from 'lucide-react';
+import { Upload, FileText, ChevronDown, ChevronUp, AlertCircle, Check, X as XIcon, Edit2, AlertTriangle } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
@@ -50,6 +50,29 @@ function ConfidenceBadge({ confidence }) {
     }}>
       {label}
     </span>
+  );
+}
+
+// ============================================================================
+// Basic Info Row (read-only)
+// ============================================================================
+function BasicInfoRow({ label, value }) {
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '80px 1fr',
+      gap: spacing[2],
+      padding: `${spacing[1]}px 0`,
+      fontSize: typography.fontSize.sm,
+    }}>
+      <span style={{ fontWeight: 600, color: colors.textPrimary }}>{label}</span>
+      <span style={{
+        color: value ? colors.textSecondary : withOpacity(colors.textMuted, 40),
+        fontStyle: value ? 'normal' : 'italic',
+      }}>
+        {value || 'Not detected'}
+      </span>
+    </div>
   );
 }
 
@@ -117,7 +140,53 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
               }}>
                 {value}
               </span>
-              <ConfidenceBadge confidence={fieldData.confidence} />
+              {/* Conflict badge (4.3) */}
+              {fieldData.hasConflict && !selectedValue && (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 3,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  background: withOpacity(colors.danger || '#f87171', 15),
+                  color: colors.danger || '#f87171',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  lineHeight: '16px',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}>
+                  <AlertTriangle size={9} /> Conflict
+                </span>
+              )}
+              {/* Merged badge (1.2) */}
+              {fieldData.mergedCount && (
+                <span style={{
+                  display: 'inline-block',
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  background: withOpacity(colors.primary, 15),
+                  color: colors.primary,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  lineHeight: '16px',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}>
+                  Combined ×{fieldData.mergedCount}
+                </span>
+              )}
+              {/* Standard confidence badge */}
+              {!fieldData.hasConflict && !fieldData.mergedCount && (
+                <ConfidenceBadge confidence={fieldData.confidence} />
+              )}
+              {fieldData.hasConflict && !fieldData.mergedCount && selectedValue && (
+                <ConfidenceBadge confidence={fieldData.confidence} />
+              )}
               {hasAlts && (
                 <button
                   onClick={() => setIsOpen(!isOpen)}
@@ -135,13 +204,29 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
                     whiteSpace: 'nowrap',
                     flexShrink: 0,
                   }}
-                  title={`${fieldData.alternatives.length} options — click to choose`}
+                  title={fieldData.hasConflict
+                    ? `⚠ ${fieldData.alternatives.length} conflicting values — click to choose`
+                    : `${fieldData.alternatives.length} options — click to choose`}
                 >
                   {isOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-                  <span>{fieldData.alternatives.length} options</span>
+                  <span>{fieldData.alternatives.length} {fieldData.hasConflict ? 'conflicts' : 'options'}</span>
                 </button>
               )}
             </div>
+            {/* Validation warning (4.2) */}
+            {fieldData.validationWarning && (
+              <div style={{
+                fontSize: 11,
+                color: colors.accent1 || '#facc15',
+                marginTop: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}>
+                <AlertTriangle size={10} />
+                <span>{fieldData.validationWarning}</span>
+              </div>
+            )}
             {/* Source key hint */}
             {fieldData.sourceKey && fieldData.sourceKey.toLowerCase() !== specName.toLowerCase() && (
               <div style={{
@@ -247,6 +332,8 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
   const [showEmptyFields, setShowEmptyFields] = useState(true);
   const [confidenceMode, setConfidenceMode] = useState('balanced'); // 'strict' | 'balanced' | 'aggressive'
   const [manualMappings, setManualMappings] = useState({}); // { unmatchedIndex: specName }
+  const [brandOverride, setBrandOverride] = useState(null); // null = use detected
+  const [categoryOverride, setCategoryOverride] = useState(null); // null = use detected
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -262,6 +349,9 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
       Array.isArray(specList) ? specList.map(s => s.name) : []
     )
   )] : [];
+
+  // Available categories for the override dropdown (3.2)
+  const availableCategories = specs ? Object.keys(specs).sort() : [];
 
   // Build required fields set
   const requiredFields = new Set();
@@ -287,6 +377,8 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     setParseResult(result);
     setSelectedValues({});
     setManualMappings({});
+    setBrandOverride(null);
+    setCategoryOverride(null);
     setImportStatus('');
   }, [inputText, specs]);
 
@@ -319,6 +411,8 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
       setParseResult(result);
       setSelectedValues({});
       setManualMappings({});
+      setBrandOverride(null);
+      setCategoryOverride(null);
     } catch (err) {
       console.error('File import error:', err);
       setImportStatus(`error:${err.message || 'Failed to read file'}`);
@@ -390,9 +484,12 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
   const handleApply = useCallback(() => {
     if (!parseResult) return;
     const payload = buildApplyPayload(parseResult, selectedValues);
+    // Apply brand/category overrides (3.2)
+    if (brandOverride !== null) payload.brand = brandOverride;
+    if (categoryOverride !== null) payload.category = categoryOverride;
     onApply(payload);
     onClose();
-  }, [parseResult, selectedValues, onApply, onClose]);
+  }, [parseResult, selectedValues, brandOverride, categoryOverride, onApply, onClose]);
 
   // -------------------------------------------------------------------------
   // Derived data
@@ -411,8 +508,8 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     ? [...filteredFields.values()].filter(f => f.alternatives && f.alternatives.length > 1).length
     : 0;
 
-  // Get category-specific spec fields if category detected
-  const detectedCategory = parseResult?.category;
+  // Get category-specific spec fields if category detected (respects override — 3.2)
+  const detectedCategory = categoryOverride !== null ? categoryOverride : parseResult?.category;
   const categorySpecFields = detectedCategory ? getCategoryFields(detectedCategory) : [];
 
   // Build ordered field list: category fields first (in order), then any extra matched fields
@@ -767,7 +864,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
             overflow: 'hidden',
             marginBottom: spacing[3],
           }}>
-            {/* Basic Info Section */}
+            {/* Basic Info Section — editable brand/category (3.2) */}
             <div style={{
               padding: `${spacing[3]}px ${spacing[3]}px ${spacing[2]}px`,
               borderBottom: `1px solid ${colors.border}`,
@@ -783,30 +880,99 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
                 Basic Information
               </div>
 
-              {[
-                { label: 'Name', value: parseResult.name, key: 'name' },
-                { label: 'Brand', value: parseResult.brand, key: 'brand' },
-                { label: 'Category', value: parseResult.category, key: 'category' },
-                { label: 'Price', value: parseResult.purchasePrice ? `$${parseResult.purchasePrice}${parseResult.priceNote ? ` (${parseResult.priceNote})` : ''}` : '', key: 'price' },
-                ...(parseResult.modelNumber ? [{ label: 'Model #', value: parseResult.modelNumber, key: 'model' }] : []),
-                ...(parseResult.serialNumber ? [{ label: 'Serial #', value: parseResult.serialNumber, key: 'serial' }] : []),
-              ].map(item => (
-                <div key={item.key} style={{
-                  display: 'grid',
-                  gridTemplateColumns: '80px 1fr',
-                  gap: spacing[2],
-                  padding: `${spacing[1]}px 0`,
-                  fontSize: typography.fontSize.sm,
-                }}>
-                  <span style={{ fontWeight: 600, color: colors.textPrimary }}>{item.label}</span>
-                  <span style={{
-                    color: item.value ? colors.textSecondary : withOpacity(colors.textMuted, 40),
-                    fontStyle: item.value ? 'normal' : 'italic',
-                  }}>
-                    {item.value || 'Not detected'}
-                  </span>
+              {/* Name — read only */}
+              <BasicInfoRow label="Name" value={parseResult.name} />
+
+              {/* Brand — editable (3.2) */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '80px 1fr',
+                gap: spacing[2],
+                padding: `${spacing[1]}px 0`,
+                fontSize: typography.fontSize.sm,
+                alignItems: 'center',
+              }}>
+                <span style={{ fontWeight: 600, color: colors.textPrimary }}>Brand</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
+                  <input
+                    type="text"
+                    value={brandOverride !== null ? brandOverride : (parseResult.brand || '')}
+                    onChange={e => setBrandOverride(e.target.value)}
+                    placeholder="Not detected — type to set"
+                    style={{
+                      ...styles.input,
+                      fontSize: typography.fontSize.sm,
+                      padding: `2px ${spacing[2]}px`,
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  />
+                  {brandOverride !== null && brandOverride !== parseResult.brand && (
+                    <button
+                      onClick={() => setBrandOverride(null)}
+                      title="Reset to detected"
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: colors.textMuted, padding: 2, display: 'flex',
+                      }}
+                    >
+                      <XIcon size={12} />
+                    </button>
+                  )}
                 </div>
-              ))}
+              </div>
+
+              {/* Category — editable dropdown (3.2) */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '80px 1fr',
+                gap: spacing[2],
+                padding: `${spacing[1]}px 0`,
+                fontSize: typography.fontSize.sm,
+                alignItems: 'center',
+              }}>
+                <span style={{ fontWeight: 600, color: colors.textPrimary }}>Category</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
+                  <select
+                    value={categoryOverride !== null ? categoryOverride : (parseResult.category || '')}
+                    onChange={e => setCategoryOverride(e.target.value || null)}
+                    style={{
+                      ...styles.input,
+                      fontSize: typography.fontSize.sm,
+                      padding: `2px ${spacing[2]}px`,
+                      flex: 1,
+                      minWidth: 0,
+                      cursor: 'pointer',
+                      color: (categoryOverride || parseResult.category) ? colors.textSecondary : withOpacity(colors.textMuted, 40),
+                    }}
+                  >
+                    <option value="">Not detected</option>
+                    {availableCategories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  {categoryOverride !== null && categoryOverride !== parseResult.category && (
+                    <button
+                      onClick={() => setCategoryOverride(null)}
+                      title="Reset to detected"
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: colors.textMuted, padding: 2, display: 'flex',
+                      }}
+                    >
+                      <XIcon size={12} />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Price, Model, Serial — read only */}
+              <BasicInfoRow
+                label="Price"
+                value={parseResult.purchasePrice ? `$${parseResult.purchasePrice}${parseResult.priceNote ? ` (${parseResult.priceNote})` : ''}` : ''}
+              />
+              {parseResult.modelNumber && <BasicInfoRow label="Model #" value={parseResult.modelNumber} />}
+              {parseResult.serialNumber && <BasicInfoRow label="Serial #" value={parseResult.serialNumber} />}
             </div>
 
             {/* Matched Specs Section */}

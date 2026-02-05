@@ -43,6 +43,18 @@ When pasting from a browser, the `onPaste` handler checks for `text/html` in the
 ### ✅ 3.1 Confidence threshold control
 Three-button mode selector (Strict/Balanced/Aggressive) filters which matches are displayed. Strict mode (≥85) shows only high-confidence direct matches; Aggressive (≥50) shows everything the fuzzy matcher found.
 
+### ✅ 1.2 Multi-value field merging
+When multiple direct-match candidates (≥85 confidence) target the same spec field with similar confidence levels (within 10 points), their values are merged with comma separation. A "Combined ×N" badge displays on merged fields.
+
+### ✅ 3.2 Editable brand/category override
+Brand is now an editable text input; Category is a dropdown populated from the specs config. Changing the category instantly re-orders the spec field list to match the new category. Overrides flow through to `buildApplyPayload`. A reset button restores the auto-detected value.
+
+### ✅ 4.2 Value range validation
+Known spec fields are validated against expected ranges (Weight ≤100kg, Focal Length ≤2000mm, Aperture f/0.7–f/128, Power ≤20kW, Screen ≤100", etc.). Out-of-range values show a yellow warning icon and message rather than being rejected.
+
+### ✅ 4.3 Duplicate field detection
+When multiple candidates match the same spec field with different values and similar confidence (within 15 points), a "⚠ Conflict" badge replaces the confidence badge. The alternatives dropdown shows "conflicts" instead of "options" so users can pick the correct value.
+
 ---
 
 ## Remaining Planned Improvements
@@ -51,7 +63,7 @@ Three-button mode selector (Strict/Balanced/Aggressive) filters which matches ar
 
 **~~1.1 Manual mapping for unmatched pairs~~** ✅ Implemented in v3
 
-**1.2 Multi-value field merging**
+**~~1.2 Multi-value field merging~~** ✅ Implemented in v3.1
 Some specs appear multiple times with different values (e.g., "Video Resolution: 4K 60p" and "Video Resolution: 1080p 120p"). The parser should detect these and concatenate rather than picking just one.
 
 - In Pass 3, when multiple candidates share the same sourceKey pattern, merge their values with a comma separator
@@ -90,12 +102,7 @@ For photographed spec sheets or screenshots, add basic OCR capability.
 
 **~~3.1 Confidence threshold control~~** ✅ Implemented in v3
 
-**3.2 Editable brand/category override**
-If the user manually corrects the detected brand or category in the results panel, the UI should re-filter which spec fields are shown and potentially re-run category-aware matching.
-
-- Make Brand and Category fields in the Basic Information section editable (click to edit)
-- On category change, rebuild the ordered field list with the new category's specs
-- Optionally re-run Pass 2 fuzzy matching with the corrected category for better cross-category penalty scoring
+**~~3.2 Editable brand/category override~~** ✅ Implemented in v3.1
 
 **3.3 Side-by-side source view**
 Show the original pasted/imported text alongside the parsed results so users can visually verify matches and spot missed data.
@@ -122,20 +129,9 @@ Values like "6.55 in" vs "166.4 mm" should be recognized as equivalent dimension
 - Offer a toggle to normalize to preferred units (configurable per user)
 - Display both original and normalized values when conversion applies
 
-**4.2 Value validation against known ranges**
-For well-known spec fields, validate that extracted values fall within reasonable ranges.
+**~~4.2 Value validation against known ranges~~** ✅ Implemented in v3.1
 
-- Weight: flag if > 100kg for most categories (likely parsing error)
-- Focal length: flag if non-numeric or > 2000mm
-- Aperture: flag if not in f/X.X format
-- Show a warning badge on suspicious values rather than rejecting them
-
-**4.3 Duplicate field detection**
-When the same spec field gets matched by multiple source keys with different values, surface this as a conflict rather than silently picking the highest-confidence match.
-
-- Show a "⚠ Conflict" badge instead of a confidence badge
-- Display all conflicting values with their sources
-- Let the user pick which one to use
+**~~4.3 Duplicate field detection~~** ✅ Implemented in v3.1
 
 **4.4 Smart field type coercion**
 Some fields expect specific formats. Add post-processing to coerce extracted values:
@@ -178,19 +174,19 @@ Allow the system to learn from user corrections. When a user manually maps an un
 
 | Priority | Item | Effort | Impact | Status |
 |----------|------|--------|--------|--------|
-| ~~1~~ | ~~1.1 Manual mapping for unmatched~~ | ~~Low~~ | ~~High~~ | ✅ Done |
-| ~~2~~ | ~~2.2 Clipboard HTML preservation~~ | ~~Low~~ | ~~High~~ | ✅ Done |
-| ~~3~~ | ~~3.1 Confidence threshold control~~ | ~~Low~~ | ~~Medium~~ | ✅ Done |
-| 4 | 3.2 Editable brand/category | Medium | High | |
-| 5 | 1.2 Multi-value merging | Medium | Medium | |
-| ~~6~~ | ~~1.3 Improved price detection~~ | ~~Low~~ | ~~Medium~~ | ✅ Done |
-| 7 | 4.3 Duplicate field detection | Medium | Medium | |
-| ~~8~~ | ~~1.4 Serial/model extraction~~ | ~~Low~~ | ~~Medium~~ | ✅ Done |
+| ~~1~~ | ~~1.1 Manual mapping for unmatched~~ | ~~Low~~ | ~~High~~ | ✅ v3 |
+| ~~2~~ | ~~2.2 Clipboard HTML preservation~~ | ~~Low~~ | ~~High~~ | ✅ v3 |
+| ~~3~~ | ~~3.1 Confidence threshold control~~ | ~~Low~~ | ~~Medium~~ | ✅ v3 |
+| ~~4~~ | ~~3.2 Editable brand/category~~ | ~~Medium~~ | ~~High~~ | ✅ v3.1 |
+| ~~5~~ | ~~1.2 Multi-value merging~~ | ~~Medium~~ | ~~Medium~~ | ✅ v3.1 |
+| ~~6~~ | ~~1.3 Improved price detection~~ | ~~Low~~ | ~~Medium~~ | ✅ v3 |
+| ~~7~~ | ~~4.3 Duplicate field detection~~ | ~~Medium~~ | ~~Medium~~ | ✅ v3.1 |
+| ~~8~~ | ~~1.4 Serial/model extraction~~ | ~~Low~~ | ~~Medium~~ | ✅ v3 |
 | 9 | 3.3 Side-by-side source view | Medium | Medium | |
 | 10 | 4.1 Unit normalization | Medium | Medium | |
 | 11 | 4.4 Smart field type coercion | Medium | Medium | |
 | 12 | 2.1 URL paste + fetch | High | High | |
-| 13 | 4.2 Value range validation | Low | Low | |
+| ~~13~~ | ~~4.2 Value range validation~~ | ~~Low~~ | ~~Low~~ | ✅ v3.1 |
 | 14 | 3.4 Paste history | Low | Low | |
 | 15 | 2.3 Image OCR | High | Medium | |
 | 16 | 5.1 Batch import | High | Medium | |
