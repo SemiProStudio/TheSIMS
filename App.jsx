@@ -102,40 +102,41 @@ export default function App() {
   const dataContext = useData();
   
   // ============================================================================
-  // Core Data State - synced from context
+  // Core Data State - directly from DataContext (no local duplication)
+  // This eliminates the sync useEffect and prevents double-render cascades
   // ============================================================================
-  const [inventory, setInventory] = useState([]);
-  const [packages, setPackages] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState(DEFAULT_ROLES);
-  const [specs, setSpecs] = useState(DEFAULT_SPECS);
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const {
+    inventory,
+    setInventory,
+    packages,
+    setPackages,
+    users,
+    setUsers,
+    roles: contextRoles,
+    setRoles,
+    specs: contextSpecs,
+    setSpecs,
+    locations: contextLocations,
+    setLocations,
+    categories: contextCategories,
+    setCategories,
+    auditLog,
+    setAuditLog,
+    packLists,
+    setPackLists,
+    clients,
+    setClients,
+  } = dataContext;
+
+  // Apply defaults for data that may not be loaded yet
+  const roles = contextRoles?.length ? contextRoles : DEFAULT_ROLES;
+  const specs = contextSpecs && Object.keys(contextSpecs).length ? contextSpecs : DEFAULT_SPECS;
+  const locations = contextLocations?.length ? contextLocations : DEFAULT_LOCATIONS;
+  const categories = contextCategories?.length ? contextCategories : DEFAULT_CATEGORIES;
+
+  // Category settings and change log are local-only (not persisted to DB yet)
   const [categorySettings, setCategorySettings] = useState(DEFAULT_CATEGORY_SETTINGS);
-  const [locations, setLocations] = useState(DEFAULT_LOCATIONS);
-  const [auditLog, setAuditLog] = useState([]);
   const [changeLog, setChangeLog] = useState([]);
-  const [packLists, setPackLists] = useState([]);
-  const [clients, setClients] = useState([]);
-  
-  // Sync with context data - always sync when data changes
-  useEffect(() => {
-    if (!dataContext.loading && dataContext.dataLoaded) {
-      console.log('[App] Syncing data from context:', {
-        inventory: dataContext.inventory?.length || 0,
-        packages: dataContext.packages?.length || 0
-      });
-      setInventory(dataContext.inventory || []);
-      setPackages(dataContext.packages || []);
-      setClients(dataContext.clients || []);
-      setUsers(dataContext.users || []);
-      setPackLists(dataContext.packLists || []);
-      setAuditLog(dataContext.auditLog || []);
-      if (dataContext.roles?.length) setRoles(dataContext.roles);
-      if (dataContext.locations?.length) setLocations(dataContext.locations);
-      if (dataContext.categories?.length) setCategories(dataContext.categories);
-      if (dataContext.specs && Object.keys(dataContext.specs).length) setSpecs(dataContext.specs);
-    }
-  }, [dataContext.loading, dataContext.dataLoaded, dataContext.inventory, dataContext.packages, dataContext.clients, dataContext.users, dataContext.packLists, dataContext.auditLog, dataContext.roles, dataContext.locations, dataContext.categories, dataContext.specs]);
 
   // ============================================================================
   // Auth State

@@ -6,8 +6,25 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { VIEWS } from '../constants.js';
+import { useData } from '../lib/DataContext.jsx';
+import { useAuth } from '../lib/AuthContext.jsx';
 
 const NavigationContext = createContext(null);
+
+/**
+ * NavigationProviderWithData - A wrapper that pulls inventory/packages from DataContext
+ * and isLoggedIn from AuthContext, then passes them to NavigationProvider
+ */
+export function NavigationProviderWithData({ children }) {
+  const { inventory, packages } = useData();
+  const { isAuthenticated } = useAuth();
+  
+  return (
+    <NavigationProvider isLoggedIn={isAuthenticated} inventory={inventory || []} packages={packages || []}>
+      {children}
+    </NavigationProvider>
+  );
+}
 
 export function NavigationProvider({ children, isLoggedIn = false, inventory = [], packages = [] }) {
   // Navigation state

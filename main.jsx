@@ -10,7 +10,7 @@ import { ErrorBoundary } from './components/ErrorBoundary.jsx'
 import { SidebarProvider } from './contexts/SidebarContext.jsx'
 import { ModalProvider } from './contexts/ModalContext.jsx'
 import { FilterProvider } from './contexts/FilterContext.jsx'
-import { NavigationProvider } from './contexts/NavigationContext.jsx'
+import { NavigationProviderWithData } from './contexts/NavigationContext.jsx'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -23,10 +23,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <SidebarProvider>
                 <ModalProvider>
                   <FilterProvider>
-                    <NavigationProvider>
+                    <NavigationProviderWithData>
                       <App />
                       <SpeedInsights />
-                    </NavigationProvider>
+                    </NavigationProviderWithData>
                   </FilterProvider>
                 </ModalProvider>
               </SidebarProvider>
