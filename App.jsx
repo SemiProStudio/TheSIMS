@@ -507,22 +507,33 @@ export default function App() {
   const processCheckout = useCallback(async (checkoutData) => {
     const { itemId, borrowerName, borrowerEmail, borrowerPhone, project, projectType, dueDate, notes, conditionAtCheckout, checkedOutDate, checkedOutTime } = checkoutData;
     
-    const currentItem = inventory.find(i => i.id === itemId);
-    
-    // Use DataContext checkOutItem for proper Supabase persistence
-    if (dataContext?.checkOutItem) {
-      try {
-        await dataContext.checkOutItem(itemId, {
-          userId: currentUser?.id,
-          userName: borrowerName,
-          clientId: null, // Could be added to checkout form if needed
-          clientName: null,
-          project: project,
-          dueBack: dueDate
-        });
-      } catch (err) {
-        console.error('Failed to save checkout:', err);
-        // Fallback to local state only
+    try {
+      // Use DataContext checkOutItem for proper Supabase persistence
+      if (dataContext?.checkOutItem) {
+        try {
+          await dataContext.checkOutItem(itemId, {
+            userId: currentUser?.id,
+            userName: borrowerName,
+            clientId: null,
+            clientName: null,
+            project: project,
+            dueBack: dueDate
+          });
+        } catch (err) {
+          console.error('Failed to save checkout to Supabase:', err);
+          // Fallback to local state only
+          setInventory(prev => updateById(prev, itemId, item => ({
+            status: STATUS.CHECKED_OUT,
+            checkedOutTo: borrowerName,
+            checkedOutDate: checkedOutDate,
+            dueBack: dueDate,
+            checkoutProject: project,
+            checkoutProjectType: projectType,
+            checkoutCount: (item.checkoutCount || 0) + 1
+          })));
+        }
+      } else {
+        // No DataContext available, update local state only
         setInventory(prev => updateById(prev, itemId, item => ({
           status: STATUS.CHECKED_OUT,
           checkedOutTo: borrowerName,
@@ -533,68 +544,60 @@ export default function App() {
           checkoutCount: (item.checkoutCount || 0) + 1
         })));
       }
-    } else {
-      // No DataContext available, update local state only
-      setInventory(prev => updateById(prev, itemId, item => ({
-        status: STATUS.CHECKED_OUT,
-        checkedOutTo: borrowerName,
-        checkedOutDate: checkedOutDate,
-        dueBack: dueDate,
-        checkoutProject: project,
-        checkoutProjectType: projectType,
-        checkoutCount: (item.checkoutCount || 0) + 1
-      })));
+      
+      if (selectedItem?.id === itemId) {
+        setSelectedItem(prev => ({ 
+          ...prev, 
+          status: STATUS.CHECKED_OUT,
+          checkedOutTo: borrowerName,
+          checkedOutDate: checkedOutDate,
+          dueBack: dueDate,
+          checkoutProject: project,
+          checkoutProjectType: projectType,
+          checkoutCount: (prev.checkoutCount || 0) + 1
+        }));
+      }
+      
+      // Add audit log entry
+      addAuditLog({
+        type: 'item_checkout',
+        description: `${checkoutItem?.name || itemId} checked out to ${borrowerName}`,
+        user: currentUser?.name || 'Unknown',
+        itemId: itemId
+      });
+      
+      // Add change log entry
+      addChangeLog({
+        type: 'checkout',
+        itemId: itemId,
+        itemType: 'item',
+        itemName: checkoutItem?.name || itemId,
+        description: `Checked out to ${borrowerName} for ${project || 'unspecified project'}`,
+        changes: [
+          { field: 'status', oldValue: STATUS.AVAILABLE, newValue: STATUS.CHECKED_OUT },
+          { field: 'checkedOutTo', newValue: borrowerName },
+          { field: 'dueBack', newValue: dueDate }
+        ]
+      });
+      
+      // Send checkout confirmation email (non-blocking)
+      if (borrowerEmail && dataContext?.sendCheckoutEmail) {
+        dataContext.sendCheckoutEmail({
+          borrowerEmail,
+          borrowerName,
+          item: checkoutItem || { id: itemId, name: itemId },
+          checkoutDate: checkedOutDate,
+          dueDate,
+          project
+        }).catch(err => console.error('Email send failed:', err));
+      }
+    } catch (err) {
+      console.error('Checkout process failed:', err);
+    } finally {
+      // Always close modal and clean up
+      closeModal();
+      setCheckoutItem(null);
     }
-    
-    if (selectedItem?.id === itemId) {
-      setSelectedItem(prev => ({ 
-        ...prev, 
-        status: STATUS.CHECKED_OUT,
-        checkedOutTo: borrowerName,
-        checkedOutDate: checkedOutDate,
-        dueBack: dueDate,
-        checkoutProject: project,
-        checkoutProjectType: projectType,
-        checkoutCount: (prev.checkoutCount || 0) + 1
-      }));
-    }
-    
-    // Add audit log entry
-    addAuditLog({
-      type: 'item_checkout',
-      description: `${checkoutItem?.name || itemId} checked out to ${borrowerName}`,
-      user: currentUser?.name || 'Unknown',
-      itemId: itemId
-    });
-    
-    // Add change log entry
-    addChangeLog({
-      type: 'checkout',
-      itemId: itemId,
-      itemType: 'item',
-      itemName: checkoutItem?.name || itemId,
-      description: `Checked out to ${borrowerName} for ${project || 'unspecified project'}`,
-      changes: [
-        { field: 'status', oldValue: STATUS.AVAILABLE, newValue: STATUS.CHECKED_OUT },
-        { field: 'checkedOutTo', newValue: borrowerName },
-        { field: 'dueBack', newValue: dueDate }
-      ]
-    });
-    
-    // Send checkout confirmation email (non-blocking)
-    if (borrowerEmail && dataContext?.sendCheckoutEmail) {
-      dataContext.sendCheckoutEmail({
-        borrowerEmail,
-        borrowerName,
-        item: checkoutItem || { id: itemId, name: itemId },
-        checkoutDate: checkedOutDate,
-        dueDate,
-        project
-      }).catch(err => console.error('Email send failed:', err));
-    }
-    
-    closeModal();
-    setCheckoutItem(null);
   }, [currentUser, selectedItem, checkoutItem, closeModal, addAuditLog, addChangeLog, dataContext, inventory]);
 
   // Process checkin from modal
