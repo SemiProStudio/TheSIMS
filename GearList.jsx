@@ -744,9 +744,10 @@ function GearList({
         marginBottom: spacing[5],
         flexWrap: 'wrap',
         alignItems: 'center',
+        justifyContent: 'space-between',
       }}>
-        {/* Search */}
-        <div style={{ flex: 1, minWidth: 200, maxWidth: 400 }}>
+        {/* Search - left side */}
+        <div style={{ minWidth: 200, maxWidth: 400, flex: '1 1 200px' }}>
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}
@@ -755,90 +756,93 @@ function GearList({
           />
         </div>
 
-        {/* Category Filter */}
-        <Select
-          value={categoryFilter}
-          onChange={e => setCategoryFilter(e.target.value)}
-          options={[
-            { value: 'all', label: 'All Categories' },
-            ...categories.map(c => ({ value: c, label: c }))
-          ]}
-          style={{ minWidth: 150 }}
-          aria-label="Filter by category"
-        />
+        {/* Right side controls */}
+        <div style={{ display: 'flex', gap: spacing[3], alignItems: 'center', flexWrap: 'wrap', marginLeft: 'auto' }}>
+          {/* Clear Filters Button */}
+          {hasActiveFilters && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setCategoryFilter('all');
+                setStatusFilter('all');
+              }}
+              style={{
+                ...styles.btnSec,
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[1],
+                padding: '12px 14px',
+                fontSize: typography.fontSize.sm,
+                color: colors.textMuted,
+              }}
+              title="Clear all filters"
+            >
+              <X size={14} />
+              Clear
+            </button>
+          )}
 
-        {/* Status Filter */}
-        <Select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          options={[
-            { value: 'all', label: 'All Status' },
-            { value: 'available', label: 'Available' },
-            { value: 'checked-out', label: 'Checked Out' },
-            { value: 'reserved', label: 'Reserved' },
-            { value: 'needs-attention', label: 'Needs Attention' },
-            { value: 'missing', label: 'Missing' },
-            { value: 'overdue', label: 'Overdue' },
-            { value: 'low-stock', label: 'Low Stock' },
-          ]}
-          style={{ minWidth: 140 }}
-          aria-label="Filter by status"
-        />
+          {/* Category Filter */}
+          <Select
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value)}
+            options={[
+              { value: 'all', label: 'All Categories' },
+              ...categories.map(c => ({ value: c, label: c }))
+            ]}
+            style={{ minWidth: 150 }}
+            aria-label="Filter by category"
+          />
 
-        {/* Clear Filters Button */}
-        {hasActiveFilters && (
-          <button
-            onClick={() => {
-              setSearchQuery('');
-              setCategoryFilter('all');
-              setStatusFilter('all');
-            }}
-            style={{
-              ...styles.btnSec,
-              display: 'flex',
-              alignItems: 'center',
-              gap: spacing[1],
-              padding: '12px 14px',
-              fontSize: typography.fontSize.sm,
-              color: colors.textMuted,
-            }}
-            title="Clear all filters"
-          >
-            <X size={14} />
-            Clear
-          </button>
-        )}
+          {/* Status Filter */}
+          <Select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            options={[
+              { value: 'all', label: 'All Status' },
+              { value: 'available', label: 'Available' },
+              { value: 'checked-out', label: 'Checked Out' },
+              { value: 'reserved', label: 'Reserved' },
+              { value: 'needs-attention', label: 'Needs Attention' },
+              { value: 'missing', label: 'Missing' },
+              { value: 'overdue', label: 'Overdue' },
+              { value: 'low-stock', label: 'Low Stock' },
+            ]}
+            style={{ minWidth: 140 }}
+            aria-label="Filter by status"
+          />
 
-        {/* View Toggle */}
-        <div style={{
-          display: 'flex',
-          background: `${withOpacity(colors.primary, 15)}`,
-          borderRadius: borderRadius.lg
-        }}>
-          <button
-            onClick={() => setIsGridView(true)}
-            style={{
-              ...styles.btnSec,
-              border: 'none',
-              padding: '12px 14px',
-              background: isGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
-              color: isGridView ? colors.primary : colors.textSecondary,
-            }}
-          >
-            <Grid size={18} />
-          </button>
-          <button
-            onClick={() => setIsGridView(false)}
-            style={{
-              ...styles.btnSec,
-              border: 'none',
-              padding: '12px 14px',
-              background: !isGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
-              color: !isGridView ? colors.primary : colors.textSecondary,
-            }}
-          >
-            <List size={18} />
-          </button>
+          {/* View Toggle */}
+          <div style={{
+            display: 'flex',
+            background: `${withOpacity(colors.primary, 15)}`,
+            borderRadius: borderRadius.lg
+          }}>
+            <button
+              onClick={() => setIsGridView(true)}
+              style={{
+                ...styles.btnSec,
+                border: 'none',
+                padding: '12px 14px',
+                background: isGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
+                color: isGridView ? colors.primary : colors.textSecondary,
+              }}
+            >
+              <Grid size={18} />
+            </button>
+            <button
+              onClick={() => setIsGridView(false)}
+              style={{
+                ...styles.btnSec,
+                border: 'none',
+                padding: '12px 14px',
+                background: !isGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
+                color: !isGridView ? colors.primary : colors.textSecondary,
+              }}
+            >
+              <List size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
