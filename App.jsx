@@ -669,11 +669,12 @@ export default function App() {
   }, [selectedItem, openModal]);
 
   // Save maintenance record (add or update)
-  const saveMaintenance = useCallback((record) => {
+  const saveMaintenance = useCallback(async (record) => {
     if (!maintenanceItem) return;
 
     const itemId = maintenanceItem.id;
     const isEdit = !!editingMaintenanceRecord;
+    const tempId = record.id;
 
     setInventory(prev => updateById(prev, itemId, item => {
       const existingHistory = item.maintenanceHistory || [];
@@ -710,7 +711,19 @@ export default function App() {
     if (isEdit) {
       dataContext.updateMaintenance(record.id, record);
     } else {
-      dataContext.addMaintenance(itemId, record);
+      const dbResult = await dataContext.addMaintenance(itemId, record);
+      // Replace temp ID with real UUID
+      if (dbResult?.id && dbResult.id !== tempId) {
+        const swapId = (history) => (history || []).map(m => 
+          m.id === tempId ? { ...m, id: dbResult.id } : m
+        );
+        setInventory(prev => updateById(prev, itemId, item => ({
+          maintenanceHistory: swapId(item.maintenanceHistory)
+        })));
+        if (selectedItem?.id === itemId) {
+          setSelectedItem(prev => ({ ...prev, maintenanceHistory: swapId(prev.maintenanceHistory) }));
+        }
+      }
     }
 
     // Add audit log entry
@@ -1081,6 +1094,7 @@ export default function App() {
       }
       
       // Create a reservation for each selected item
+      let firstCreatedReservation = null;
       for (const targetItemId of itemIds) {
         const targetItem = inventory.find(i => i.id === targetItemId);
         if (!targetItem) {
@@ -1103,6 +1117,11 @@ export default function App() {
           }
         } catch (err) {
           logError('Failed to create reservation for', targetItemId, err);
+        }
+        
+        // Track the first created reservation for navigation
+        if (!firstCreatedReservation) {
+          firstCreatedReservation = { reservation, item: targetItem };
         }
         
         // Update local state
@@ -1144,15 +1163,9 @@ export default function App() {
         }).catch(err => logError('Email send failed:', err));
       }
       
-      // Navigate to the first item's reservation
-      if (firstItem) {
-        const reservation = {
-          id: generateId(),
-          ...reservationForm,
-          notes: [],
-          dueBack: reservationForm.end
-        };
-        navigateToReservation(reservation, firstItem);
+      // Navigate to the first item's reservation (using real UUID)
+      if (firstCreatedReservation) {
+        navigateToReservation(firstCreatedReservation.reservation, firstCreatedReservation.item);
       }
     }
     
@@ -1318,13 +1331,23 @@ export default function App() {
       }
     };
 
+    // Helper to replace a temp note ID with the real UUID in a notes tree
+    const replaceNoteId = (notes, tempId, realId) => {
+      return notes.map(n => ({
+        ...n,
+        id: n.id === tempId ? realId : n.id,
+        replies: n.replies ? replaceNoteId(n.replies, tempId, realId) : []
+      }));
+    };
+
     return {
-      add: (text) => {
+      add: async (text) => {
         const entity = getEntity();
         if (!text?.trim() || !entity) return;
 
+        const tempId = generateId();
         const note = {
-          id: generateId(),
+          id: tempId,
           user: currentUser.name,
           date: getTodayISO(),
           text: text.trim(),
@@ -1338,18 +1361,24 @@ export default function App() {
         updateCollection(entity.id, () => updatedNotes);
         setEntity(prev => ({ ...prev, notes: updatedNotes }));
         
-        // Persist to Supabase
+        // Persist to Supabase and replace temp ID with real UUID
         if (entityType === 'item' && dataContext?.addItemNote) {
-          dataContext.addItemNote(entity.id, note);
+          const dbResult = await dataContext.addItemNote(entity.id, note);
+          if (dbResult?.id && dbResult.id !== tempId) {
+            const swapId = (notes) => replaceNoteId(notes, tempId, dbResult.id);
+            updateCollection(entity.id, swapId);
+            setEntity(prev => ({ ...prev, notes: swapId(prev.notes || []) }));
+          }
         }
       },
 
-      reply: (parentId, text) => {
+      reply: async (parentId, text) => {
         const entity = getEntity();
         if (!text?.trim() || !entity) return;
 
+        const tempId = generateId();
         const reply = {
-          id: generateId(),
+          id: tempId,
           user: currentUser.name,
           date: getTodayISO(),
           text: text.trim(),
@@ -1362,9 +1391,14 @@ export default function App() {
         updateCollection(entity.id, () => updatedNotes);
         setEntity(prev => ({ ...prev, notes: updatedNotes }));
         
-        // Persist reply to Supabase
+        // Persist reply to Supabase and replace temp ID with real UUID
         if (entityType === 'item' && dataContext?.addItemNote) {
-          dataContext.addItemNote(entity.id, reply);
+          const dbResult = await dataContext.addItemNote(entity.id, reply);
+          if (dbResult?.id && dbResult.id !== tempId) {
+            const swapId = (notes) => replaceNoteId(notes, tempId, dbResult.id);
+            updateCollection(entity.id, swapId);
+            setEntity(prev => ({ ...prev, notes: swapId(prev.notes || []) }));
+          }
         }
       },
 
@@ -1459,9 +1493,10 @@ export default function App() {
   // ============================================================================
   // Reminder Handlers
   // ============================================================================
-  const addReminder = useCallback((reminder) => {
+  const addReminder = useCallback(async (reminder) => {
     if (!selectedItem) return;
     
+    const tempId = reminder.id;
     const updatedReminders = [...(selectedItem.reminders || []), reminder];
     
     setInventory(prev => updateById(prev, selectedItem.id, item => ({
@@ -1469,12 +1504,19 @@ export default function App() {
     })));
     setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
     
-    // Persist to Supabase
-    {
-      dataContext.addItemReminder(selectedItem.id, {
-        ...reminder,
-        createdBy: currentUser.name
-      });
+    // Persist to Supabase and replace temp ID with real UUID
+    const dbResult = await dataContext.addItemReminder(selectedItem.id, {
+      ...reminder,
+      createdBy: currentUser.name
+    });
+    if (dbResult?.id && dbResult.id !== tempId) {
+      const swapId = (reminders) => (reminders || []).map(r => 
+        r.id === tempId ? { ...r, id: dbResult.id } : r
+      );
+      setInventory(prev => updateById(prev, selectedItem.id, item => ({
+        reminders: swapId(item.reminders)
+      })));
+      setSelectedItem(prev => ({ ...prev, reminders: swapId(prev.reminders) }));
     }
     
     setAuditLog(prev => [...prev, {

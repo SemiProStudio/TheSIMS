@@ -234,10 +234,11 @@ export function DataProvider({ children }) {
         parent_id: note.parentId || null,
         deleted: false
       };
-      await itemNotesService.create(dbNote);
+      const result = await itemNotesService.create(dbNote);
+      return result; // Returns record with real UUID
     } catch (err) {
       logError('Failed to save note:', err);
-      // Continue with local state update even if DB fails
+      return null;
     }
   }, []);
 
@@ -265,9 +266,11 @@ export function DataProvider({ children }) {
         completed: false,
         created_by_name: reminder.createdBy || 'Unknown'
       };
-      await itemRemindersService.create(dbReminder);
+      const result = await itemRemindersService.create(dbReminder);
+      return result; // Returns record with real UUID
     } catch (err) {
       logError('Failed to save reminder:', err);
+      return null;
     }
   }, []);
 
@@ -312,9 +315,11 @@ export function DataProvider({ children }) {
         notes: record.notes || '',
         created_by_name: record.performedBy || 'Unknown'
       };
-      await maintenanceService.create(dbRecord);
+      const result = await maintenanceService.create(dbRecord);
+      return result; // Returns record with real UUID
     } catch (err) {
       logError('Failed to save maintenance record:', err);
+      return null;
     }
   }, []);
 
