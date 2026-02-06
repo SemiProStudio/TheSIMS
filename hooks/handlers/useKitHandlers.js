@@ -3,8 +3,8 @@
 // Extracted from App.jsx — manages kit/container items, accessories, and images
 // ============================================================================
 import { useCallback } from 'react';
-import { updateById } from '../utils.js';
-import { error as logError } from '../lib/logger.js';
+import { updateById } from '../../utils.js';
+import { error as logError } from '../../lib/logger.js';
 
 export function useKitHandlers({
   inventory,

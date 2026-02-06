@@ -3,7 +3,7 @@
 // Extracted from App.jsx — manages item reminder CRUD
 // ============================================================================
 import { useCallback } from 'react';
-import { getTodayISO, updateById } from '../utils.js';
+import { getTodayISO, updateById } from '../../utils.js';
 
 export function useReminderHandlers({
   selectedItem,

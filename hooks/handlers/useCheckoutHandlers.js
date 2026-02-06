@@ -3,9 +3,9 @@
 // Extracted from App.jsx — manages check-out, check-in, and maintenance flows
 // ============================================================================
 import { useState, useCallback } from 'react';
-import { STATUS, MODALS } from '../constants.js';
-import { updateById } from '../utils.js';
-import { error as logError } from '../lib/logger.js';
+import { STATUS, MODALS } from '../../constants.js';
+import { updateById } from '../../utils.js';
+import { error as logError } from '../../lib/logger.js';
 
 export function useCheckoutHandlers({
   inventory,

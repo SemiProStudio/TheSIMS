@@ -3,8 +3,8 @@
 // Extracted from App.jsx — manages package CRUD
 // ============================================================================
 import { useCallback } from 'react';
-import { VIEWS } from '../constants.js';
-import { updateById, removeById } from '../utils.js';
+import { VIEWS } from '../../constants.js';
+import { updateById, removeById } from '../../utils.js';
 
 export function usePackageHandlers({
   packages,

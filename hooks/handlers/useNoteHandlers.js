@@ -3,7 +3,7 @@
 // Extracted from App.jsx — manages note CRUD for all entity types
 // ============================================================================
 import { useState, useCallback, useMemo } from 'react';
-import { generateId, getTodayISO, updateById, addReplyToNote, markNoteDeleted, findNoteById } from '../utils.js';
+import { generateId, getTodayISO, updateById, addReplyToNote, markNoteDeleted, findNoteById } from '../../utils.js';
 
 export function useNoteHandlers({
   selectedItem,

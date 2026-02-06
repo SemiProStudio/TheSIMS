@@ -3,9 +3,9 @@
 // Extracted from App.jsx — manages reservation CRUD flows
 // ============================================================================
 import { useCallback } from 'react';
-import { VIEWS, MODALS } from '../constants.js';
-import { generateId, updateById } from '../utils.js';
-import { error as logError } from '../lib/logger.js';
+import { VIEWS, MODALS } from '../../constants.js';
+import { generateId, updateById } from '../../utils.js';
+import { error as logError } from '../../lib/logger.js';
 
 export function useReservationHandlers({
   inventory,
