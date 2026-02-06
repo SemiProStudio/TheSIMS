@@ -2131,12 +2131,13 @@ export default function App() {
               onBack={() => setCurrentView(selectedItem ? VIEWS.GEAR_DETAIL : VIEWS.SCHEDULE)}
               onEdit={() => openEditReservation(selectedReservation)}
               onDelete={() => {
-                // For multi-item reservations, items[0] is the first item
-                const itemForDelete = selectedReservationItem || selectedReservation?.items?.[0];
-                if (itemForDelete && selectedReservation?.id) {
+                // Determine which item this reservation belongs to
+                const itemForDelete = selectedReservationItem || selectedItem || selectedReservation?.items?.[0];
+                if (itemForDelete?.id && selectedReservation?.id) {
                   deleteReservation(itemForDelete.id, selectedReservation.id);
                 } else {
-                  logError('Cannot delete: missing item or reservation ID', { selectedReservationItem, selectedReservation });
+                  logError('Cannot delete: missing item or reservation ID', { selectedReservationItem, selectedItem, selectedReservation });
+                  alert('Unable to cancel reservation — missing item reference. Please go back and try again.');
                 }
               }}
               onAddNote={reservationNoteHandlers.add}
