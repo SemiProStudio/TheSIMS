@@ -15,6 +15,8 @@ import { Select } from './components/Select.jsx';
 import NotesSection from './NotesSection.jsx';
 import { useData } from './lib/DataContext.jsx';
 
+import { error as logError } from './lib/logger.js';
+
 // Client type options
 const CLIENT_TYPES = ['Individual', 'Company', 'Agency', 'Non-Profit', 'Government', 'Other'];
 
@@ -618,7 +620,7 @@ function ClientsView({
         try {
           await dataContext.updateClient(clientData.id, clientData);
         } catch (err) {
-          console.error('Failed to update client:', err);
+          logError('Failed to update client:', err);
           onUpdateClients(clients.map(c => c.id === clientData.id ? clientData : c));
         }
       } else {
@@ -630,7 +632,7 @@ function ClientsView({
         try {
           await dataContext.createClient(clientData);
         } catch (err) {
-          console.error('Failed to create client:', err);
+          logError('Failed to create client:', err);
           onUpdateClients([...clients, clientData]);
         }
       } else {
@@ -651,7 +653,7 @@ function ClientsView({
         try {
           await dataContext.deleteClient(clientToDelete.id);
         } catch (err) {
-          console.error('Failed to delete client:', err);
+          logError('Failed to delete client:', err);
           onUpdateClients(clients.filter(c => c.id !== clientToDelete.id));
         }
       } else {

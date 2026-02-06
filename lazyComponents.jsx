@@ -40,15 +40,6 @@ export const LazyClientReportPanel = lazy(() =>
   import('./views/ClientReportView.jsx').then(m => ({ default: m.ClientReportPanel }))
 );
 
-// Package Views
-export const LazyPackagesList = lazy(() => 
-  import('./views/PackagesView.jsx').then(m => ({ default: m.PackagesList }))
-);
-
-export const LazyPackageDetail = lazy(() => 
-  import('./views/PackagesView.jsx').then(m => ({ default: m.PackageDetail }))
-);
-
 // ============================================================================
 // Lazy-Loaded Modals
 // Modals are never needed on initial load - perfect for code splitting
@@ -142,7 +133,5 @@ export const LazyRolesManager = lazy(() => import('./RolesManager.jsx'));
 export const LazyChangeLog = lazy(() => import('./ChangeLog.jsx'));
 
 export const LazyProfileModal = lazy(() => import('./ProfileModal.jsx'));
-
-export const LazyPackagesView = lazy(() => import('./PackagesView.jsx'));
 
 export const LazyPackListsView = lazy(() => import('./PackListsView.jsx'));

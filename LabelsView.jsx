@@ -9,6 +9,8 @@ import { LABEL_FORMATS } from './constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity} from './theme.js';
 import { Card, CardHeader, Button, SearchInput, Badge } from './components/ui.jsx';
 
+import { error as logError } from './lib/logger.js';
+
 // Real QR Code Generator Component using qrcode library
 const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
   const canvasRef = useRef(null);
@@ -28,7 +30,7 @@ const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
       errorCorrectionLevel: 'M'
     }, (error) => {
       if (error) {
-        console.error('QR Code generation error:', error);
+        logError('QR Code generation error:', error);
       }
     });
   }, [data, size]);

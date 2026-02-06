@@ -10,6 +10,8 @@ import { Card, Button } from './components/ui.jsx';
 import { Select } from './components/Select.jsx';
 import { usePermissions } from './PermissionsContext.jsx';
 
+import { error as logError } from './lib/logger.js';
+
 // Toggle switch component
 const Toggle = memo(function Toggle({ checked, onChange, disabled = false }) {
   return (
@@ -247,7 +249,7 @@ function NotificationSettings({
       await onSave(settings);
       setHasChanges(false);
     } catch (err) {
-      console.error('Failed to save notification settings:', err);
+      logError('Failed to save notification settings:', err);
     } finally {
       setSaving(false);
     }

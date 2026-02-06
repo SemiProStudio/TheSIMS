@@ -7,6 +7,8 @@ import { useCallback, useState } from 'react';
 import { generateItemCode, updateById } from '../utils.js';
 import { VIEWS, STATUS, MODALS } from '../constants.js';
 
+import { error as logError } from '../lib/logger.js';
+
 /**
  * Custom hook for inventory CRUD operations
  * Integrates with DataContext for Supabase persistence
@@ -129,7 +131,7 @@ export function useInventoryActions({
       
       return newItem;
     } catch (err) {
-      console.error('Failed to create item:', err);
+      logError('Failed to create item:', err);
       setError(err.message || 'Failed to create item');
       throw err;
     } finally {
@@ -215,7 +217,7 @@ export function useInventoryActions({
       closeModal();
       setEditingItemId(null);
     } catch (err) {
-      console.error('Failed to update item:', err);
+      logError('Failed to update item:', err);
       setError(err.message || 'Failed to update item');
       throw err;
     } finally {
@@ -265,7 +267,7 @@ export function useInventoryActions({
           
           setConfirmDialog(prev => ({ ...prev, isOpen: false }));
         } catch (err) {
-          console.error('Failed to delete item:', err);
+          logError('Failed to delete item:', err);
           setError(err.message || 'Failed to delete item');
           setConfirmDialog(prev => ({ ...prev, isOpen: false }));
         } finally {
@@ -346,7 +348,7 @@ export function useInventoryActions({
       closeModal();
       setBulkActionIds([]);
     } catch (err) {
-      console.error('Failed to apply bulk status:', err);
+      logError('Failed to apply bulk status:', err);
       setError(err.message || 'Failed to update items');
     } finally {
       setIsLoading(false);
@@ -394,7 +396,7 @@ export function useInventoryActions({
       closeModal();
       setBulkActionIds([]);
     } catch (err) {
-      console.error('Failed to apply bulk location:', err);
+      logError('Failed to apply bulk location:', err);
       setError(err.message || 'Failed to update items');
     } finally {
       setIsLoading(false);
@@ -442,7 +444,7 @@ export function useInventoryActions({
       closeModal();
       setBulkActionIds([]);
     } catch (err) {
-      console.error('Failed to apply bulk category:', err);
+      logError('Failed to apply bulk category:', err);
       setError(err.message || 'Failed to update items');
     } finally {
       setIsLoading(false);
@@ -487,7 +489,7 @@ export function useInventoryActions({
       closeModal();
       setBulkActionIds([]);
     } catch (err) {
-      console.error('Failed to apply bulk delete:', err);
+      logError('Failed to apply bulk delete:', err);
       setError(err.message || 'Failed to delete items');
     } finally {
       setIsLoading(false);

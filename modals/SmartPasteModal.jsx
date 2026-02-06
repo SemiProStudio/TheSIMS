@@ -28,6 +28,8 @@ import {
 } from '../lib/smartPasteParser.js';
 import { getSupabase } from '../lib/supabase.js';
 
+import { error as logError } from '../lib/logger.js';
+
 // ============================================================================
 // Confidence Badge
 // ============================================================================
@@ -570,7 +572,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
       setBrandOverride(null);
       setCategoryOverride(null);
     } catch (err) {
-      console.error('File import error:', err);
+      logError('File import error:', err);
       setImportStatus(`error:${err.message || 'Failed to read file'}`);
       setOcrProgress(null);
     }

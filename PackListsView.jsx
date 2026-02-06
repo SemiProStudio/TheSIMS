@@ -12,6 +12,8 @@ import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog
 import { Select } from './components/Select.jsx';
 import { useData } from './lib/DataContext.jsx';
 
+import { error as logError } from './lib/logger.js';
+
 function PackListsView({ 
   packLists, 
   setPackLists, 
@@ -320,7 +322,7 @@ function PackListsView({
         try {
           await dataContext.updatePackList(editingList.id, updatedList);
         } catch (err) {
-          console.error('Failed to update pack list:', err);
+          logError('Failed to update pack list:', err);
           setPackLists(prev => prev.map(pl => pl.id === editingList.id ? updatedList : pl));
         }
       } else {
@@ -370,7 +372,7 @@ function PackListsView({
           setShowCreate(false);
           setSelectedList(createdList);
         } catch (err) {
-          console.error('Failed to create pack list:', err);
+          logError('Failed to create pack list:', err);
         }
       } else {
         // Fallback for no DB - generate local ID
@@ -402,7 +404,7 @@ function PackListsView({
       try {
         await dataContext.deletePackList(id);
       } catch (err) {
-        console.error('Failed to delete pack list:', err);
+        logError('Failed to delete pack list:', err);
         setPackLists(prev => prev.filter(pl => pl.id !== id));
       }
     } else {

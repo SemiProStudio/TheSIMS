@@ -9,6 +9,8 @@
 // For opacity, use the withOpacity() helper which uses CSS color-mix()
 // ============================================================================
 
+import { warn } from './lib/logger.js';
+
 export const colors = {
   // Primary backgrounds
   bgDark: 'var(--bg-dark)',
@@ -84,7 +86,7 @@ export const colors = {
 export const withOpacity = (color, percent) => {
   // Safety check for undefined/null colors
   if (!color) {
-    console.warn('withOpacity called with undefined color');
+    warn('withOpacity called with undefined color');
     return 'transparent';
   }
   // Handle hex colors directly for backwards compatibility

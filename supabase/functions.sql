@@ -9,8 +9,12 @@
 CREATE OR REPLACE FUNCTION increment_view_count(item_id VARCHAR)
 RETURNS void AS $$
 BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
   UPDATE inventory
-  SET view_count = view_count + 1
+  SET view_count = COALESCE(view_count, 0) + 1
   WHERE id = item_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -21,8 +25,12 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION increment_checkout_count(item_id VARCHAR)
 RETURNS void AS $$
 BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
   UPDATE inventory
-  SET checkout_count = checkout_count + 1
+  SET checkout_count = COALESCE(checkout_count, 0) + 1
   WHERE id = item_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

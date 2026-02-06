@@ -11,6 +11,8 @@ import { getStatusColor } from '../utils.js';
 import { Badge, Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
+import { error as logError } from '../lib/logger.js';
+
 export const QRScannerModal = memo(function QRScannerModal({ 
   inventory, 
   onItemFound, 
@@ -46,7 +48,7 @@ export const QRScannerModal = memo(function QRScannerModal({
         scanFrame();
       }
     } catch (err) {
-      console.error('Camera error:', err);
+      logError('Camera error:', err);
       setError(err.name === 'NotAllowedError' 
         ? 'Camera access denied. Please allow camera access and try again.' 
         : 'Could not access camera. Try entering the code manually below.');

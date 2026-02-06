@@ -2,6 +2,8 @@ import { useMemo, useState, useCallback } from 'react';
 import { generateItemCode, flattenLocations } from './utils.js';
 import { validateItem } from './lib/validators.js';
 
+import { warn } from './lib/logger.js';
+
 // ============================================================================
 // useItemForm - Custom hook for item form validation and computed values
 // Used by both ItemModal (compact) and ItemFormPage (full page)
@@ -44,7 +46,7 @@ export function useItemForm({
     // Debug: log if the "duplicate" appears to be the item itself
     if (duplicate && isEdit) {
       if (import.meta.env.DEV) {
-        console.warn('[useItemForm] Serial duplicate check:', {
+        warn('[useItemForm] Serial duplicate check:', {
           itemId,
           duplicateId: duplicate.id,
           duplicateName: duplicate.name,

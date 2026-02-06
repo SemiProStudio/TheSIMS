@@ -12,6 +12,8 @@ import { Select } from './components/Select.jsx';
 import { OptimizedImage } from './components/OptimizedImage.jsx';
 import { useData } from './lib/DataContext.jsx';
 
+import { error as logError } from './lib/logger.js';
+
 function PackagesView({ 
   packages, 
   setPackages, 
@@ -224,7 +226,7 @@ function PackagesView({
         try {
           await dataContext.updatePackage(editingPackage.id, updates);
         } catch (err) {
-          console.error('Failed to update package:', err);
+          logError('Failed to update package:', err);
         }
       } else {
         // Fallback to local state
@@ -257,7 +259,7 @@ function PackagesView({
           setShowCreate(false);
           resetForm();
         } catch (err) {
-          console.error('Failed to create package:', err);
+          logError('Failed to create package:', err);
         }
       } else {
         // Fallback - generate local ID if no DB
@@ -289,7 +291,7 @@ function PackagesView({
       try {
         await dataContext.deletePackage(id);
       } catch (err) {
-        console.error('Failed to delete package:', err);
+        logError('Failed to delete package:', err);
         // Fallback to local state
         setPackages(prev => prev.filter(p => p.id !== id));
       }

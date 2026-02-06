@@ -10,6 +10,8 @@ import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
+import { error as logError } from '../lib/logger.js';
+
 export const ImageSelectorModal = memo(function ImageSelectorModal({ 
   images, 
   currentImage, 
@@ -67,7 +69,7 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
         onSelect(result.url);
       }
     } catch (err) {
-      console.error('Image upload error:', err);
+      logError('Image upload error:', err);
       setError(err.message || 'Failed to upload image');
       // Fall back to data URL if upload fails
       onSelect(uploadedImage);

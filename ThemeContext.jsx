@@ -6,6 +6,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { themes, generateRandomTheme, DEFAULT_CUSTOM_THEME } from './themes-data.js';
 import { announce } from './utils/accessibility.js';
 
+import { warn } from './lib/logger.js';
+
 // Load custom theme from localStorage
 const loadCustomTheme = () => {
   if (typeof window === 'undefined') return null;
@@ -31,7 +33,7 @@ const loadCustomTheme = () => {
       };
     }
   } catch (e) {
-    console.warn('Failed to load custom theme:', e);
+    warn('Failed to load custom theme:', e);
   }
   return null;
 };

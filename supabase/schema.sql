@@ -577,60 +577,109 @@ CREATE POLICY "read_pack_list_packages" ON pack_list_packages FOR SELECT TO auth
 CREATE POLICY "read_audit_log" ON audit_log FOR SELECT TO authenticated USING (true);
 
 -- =============================================================================
--- RLS POLICIES - Write access for authenticated users
+-- RLS POLICIES - Write access (permission-checked)
+-- Uses has_permission() to enforce the same role-based permissions as the UI
 -- =============================================================================
 
 -- Users can update their own profile
 CREATE POLICY "update_own_profile" ON users FOR UPDATE TO authenticated USING (auth.uid() = id);
 
--- General write access for most tables
-CREATE POLICY "insert_locations" ON locations FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "update_locations" ON locations FOR UPDATE TO authenticated USING (true);
+-- Inventory: requires gear_list edit permission
+CREATE POLICY "write_inventory" ON inventory FOR INSERT TO authenticated WITH CHECK (has_permission('gear_list', 'edit'));
+CREATE POLICY "edit_inventory" ON inventory FOR UPDATE TO authenticated USING (has_permission('gear_list', 'edit'));
 
-CREATE POLICY "insert_clients" ON clients FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "update_clients" ON clients FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "delete_clients" ON clients FOR DELETE TO authenticated USING (true);
+-- Clients: requires clients edit permission
+CREATE POLICY "write_clients" ON clients FOR INSERT TO authenticated WITH CHECK (has_permission('clients', 'edit'));
+CREATE POLICY "edit_clients" ON clients FOR UPDATE TO authenticated USING (has_permission('clients', 'edit'));
+CREATE POLICY "remove_clients" ON clients FOR DELETE TO authenticated USING (has_permission('clients', 'edit'));
 
-CREATE POLICY "insert_client_notes" ON client_notes FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "update_client_notes" ON client_notes FOR UPDATE TO authenticated USING (true);
+-- Client notes: requires clients edit permission
+CREATE POLICY "write_client_notes" ON client_notes FOR INSERT TO authenticated WITH CHECK (has_permission('clients', 'edit'));
+CREATE POLICY "edit_client_notes" ON client_notes FOR UPDATE TO authenticated USING (has_permission('clients', 'edit'));
+CREATE POLICY "delete_client_notes" ON client_notes FOR DELETE TO authenticated USING (has_permission('clients', 'edit'));
 
-CREATE POLICY "insert_inventory" ON inventory FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "update_inventory" ON inventory FOR UPDATE TO authenticated USING (true);
+-- Item notes: requires item_details edit permission
+CREATE POLICY "write_item_notes" ON item_notes FOR INSERT TO authenticated WITH CHECK (has_permission('item_details', 'edit'));
+CREATE POLICY "edit_item_notes" ON item_notes FOR UPDATE TO authenticated USING (has_permission('item_details', 'edit'));
+CREATE POLICY "delete_item_notes" ON item_notes FOR DELETE TO authenticated USING (has_permission('item_details', 'edit'));
 
-CREATE POLICY "insert_item_notes" ON item_notes FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "update_item_notes" ON item_notes FOR UPDATE TO authenticated USING (true);
+-- Item reminders: requires item_details edit permission
+CREATE POLICY "write_item_reminders" ON item_reminders FOR INSERT TO authenticated WITH CHECK (has_permission('item_details', 'edit'));
+CREATE POLICY "edit_item_reminders" ON item_reminders FOR UPDATE TO authenticated USING (has_permission('item_details', 'edit'));
+CREATE POLICY "remove_item_reminders" ON item_reminders FOR DELETE TO authenticated USING (has_permission('item_details', 'edit'));
 
-CREATE POLICY "insert_item_reminders" ON item_reminders FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "update_item_reminders" ON item_reminders FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "delete_item_reminders" ON item_reminders FOR DELETE TO authenticated USING (true);
+-- Reservations: requires schedule edit permission
+CREATE POLICY "write_reservations" ON reservations FOR INSERT TO authenticated WITH CHECK (has_permission('schedule', 'edit'));
+CREATE POLICY "edit_reservations" ON reservations FOR UPDATE TO authenticated USING (has_permission('schedule', 'edit'));
+CREATE POLICY "remove_reservations" ON reservations FOR DELETE TO authenticated USING (has_permission('schedule', 'edit'));
 
-CREATE POLICY "insert_reservations" ON reservations FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "update_reservations" ON reservations FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "delete_reservations" ON reservations FOR DELETE TO authenticated USING (true);
+-- Maintenance: requires item_details edit permission
+CREATE POLICY "write_maintenance" ON maintenance_records FOR INSERT TO authenticated WITH CHECK (has_permission('item_details', 'edit'));
+CREATE POLICY "edit_maintenance" ON maintenance_records FOR UPDATE TO authenticated USING (has_permission('item_details', 'edit'));
+CREATE POLICY "remove_maintenance" ON maintenance_records FOR DELETE TO authenticated USING (has_permission('item_details', 'edit'));
 
-CREATE POLICY "insert_maintenance" ON maintenance_records FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "update_maintenance" ON maintenance_records FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "delete_maintenance" ON maintenance_records FOR DELETE TO authenticated USING (true);
+-- Checkout history: any authenticated user with view access can insert (triggered by checkout/checkin)
+CREATE POLICY "write_checkout_history" ON checkout_history FOR INSERT TO authenticated WITH CHECK (has_permission('gear_list', 'view'));
 
-CREATE POLICY "insert_checkout_history" ON checkout_history FOR INSERT TO authenticated WITH CHECK (true);
+-- Packages: requires gear_list edit permission
+CREATE POLICY "write_packages" ON packages FOR INSERT TO authenticated WITH CHECK (has_permission('gear_list', 'edit'));
+CREATE POLICY "edit_packages" ON packages FOR UPDATE TO authenticated USING (has_permission('gear_list', 'edit'));
+CREATE POLICY "remove_packages" ON packages FOR DELETE TO authenticated USING (has_permission('gear_list', 'edit'));
 
-CREATE POLICY "insert_packages" ON packages FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "update_packages" ON packages FOR UPDATE TO authenticated USING (true);
-CREATE POLICY "delete_packages" ON packages FOR DELETE TO authenticated USING (true);
+CREATE POLICY "write_package_items" ON package_items FOR ALL TO authenticated USING (has_permission('gear_list', 'edit'));
+CREATE POLICY "write_package_notes" ON package_notes FOR INSERT TO authenticated WITH CHECK (has_permission('gear_list', 'edit'));
+CREATE POLICY "edit_package_notes" ON package_notes FOR UPDATE TO authenticated USING (has_permission('gear_list', 'edit'));
+CREATE POLICY "delete_package_notes" ON package_notes FOR DELETE TO authenticated USING (has_permission('gear_list', 'edit'));
 
-CREATE POLICY "all_package_items" ON package_items FOR ALL TO authenticated USING (true);
-CREATE POLICY "insert_package_notes" ON package_notes FOR INSERT TO authenticated WITH CHECK (true);
-CREATE POLICY "update_package_notes" ON package_notes FOR UPDATE TO authenticated USING (true);
+-- Pack lists: requires pack_lists edit permission
+CREATE POLICY "write_pack_lists" ON pack_lists FOR ALL TO authenticated USING (has_permission('pack_lists', 'edit'));
+CREATE POLICY "write_pack_list_items" ON pack_list_items FOR ALL TO authenticated USING (has_permission('pack_lists', 'edit'));
+CREATE POLICY "write_pack_list_packages" ON pack_list_packages FOR ALL TO authenticated USING (has_permission('pack_lists', 'edit'));
 
-CREATE POLICY "all_pack_lists" ON pack_lists FOR ALL TO authenticated USING (true);
-CREATE POLICY "all_pack_list_items" ON pack_list_items FOR ALL TO authenticated USING (true);
-CREATE POLICY "all_pack_list_packages" ON pack_list_packages FOR ALL TO authenticated USING (true);
+-- Pack list delete policies
+CREATE POLICY "delete_pack_lists" ON pack_lists FOR DELETE TO authenticated USING (has_permission('pack_lists', 'edit'));
+CREATE POLICY "delete_pack_list_items" ON pack_list_items FOR DELETE TO authenticated USING (has_permission('pack_lists', 'edit'));
+CREATE POLICY "delete_pack_list_packages" ON pack_list_packages FOR DELETE TO authenticated USING (has_permission('pack_lists', 'edit'));
 
-CREATE POLICY "insert_audit_log" ON audit_log FOR INSERT TO authenticated WITH CHECK (true);
+-- Locations: requires admin_locations edit permission
+CREATE POLICY "write_locations" ON locations FOR INSERT TO authenticated WITH CHECK (has_permission('admin_locations', 'edit'));
+CREATE POLICY "edit_locations" ON locations FOR UPDATE TO authenticated USING (has_permission('admin_locations', 'edit'));
+
+-- Audit log: any authenticated user can insert (the app logs actions on their behalf)
+-- Intentionally no UPDATE/DELETE — audit trail is append-only
+CREATE POLICY "write_audit_log" ON audit_log FOR INSERT TO authenticated WITH CHECK (true);
 
 -- =============================================================================
 -- RLS POLICIES - Admin-only operations
 -- =============================================================================
+
+-- Helper function: check if current user has a specific permission level for a function
+CREATE OR REPLACE FUNCTION has_permission(p_function_id TEXT, p_level TEXT DEFAULT 'edit')
+RETURNS BOOLEAN AS $$
+DECLARE
+  user_permissions JSONB;
+  permission_value TEXT;
+BEGIN
+  SELECT r.permissions INTO user_permissions
+  FROM users u
+  JOIN roles r ON r.id = u.role_id
+  WHERE u.id = auth.uid();
+
+  IF user_permissions IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  permission_value := user_permissions ->> p_function_id;
+
+  IF p_level = 'view' THEN
+    RETURN permission_value IN ('view', 'edit');
+  ELSIF p_level = 'edit' THEN
+    RETURN permission_value = 'edit';
+  ELSE
+    RETURN FALSE;
+  END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
 -- Helper function to check if user is admin
 CREATE OR REPLACE FUNCTION is_admin()
@@ -650,6 +699,11 @@ CREATE POLICY "admin_delete_inventory" ON inventory FOR DELETE TO authenticated 
 CREATE POLICY "admin_categories" ON categories FOR ALL TO authenticated USING (is_admin());
 CREATE POLICY "admin_specs" ON specs FOR ALL TO authenticated USING (is_admin());
 CREATE POLICY "admin_delete_locations" ON locations FOR DELETE TO authenticated USING (is_admin());
+
+-- Admin user management
+CREATE POLICY "admin_insert_users" ON users FOR INSERT TO authenticated WITH CHECK (is_admin());
+CREATE POLICY "admin_update_users" ON users FOR UPDATE TO authenticated USING (is_admin());
+CREATE POLICY "admin_delete_users" ON users FOR DELETE TO authenticated USING (is_admin());
 
 -- =============================================================================
 -- FUNCTIONS & TRIGGERS
@@ -841,3 +895,4 @@ GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon;
 GRANT EXECUTE ON FUNCTION generate_item_id(VARCHAR) TO authenticated;
 GRANT EXECUTE ON FUNCTION generate_client_id() TO authenticated;
 GRANT EXECUTE ON FUNCTION is_admin() TO authenticated;
+GRANT EXECUTE ON FUNCTION has_permission(TEXT, TEXT) TO authenticated;
