@@ -41,8 +41,22 @@ export function useItemForm({
       item.serialNumber?.toLowerCase() === serialLower && 
       item.id !== itemId // Exclude current item when editing
     );
+    // Debug: log if the "duplicate" appears to be the item itself
+    if (duplicate && isEdit) {
+      if (import.meta.env.DEV) {
+        console.warn('[useItemForm] Serial duplicate check:', {
+          itemId,
+          duplicateId: duplicate.id,
+          duplicateName: duplicate.name,
+          formName: itemForm.name,
+          match: duplicate.id === itemId,
+        });
+      }
+      // Safety: if the duplicate has the same name as the form, it's the item itself
+      if (duplicate.name === itemForm.name) return null;
+    }
     return duplicate;
-  }, [itemForm.serialNumber, inventory, itemId]);
+  }, [itemForm.serialNumber, itemForm.name, isEdit, inventory, itemId]);
   
   // Get settings for the selected category
   const currentCategorySettings = categorySettings?.[itemForm.category] || { 
