@@ -2133,10 +2133,29 @@ export default function App() {
               onDelete={() => {
                 // Determine which item this reservation belongs to
                 const itemForDelete = selectedReservationItem || selectedItem || selectedReservation?.items?.[0];
-                if (itemForDelete?.id && selectedReservation?.id) {
-                  deleteReservation(itemForDelete.id, selectedReservation.id);
+                
+                // Debug: log all available references
+                if (import.meta.env.DEV) {
+                  console.warn('[Cancel Reservation] Debug:', {
+                    hasSelectedReservationItem: !!selectedReservationItem,
+                    selectedReservationItemId: selectedReservationItem?.id,
+                    hasSelectedItem: !!selectedItem,
+                    selectedItemId: selectedItem?.id,
+                    hasReservationItems: !!selectedReservation?.items,
+                    reservationId: selectedReservation?.id,
+                    reservationItemId: selectedReservation?.itemId,
+                    itemForDeleteId: itemForDelete?.id,
+                  });
+                }
+                
+                // Use itemId from the reservation itself as last resort
+                const itemId = itemForDelete?.id || selectedReservation?.itemId;
+                const resId = selectedReservation?.id;
+                
+                if (itemId && resId) {
+                  deleteReservation(itemId, resId);
                 } else {
-                  logError('Cannot delete: missing item or reservation ID', { selectedReservationItem, selectedItem, selectedReservation });
+                  logError('Cannot delete: missing item or reservation ID', { itemId, resId, selectedReservationItem, selectedItem, selectedReservation });
                   alert('Unable to cancel reservation — missing item reference. Please go back and try again.');
                 }
               }}
