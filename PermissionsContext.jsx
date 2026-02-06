@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useMemo, useCallback } from 'react';
 import { PERMISSION_LEVELS, APP_FUNCTIONS, VIEWS } from './constants.js';
+import { typography, borderRadius } from './theme.js';
 
 const PermissionsContext = createContext(null);
 

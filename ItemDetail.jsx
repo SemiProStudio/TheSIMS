@@ -344,13 +344,11 @@ function ItemDetail({
   const canEditItems = canEdit('item_details');
   const [specsExpanded, setSpecsExpanded] = useState(false);
 
-  if (!item) return null;
-
-  const isCheckedOut = item.status === 'checked-out';
-  const categorySpecs = specs[item.category] || [];
+  const isCheckedOut = item?.status === 'checked-out';
+  const categorySpecs = item ? (specs[item.category] || []) : [];
   
   // Get category settings for quantity display
-  const currentCategorySettings = categorySettings?.[item.category] || { 
+  const currentCategorySettings = (item && categorySettings?.[item.category]) || { 
     trackQuantity: false, 
     trackSerialNumbers: true 
   };
@@ -397,6 +395,7 @@ function ItemDetail({
   };
 
   const allSpecs = useMemo(() => {
+    if (!item) return [];
     const baseSpecs = [
       { name: 'Location', value: item.location || '-' },
       { name: 'Serial Number', value: item.serialNumber || '-' },
@@ -427,6 +426,8 @@ function ItemDetail({
       .sort((a, b) => a.order - b.order)
       .map(s => s.id);
   }, [layoutPrefs]);
+
+  if (!item) return null;
 
   const renderSection = (sectionId) => {
     switch (sectionId) {
