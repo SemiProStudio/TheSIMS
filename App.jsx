@@ -316,7 +316,8 @@ export default function App() {
       
       // Fetch full item details with related data (notes, reminders, reservations, etc.)
       // This is async but we don't await it - UI updates when data arrives
-      if (dataContext?.getItemWithDetails) {
+      // Fetch full item details from Supabase
+      {
         dataContext.getItemWithDetails(id)
           .then(itemWithDetails => {
             if (itemWithDetails) {
@@ -472,15 +473,7 @@ export default function App() {
 
   // Audit Log Helper — uses DataContext.addAuditLog which persists to Supabase
   const addAuditLog = useCallback((entry) => {
-    if (dataContext?.addAuditLog) {
-      dataContext.addAuditLog(entry);
-    } else {
-      // Fallback: local-only (should not happen when Supabase is connected)
-      setAuditLog(prev => [...prev, {
-        ...entry,
-        timestamp: new Date().toISOString(),
-      }]);
-    }
+    dataContext.addAuditLog(entry);
   }, [dataContext]);
 
   // ============================================================================
@@ -517,28 +510,15 @@ export default function App() {
     const { itemId, borrowerName, borrowerEmail, borrowerPhone, project, projectType, dueDate, notes, conditionAtCheckout, checkedOutDate, checkedOutTime } = checkoutData;
     
     try {
-      // Use DataContext checkOutItem for proper Supabase persistence
-      if (dataContext?.checkOutItem) {
-        await dataContext.checkOutItem(itemId, {
-          userId: currentUser?.id,
-          userName: borrowerName,
-          clientId: null,
-          clientName: null,
-          project: project,
-          dueBack: dueDate
-        });
-      } else {
-        // No DataContext available, update local state only
-        setInventory(prev => updateById(prev, itemId, item => ({
-          status: STATUS.CHECKED_OUT,
-          checkedOutTo: borrowerName,
-          checkedOutDate: checkedOutDate,
-          dueBack: dueDate,
-          checkoutProject: project,
-          checkoutProjectType: projectType,
-          checkoutCount: (item.checkoutCount || 0) + 1
-        })));
-      }
+      // Persist checkout to Supabase
+      await dataContext.checkOutItem(itemId, {
+        userId: currentUser?.id,
+        userName: borrowerName,
+        clientId: null,
+        clientName: null,
+        project: project,
+        dueBack: dueDate
+      });
       
       if (selectedItem?.id === itemId) {
         setSelectedItem(prev => ({ 
@@ -608,27 +588,16 @@ export default function App() {
     const newStatus = damageReported ? STATUS.NEEDS_ATTENTION : STATUS.AVAILABLE;
     
     // Use DataContext checkInItem for proper Supabase persistence
-    if (dataContext?.checkInItem) {
-      await dataContext.checkInItem(itemId, {
-        returnedBy,
-        userId: currentUser?.id,
-        condition,
-        conditionNotes,
-        returnNotes,
-        damageReported,
-        damageDescription
-      });
-    } else {
-      // No DataContext available, update local state only
-      setInventory(prev => updateById(prev, itemId, item => ({
-        status: newStatus,
-        condition: condition,
-        checkedOutTo: null,
-        checkedOutDate: null,
-        dueBack: null,
-        checkoutProject: null
-      })));
-    }
+    // Persist check-in to Supabase
+    await dataContext.checkInItem(itemId, {
+      returnedBy,
+      userId: currentUser?.id,
+      condition,
+      conditionNotes,
+      returnNotes,
+      damageReported,
+      damageDescription
+    });
     
     if (selectedItem?.id === itemId) {
       setSelectedItem(prev => ({ 
@@ -739,13 +708,9 @@ export default function App() {
 
     // Persist to Supabase
     if (isEdit) {
-      if (dataContext?.updateMaintenance) {
-        dataContext.updateMaintenance(record.id, record);
-      }
+      dataContext.updateMaintenance(record.id, record);
     } else {
-      if (dataContext?.addMaintenance) {
-        dataContext.addMaintenance(itemId, record);
-      }
+      dataContext.addMaintenance(itemId, record);
     }
 
     // Add audit log entry
@@ -1039,7 +1004,7 @@ export default function App() {
       setSelectedItem(prev => ({ ...prev, image }));
       
       // Persist to database
-      if (dataContext?.updateItem) {
+      {
         try {
           await dataContext.updateItem(selectedItem.id, { image });
         } catch (err) {
@@ -1068,7 +1033,7 @@ export default function App() {
       );
       
       // Use DataContext for Supabase persistence
-      if (dataContext?.updateReservation) {
+      {
         try {
           await dataContext.updateReservation(editingReservationId, reservationForm);
         } catch (err) {
@@ -1131,7 +1096,7 @@ export default function App() {
         };
 
         // Use DataContext for Supabase persistence
-        if (dataContext?.createReservation) {
+        {
           try {
             await dataContext.createReservation(targetItemId, reservationForm);
           } catch (err) {
@@ -1266,7 +1231,7 @@ export default function App() {
       variant: 'danger',
       onConfirm: async () => {
         // Delete all related reservations from database
-        if (dataContext?.deleteReservation) {
+        {
           try {
             for (const resIdToDelete of reservationIdsToDelete) {
               await dataContext.deleteReservation(resIdToDelete);
@@ -1504,7 +1469,7 @@ export default function App() {
     setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
     
     // Persist to Supabase
-    if (dataContext?.addItemReminder) {
+    {
       dataContext.addItemReminder(selectedItem.id, {
         ...reminder,
         createdBy: currentUser.name
@@ -1537,7 +1502,7 @@ export default function App() {
     setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
     
     // Persist to Supabase
-    if (dataContext?.updateItemReminder) {
+    {
       dataContext.updateItemReminder(reminderId, { completed: true, completedDate: getTodayISO() });
     }
     
@@ -1567,7 +1532,7 @@ export default function App() {
     setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
     
     // Persist to Supabase
-    if (dataContext?.updateItemReminder) {
+    {
       dataContext.updateItemReminder(reminderId, { completed: false, completedDate: null });
     }
   }, [selectedItem, dataContext]);
@@ -1591,7 +1556,7 @@ export default function App() {
         setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
         
         // Persist to Supabase
-        if (dataContext?.deleteItemReminder) {
+        {
           dataContext.deleteItemReminder(reminderId);
         }
       }
@@ -2420,7 +2385,7 @@ export default function App() {
               isAdmin={currentUser?.roleId === 'role_admin'}
               onSave={async (prefs) => {
                 // Save notification preferences to Supabase
-                if (dataContext?.saveNotificationPreferences) {
+                {
                   try {
                     await dataContext.saveNotificationPreferences(currentUser.id, prefs);
                   } catch (err) {
