@@ -13,6 +13,7 @@ import { useAuth } from './lib/AuthContext.jsx';
 import { useData } from './lib/DataContext.jsx';
 import { SectionErrorBoundary } from './components/ErrorBoundary.jsx';
 import { FullPageLoading, ContentLoading, ViewLoading, ModalLoading } from './components/Loading.jsx';
+import { log, error as logError } from './lib/logger.js';
 
 // Custom hooks for state management (remaining hooks still used directly)
 import { useInventoryActions } from './hooks/index.js';
@@ -157,7 +158,7 @@ export default function App() {
   // Sync auth state with context and refresh data when authenticated
   useEffect(() => {
     if (auth.isAuthenticated && auth.userProfile) {
-      console.log('[App] User authenticated:', auth.userProfile.email);
+      log('[App] User authenticated:', auth.userProfile.email);
       setIsLoggedIn(true);
       setCurrentUser({
         ...auth.userProfile,
@@ -243,12 +244,12 @@ export default function App() {
     const { user, error } = await auth.signIn(loginForm.email, loginForm.password);
     
     if (error) {
-      console.error('Login failed:', error);
+      logError('Login failed:', error);
       return;
     }
     
     if (user) {
-      console.log('[App] Login successful, setting user and refreshing data');
+      log('[App] Login successful, setting user and refreshing data');
       setIsLoggedIn(true);
       setCurrentUser({
         ...user,
@@ -325,7 +326,7 @@ export default function App() {
             }
           })
           .catch(err => {
-            console.error('Failed to load item details:', err);
+            logError('Failed to load item details:', err);
           });
       }
     }
@@ -469,13 +470,18 @@ export default function App() {
     addChangeLog,
   } = inventoryActions;
 
-  // Audit Log Helper
+  // Audit Log Helper — uses DataContext.addAuditLog which persists to Supabase
   const addAuditLog = useCallback((entry) => {
-    setAuditLog(prev => [...prev, {
-      ...entry,
-      timestamp: new Date().toISOString(),
-    }]);
-  }, []);
+    if (dataContext?.addAuditLog) {
+      dataContext.addAuditLog(entry);
+    } else {
+      // Fallback: local-only (should not happen when Supabase is connected)
+      setAuditLog(prev => [...prev, {
+        ...entry,
+        timestamp: new Date().toISOString(),
+      }]);
+    }
+  }, [dataContext]);
 
   // ============================================================================
   // Checkout Handlers
@@ -513,28 +519,14 @@ export default function App() {
     try {
       // Use DataContext checkOutItem for proper Supabase persistence
       if (dataContext?.checkOutItem) {
-        try {
-          await dataContext.checkOutItem(itemId, {
-            userId: currentUser?.id,
-            userName: borrowerName,
-            clientId: null,
-            clientName: null,
-            project: project,
-            dueBack: dueDate
-          });
-        } catch (err) {
-          console.error('Failed to save checkout to Supabase:', err);
-          // Fallback to local state only
-          setInventory(prev => updateById(prev, itemId, item => ({
-            status: STATUS.CHECKED_OUT,
-            checkedOutTo: borrowerName,
-            checkedOutDate: checkedOutDate,
-            dueBack: dueDate,
-            checkoutProject: project,
-            checkoutProjectType: projectType,
-            checkoutCount: (item.checkoutCount || 0) + 1
-          })));
-        }
+        await dataContext.checkOutItem(itemId, {
+          userId: currentUser?.id,
+          userName: borrowerName,
+          clientId: null,
+          clientName: null,
+          project: project,
+          dueBack: dueDate
+        });
       } else {
         // No DataContext available, update local state only
         setInventory(prev => updateById(prev, itemId, item => ({
@@ -592,10 +584,12 @@ export default function App() {
           checkoutDate: checkedOutDate,
           dueDate,
           project
-        }).catch(err => console.error('Email send failed:', err));
+        }).catch(err => logError('Email send failed:', err));
       }
     } catch (err) {
-      console.error('Checkout process failed:', err);
+      logError('Checkout process failed:', err);
+      // TODO: Replace with toast notification system
+      alert('Checkout failed: ' + (err.message || 'Please try again.'));
     } finally {
       // Always close modal and clean up
       closeModal();
@@ -607,6 +601,7 @@ export default function App() {
   const processCheckin = useCallback(async (checkinData) => {
     const { itemId, returnedBy, condition, conditionChanged, conditionAtCheckout, conditionNotes, returnNotes, damageReported, damageDescription, returnDate, returnTime } = checkinData;
     
+    try {
     const currentItem = inventory.find(i => i.id === itemId);
     
     // Determine new status based on damage
@@ -614,28 +609,15 @@ export default function App() {
     
     // Use DataContext checkInItem for proper Supabase persistence
     if (dataContext?.checkInItem) {
-      try {
-        await dataContext.checkInItem(itemId, {
-          returnedBy,
-          userId: currentUser?.id,
-          condition,
-          conditionNotes,
-          returnNotes,
-          damageReported,
-          damageDescription
-        });
-      } catch (err) {
-        console.error('Failed to save checkin:', err);
-        // Fallback to local state only
-        setInventory(prev => updateById(prev, itemId, item => ({
-          status: newStatus,
-          condition: condition,
-          checkedOutTo: null,
-          checkedOutDate: null,
-          dueBack: null,
-          checkoutProject: null
-        })));
-      }
+      await dataContext.checkInItem(itemId, {
+        returnedBy,
+        userId: currentUser?.id,
+        condition,
+        conditionNotes,
+        returnNotes,
+        damageReported,
+        damageDescription
+      });
     } else {
       // No DataContext available, update local state only
       setInventory(prev => updateById(prev, itemId, item => ({
@@ -692,11 +674,17 @@ export default function App() {
         borrowerName: returnedBy,
         item: checkinItemData || currentItem || { id: itemId, name: itemId },
         returnDate
-      }).catch(err => console.error('Email send failed:', err));
+      }).catch(err => logError('Email send failed:', err));
     }
     
-    closeModal();
-    setCheckinItemData(null);
+    } catch (err) {
+      logError('Checkin process failed:', err);
+      // TODO: Replace with toast notification system
+      alert('Check-in failed: ' + (err.message || 'Please try again.'));
+    } finally {
+      closeModal();
+      setCheckinItemData(null);
+    }
   }, [currentUser, selectedItem, checkinItemData, closeModal, addAuditLog, addChangeLog, dataContext, inventory]);
 
   // ============================================================================
@@ -1055,7 +1043,7 @@ export default function App() {
         try {
           await dataContext.updateItem(selectedItem.id, { image });
         } catch (err) {
-          console.error('Failed to save image:', err);
+          logError('Failed to save image:', err);
         }
       }
     }
@@ -1084,7 +1072,7 @@ export default function App() {
         try {
           await dataContext.updateReservation(editingReservationId, reservationForm);
         } catch (err) {
-          console.error('Failed to update reservation:', err);
+          logError('Failed to update reservation:', err);
         }
       }
       
@@ -1123,7 +1111,7 @@ export default function App() {
         : (reservationForm.itemId ? [reservationForm.itemId] : [selectedItem?.id || selectedReservationItem?.id].filter(Boolean));
       
       if (itemIds.length === 0) {
-        console.error('No items selected for reservation');
+        logError('No items selected for reservation');
         return;
       }
       
@@ -1131,7 +1119,7 @@ export default function App() {
       for (const targetItemId of itemIds) {
         const targetItem = inventory.find(i => i.id === targetItemId);
         if (!targetItem) {
-          console.error('Item not found:', targetItemId);
+          logError('Item not found:', targetItemId);
           continue;
         }
         
@@ -1147,7 +1135,7 @@ export default function App() {
           try {
             await dataContext.createReservation(targetItemId, reservationForm);
           } catch (err) {
-            console.error('Failed to create reservation for', targetItemId, err);
+            logError('Failed to create reservation for', targetItemId, err);
           }
         }
         
@@ -1187,7 +1175,7 @@ export default function App() {
             ...reservationForm,
             itemCount: itemIds.length
           }
-        }).catch(err => console.error('Email send failed:', err));
+        }).catch(err => logError('Email send failed:', err));
       }
       
       // Navigate to the first item's reservation
@@ -1226,7 +1214,7 @@ export default function App() {
     const reservation = item?.reservations?.find(r => r.id === resId);
     
     if (!itemId || !resId) {
-      console.error('[deleteReservation] Missing itemId or resId:', { itemId, resId });
+      logError('[deleteReservation] Missing itemId or resId:', { itemId, resId });
       return;
     }
     
@@ -1284,7 +1272,7 @@ export default function App() {
               await dataContext.deleteReservation(resIdToDelete);
             }
           } catch (err) {
-            console.error('Failed to delete reservations:', err);
+            logError('Failed to delete reservations:', err);
           }
         }
         
@@ -2183,7 +2171,7 @@ export default function App() {
                 if (itemForDelete && selectedReservation?.id) {
                   deleteReservation(itemForDelete.id, selectedReservation.id);
                 } else {
-                  console.error('Cannot delete: missing item or reservation ID', { selectedReservationItem, selectedReservation });
+                  logError('Cannot delete: missing item or reservation ID', { selectedReservationItem, selectedReservation });
                 }
               }}
               onAddNote={reservationNoteHandlers.add}
@@ -2436,7 +2424,7 @@ export default function App() {
                   try {
                     await dataContext.saveNotificationPreferences(currentUser.id, prefs);
                   } catch (err) {
-                    console.error('Failed to save notification preferences:', err);
+                    logError('Failed to save notification preferences:', err);
                   }
                 }
                 // Also update local state

@@ -3,9 +3,9 @@
 // Enables offline support, caching, and background sync
 // =============================================================================
 
-const CACHE_NAME = 'sims-cache-v1';
-const STATIC_CACHE = 'sims-static-v1';
-const DYNAMIC_CACHE = 'sims-dynamic-v1';
+const CACHE_NAME = 'sims-cache-v2';
+const STATIC_CACHE = 'sims-static-v2';
+const DYNAMIC_CACHE = 'sims-dynamic-v2';
 
 // Assets to cache immediately on install
 const STATIC_ASSETS = [
@@ -100,7 +100,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: Cache first, fallback to network
+  // Hashed build assets (/assets/*.js, /assets/*.css): stale-while-revalidate
+  // These change hash on every deploy, so SWR ensures fresh code reaches users
+  if (url.pathname.startsWith('/assets/') && isCodeAsset(url.pathname)) {
+    event.respondWith(staleWhileRevalidate(request));
+    return;
+  }
+
+  // Truly static assets (fonts, images, favicon): cache first
   if (isStaticAsset(url.pathname)) {
     event.respondWith(cacheFirst(request));
     return;
@@ -224,11 +231,14 @@ async function staleWhileRevalidate(request) {
 // Helper Functions
 // =============================================================================
 
+function isCodeAsset(pathname) {
+  return pathname.endsWith('.js') || pathname.endsWith('.css');
+}
+
 function isStaticAsset(pathname) {
   const staticExtensions = [
-    '.js', '.css', '.woff', '.woff2', '.ttf', 
+    '.woff', '.woff2', '.ttf', 
     '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico',
-    '.json'
   ];
   return staticExtensions.some((ext) => pathname.endsWith(ext));
 }

@@ -25,6 +25,7 @@ import {
 } from './services.js';
 
 import { DEFAULT_ROLES, DEFAULT_LOCATIONS, DEFAULT_SPECS } from '../constants.js';
+import { log, error as logError } from './logger.js';
 
 // =============================================================================
 // CONTEXT
@@ -59,7 +60,7 @@ export function DataProvider({ children }) {
   // =============================================================================
   
   const loadData = useCallback(async () => {
-    console.log('[DataContext] Starting data load...');
+    log('[DataContext] Starting data load...');
     setLoading(true);
     setError(null);
 
@@ -104,7 +105,7 @@ export function DataProvider({ children }) {
         reservations: reservationsByItemId[item.id] || []
       }));
 
-      console.log('[DataContext] Data loaded:', {
+      log('[DataContext] Data loaded:', {
         inventory: inventoryData?.length || 0,
         packages: packagesData?.length || 0,
         packLists: packListsData?.length || 0,
@@ -128,7 +129,7 @@ export function DataProvider({ children }) {
       setAuditLog(auditLogData || []);
       setDataLoaded(true);
     } catch (err) {
-      console.error('[DataContext] Failed to load data:', err);
+      logError('[DataContext] Failed to load data:', err);
       setError(err);
     } finally {
       setLoading(false);
@@ -156,7 +157,7 @@ export function DataProvider({ children }) {
     try {
       await auditLogService.create(newEntry);
     } catch (err) {
-      console.error('Failed to create audit log:', err);
+      logError('Failed to create audit log:', err);
     }
 
     setAuditLog(prev => [newEntry, ...prev]);
@@ -174,7 +175,7 @@ export function DataProvider({ children }) {
     try {
       await inventoryService.update(id, updates);
     } catch (err) {
-      console.error('Failed to update item:', err);
+      logError('Failed to update item:', err);
       throw err;
     }
     
@@ -189,7 +190,7 @@ export function DataProvider({ children }) {
     try {
       newItem = await inventoryService.create(item);
     } catch (err) {
-      console.error('Failed to create item:', err);
+      logError('Failed to create item:', err);
       throw err;
     }
     
@@ -201,7 +202,7 @@ export function DataProvider({ children }) {
     try {
       await inventoryService.delete(id);
     } catch (err) {
-      console.error('Failed to delete item:', err);
+      logError('Failed to delete item:', err);
       throw err;
     }
     
@@ -214,7 +215,7 @@ export function DataProvider({ children }) {
       const itemWithDetails = await inventoryService.getByIdWithDetails(id);
       return itemWithDetails;
     } catch (err) {
-      console.error('Failed to fetch item details:', err);
+      logError('Failed to fetch item details:', err);
       return inventory.find(item => item.id === id) || null;
     }
   }, [inventory]);
@@ -235,7 +236,7 @@ export function DataProvider({ children }) {
       };
       await itemNotesService.create(dbNote);
     } catch (err) {
-      console.error('Failed to save note:', err);
+      logError('Failed to save note:', err);
       // Continue with local state update even if DB fails
     }
   }, []);
@@ -244,7 +245,7 @@ export function DataProvider({ children }) {
     try {
       await itemNotesService.softDelete(noteId);
     } catch (err) {
-      console.error('Failed to delete note:', err);
+      logError('Failed to delete note:', err);
     }
   }, []);
 
@@ -266,7 +267,7 @@ export function DataProvider({ children }) {
       };
       await itemRemindersService.create(dbReminder);
     } catch (err) {
-      console.error('Failed to save reminder:', err);
+      logError('Failed to save reminder:', err);
     }
   }, []);
 
@@ -280,7 +281,7 @@ export function DataProvider({ children }) {
       
       await itemRemindersService.update(reminderId, dbUpdates);
     } catch (err) {
-      console.error('Failed to update reminder:', err);
+      logError('Failed to update reminder:', err);
     }
   }, []);
 
@@ -288,7 +289,7 @@ export function DataProvider({ children }) {
     try {
       await itemRemindersService.delete(reminderId);
     } catch (err) {
-      console.error('Failed to delete reminder:', err);
+      logError('Failed to delete reminder:', err);
     }
   }, []);
 
@@ -313,7 +314,7 @@ export function DataProvider({ children }) {
       };
       await maintenanceService.create(dbRecord);
     } catch (err) {
-      console.error('Failed to save maintenance record:', err);
+      logError('Failed to save maintenance record:', err);
     }
   }, []);
 
@@ -321,7 +322,7 @@ export function DataProvider({ children }) {
     try {
       await maintenanceService.update(recordId, updates);
     } catch (err) {
-      console.error('Failed to update maintenance record:', err);
+      logError('Failed to update maintenance record:', err);
     }
   }, []);
 
@@ -329,7 +330,7 @@ export function DataProvider({ children }) {
     try {
       await maintenanceService.delete(recordId);
     } catch (err) {
-      console.error('Failed to delete maintenance record:', err);
+      logError('Failed to delete maintenance record:', err);
     }
   }, []);
 
@@ -357,7 +358,7 @@ export function DataProvider({ children }) {
       const result = await reservationsService.create(dbReservation);
       return result;
     } catch (err) {
-      console.error('Failed to create reservation:', err);
+      logError('Failed to create reservation:', err);
       throw err;
     }
   }, []);
@@ -378,7 +379,7 @@ export function DataProvider({ children }) {
       
       await reservationsService.update(reservationId, dbUpdates);
     } catch (err) {
-      console.error('Failed to update reservation:', err);
+      logError('Failed to update reservation:', err);
       throw err;
     }
   }, []);
@@ -387,7 +388,7 @@ export function DataProvider({ children }) {
     try {
       await reservationsService.delete(reservationId);
     } catch (err) {
-      console.error('Failed to delete reservation:', err);
+      logError('Failed to delete reservation:', err);
       throw err;
     }
   }, []);
@@ -416,7 +417,7 @@ export function DataProvider({ children }) {
       
       return result;
     } catch (err) {
-      console.error('Failed to check out item:', err);
+      logError('Failed to check out item:', err);
       throw err;
     }
   }, []);
@@ -468,13 +469,13 @@ export function DataProvider({ children }) {
             text: `⚠️ Damage reported: ${damageDescription}`
           });
         } catch (noteErr) {
-          console.error('Failed to add damage note:', noteErr);
+          logError('Failed to add damage note:', noteErr);
         }
       }
       
       return result;
     } catch (err) {
-      console.error('Failed to check in item:', err);
+      logError('Failed to check in item:', err);
       throw err;
     }
   }, []);
@@ -493,7 +494,7 @@ export function DataProvider({ children }) {
     try {
       newPackage = await packagesService.create(pkg);
     } catch (err) {
-      console.error('Failed to create package:', err);
+      logError('Failed to create package:', err);
       throw err;
     }
     
@@ -505,7 +506,7 @@ export function DataProvider({ children }) {
     try {
       await packagesService.update(id, updates);
     } catch (err) {
-      console.error('Failed to update package:', err);
+      logError('Failed to update package:', err);
       throw err;
     }
     
@@ -518,7 +519,7 @@ export function DataProvider({ children }) {
     try {
       await packagesService.delete(id);
     } catch (err) {
-      console.error('Failed to delete package:', err);
+      logError('Failed to delete package:', err);
       throw err;
     }
     
@@ -539,7 +540,7 @@ export function DataProvider({ children }) {
     try {
       newPackList = await packListsService.create(packList);
     } catch (err) {
-      console.error('Failed to create pack list:', err);
+      logError('Failed to create pack list:', err);
       throw err;
     }
     
@@ -551,7 +552,7 @@ export function DataProvider({ children }) {
     try {
       await packListsService.update(id, updates);
     } catch (err) {
-      console.error('Failed to update pack list:', err);
+      logError('Failed to update pack list:', err);
       throw err;
     }
     
@@ -564,7 +565,7 @@ export function DataProvider({ children }) {
     try {
       await packListsService.delete(id);
     } catch (err) {
-      console.error('Failed to delete pack list:', err);
+      logError('Failed to delete pack list:', err);
       throw err;
     }
     
@@ -585,7 +586,7 @@ export function DataProvider({ children }) {
     try {
       newClient = await clientsService.create(client);
     } catch (err) {
-      console.error('Failed to create client:', err);
+      logError('Failed to create client:', err);
       throw err;
     }
     
@@ -597,7 +598,7 @@ export function DataProvider({ children }) {
     try {
       await clientsService.update(id, updates);
     } catch (err) {
-      console.error('Failed to update client:', err);
+      logError('Failed to update client:', err);
       throw err;
     }
     
@@ -610,7 +611,7 @@ export function DataProvider({ children }) {
     try {
       await clientsService.delete(id);
     } catch (err) {
-      console.error('Failed to delete client:', err);
+      logError('Failed to delete client:', err);
       throw err;
     }
     
@@ -665,7 +666,7 @@ export function DataProvider({ children }) {
     try {
       await notificationPreferencesService.upsert(userId, preferences);
     } catch (err) {
-      console.error('Failed to save notification preferences:', err);
+      logError('Failed to save notification preferences:', err);
       throw err;
     }
     
@@ -676,7 +677,7 @@ export function DataProvider({ children }) {
     try {
       return await notificationPreferencesService.getByUserId(userId);
     } catch (err) {
-      console.error('Failed to get notification preferences:', err);
+      logError('Failed to get notification preferences:', err);
       return null;
     }
   }, []);
@@ -692,7 +693,7 @@ export function DataProvider({ children }) {
         project
       });
     } catch (err) {
-      console.error('Failed to send checkout email:', err);
+      logError('Failed to send checkout email:', err);
       return { success: false, error: err.message };
     }
   }, []);
@@ -706,7 +707,7 @@ export function DataProvider({ children }) {
         returnDate
       });
     } catch (err) {
-      console.error('Failed to send checkin email:', err);
+      logError('Failed to send checkin email:', err);
       return { success: false, error: err.message };
     }
   }, []);
@@ -720,7 +721,7 @@ export function DataProvider({ children }) {
         reservation
       });
     } catch (err) {
-      console.error('Failed to send reservation email:', err);
+      logError('Failed to send reservation email:', err);
       return { success: false, error: err.message };
     }
   }, []);

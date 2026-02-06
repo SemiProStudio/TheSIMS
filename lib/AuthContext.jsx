@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getSupabase, auth } from './supabase.js';
 import { usersService } from './services.js';
+import { log, error as logError } from './logger.js';
 
 // Context
 const AuthContext = createContext(null);
@@ -45,13 +46,13 @@ export function AuthProvider({ children }) {
             const profile = await usersService.getById(currentSession.user.id);
             setUserProfile(profile);
           } catch (profileErr) {
-            console.error('Failed to fetch user profile:', profileErr);
+            logError('Failed to fetch user profile:', profileErr);
           }
         }
         
         // Subscribe to auth changes (now that supabase is ready)
         const { data } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-          console.log('Auth state changed:', event);
+          log('Auth state changed:', event);
           setSession(newSession);
           setUser(newSession?.user ?? null);
           
@@ -60,7 +61,7 @@ export function AuthProvider({ children }) {
               const profile = await usersService.getById(newSession.user.id);
               setUserProfile(profile);
             } catch (err) {
-              console.error('Failed to fetch user profile:', err);
+              logError('Failed to fetch user profile:', err);
             }
           } else {
             setUserProfile(null);
@@ -69,7 +70,7 @@ export function AuthProvider({ children }) {
         
         subscription = data.subscription;
       } catch (err) {
-        console.error('Auth init error:', err);
+        logError('Auth init error:', err);
         setError(err);
       } finally {
         setLoading(false);
@@ -104,13 +105,13 @@ export function AuthProvider({ children }) {
           profile = await usersService.getById(authUser.id);
           setUserProfile(profile);
         } catch (profileErr) {
-          console.error('Failed to fetch profile after login:', profileErr);
+          logError('Failed to fetch profile after login:', profileErr);
         }
       }
 
       return { user: profile || authUser, error: null };
     } catch (err) {
-      console.error('Sign in error:', err);
+      logError('Sign in error:', err);
       setError(err);
       return { user: null, error: err };
     }
