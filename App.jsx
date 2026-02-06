@@ -1089,19 +1089,20 @@ export default function App() {
         }
         
         const reservation = {
-          id: generateId(),
+          id: generateId(), // temporary, replaced below if DB succeeds
           ...reservationForm,
           notes: [],
           dueBack: reservationForm.end
         };
 
-        // Use DataContext for Supabase persistence
-        {
-          try {
-            await dataContext.createReservation(targetItemId, reservationForm);
-          } catch (err) {
-            logError('Failed to create reservation for', targetItemId, err);
+        // Persist to Supabase — use the returned UUID
+        try {
+          const dbResult = await dataContext.createReservation(targetItemId, reservationForm);
+          if (dbResult?.id) {
+            reservation.id = dbResult.id;
           }
+        } catch (err) {
+          logError('Failed to create reservation for', targetItemId, err);
         }
         
         // Update local state
@@ -2131,32 +2132,15 @@ export default function App() {
               onBack={() => setCurrentView(selectedItem ? VIEWS.GEAR_DETAIL : VIEWS.SCHEDULE)}
               onEdit={() => openEditReservation(selectedReservation)}
               onDelete={() => {
-                // Determine which item this reservation belongs to
-                const itemForDelete = selectedReservationItem || selectedItem || selectedReservation?.items?.[0];
-                
-                // Debug: log all available references
-                if (import.meta.env.DEV) {
-                  console.warn('[Cancel Reservation] Debug:', {
-                    hasSelectedReservationItem: !!selectedReservationItem,
-                    selectedReservationItemId: selectedReservationItem?.id,
-                    hasSelectedItem: !!selectedItem,
-                    selectedItemId: selectedItem?.id,
-                    hasReservationItems: !!selectedReservation?.items,
-                    reservationId: selectedReservation?.id,
-                    reservationItemId: selectedReservation?.itemId,
-                    itemForDeleteId: itemForDelete?.id,
-                  });
-                }
-                
-                // Use itemId from the reservation itself as last resort
-                const itemId = itemForDelete?.id || selectedReservation?.itemId;
+                // Determine the item and reservation IDs for deletion
+                const itemId = selectedReservationItem?.id || selectedItem?.id || selectedReservation?.itemId;
                 const resId = selectedReservation?.id;
                 
                 if (itemId && resId) {
                   deleteReservation(itemId, resId);
                 } else {
-                  logError('Cannot delete: missing item or reservation ID', { itemId, resId, selectedReservationItem, selectedItem, selectedReservation });
-                  alert('Unable to cancel reservation — missing item reference. Please go back and try again.');
+                  logError('Cannot delete: missing item or reservation ID', { itemId, resId });
+                  alert('Unable to cancel reservation — missing reference. Please go back and try again.');
                 }
               }}
               onAddNote={reservationNoteHandlers.add}
@@ -2652,6 +2636,9 @@ export default function App() {
         isOpen={confirmDialog.isOpen}
         title={confirmDialog.title}
         message={confirmDialog.message}
+        confirmText={confirmDialog.confirmText}
+        cancelText={confirmDialog.cancelText}
+        danger={confirmDialog.variant === 'danger'}
         onConfirm={handleConfirm}
         onCancel={closeConfirm}
       />
