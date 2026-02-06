@@ -3,9 +3,11 @@
 // Enables offline support, caching, and background sync
 // =============================================================================
 
-const CACHE_NAME = 'sims-cache-v2';
-const STATIC_CACHE = 'sims-static-v2';
-const DYNAMIC_CACHE = 'sims-dynamic-v2';
+// Cache version — replaced at build time by vite.config.js, falls back to 'dev' for local dev
+const BUILD_ID = '__SIMS_BUILD_ID__' !== '__SIMS_' + 'BUILD_ID__' ? '__SIMS_BUILD_ID__' : 'dev';
+const CACHE_NAME = `sims-cache-${BUILD_ID}`;
+const STATIC_CACHE = `sims-static-${BUILD_ID}`;
+const DYNAMIC_CACHE = `sims-dynamic-${BUILD_ID}`;
 
 // Assets to cache immediately on install
 const STATIC_ASSETS = [
