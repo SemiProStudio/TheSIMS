@@ -40,8 +40,9 @@ vi.mock('../theme.js', () => ({
   spacing: { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24 },
   borderRadius: { sm: 4, md: 8, lg: 12 },
   typography: {
-    fontSize: { xs: 12, sm: 14, md: 16, lg: 18, xl: 20 },
-    fontSizes: { xs: 12, sm: 14, md: 16, lg: 18, xl: 20 },
+    fontSize: { xs: '10px', sm: '12px', base: '14px', md: '15px', lg: '16px', xl: '18px' },
+    fontWeight: { normal: 400, medium: 500, semibold: 600, bold: 700 },
+    lineHeight: { tight: 1.25, normal: 1.5 },
   },
   withOpacity: (color, opacity) => color,
 }));
