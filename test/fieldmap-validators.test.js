@@ -256,7 +256,7 @@ describe('Roundtrip mapping', () => {
 describe('validateItem', () => {
   const validItem = {
     name: 'Canon R5',
-    category: 'Camera',
+    category: 'Cameras',
     status: 'available',
     condition: 'excellent',
   };
@@ -460,9 +460,9 @@ describe('validateMaintenanceRecord', () => {
 describe('validateItems (bulk)', () => {
   it('returns valid and invalid items', () => {
     const items = [
-      { name: 'Canon R5', category: 'Camera' },
-      { name: '', category: 'Lens' },
-      { name: 'Sony A7', category: 'Camera' },
+      { name: 'Canon R5', category: 'Cameras' },
+      { name: '', category: 'Lenses' },
+      { name: 'Sony A7', category: 'Cameras' },
     ];
     const result = validateItems(items);
     expect(result.validCount).toBe(2);

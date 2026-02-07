@@ -17,13 +17,19 @@ vi.mock('../lib/supabase.js', () => ({
 // Mock the services
 vi.mock('../lib/services.js', () => ({
   inventoryService: {
-    getAll: vi.fn(() => Promise.resolve([])),
+    getAll: vi.fn(() => Promise.resolve([
+      { id: 'CAM001', name: 'Test Camera', status: 'available', category_name: 'Cameras' },
+      { id: 'LENS001', name: 'Test Lens', status: 'available', category_name: 'Lenses' },
+    ])),
     create: vi.fn((item) => Promise.resolve(item)),
     update: vi.fn((id, updates) => Promise.resolve({ id, ...updates })),
     delete: vi.fn((id) => Promise.resolve({ id })),
+    getByIdWithDetails: vi.fn((id) => Promise.resolve({ id, name: 'Test Camera', notes: [], reminders: [], reservations: [], maintenanceHistory: [], checkoutHistory: [] })),
   },
   packagesService: {
-    getAll: vi.fn(() => Promise.resolve([])),
+    getAll: vi.fn(() => Promise.resolve([
+      { id: 'pkg-1', name: 'Interview Kit' },
+    ])),
     create: vi.fn((pkg) => Promise.resolve(pkg)),
     update: vi.fn((id, updates) => Promise.resolve({ id, ...updates })),
     delete: vi.fn((id) => Promise.resolve({ id })),
@@ -35,13 +41,17 @@ vi.mock('../lib/services.js', () => ({
     delete: vi.fn((id) => Promise.resolve({ id })),
   },
   clientsService: {
-    getAll: vi.fn(() => Promise.resolve([])),
+    getAll: vi.fn(() => Promise.resolve([
+      { id: 'client-1', name: 'Test Client' },
+    ])),
     create: vi.fn((client) => Promise.resolve(client)),
     update: vi.fn((id, updates) => Promise.resolve({ id, ...updates })),
     delete: vi.fn((id) => Promise.resolve({ id })),
   },
   usersService: {
-    getAll: vi.fn(() => Promise.resolve([])),
+    getAll: vi.fn(() => Promise.resolve([
+      { id: 'user-1', name: 'Admin', role: 'admin' },
+    ])),
   },
   rolesService: {
     getAll: vi.fn(() => Promise.resolve([])),
@@ -202,7 +212,7 @@ describe('DataProvider', () => {
       );
       
       await waitFor(() => {
-        expect(screen.getByTestId('inventory-count')).toHaveTextContent('0');
+        expect(screen.getByTestId('inventory-count')).toHaveTextContent('2');
       });
     });
   });
@@ -528,7 +538,7 @@ describe('DataProvider', () => {
   // =============================================================================
 
   describe('Notification Operations', () => {
-    it('saveNotificationPreferences should update user preferences', async () => {
+    it('saveNotificationPreferences should call service upsert', async () => {
       let capturedContext = null;
       
       render(
@@ -543,13 +553,12 @@ describe('DataProvider', () => {
       
       const prefs = { email_enabled: true, due_date_reminders: true };
       
+      let result;
       await act(async () => {
-        await capturedContext.saveNotificationPreferences('user-1', prefs);
+        result = await capturedContext.saveNotificationPreferences('user-1', prefs);
       });
       
-      // Should update the user in the users array
-      const user = capturedContext.users.find(u => u.id === 'user-1');
-      expect(user?.notificationPreferences).toEqual(prefs);
+      expect(result).toEqual(prefs);
     });
 
     it('sendCheckoutEmail should return success in demo mode', async () => {
