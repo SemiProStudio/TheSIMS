@@ -7,13 +7,13 @@
 
 import React, { memo, useMemo, useState, useCallback, useEffect } from 'react';
 import { Search, Plus, Grid, List, CheckSquare, Square, MinusSquare, X, Bookmark, BookmarkPlus, Trash2, ChevronDown } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity, zIndex } from './theme.js';
-import { getStatusColor, filterBySearch, filterByCategory, filterByStatus, generateId } from './utils.js';
-import { Badge, Card, Button, SearchInput, Pagination } from './components/ui.jsx';
-import { OptimizedImage } from './components/OptimizedImage.jsx';
-import { Select } from './components/Select.jsx';
-import { useDebounce, usePagination } from './hooks/index.js';
-import { usePermissions, ViewOnlyBanner } from './PermissionsContext.jsx';
+import { colors, styles, spacing, borderRadius, typography, withOpacity, zIndex } from '../theme.js';
+import { getStatusColor, filterBySearch, filterByCategory, filterByStatus, generateId } from '../utils.js';
+import { Badge, Card, Button, SearchInput, Pagination } from '../components/ui.jsx';
+import { OptimizedImage } from '../components/OptimizedImage.jsx';
+import { Select } from '../components/Select.jsx';
+import { useDebounce, usePagination } from '../hooks/index.js';
+import { usePermissions, ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
 
 // Items per page options
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 250, 500];

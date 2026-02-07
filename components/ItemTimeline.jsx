@@ -8,10 +8,10 @@ import {
   Clock, CheckCircle, RefreshCw, Wrench, MessageSquare, Calendar, 
   Bell, AlertTriangle, DollarSign, ChevronDown, ChevronUp, Filter
 } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { formatDate, formatDateTime, formatMoney } from './utils.js';
-import { Badge, Card, CardHeader, Button } from './components/ui.jsx';
-import { Select } from './components/Select.jsx';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { formatDate, formatDateTime, formatMoney } from '../utils.js';
+import { Badge, Card, CardHeader, Button } from './ui.jsx';
+import { Select } from './Select.jsx';
 
 // Event type configuration
 const EVENT_TYPES = {

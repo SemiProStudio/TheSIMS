@@ -5,10 +5,10 @@
 
 import React, { memo, useState, useCallback } from 'react';
 import { Shield, Plus, Edit2, Trash2, Save, X, Users, Eye, EyeOff, Pencil, ChevronDown, ChevronRight } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity, zIndex } from './theme.js';
-import { APP_FUNCTIONS, PERMISSION_LEVELS } from './constants.js';
-import { Button, Card, Badge } from './components/ui.jsx';
-import { generateId } from './utils.js';
+import { colors, styles, spacing, borderRadius, typography, withOpacity, zIndex } from '../theme.js';
+import { APP_FUNCTIONS, PERMISSION_LEVELS } from '../constants.js';
+import { Button, Card, Badge } from '../components/ui.jsx';
+import { generateId } from '../utils.js';
 
 // Permission level badge colors
 const getPermissionColor = (level) => {

@@ -26,6 +26,7 @@ import {
 
 import { DEFAULT_ROLES, DEFAULT_LOCATIONS, DEFAULT_SPECS } from '../constants.js';
 import { log, error as logError } from './logger.js';
+import { validateReservation, validateClient, validateMaintenanceRecord } from './validators.js';
 
 // =============================================================================
 // CONTEXT
@@ -302,6 +303,12 @@ export function DataProvider({ children }) {
 
   const addMaintenance = useCallback(async (itemId, record) => {
     try {
+      // Validate before writing (still in camelCase at this point)
+      const validation = validateMaintenanceRecord(record);
+      if (!validation.isValid) {
+        throw new Error('Validation failed: ' + Object.values(validation.errors).join(', '));
+      }
+      
       const dbRecord = {
         // Don't pass id - let DB generate UUID
         item_id: itemId,
@@ -345,6 +352,12 @@ export function DataProvider({ children }) {
 
   const createReservation = useCallback(async (itemId, reservation) => {
     try {
+      // Validate before writing (still in camelCase at this point)
+      const validation = validateReservation(reservation);
+      if (!validation.isValid) {
+        throw new Error('Validation failed: ' + Object.values(validation.errors).join(', '));
+      }
+      
       const dbReservation = {
         // Don't pass id - let DB generate UUID
         item_id: itemId,
@@ -586,6 +599,12 @@ export function DataProvider({ children }) {
   }, []);
 
   const createClient = useCallback(async (client) => {
+    // Validate before writing
+    const validation = validateClient(client);
+    if (!validation.isValid) {
+      throw new Error('Validation failed: ' + Object.values(validation.errors).join(', '));
+    }
+    
     let newClient = client;
     
     try {

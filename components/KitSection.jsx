@@ -8,10 +8,10 @@ import {
   Package, Plus, X, ChevronRight, Box, Layers, Link2, Unlink,
   Search, AlertTriangle
 } from 'lucide-react';
-import { KIT_TYPES } from './constants.js';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { formatMoney, getStatusColor } from './utils.js';
-import { Badge, Card, CardHeader, Button, SearchInput } from './components/ui.jsx';
+import { KIT_TYPES } from '../constants.js';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { formatMoney, getStatusColor } from '../utils.js';
+import { Badge, Card, CardHeader, Button, SearchInput } from './ui.jsx';
 
 // Get kit type label
 const getKitTypeLabel = (type) => {

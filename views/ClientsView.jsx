@@ -8,14 +8,14 @@ import {
   Package, ChevronRight, Edit2, Trash2, MapPin, FileText,
   Clock, DollarSign, Star, MessageSquare, X
 } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { formatMoney } from './utils.js';
-import { Card, Button, SearchInput, Badge, ConfirmDialog, CollapsibleSection } from './components/ui.jsx';
-import { Select } from './components/Select.jsx';
-import NotesSection from './NotesSection.jsx';
-import { useData } from './lib/DataContext.jsx';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { formatMoney } from '../utils.js';
+import { Card, Button, SearchInput, Badge, ConfirmDialog, CollapsibleSection } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
+import NotesSection from '../components/NotesSection.jsx';
+import { useData } from '../lib/DataContext.jsx';
 
-import { error as logError } from './lib/logger.js';
+import { error as logError } from '../lib/logger.js';
 
 // Client type options
 const CLIENT_TYPES = ['Individual', 'Company', 'Agency', 'Non-Profit', 'Government', 'Other'];

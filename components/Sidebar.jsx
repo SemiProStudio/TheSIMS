@@ -8,11 +8,11 @@ import {
   BarChart3, Home, LogOut, Layers, ClipboardList, User, ChevronDown,
   ScanLine, Upload, Download, Bell, Palette, ChevronLeft, ChevronRight, Search
 } from 'lucide-react';
-import { VIEWS } from './constants.js';
-import { colors, spacing, borderRadius, typography, withOpacity } from './theme.js';
-import { useTheme } from './ThemeContext.jsx';
-import { usePermissions } from './PermissionsContext.jsx';
-import { announcePageChange } from './utils/accessibility.js';
+import { VIEWS } from '../constants.js';
+import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
+import { useTheme } from '../contexts/ThemeContext.jsx';
+import { usePermissions } from '../contexts/PermissionsContext.jsx';
+import { announcePageChange } from '../utils/accessibility.js';
 
 // Navigation button component
 const NavButton = memo(function NavButton({ icon: Icon, label, viewId, currentView, onClick, colorVar, collapsed }) {

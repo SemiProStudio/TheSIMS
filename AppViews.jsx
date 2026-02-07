@@ -11,29 +11,29 @@ import { useNavigationContext } from './contexts/NavigationContext.jsx';
 import { useFilterContext } from './contexts/FilterContext.jsx';
 import { useModalContext } from './contexts/ModalContext.jsx';
 import { useData } from './lib/DataContext.jsx';
-import { PermissionGate } from './PermissionsContext.jsx';
+import { PermissionGate } from './contexts/PermissionsContext.jsx';
 import { ViewLoading } from './components/Loading.jsx';
 import { generateId } from './utils.js';
 
 // Core (eagerly loaded)
-import Dashboard from './Dashboard.jsx';
-import GearList from './GearList.jsx';
-import ItemDetail from './ItemDetail.jsx';
-import SearchView from './SearchView.jsx';
+import Dashboard from './views/Dashboard.jsx';
+import GearList from './views/GearList.jsx';
+import ItemDetail from './views/ItemDetail.jsx';
+import SearchView from './views/SearchView.jsx';
 
 // Lazy views
-const LabelsView = lazy(() => import('./LabelsView.jsx'));
-const PackagesView = lazy(() => import('./PackagesView.jsx'));
-const PackListsView = lazy(() => import('./PackListsView.jsx'));
-const ReservationDetail = lazy(() => import('./ReservationDetail.jsx'));
-const ScheduleView = lazy(() => import('./ScheduleView.jsx'));
-const NotificationSettings = lazy(() => import('./NotificationSettings.jsx'));
-const LocationsManager = lazy(() => import('./LocationsManager.jsx'));
-const LayoutCustomize = lazy(() => import('./LayoutCustomize.jsx'));
-const ThemeSelector = lazy(() => import('./ThemeSelector.jsx'));
-const ClientsView = lazy(() => import('./ClientsView.jsx'));
-const RolesManager = lazy(() => import('./RolesManager.jsx'));
-const ChangeLog = lazy(() => import('./ChangeLog.jsx'));
+const LabelsView = lazy(() => import('./views/LabelsView.jsx'));
+const PackagesView = lazy(() => import('./views/PackagesView.jsx'));
+const PackListsView = lazy(() => import('./views/PackListsView.jsx'));
+const ReservationDetail = lazy(() => import('./views/ReservationDetail.jsx'));
+const ScheduleView = lazy(() => import('./views/ScheduleView.jsx'));
+const NotificationSettings = lazy(() => import('./views/NotificationSettings.jsx'));
+const LocationsManager = lazy(() => import('./views/LocationsManager.jsx'));
+const LayoutCustomize = lazy(() => import('./views/LayoutCustomize.jsx'));
+const ThemeSelector = lazy(() => import('./views/ThemeSelector.jsx'));
+const ClientsView = lazy(() => import('./views/ClientsView.jsx'));
+const RolesManager = lazy(() => import('./views/RolesManager.jsx'));
+const ChangeLog = lazy(() => import('./views/ChangeLog.jsx'));
 
 const AdminPanel = lazy(() => import('./views/AdminView.jsx').then(m => ({ default: m.AdminPanel })));
 const UsersPanel = lazy(() => import('./views/UsersView.jsx').then(m => ({ default: m.UsersPanel })));
@@ -42,9 +42,9 @@ const AuditLogPanel = lazy(() => import('./views/AuditLogView.jsx').then(m => ({
 const MaintenanceReportPanel = lazy(() => import('./views/MaintenanceReportView.jsx').then(m => ({ default: m.MaintenanceReportPanel })));
 const InsuranceReportPanel = lazy(() => import('./views/InsuranceReportView.jsx').then(m => ({ default: m.InsuranceReportPanel })));
 
-const ItemFormPage = lazy(() => import('./AdminPages.jsx').then(m => ({ default: m.ItemFormPage })));
-const SpecsPage = lazy(() => import('./AdminPages.jsx').then(m => ({ default: m.SpecsPage })));
-const CategoriesPage = lazy(() => import('./AdminPages.jsx').then(m => ({ default: m.CategoriesPage })));
+const ItemFormPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ default: m.ItemFormPage })));
+const SpecsPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ default: m.SpecsPage })));
+const CategoriesPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ default: m.CategoriesPage })));
 
 export default function AppViews({ handlers, currentUser, categorySettings, changeLog }) {
   // Read state from contexts

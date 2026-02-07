@@ -9,11 +9,11 @@ import {
   Plus, Trash2, Edit, ChevronRight, ChevronDown, Save,
   FolderTree, Search
 } from 'lucide-react';
-import { LOCATION_TYPES } from './constants.js';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { flattenLocations } from './utils.js';
-import { Badge, Card, CardHeader, Button, SearchInput, PageHeader } from './components/ui.jsx';
-import { Select } from './components/Select.jsx';
+import { LOCATION_TYPES } from '../constants.js';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { flattenLocations } from '../utils.js';
+import { Badge, Card, CardHeader, Button, SearchInput, PageHeader } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
 
 // Get icon for location type
 const getLocationIcon = (type) => {

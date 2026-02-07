@@ -4,13 +4,13 @@
 
 import React, { memo, useState, useEffect, useRef, useMemo } from 'react';
 import { Plus, Save, Trash2, GripVertical, Search } from 'lucide-react';
-import { CONDITION, DEFAULT_NEW_CATEGORY_SETTINGS } from './constants.js';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { Card, Badge, Button, PageHeader } from './components/ui.jsx';
-import { Select } from './components/Select.jsx';
-import { DatePicker } from './components/DatePicker.jsx';
-import { useItemForm } from './ItemForm.jsx';
-import { SmartPasteModal } from './modals/ItemModal.jsx';
+import { CONDITION, DEFAULT_NEW_CATEGORY_SETTINGS } from '../constants.js';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { Card, Badge, Button, PageHeader } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
+import { DatePicker } from '../components/DatePicker.jsx';
+import { useItemForm } from '../components/ItemForm.jsx';
+import { SmartPasteModal } from '../modals/ItemModal.jsx';
 
 // ============================================================================
 // Add/Edit Item Page

@@ -1,8 +1,8 @@
 import { useMemo, useState, useCallback } from 'react';
-import { generateItemCode, flattenLocations } from './utils.js';
-import { validateItem } from './lib/validators.js';
+import { generateItemCode, flattenLocations } from '../utils.js';
+import { validateItem } from '../lib/validators.js';
 
-import { warn } from './lib/logger.js';
+import { warn } from '../lib/logger.js';
 
 // ============================================================================
 // useItemForm - Custom hook for item form validation and computed values

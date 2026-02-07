@@ -5,14 +5,14 @@
 
 import React, { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import { Plus, Package, Trash2, ArrowLeft, ChevronRight, Edit2, AlertTriangle, Lightbulb } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity } from './theme.js';
-import { formatMoney, getStatusColor } from './utils.js';
-import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog } from './components/ui.jsx';
-import { Select } from './components/Select.jsx';
-import { OptimizedImage } from './components/OptimizedImage.jsx';
-import { useData } from './lib/DataContext.jsx';
+import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
+import { formatMoney, getStatusColor } from '../utils.js';
+import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
+import { OptimizedImage } from '../components/OptimizedImage.jsx';
+import { useData } from '../lib/DataContext.jsx';
 
-import { error as logError } from './lib/logger.js';
+import { error as logError } from '../lib/logger.js';
 
 function PackagesView({ 
   packages, 

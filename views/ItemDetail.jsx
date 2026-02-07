@@ -5,18 +5,18 @@
 
 import React, { memo, useMemo, useState, useEffect } from 'react';
 import { CheckCircle, RefreshCw, Edit, QrCode, Trash2, Calendar, Plus, Upload, Layout, DollarSign, Clock, Bell, Wrench, MessageSquare, History, Settings, Package, ChevronDown, ChevronUp, Eye } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { formatDate, formatMoney, getStatusColor, getConditionColor } from './utils.js';
-import { ITEM_DETAIL_SECTIONS } from './constants.js';
-import { Badge, Card, Button, CollapsibleSection, BackButton } from './components/ui.jsx';
-import { OptimizedImage } from './components/OptimizedImage.jsx';
-import { Select } from './components/Select.jsx';
-import NotesSection from './NotesSection.jsx';
-import RemindersSection from './RemindersSection.jsx';
-import MaintenanceSection from './MaintenanceSection.jsx';
-import ItemTimeline from './ItemTimeline.jsx';
-import DepreciationCalculator from './DepreciationCalculator.jsx';
-import { usePermissions } from './PermissionsContext.jsx';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { formatDate, formatMoney, getStatusColor, getConditionColor } from '../utils.js';
+import { ITEM_DETAIL_SECTIONS } from '../constants.js';
+import { Badge, Card, Button, CollapsibleSection, BackButton } from '../components/ui.jsx';
+import { OptimizedImage } from '../components/OptimizedImage.jsx';
+import { Select } from '../components/Select.jsx';
+import NotesSection from '../components/NotesSection.jsx';
+import RemindersSection from '../components/RemindersSection.jsx';
+import MaintenanceSection from '../components/MaintenanceSection.jsx';
+import ItemTimeline from '../components/ItemTimeline.jsx';
+import DepreciationCalculator from '../components/DepreciationCalculator.jsx';
+import { usePermissions } from '../contexts/PermissionsContext.jsx';
 
 // Panel color mapping for item detail sections (CSS variables)
 const SECTION_COLORS = {

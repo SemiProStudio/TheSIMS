@@ -3,8 +3,8 @@
 // ============================================================================
 
 import React, { memo, useState } from 'react';
-import { colors, styles, spacing, borderRadius, typography } from './theme.js';
-import { Spinner } from './components/Loading.jsx';
+import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
+import { Spinner } from '../components/Loading.jsx';
 
 function Login({ loginForm, setLoginForm, onLogin, isLoading, error }) {
   const [showPassword, setShowPassword] = useState(false);

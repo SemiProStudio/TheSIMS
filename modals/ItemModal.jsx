@@ -11,7 +11,7 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity } from '
 import { Badge, Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
-import { useItemForm } from '../ItemForm.jsx';
+import { useItemForm } from '../components/ItemForm.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 import { SmartPasteModal } from './SmartPasteModal.jsx';
 

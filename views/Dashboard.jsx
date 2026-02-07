@@ -8,11 +8,11 @@ import {
   Package, CheckCircle, Clock, AlertTriangle, Calendar,
   ChevronRight, Search, Bell, TrendingDown, Layout
 } from 'lucide-react';
-import { STATUS, DASHBOARD_SECTIONS } from './constants.js';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { formatDate, getStatusColor, getTodayISO, isReminderDue } from './utils.js';
-import { Badge, StatCard, SearchInput, Button, CollapsibleSection } from './components/ui.jsx';
-import { usePermissions } from './PermissionsContext.jsx';
+import { STATUS, DASHBOARD_SECTIONS } from '../constants.js';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { formatDate, getStatusColor, getTodayISO, isReminderDue } from '../utils.js';
+import { Badge, StatCard, SearchInput, Button, CollapsibleSection } from '../components/ui.jsx';
+import { usePermissions } from '../contexts/PermissionsContext.jsx';
 
 // Panel color CSS variables for dashboard sections
 const PANEL_COLORS = {

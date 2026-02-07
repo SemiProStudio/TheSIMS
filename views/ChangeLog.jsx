@@ -5,9 +5,9 @@
 
 import React, { memo, useState, useMemo, useCallback } from 'react';
 import { History, Search, Package, ChevronRight, Clock, User, Edit2, Plus, Trash2, RefreshCw, ArrowRight, X } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { formatDate, formatDateTime } from './utils.js';
-import { Card, Button, SearchInput, Badge, BackButton, PageHeader } from './components/ui.jsx';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { formatDate, formatDateTime } from '../utils.js';
+import { Card, Button, SearchInput, Badge, BackButton, PageHeader } from '../components/ui.jsx';
 
 // Change type icons and colors
 const CHANGE_TYPE_CONFIG = {

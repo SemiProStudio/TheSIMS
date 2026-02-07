@@ -5,11 +5,12 @@
 import React, { memo, useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Search, Printer, Download, Check, Package, Layers } from 'lucide-react';
 import QRCode from 'qrcode';
-import { LABEL_FORMATS } from './constants.js';
-import { colors, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { Card, CardHeader, Button, SearchInput, Badge } from './components/ui.jsx';
+import { LABEL_FORMATS } from '../constants.js';
+import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { Card, CardHeader, Button, SearchInput, Badge } from '../components/ui.jsx';
 
-import { error as logError } from './lib/logger.js';
+import { error as logError } from '../lib/logger.js';
+import { openPrintWindow } from '../lib/printUtil.js';
 
 // Real QR Code Generator Component using qrcode library
 const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
@@ -684,31 +685,24 @@ function LabelsView({ inventory, packages = [], user }) {
       return generateLabelHTML(item, selectedFormat, isKitTab, isPackageTab, contained);
     }).join('');
     
-    const w = window.open('', '_blank');
-    w.document.write(`
-      <html>
-        <head>
-          <title>Labels</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              padding: 20px; 
-              display: flex; 
-              flex-wrap: wrap; 
-              gap: 16px;
-              background: #f5f5f5;
-            }
-            @media print {
-              body { padding: 0; background: white; }
-            }
-          </style>
-        </head>
-        <body>${labelsHTML}</body>
-      </html>
-    `);
-    w.document.close();
-    setTimeout(() => w.print(), 250);
+    openPrintWindow({
+      title: 'Labels',
+      styles: `
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          padding: 20px; 
+          display: flex; 
+          flex-wrap: wrap; 
+          gap: 16px;
+          background: #f5f5f5;
+        }
+        @media print {
+          body { padding: 0; background: white; }
+        }
+      `,
+      body: labelsHTML,
+    });
   }, [inventory, packages, selectedItems, selectedFormat, selectionTab, getContainedItems, generateLabelHTML]);
 
   const handleDownload = useCallback(async () => {

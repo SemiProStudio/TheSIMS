@@ -4,8 +4,8 @@
 // ============================================================================
 
 import { useState } from 'react';
-import { colors, spacing, typography, borderRadius } from './theme.js';
-import { VIEWS, MODALS } from './constants.js';
+import { colors, spacing, typography, borderRadius } from '../theme.js';
+import { VIEWS, MODALS } from '../constants.js';
 
 export default function MobileHeader({
   currentUser,

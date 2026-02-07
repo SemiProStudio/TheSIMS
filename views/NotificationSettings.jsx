@@ -5,12 +5,12 @@
 
 import React, { memo, useState, useCallback } from 'react';
 import { Mail, Calendar, Clock, AlertTriangle, CheckCircle, Settings, ChevronDown, ChevronRight } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { Card, Button } from './components/ui.jsx';
-import { Select } from './components/Select.jsx';
-import { usePermissions } from './PermissionsContext.jsx';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { Card, Button } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
+import { usePermissions } from '../contexts/PermissionsContext.jsx';
 
-import { error as logError } from './lib/logger.js';
+import { error as logError } from '../lib/logger.js';
 
 // Toggle switch component
 const Toggle = memo(function Toggle({ checked, onChange, disabled = false }) {

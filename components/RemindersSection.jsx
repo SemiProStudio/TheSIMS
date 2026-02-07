@@ -5,11 +5,11 @@
 
 import React, { memo, useState, useCallback } from 'react';
 import { Bell, Plus, Trash2, Calendar, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { formatDate, generateId, getTodayISO, getNextDueDate, isReminderDue } from './utils.js';
-import { Button } from './components/ui.jsx';
-import { Select } from './components/Select.jsx';
-import { DatePicker } from './components/DatePicker.jsx';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { formatDate, generateId, getTodayISO, getNextDueDate, isReminderDue } from '../utils.js';
+import { Button } from './ui.jsx';
+import { Select } from './Select.jsx';
+import { DatePicker } from './DatePicker.jsx';
 
 // Recurrence options
 const RECURRENCE_OPTIONS = [

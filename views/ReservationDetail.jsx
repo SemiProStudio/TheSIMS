@@ -4,10 +4,10 @@
 
 import React, { memo } from 'react';
 import { ArrowLeft, Calendar, MapPin, Phone, Mail, User, FileText, Edit, Trash2, MessageSquare, Package } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { formatDate, getStatusColor, getTodayISO } from './utils.js';
-import { Badge, Card, CardHeader, Button } from './components/ui.jsx';
-import NotesSection from './NotesSection.jsx';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { formatDate, getStatusColor, getTodayISO } from '../utils.js';
+import { Badge, Card, CardHeader, Button } from '../components/ui.jsx';
+import NotesSection from '../components/NotesSection.jsx';
 
 // Map widget with embedded OpenStreetMap
 const MapWidget = memo(function MapWidget({ location }) {

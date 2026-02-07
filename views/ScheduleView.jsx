@@ -4,11 +4,11 @@
 
 import React, { memo, useMemo, useCallback } from 'react';
 import { ArrowLeft, ArrowRight, Calendar, List, Clock, MapPin, Plus, Package } from 'lucide-react';
-import { SCHEDULE_MODES, SCHEDULE_PERIODS } from './constants.js';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { formatDate } from './utils.js';
-import { Badge, Card, Button } from './components/ui.jsx';
-import { DatePicker } from './components/DatePicker.jsx';
+import { SCHEDULE_MODES, SCHEDULE_PERIODS } from '../constants.js';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { formatDate } from '../utils.js';
+import { Badge, Card, Button } from '../components/ui.jsx';
+import { DatePicker } from '../components/DatePicker.jsx';
 
 function ScheduleView({
   inventory,

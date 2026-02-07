@@ -6,13 +6,14 @@
 
 import React, { memo, useState, useCallback, useMemo } from 'react';
 import { Plus, Package, Trash2, ArrowLeft, Download, Printer, Copy, Box, Layers, ChevronRight, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity } from './theme.js';
-import { formatDate, generateId, getStatusColor } from './utils.js';
-import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog } from './components/ui.jsx';
-import { Select } from './components/Select.jsx';
-import { useData } from './lib/DataContext.jsx';
+import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
+import { formatDate, generateId, getStatusColor } from '../utils.js';
+import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
+import { useData } from '../lib/DataContext.jsx';
 
-import { error as logError } from './lib/logger.js';
+import { error as logError } from '../lib/logger.js';
+import { openPrintWindow } from '../lib/printUtil.js';
 
 function PackListsView({ 
   packLists, 
@@ -454,7 +455,6 @@ function PackListsView({
       alert('Copied to clipboard!');
     } else {
       const fs = { XS: 10, S: 12, M: 14, L: 16, XL: 18 }[exportFontSize];
-      const w = window.open('', '_blank');
       
       // Group items by category if sorted by category
       let tableContent = '';
@@ -494,8 +494,9 @@ function PackListsView({
       
       const categoryColumn = exportSort !== 'category' ? '<th>Category</th>' : '';
       
-      w.document.write(`<!DOCTYPE html><html><head><title>${selectedList.name}</title>
-        <style>
+      openPrintWindow({
+        title: selectedList.name,
+        styles: `
           body { font-family: system-ui; font-size: ${fs}px; padding: 20px; }
           table { width: 100%; border-collapse: collapse; }
           th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
@@ -514,17 +515,17 @@ function PackListsView({
             .category-header { break-after: avoid; }
             tr { break-inside: avoid; }
           }
-        </style>
-        </head><body>
-        <h1>${selectedList.name}</h1>
-        <p>Created: ${formatDate(selectedList.createdAt)} | Items: ${items.length}</p>
-        <table>
-          <thead><tr><th class="check">✓</th><th class="qty">Qty</th><th>ID</th><th>Name</th>${categoryColumn}</tr></thead>
-          <tbody>${tableContent}</tbody>
-        </table>
-        </body></html>`);
-      w.document.close();
-      w.print();
+        `,
+        body: `
+          <h1>${selectedList.name}</h1>
+          <p>Created: ${formatDate(selectedList.createdAt)} | Items: ${items.length}</p>
+          <table>
+            <thead><tr><th class="check">✓</th><th class="qty">Qty</th><th>ID</th><th>Name</th>${categoryColumn}</tr></thead>
+            <tbody>${tableContent}</tbody>
+          </table>
+        `,
+        delay: 0,
+      });
     }
     setShowExport(false);
   }, [selectedList, getListItems, getSortedItems, exportFormat, exportFontSize, exportSort]);

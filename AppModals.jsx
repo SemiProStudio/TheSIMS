@@ -17,7 +17,7 @@ const ItemModal = lazy(() => import('./modals/ItemModal.jsx').then(m => ({ defau
 const ReservationModal = lazy(() => import('./modals/ReservationModal.jsx').then(m => ({ default: m.ReservationModal })));
 const QRModal = lazy(() => import('./modals/QRModal.jsx').then(m => ({ default: m.QRModal })));
 const ExportModal = lazy(() => import('./modals/ExportModal.jsx').then(m => ({ default: m.ExportModal })));
-const ProfileModal = lazy(() => import('./ProfileModal.jsx'));
+const ProfileModal = lazy(() => import('./modals/ProfileModal.jsx'));
 const ImageSelectorModal = lazy(() => import('./modals/ImageSelectorModal.jsx').then(m => ({ default: m.ImageSelectorModal })));
 const QRScannerModal = lazy(() => import('./modals/QRScannerModal.jsx').then(m => ({ default: m.QRScannerModal })));
 const CSVImportModal = lazy(() => import('./modals/CSVImportModal.jsx').then(m => ({ default: m.CSVImportModal })));

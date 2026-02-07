@@ -7,8 +7,8 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { VIEWS, MODALS, STATUS, EMPTY_ITEM_FORM, EMPTY_RESERVATION_FORM, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_CATEGORY_SETTINGS, DEFAULT_LOCATIONS, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
 import { colors } from './theme.js';
 import { updateById, findById } from './utils.js';
-import { useTheme } from './ThemeContext.jsx';
-import { PermissionsProvider } from './PermissionsContext.jsx';
+import { useTheme } from './contexts/ThemeContext.jsx';
+import { PermissionsProvider } from './contexts/PermissionsContext.jsx';
 import { useAuth } from './lib/AuthContext.jsx';
 import { useData } from './lib/DataContext.jsx';
 import { FullPageLoading } from './components/Loading.jsx';
@@ -26,11 +26,11 @@ import { useModalContext } from './contexts/ModalContext.jsx';
 import { useSidebarContext } from './contexts/SidebarContext.jsx';
 
 // Core components (always needed)
-import Login from './Login.jsx';
-import Sidebar from './Sidebar.jsx';
+import Login from './views/Login.jsx';
+import Sidebar from './components/Sidebar.jsx';
 
 // Extracted sub-components
-import MobileHeader from './MobileHeader.jsx';
+import MobileHeader from './components/MobileHeader.jsx';
 import AppViews from './AppViews.jsx';
 import AppModals from './AppModals.jsx';
 

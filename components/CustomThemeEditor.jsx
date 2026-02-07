@@ -4,15 +4,15 @@
 
 import React, { memo, useState, useCallback, useEffect, useMemo } from 'react';
 import { Save, Palette, RotateCcw, ChevronDown, ChevronRight, AlertTriangle, CheckCircle } from 'lucide-react';
-import { colors, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { BackButton, Button, Card } from './components/ui.jsx';
-import { COLOR_CATEGORIES, DEFAULT_CUSTOM_THEME } from './themes-data.js';
+import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { BackButton, Button, Card } from './ui.jsx';
+import { COLOR_CATEGORIES, DEFAULT_CUSTOM_THEME } from '../themes-data.js';
 import { 
   validateThemeContrast, 
   getContrastSummary, 
   getContrastStatus,
   announce 
-} from './utils/accessibility.js';
+} from '../utils/accessibility.js';
 
 // Simple color picker with hex input and native picker
 const ColorPicker = memo(function ColorPicker({ color, onChange }) {
