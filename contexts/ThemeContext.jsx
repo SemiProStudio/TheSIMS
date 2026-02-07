@@ -3,10 +3,10 @@
 // ============================================================================
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { themes, generateRandomTheme, DEFAULT_CUSTOM_THEME } from './themes-data.js';
-import { announce } from './utils/accessibility.js';
+import { themes, generateRandomTheme, DEFAULT_CUSTOM_THEME } from '../themes-data.js';
+import { announce } from '../utils/accessibility.js';
 
-import { warn } from './lib/logger.js';
+import { warn } from '../lib/logger.js';
 
 // Load custom theme from localStorage
 const loadCustomTheme = () => {
