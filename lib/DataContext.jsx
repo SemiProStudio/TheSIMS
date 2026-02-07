@@ -57,40 +57,80 @@ export function DataProvider({ children }) {
   const [auditLog, setAuditLog] = useState([]);
 
   // =============================================================================
-  // DATA LOADING FUNCTION
+  // DATA LOADING FUNCTION (Tiered)
+  //
+  // Tier 1 (blocking): inventory, categories, users, roles, locations, specs
+  //   → UI renders as soon as these arrive
+  // Tier 2 (background): reservations, packages, pack lists, clients, audit log
+  //   → Loaded after first paint, merged into state progressively
   // =============================================================================
   
   const loadData = useCallback(async () => {
-    log('[DataContext] Starting data load...');
+    log('[DataContext] Starting tiered data load...');
     setLoading(true);
     setError(null);
 
     try {
+      // --- Tier 1: Critical data (blocks rendering) ---
       const [
         inventoryData,
-        packagesData,
-        packListsData,
-        clientsData,
+        categoriesData,
         usersData,
         rolesData,
         locationsData,
-        categoriesData,
         specsData,
-        auditLogData,
-        reservationsData
       ] = await Promise.all([
         inventoryService.getAll(),
-        packagesService.getAll(),
-        packListsService.getAll(),
-        clientsService.getAll(),
+        categoriesService.getAll(),
         usersService.getAll(),
         rolesService.getAll(),
         locationsService.getAll(),
-        categoriesService.getAll(),
         specsService.getAll(),
-        auditLogService.getAll({ limit: 100 }),
-        reservationsService.getAll()
       ]);
+
+      log('[DataContext] Tier 1 loaded:', {
+        inventory: inventoryData?.length || 0,
+        categories: categoriesData?.length || 0,
+        users: usersData?.length || 0,
+      });
+
+      setInventory(inventoryData || []);
+      setCategories(categoriesData?.map(c => c.name) || []);
+      setUsers(usersData || []);
+      setRoles(rolesData || DEFAULT_ROLES);
+      setLocations(locationsData || []);
+      setSpecs(specsData || {});
+      setDataLoaded(true);
+
+    } catch (err) {
+      logError('[DataContext] Tier 1 load failed:', err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+
+    // --- Tier 2: Secondary data (non-blocking, after first paint) ---
+    try {
+      const [
+        reservationsData,
+        packagesData,
+        packListsData,
+        clientsData,
+        auditLogData,
+      ] = await Promise.all([
+        reservationsService.getAll(),
+        packagesService.getAll(),
+        packListsService.getAll(),
+        clientsService.getAll(),
+        auditLogService.getAll({ limit: 100 }),
+      ]);
+
+      log('[DataContext] Tier 2 loaded:', {
+        reservations: reservationsData?.length || 0,
+        packages: packagesData?.length || 0,
+        packLists: packListsData?.length || 0,
+        clients: clientsData?.length || 0,
+      });
 
       // Merge reservations into inventory items
       const reservationsByItemId = {};
@@ -100,40 +140,20 @@ export function DataProvider({ children }) {
         }
         reservationsByItemId[res.itemId].push(res);
       });
-      
-      const inventoryWithReservations = (inventoryData || []).map(item => ({
+
+      setInventory(prev => prev.map(item => ({
         ...item,
-        reservations: reservationsByItemId[item.id] || []
-      }));
+        reservations: reservationsByItemId[item.id] || item.reservations || []
+      })));
 
-      log('[DataContext] Data loaded:', {
-        inventory: inventoryData?.length || 0,
-        packages: packagesData?.length || 0,
-        packLists: packListsData?.length || 0,
-        clients: clientsData?.length || 0,
-        users: usersData?.length || 0,
-        roles: rolesData?.length || 0,
-        locations: locationsData?.length || 0,
-        categories: categoriesData?.length || 0,
-        reservations: reservationsData?.length || 0
-      });
-
-      setInventory(inventoryWithReservations || []);
       setPackages(packagesData || []);
       setPackLists(packListsData || []);
       setClients(clientsData || []);
-      setUsers(usersData || []);
-      setRoles(rolesData || []);
-      setLocations(locationsData || []);
-      setCategories(categoriesData?.map(c => c.name) || []);
-      setSpecs(specsData || {});
       setAuditLog(auditLogData || []);
-      setDataLoaded(true);
+
     } catch (err) {
-      logError('[DataContext] Failed to load data:', err);
-      setError(err);
-    } finally {
-      setLoading(false);
+      logError('[DataContext] Tier 2 load failed (non-critical):', err);
+      // Don't set error state — Tier 1 data is already available
     }
   }, []);
 
