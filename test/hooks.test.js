@@ -498,19 +498,15 @@ describe('useSidebar', () => {
   };
 
   beforeEach(() => {
-    // Mock localStorage
-    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue(null);
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {});
+    // Reset localStorage mock to default (null) for each test
+    window.localStorage.getItem.mockReturnValue(null);
+    window.localStorage.setItem.mockClear();
     
     // Mock window dimensions
     Object.defineProperty(window, 'innerWidth', {
       writable: true,
       value: 1024,
     });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   it('should initialize with default state', () => {

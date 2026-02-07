@@ -9,7 +9,7 @@ import userEvent from '@testing-library/user-event';
 import NotificationSettings from '../views/NotificationSettings.jsx';
 
 // Mock the PermissionsContext
-vi.mock('../PermissionsContext.jsx', () => ({
+vi.mock('../contexts/PermissionsContext.jsx', () => ({
   usePermissions: () => ({
     canView: vi.fn((permission) => permission === 'admin_notifications'),
     canCreate: vi.fn(() => true),

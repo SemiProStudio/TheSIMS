@@ -63,7 +63,7 @@ describe('ModalLoading', () => {
 describe('ViewLoading', () => {
   it('should render with default message', () => {
     render(<ViewLoading />);
-    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.getByText('Loading view...')).toBeInTheDocument();
   });
 
   it('should render with custom message', () => {
