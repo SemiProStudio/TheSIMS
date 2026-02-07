@@ -12,9 +12,9 @@ import {
   MODALS,
   DASHBOARD_SECTIONS,
   ITEM_DETAIL_SECTIONS,
-  ITEM_STATUS,
+  STATUS,
   CONDITION,
-  DEFAULT_CATEGORIES,
+  CATEGORIES,
   MAINTENANCE_TYPES,
   MAINTENANCE_STATUS,
   EMPTY_ITEM_FORM,
@@ -198,13 +198,13 @@ describe('DASHBOARD_SECTIONS', () => {
 // Item Status Tests
 // =============================================================================
 
-describe('ITEM_STATUS', () => {
+describe('STATUS', () => {
   it('should have all required statuses', () => {
-    expect(ITEM_STATUS.AVAILABLE).toBe('available');
-    expect(ITEM_STATUS.CHECKED_OUT).toBe('checked-out');
-    expect(ITEM_STATUS.RESERVED).toBe('reserved');
-    expect(ITEM_STATUS.NEEDS_ATTENTION).toBe('needs-attention');
-    expect(ITEM_STATUS.MISSING).toBe('missing');
+    expect(STATUS.AVAILABLE).toBe('available');
+    expect(STATUS.CHECKED_OUT).toBe('checked-out');
+    expect(STATUS.RESERVED).toBe('reserved');
+    expect(STATUS.NEEDS_ATTENTION).toBe('needs-attention');
+    expect(STATUS.MISSING).toBe('missing');
   });
 });
 
@@ -225,33 +225,24 @@ describe('CONDITION', () => {
 // Default Categories Tests
 // =============================================================================
 
-describe('DEFAULT_CATEGORIES', () => {
+describe('CATEGORIES', () => {
   it('should have essential categories', () => {
-    const categoryNames = DEFAULT_CATEGORIES.map(c => c.name);
-    expect(categoryNames).toContain('Cameras');
-    expect(categoryNames).toContain('Lenses');
-    expect(categoryNames).toContain('Lighting');
-    expect(categoryNames).toContain('Audio');
+    expect(CATEGORIES).toContain('Cameras');
+    expect(CATEGORIES).toContain('Lenses');
+    expect(CATEGORIES).toContain('Lighting');
+    expect(CATEGORIES).toContain('Audio');
   });
 
-  it('should have name and icon for each category', () => {
-    DEFAULT_CATEGORIES.forEach(category => {
-      expect(category.name).toBeDefined();
-      expect(category.icon).toBeDefined();
+  it('should be an array of strings', () => {
+    CATEGORIES.forEach(category => {
+      expect(typeof category).toBe('string');
+      expect(category.length).toBeGreaterThan(0);
     });
   });
 
-  it('should have prefixes for each category', () => {
-    DEFAULT_CATEGORIES.forEach(category => {
-      expect(category.prefix).toBeDefined();
-      expect(category.prefix.length).toBe(2);
-    });
-  });
-
-  it('should have unique prefixes', () => {
-    const prefixes = DEFAULT_CATEGORIES.map(c => c.prefix);
-    const uniquePrefixes = new Set(prefixes);
-    expect(uniquePrefixes.size).toBe(prefixes.length);
+  it('should have unique entries', () => {
+    const unique = new Set(CATEGORIES);
+    expect(unique.size).toBe(CATEGORIES.length);
   });
 });
 

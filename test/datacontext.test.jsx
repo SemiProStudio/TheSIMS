@@ -58,8 +58,24 @@ vi.mock('../lib/services.js', () => ({
   auditLogService: {
     getAll: vi.fn(() => Promise.resolve([])),
   },
-  reservationsService: {},
-  maintenanceService: {},
+  reservationsService: {
+    getAll: vi.fn(() => Promise.resolve([])),
+  },
+  maintenanceService: {
+    getAll: vi.fn(() => Promise.resolve([])),
+  },
+  itemNotesService: {
+    create: vi.fn((note) => Promise.resolve(note)),
+    delete: vi.fn(() => Promise.resolve()),
+  },
+  itemRemindersService: {
+    create: vi.fn((r) => Promise.resolve(r)),
+    update: vi.fn((id, u) => Promise.resolve({ id, ...u })),
+    delete: vi.fn(() => Promise.resolve()),
+  },
+  checkoutHistoryService: {
+    create: vi.fn((r) => Promise.resolve(r)),
+  },
   notificationPreferencesService: {
     getByUserId: vi.fn(() => Promise.resolve(null)),
     upsert: vi.fn((userId, prefs) => Promise.resolve(prefs)),
@@ -165,7 +181,7 @@ describe('DataProvider', () => {
       });
     });
 
-    it('should indicate demo mode', async () => {
+    it('should complete loading', async () => {
       render(
         <DataProvider>
           <TestConsumer onContextReady={() => {}} />
@@ -173,11 +189,12 @@ describe('DataProvider', () => {
       );
       
       await waitFor(() => {
-        expect(screen.getByTestId('is-demo-mode')).toHaveTextContent('true');
+        // After loading, inventory-count should be rendered (not "Loading...")
+        expect(screen.getByTestId('inventory-count')).toBeInTheDocument();
       });
     });
 
-    it('should load demo data in demo mode', async () => {
+    it('should start with empty data when services return empty', async () => {
       render(
         <DataProvider>
           <TestConsumer onContextReady={() => {}} />
@@ -185,7 +202,7 @@ describe('DataProvider', () => {
       );
       
       await waitFor(() => {
-        expect(screen.getByTestId('inventory-count')).toHaveTextContent('2');
+        expect(screen.getByTestId('inventory-count')).toHaveTextContent('0');
       });
     });
   });

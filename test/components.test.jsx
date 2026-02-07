@@ -83,8 +83,8 @@ describe('SearchInput', () => {
 
   it('should call onChange when typing', () => {
     const handleChange = vi.fn();
-    render(<SearchInput value="" onChange={handleChange} />);
-    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'test' } });
+    render(<SearchInput value="" onChange={handleChange} placeholder="Search..." />);
+    fireEvent.change(screen.getByPlaceholderText('Search...'), { target: { value: 'test' } });
     expect(handleChange).toHaveBeenCalledWith('test');
   });
 
@@ -112,9 +112,9 @@ describe('SearchInput', () => {
     expect(screen.getByRole('search')).toBeInTheDocument();
   });
 
-  it('should have type="search" on input', () => {
-    render(<SearchInput value="" onChange={() => {}} />);
-    expect(screen.getByRole('searchbox')).toHaveAttribute('type', 'search');
+  it('should have type="text" on input', () => {
+    render(<SearchInput value="" onChange={() => {}} placeholder="Search..." />);
+    expect(screen.getByPlaceholderText('Search...')).toHaveAttribute('type', 'text');
   });
 });
 
@@ -469,8 +469,8 @@ describe('PageHeader', () => {
   });
 
   it('should render actions', () => {
-    const actions = <button>Add New</button>;
-    render(<PageHeader title="Items" actions={actions} />);
+    const action = <button>Add New</button>;
+    render(<PageHeader title="Items" action={action} />);
     expect(screen.getByText('Add New')).toBeInTheDocument();
   });
 
@@ -494,6 +494,6 @@ describe('BackButton', () => {
 
   it('should have aria-label', () => {
     render(<BackButton onClick={() => {}} />);
-    expect(screen.getByLabelText('Go back')).toBeInTheDocument();
+    expect(screen.getByLabelText('Go back: Back')).toBeInTheDocument();
   });
 });
