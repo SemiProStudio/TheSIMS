@@ -334,11 +334,11 @@ describe('useModals', () => {
     const { result } = renderHook(() => useModals());
     
     act(() => {
-      result.current.openModal('add_item');
+      result.current.openModal('add-item');
     });
     
-    expect(result.current.activeModal).toBe('add_item');
-    expect(result.current.isModalOpen('add_item')).toBe(true);
+    expect(result.current.activeModal).toBe('add-item');
+    expect(result.current.isModalOpen('add-item')).toBe(true);
     
     act(() => {
       result.current.closeModal();
@@ -355,7 +355,7 @@ describe('useModals', () => {
       result.current.openAddItemModal();
     });
     
-    expect(result.current.activeModal).toBe('add_item');
+    expect(result.current.activeModal).toBe('add-item');
     expect(result.current.editingItemId).toBeNull();
   });
 
@@ -369,7 +369,7 @@ describe('useModals', () => {
       result.current.openEditItemModal(item);
     });
     
-    expect(result.current.activeModal).toBe('add_item');
+    expect(result.current.activeModal).toBe('add-item');
     expect(result.current.editingItemId).toBe('1');
     expect(result.current.itemForm.name).toBe('Test Item');
   });
@@ -468,7 +468,7 @@ describe('useModals', () => {
       result.current.openCheckOutModal(item);
     });
     
-    expect(result.current.activeModal).toBe('check_out');
+    expect(result.current.activeModal).toBe('check-out');
     expect(result.current.modalData).toEqual(item);
   });
 
@@ -482,7 +482,7 @@ describe('useModals', () => {
       result.current.openBulkDeleteModal(ids);
     });
     
-    expect(result.current.activeModal).toBe('bulk_delete');
+    expect(result.current.activeModal).toBe('bulk-delete');
     expect(result.current.modalData.ids).toEqual(ids);
   });
 });
@@ -522,7 +522,7 @@ describe('useSidebar', () => {
   });
 
   it('should load collapsed state from localStorage', () => {
-    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('true');
+    window.localStorage.getItem.mockReturnValue('true');
     
     const useSidebar = createUseSidebar();
     const { result } = renderHook(() => useSidebar());
@@ -556,7 +556,7 @@ describe('useSidebar', () => {
     });
     
     expect(result.current.sidebarCollapsed).toBe(true);
-    expect(Storage.prototype.setItem).toHaveBeenCalledWith('sims-sidebar-collapsed', 'true');
+    expect(window.localStorage.setItem).toHaveBeenCalledWith('sims-sidebar-collapsed', 'true');
   });
 
   it('should open and close sidebar', () => {

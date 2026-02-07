@@ -683,7 +683,7 @@ describe('Search and Filter Flow', () => {
     
     expect(screen.getByText('2 items found')).toBeInTheDocument();
     
-    await user.type(screen.getByLabelText(/Search/), 'Canon');
+    await user.type(screen.getByLabelText('Search'), 'Canon');
     
     expect(screen.getByText('1 items found')).toBeInTheDocument();
     expect(screen.getByText(/Canon C70/)).toBeInTheDocument();
@@ -729,7 +729,7 @@ describe('Search and Filter Flow', () => {
     
     render(<SearchableListTestWrapper items={items} />);
     
-    await user.type(screen.getByLabelText(/Search/), 'Sony');
+    await user.type(screen.getByLabelText('Search'), 'Sony');
     await user.selectOptions(screen.getByLabelText(/Status/), 'available');
     
     expect(screen.getByText('1 items found')).toBeInTheDocument();
@@ -741,7 +741,7 @@ describe('Search and Filter Flow', () => {
     
     render(<SearchableListTestWrapper items={[mockItem]} />);
     
-    await user.type(screen.getByLabelText(/Search/), 'nonexistent');
+    await user.type(screen.getByLabelText('Search'), 'nonexistent');
     
     expect(screen.getByText('No items match your search criteria')).toBeInTheDocument();
   });
@@ -751,7 +751,7 @@ describe('Search and Filter Flow', () => {
     
     render(<SearchableListTestWrapper items={[mockItem, mockCheckedOutItem]} />);
     
-    await user.type(screen.getByLabelText(/Search/), 'Canon');
+    await user.type(screen.getByLabelText('Search'), 'Canon');
     expect(screen.getByText('1 items found')).toBeInTheDocument();
     
     await user.click(screen.getByLabelText(/Clear search/));
