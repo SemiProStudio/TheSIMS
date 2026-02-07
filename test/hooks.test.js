@@ -39,10 +39,10 @@ describe('useNavigation', () => {
     const { result } = renderHook(() => useNavigation());
     
     act(() => {
-      result.current.navigate('gear_list');
+      result.current.navigate('inventory');
     });
     
-    expect(result.current.currentView).toBe('gear_list');
+    expect(result.current.currentView).toBe('inventory');
   });
 
   it('should navigate to item detail', () => {
@@ -55,7 +55,7 @@ describe('useNavigation', () => {
       result.current.navigateToItem(item);
     });
     
-    expect(result.current.currentView).toBe('gear_detail');
+    expect(result.current.currentView).toBe('detail');
     expect(result.current.selectedItem).toEqual(item);
   });
 
@@ -69,13 +69,13 @@ describe('useNavigation', () => {
       result.current.navigateToItem(item);
     });
     
-    expect(result.current.currentView).toBe('gear_detail');
+    expect(result.current.currentView).toBe('detail');
     
     act(() => {
       result.current.goBack();
     });
     
-    expect(result.current.currentView).toBe('gear_list');
+    expect(result.current.currentView).toBe('inventory');
     expect(result.current.selectedItem).toBeNull();
   });
 
@@ -103,7 +103,7 @@ describe('useNavigation', () => {
     const { result } = renderHook(() => useNavigation());
     
     act(() => {
-      result.current.navigate('gear_list');
+      result.current.navigate('inventory');
       result.current.navigateToItem({ id: '1' });
     });
     

@@ -701,14 +701,14 @@ describe('ErrorBoundary Edge Cases', () => {
       return <div>Finally stable</div>;
     };
     
-    render(
+    const { container } = render(
       <ErrorBoundary>
         <RapidError />
       </ErrorBoundary>
     );
     
-    // ErrorBoundary should catch the error and render fallback UI
-    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+    // ErrorBoundary should catch the error and render fallback UI (not the child)
+    expect(container.innerHTML).toContain('Something went wrong');
   });
 
   it('should handle deeply nested errors', () => {
