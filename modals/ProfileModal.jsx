@@ -4,8 +4,8 @@
 
 import React, { memo, useState, useRef } from 'react';
 import { X, Upload, Save, User } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from './theme.js';
-import { Button } from './components/ui.jsx';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { Button } from '../components/ui.jsx';
 
 // Modal components (matching Modals.jsx pattern)
 const Modal = memo(function Modal({ onClose, maxWidth = 500, children }) {
