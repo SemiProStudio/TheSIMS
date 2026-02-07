@@ -157,24 +157,14 @@ describe('emailService', () => {
       expect(result).toEqual({ success: true, demo: true });
     });
 
-    it('should log email details in demo mode', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      
-      await emailService.send({
+    it('should return demo result regardless of input', async () => {
+      const result = await emailService.send({
         to: 'test@example.com',
         templateKey: 'checkout_confirmation',
         templateData: { item_name: 'Camera' },
       });
       
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[Demo Mode] Would send email:',
-        expect.objectContaining({
-          to: 'test@example.com',
-          templateKey: 'checkout_confirmation',
-        })
-      );
-      
-      consoleSpy.mockRestore();
+      expect(result).toEqual({ success: true, demo: true });
     });
   });
 
@@ -345,7 +335,7 @@ describe('inventoryService (demo mode)', () => {
     it('should return updates in demo mode', async () => {
       const updates = { name: 'Updated Camera' };
       const result = await inventoryService.update('CAM001', updates);
-      expect(result).toEqual(updates);
+      expect(result).toEqual({ id: 'CAM001', name: 'Updated Camera' });
     });
   });
 

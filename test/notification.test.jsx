@@ -10,7 +10,7 @@ import NotificationSettings from '../views/NotificationSettings.jsx';
 // Mock PermissionsContext (path matches actual import after file reorg)
 vi.mock('../contexts/PermissionsContext.jsx', () => ({
   usePermissions: () => ({
-    canView: vi.fn(() => true),
+    canView: vi.fn(() => false),
     canCreate: vi.fn(() => true),
     canEdit: vi.fn(() => true),
     canDelete: vi.fn(() => true),
