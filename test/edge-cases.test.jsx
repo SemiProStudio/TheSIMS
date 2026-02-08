@@ -377,9 +377,9 @@ describe('Note System Edge Cases', () => {
   });
 
   describe('findNoteById', () => {
-    it('should return undefined for empty notes', () => {
+    it('should return null for empty notes', () => {
       const result = findNoteById([], 'note-1');
-      expect(result).toBeUndefined();
+      expect(result).toBeNull();
     });
 
     it('should find note by id', () => {

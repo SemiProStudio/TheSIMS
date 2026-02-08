@@ -91,7 +91,7 @@ describe('VirtualList', () => {
       />
     );
     
-    expect(container.firstChild).toHaveStyle({ backgroundColor: 'red' });
+    expect(container.firstChild.style.backgroundColor).toBe('red');
   });
 
   it('should handle scroll events', () => {
