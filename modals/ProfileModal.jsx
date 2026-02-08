@@ -6,6 +6,7 @@ import React, { memo, useState, useRef } from 'react';
 import { X, Upload, Save, User } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { Button } from '../components/ui.jsx';
+import ImageCropEditor from '../components/ImageCropEditor.jsx';
 
 // Modal components (matching Modals.jsx pattern)
 const Modal = memo(function Modal({ onClose, maxWidth = 500, children }) {
@@ -48,6 +49,7 @@ function ProfileModal({ user, onSave, onClose }) {
     }
   });
   const [errors, setErrors] = useState({});
+  const [cropSrc, setCropSrc] = useState(null); // raw image for cropping
   const fileInputRef = useRef(null);
 
   const validators = {
@@ -95,10 +97,30 @@ function ProfileModal({ user, onSave, onClose }) {
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, logo: 'Image must be smaller than 5MB' }));
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        setErrors(prev => ({ ...prev, logo: 'Please select an image file' }));
+        return;
+      }
+      setErrors(prev => ({ ...prev, logo: null }));
       const reader = new FileReader();
-      reader.onload = (ev) => handleChange('logo', ev.target.result);
+      reader.onload = (ev) => setCropSrc(ev.target.result);
       reader.readAsDataURL(file);
     }
+    // Reset input so same file can be re-selected
+    if (e.target) e.target.value = '';
+  };
+
+  const handleCropComplete = (croppedDataUrl) => {
+    handleChange('logo', croppedDataUrl);
+    setCropSrc(null);
+  };
+
+  const handleCropCancel = () => {
+    setCropSrc(null);
   };
 
   const handleSave = () => {
@@ -113,67 +135,106 @@ function ProfileModal({ user, onSave, onClose }) {
       
       {/* Content */}
       <div style={{ padding: spacing[4], maxHeight: '70vh', overflowY: 'auto' }}>
-        {/* Logo Upload */}
+        {/* Logo Upload / Crop Editor */}
         <div style={{ marginBottom: spacing[5] }}>
-          <label style={styles.label}>Logo</label>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[4]
-          }}>
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: borderRadius.lg,
-                border: `2px dashed ${colors.border}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                overflow: 'hidden'
-              }}
-            >
-              {profile.logo ? (
-                <img src={profile.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <Upload size={24} color={colors.textMuted} />
-              )}
-            </div>
-            <div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Upload Logo
-              </Button>
-              {profile.logo && (
-                <button
-                  onClick={() => handleChange('logo', null)}
-                  style={{
-                    display: 'block',
-                    background: 'none',
-                    border: 'none',
-                    color: colors.danger,
-                    cursor: 'pointer',
-                    fontSize: typography.fontSize.sm,
-                    marginTop: spacing[2]
-                  }}
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleLogoUpload}
-              style={{ display: 'none' }}
+          <label style={styles.label}>Profile Photo</label>
+          
+          {cropSrc ? (
+            /* Crop editor mode */
+            <ImageCropEditor
+              imageSrc={cropSrc}
+              onCropComplete={handleCropComplete}
+              onCancel={handleCropCancel}
+              outputSize={400}
+              cropShape="rounded-square"
+              cropBorderRadius={12}
+              title="Crop your photo"
             />
-          </div>
+          ) : (
+            /* Normal upload/preview mode */
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[4]
+            }}>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: borderRadius.lg,
+                  border: `2px dashed ${colors.border}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  overflow: 'hidden'
+                }}
+              >
+                {profile.logo ? (
+                  <img src={profile.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <Upload size={24} color={colors.textMuted} />
+                )}
+              </div>
+              <div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Upload Photo
+                </Button>
+                {profile.logo && (
+                  <>
+                    <button
+                      onClick={() => {
+                        // Re-crop existing image
+                        setCropSrc(profile.logo);
+                      }}
+                      style={{
+                        display: 'block',
+                        background: 'none',
+                        border: 'none',
+                        color: colors.primary,
+                        cursor: 'pointer',
+                        fontSize: typography.fontSize.sm,
+                        marginTop: spacing[2]
+                      }}
+                    >
+                      Resize / Crop
+                    </button>
+                    <button
+                      onClick={() => handleChange('logo', null)}
+                      style={{
+                        display: 'block',
+                        background: 'none',
+                        border: 'none',
+                        color: colors.danger,
+                        cursor: 'pointer',
+                        fontSize: typography.fontSize.sm,
+                        marginTop: spacing[1]
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleLogoUpload}
+                style={{ display: 'none' }}
+              />
+            </div>
+          )}
+          {errors.logo && (
+            <div style={{ color: colors.danger, fontSize: typography.fontSize.xs, marginTop: spacing[1] }}>
+              {errors.logo}
+            </div>
+          )}
         </div>
 
         {/* Form Fields */}
