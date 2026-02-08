@@ -20,7 +20,7 @@ import {
   isErrorTrackingEnabled,
   ErrorSeverity,
   ErrorCategory,
-} from '../lib/errorTracking.js';
+} from '../lib/errorTracking.jsx';
 
 // =============================================================================
 // Test Setup
