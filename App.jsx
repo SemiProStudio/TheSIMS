@@ -97,22 +97,22 @@ export default function App() {
     currentView, setCurrentView,
     selectedItem, setSelectedItem,
     selectedPackage, setSelectedPackage,
-    selectedPackList, setSelectedPackList,
+    setSelectedPackList,
     selectedReservation, setSelectedReservation,
     selectedReservationItem, setSelectedReservationItem,
-    itemBackContext, setItemBackContext,
+    setItemBackContext,
   } = useNavigationContext();
 
   const {
-    searchQuery, setSearchQuery,
-    categoryFilter, setCategoryFilter,
-    statusFilter, setStatusFilter,
-    scheduleDate, setScheduleDate,
+    setSearchQuery,
+    setCategoryFilter,
+    setStatusFilter,
+    setScheduleDate,
     selectedIds,
   } = useFilterContext();
 
   const {
-    activeModal, setActiveModal,
+    setActiveModal,
     editingItemId, setEditingItemId,
     editingReservationId, setEditingReservationId,
     itemForm, setItemForm,
