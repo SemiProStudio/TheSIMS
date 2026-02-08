@@ -16,6 +16,8 @@ export function useReservationHandlers({
   openModal,
   closeModal,
   addChangeLog,
+  addAuditLog,
+  currentUser,
   // Reservation-specific state (from navigation/modal contexts)
   reservationForm,
   setReservationForm,
@@ -73,6 +75,12 @@ export function useReservationHandlers({
         itemName: selectedReservationItem.name,
         description: `Updated reservation for ${reservationForm.project}`,
         changes: [{ field: 'reservation', newValue: `${reservationForm.project} (${reservationForm.start} - ${reservationForm.end})` }]
+      });
+      addAuditLog?.({
+        type: 'reservation_updated',
+        description: `Updated reservation: ${reservationForm.project} for ${selectedReservationItem.name}`,
+        itemId: selectedReservationItem.id,
+        user: currentUser?.name || 'Unknown',
       });
       
       setEditingReservationId(null);
@@ -133,6 +141,12 @@ export function useReservationHandlers({
           itemName: targetItem.name,
           description: `New reservation: ${reservationForm.project} (${reservationForm.start} - ${reservationForm.end})`,
           changes: [{ field: 'reservation', newValue: reservationForm.project }]
+        });
+        addAuditLog?.({
+          type: 'reservation_created',
+          description: `Created reservation: ${reservationForm.project} for ${targetItem.name}`,
+          itemId: targetItemId,
+          user: currentUser?.name || 'Unknown',
         });
       }
       
@@ -270,9 +284,15 @@ export function useReservationHandlers({
           description: `Cancelled reservation: ${projectName}`,
           changes: [{ field: 'reservation', oldValue: projectName }]
         });
+        addAuditLog?.({
+          type: 'reservation_deleted',
+          description: `Deleted reservation: ${projectName}`,
+          itemId: itemId,
+          user: currentUser?.name || 'Unknown',
+        });
       }
     });
-  }, [inventory, addChangeLog, dataContext, selectedItem?.id, selectedReservation?.id, showConfirm, setCurrentView, setInventory, setSelectedItem, setSelectedReservation]);
+  }, [inventory, addChangeLog, addAuditLog, currentUser, dataContext, selectedItem?.id, selectedReservation?.id, showConfirm, setCurrentView, setInventory, setSelectedItem, setSelectedReservation]);
 
   return {
     saveReservation,

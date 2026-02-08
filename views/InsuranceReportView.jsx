@@ -14,6 +14,7 @@ import { Select } from '../components/Select.jsx';
 export const InsuranceReportPanel = memo(function InsuranceReportPanel({ 
   inventory, 
   categories, 
+  currentUser,
   onViewItem, 
   onExport, 
   onBack 
@@ -126,6 +127,27 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
         backLabel="Back to Reports"
         action={<Button onClick={handleExport} icon={Download}>Export CSV</Button>}
       />
+      
+      {/* Profile branding for print/export */}
+      {currentUser?.profile && (() => {
+        const p = currentUser.profile;
+        const sf = p.showFields || {};
+        const hasContent = Object.entries(sf).some(([k, v]) => v && p[k]);
+        if (!hasContent) return null;
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4], padding: spacing[3], marginBottom: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
+            {sf.logo && p.logo && <img src={p.logo} alt="" style={{ height: 36, objectFit: 'contain' }} />}
+            <div>
+              {sf.businessName && p.businessName && <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.textPrimary }}>{p.businessName}</div>}
+              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
+                {sf.displayName && p.displayName && <span>{p.displayName}</span>}
+                {sf.phone && p.phone && <span>{p.phone}</span>}
+                {sf.email && p.email && <span>{p.email}</span>}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       
       {/* Summary Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: spacing[4], marginBottom: spacing[6] }}>

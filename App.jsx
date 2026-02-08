@@ -299,7 +299,7 @@ export default function App() {
     saveReservation, openEditReservation, deleteReservation,
   } = useReservationHandlers({
     inventory, setInventory, selectedItem, setSelectedItem,
-    dataContext, openModal, closeModal, addChangeLog,
+    dataContext, openModal, closeModal, addChangeLog, addAuditLog, currentUser,
     reservationForm, setReservationForm,
     editingReservationId, setEditingReservationId,
     selectedReservationItem, selectedReservation, setSelectedReservation,
@@ -343,7 +343,12 @@ export default function App() {
     } catch (err) {
       console.error('Failed to save profile:', err);
     }
-  }, [currentUser]);
+    // Audit log
+    addAuditLog({
+      type: 'profile_updated',
+      description: `${updatedUser.name || 'User'} updated their profile`,
+    });
+  }, [currentUser, addAuditLog]);
 
   const exportData = useCallback((options) => {
     const items = selectedIds.length

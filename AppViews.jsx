@@ -440,6 +440,7 @@ export default function AppViews({ handlers, currentUser, categorySettings, chan
           <Suspense fallback={<ViewLoading message="Loading Reports..." />}>
             <ReportsPanel
               inventory={inventory}
+              currentUser={currentUser}
               onExport={() => openModal(MODALS.EXPORT)}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />
@@ -463,6 +464,7 @@ export default function AppViews({ handlers, currentUser, categorySettings, chan
           <Suspense fallback={<ViewLoading message="Loading Maintenance Report..." />}>
             <MaintenanceReportPanel
               inventory={inventory}
+              currentUser={currentUser}
               onViewItem={navigateToItem}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />
@@ -476,6 +478,7 @@ export default function AppViews({ handlers, currentUser, categorySettings, chan
             <InsuranceReportPanel
               inventory={inventory}
               categories={categories}
+              currentUser={currentUser}
               onViewItem={navigateToItem}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />

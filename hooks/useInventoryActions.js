@@ -59,6 +59,19 @@ export function useInventoryActions({
   const [bulkActionIds, setBulkActionIds] = useState([]);
 
   // ============================================================================
+  // Audit Log Helper
+  // ============================================================================
+  
+  const addAuditLog = useCallback((entry) => {
+    if (dataContext?.addAuditLog) {
+      dataContext.addAuditLog({
+        ...entry,
+        user: currentUser?.name || 'Unknown',
+      });
+    }
+  }, [dataContext, currentUser]);
+
+  // ============================================================================
   // Change Log Helper
   // ============================================================================
   
@@ -119,6 +132,11 @@ export function useInventoryActions({
         itemName: newItem.name,
         description: `Created new item: ${newItem.name}`,
         changes: [{ field: 'item', newValue: newItem.name }]
+      });
+      addAuditLog({
+        type: 'item_created',
+        description: `Created item: ${newItem.name} (${id})`,
+        itemId: id,
       });
       
       closeModal();
@@ -212,6 +230,11 @@ export function useInventoryActions({
           description: `Updated item: ${updates.name}`,
           changes
         });
+        addAuditLog({
+          type: 'item_updated',
+          description: `Updated item: ${updates.name} (${changes.map(c => c.field).join(', ')})`,
+          itemId: editingItemId,
+        });
       }
       
       closeModal();
@@ -257,6 +280,11 @@ export function useInventoryActions({
             itemName: itemToDelete?.name || 'Unknown',
             description: `Deleted item: ${itemToDelete?.name || id}`,
             changes: [{ field: 'item', oldValue: itemToDelete?.name }]
+          });
+          addAuditLog({
+            type: 'item_deleted',
+            description: `Deleted item: ${itemToDelete?.name || id}`,
+            itemId: id,
           });
           
           // Clear selection if deleted item was selected
@@ -344,6 +372,10 @@ export function useInventoryActions({
           newValue: newStatus 
         }))
       });
+      addAuditLog({
+        type: 'bulk_status_change',
+        description: `Bulk status change to "${newStatus}" for ${bulkActionIds.length} items`,
+      });
       
       closeModal();
       setBulkActionIds([]);
@@ -392,6 +424,10 @@ export function useInventoryActions({
           newValue: newLocation 
         }))
       });
+      addAuditLog({
+        type: 'bulk_location_change',
+        description: `Bulk location change to "${newLocation}" for ${bulkActionIds.length} items`,
+      });
       
       closeModal();
       setBulkActionIds([]);
@@ -401,7 +437,7 @@ export function useInventoryActions({
     } finally {
       setIsLoading(false);
     }
-  }, [bulkActionIds, inventory, setInventory, addChangeLog, closeModal, dataContext]);
+  }, [bulkActionIds, inventory, setInventory, addChangeLog, addAuditLog, closeModal, dataContext]);
 
   const applyBulkCategory = useCallback(async (newCategory) => {
     setIsLoading(true);
@@ -440,6 +476,10 @@ export function useInventoryActions({
           newValue: newCategory 
         }))
       });
+      addAuditLog({
+        type: 'bulk_category_change',
+        description: `Bulk category change to "${newCategory}" for ${bulkActionIds.length} items`,
+      });
       
       closeModal();
       setBulkActionIds([]);
@@ -449,7 +489,7 @@ export function useInventoryActions({
     } finally {
       setIsLoading(false);
     }
-  }, [bulkActionIds, inventory, setInventory, addChangeLog, closeModal, dataContext]);
+  }, [bulkActionIds, inventory, setInventory, addChangeLog, addAuditLog, closeModal, dataContext]);
 
   const applyBulkDelete = useCallback(async () => {
     setIsLoading(true);
@@ -484,6 +524,10 @@ export function useInventoryActions({
           oldValue: `${i.id} - ${i.name}`, 
           newValue: null 
         }))
+      });
+      addAuditLog({
+        type: 'bulk_delete',
+        description: `Bulk deleted ${bulkActionIds.length} items`,
       });
       
       closeModal();
