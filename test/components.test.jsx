@@ -12,14 +12,14 @@ import {
   Badge, 
   Card,
   Input,
-  Select,
   Modal,
   EmptyState,
   LoadingSpinner,
-  StatCard,
   PageHeader,
   BackButton,
 } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
+import { StatCard } from '../components/ui/StatCard.jsx';
 
 // =============================================================================
 // Button Tests

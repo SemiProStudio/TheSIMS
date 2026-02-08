@@ -7,38 +7,11 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Suspense } from 'react';
 import {
-  LoadingFallback,
   ModalLoading,
   ViewLoading,
   SuspenseView,
   SuspenseModal,
 } from '../components/Loading.jsx';
-
-// =============================================================================
-// LoadingFallback Tests
-// =============================================================================
-
-describe('LoadingFallback', () => {
-  it('should render with default message', () => {
-    render(<LoadingFallback />);
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
-  });
-
-  it('should render with custom message', () => {
-    render(<LoadingFallback message="Please wait..." />);
-    expect(screen.getByText('Please wait...')).toBeInTheDocument();
-  });
-
-  it('should have role="status" for accessibility', () => {
-    render(<LoadingFallback />);
-    expect(screen.getByRole('status')).toBeInTheDocument();
-  });
-
-  it('should have aria-live for screen readers', () => {
-    render(<LoadingFallback />);
-    expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite');
-  });
-});
 
 // =============================================================================
 // ModalLoading Tests

@@ -84,7 +84,6 @@ describe('VirtualList', () => {
   });
 
   it('should apply custom style', () => {
-    render(
     const { container } = render(
       <VirtualList 
         {...defaultProps} 
