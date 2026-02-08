@@ -55,7 +55,9 @@ export const generateId = () => {
 export const formatDate = (date) => {
   if (!date) return '-';
   try {
-    return new Date(date).toLocaleDateString('en-US', {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -468,7 +470,7 @@ export const getNextDueDate = (currentDueDate, recurrence) => {
  * @returns {boolean} True if reminder is due
  */
 export const isReminderDue = (reminder) => {
-  if (reminder.completed) return false;
+  if (!reminder || reminder.completed) return false;
   const today = getTodayISO();
   return reminder.dueDate <= today;
 };
@@ -512,6 +514,17 @@ export const DEFAULT_USEFUL_LIFE = {
  * @returns {Object} Depreciation details including currentValue, schedule, etc.
  */
 export const calculateDepreciation = (purchasePrice, purchaseDate, usefulLife, salvageValue, method) => {
+  if (!purchaseDate) {
+    return {
+      currentValue: purchasePrice,
+      totalDepreciation: 0,
+      annualDepreciation: 0,
+      monthlyDepreciation: 0,
+      ageInMonths: 0,
+      percentDepreciated: 0,
+      schedule: [],
+    };
+  }
   const purchase = new Date(purchaseDate);
   const today = new Date();
   const ageInYears = (today - purchase) / (365.25 * 24 * 60 * 60 * 1000);

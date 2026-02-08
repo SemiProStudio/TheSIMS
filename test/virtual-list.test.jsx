@@ -85,14 +85,14 @@ describe('VirtualList', () => {
 
   it('should apply custom style', () => {
     render(
+    const { container } = render(
       <VirtualList 
         {...defaultProps} 
         style={{ backgroundColor: 'red' }}
       />
     );
     
-    const list = screen.getByRole('list');
-    expect(list).toHaveStyle({ backgroundColor: 'red' });
+    expect(container.firstChild).toHaveStyle({ backgroundColor: 'red' });
   });
 
   it('should handle scroll events', () => {
@@ -167,14 +167,16 @@ describe('VirtualGrid', () => {
 
   // Mock ResizeObserver
   beforeEach(() => {
-    global.ResizeObserver = vi.fn().mockImplementation((callback) => ({
-      observe: vi.fn((element) => {
-        // Simulate initial size
-        callback([{ contentRect: { width: 800 } }]);
-      }),
-      unobserve: vi.fn(),
-      disconnect: vi.fn(),
-    }));
+    global.ResizeObserver = class MockResizeObserver {
+      constructor(callback) {
+        this._callback = callback;
+        this.observe = vi.fn((element) => {
+          callback([{ contentRect: { width: 800 } }]);
+        });
+        this.unobserve = vi.fn();
+        this.disconnect = vi.fn();
+      }
+    };
   });
 
   afterEach(() => {
