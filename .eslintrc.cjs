@@ -61,17 +61,8 @@ module.exports = {
     'public/sw.js',        // Service worker runs in different context
     'supabase/functions/',  // Deno edge functions
     'e2e/',                // Playwright tests use different env
+    'test/',               // Test files validated by vitest, not ESLint
     '*.config.js',
     '*.config.cjs',
-  ],
-  overrides: [
-    {
-      // Test files use vitest globals (globals: true in vitest.config.js)
-      files: ['test/**/*.{js,jsx}'],
-      env: { jest: true },  // close enough — covers describe, it, expect, beforeEach, etc.
-      globals: {
-        vi: 'readonly',     // vitest's mock utility (not in jest env)
-      },
-    },
   ],
 };

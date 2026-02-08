@@ -1,4 +1,3 @@
-/* eslint-disable */
 // =============================================================================
 // Error Tracking Service Tests
 // Tests for Sentry integration and error reporting
