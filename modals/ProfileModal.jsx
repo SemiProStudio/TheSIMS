@@ -47,10 +47,42 @@ function ProfileModal({ user, onSave, onClose }) {
       logo: true
     }
   });
+  const [errors, setErrors] = useState({});
   const fileInputRef = useRef(null);
+
+  const validators = {
+    email: (v) => {
+      if (!v) return null; // optional
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? null : 'Enter a valid email address';
+    },
+    phone: (v) => {
+      if (!v) return null; // optional
+      const digits = v.replace(/\D/g, '');
+      return digits.length >= 7 && digits.length <= 15 ? null : 'Enter a valid phone number (7–15 digits)';
+    },
+  };
+
+  const validateField = (field, value) => {
+    const validator = validators[field];
+    if (!validator) return null;
+    const error = validator(value);
+    setErrors(prev => ({ ...prev, [field]: error }));
+    return error;
+  };
+
+  const validateAll = () => {
+    const newErrors = {};
+    for (const [field, validator] of Object.entries(validators)) {
+      const error = validator(profile[field]);
+      if (error) newErrors[field] = error;
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (field, value) => {
     setProfile(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) validateField(field, value);
   };
 
   const handleShowFieldToggle = (field) => {
@@ -70,6 +102,7 @@ function ProfileModal({ user, onSave, onClose }) {
   };
 
   const handleSave = () => {
+    if (!validateAll()) return;
     onSave({ ...user, profile });
     onClose();
   };
@@ -181,9 +214,22 @@ function ProfileModal({ user, onSave, onClose }) {
                 type={type}
                 value={profile[field]}
                 onChange={e => handleChange(field, e.target.value)}
+                onBlur={() => validateField(field, profile[field])}
                 placeholder={placeholder}
-                style={styles.input}
+                style={{
+                  ...styles.input,
+                  ...(errors[field] ? { borderColor: colors.danger } : {}),
+                }}
               />
+              {errors[field] && (
+                <div style={{
+                  color: colors.danger,
+                  fontSize: typography.fontSize.xs,
+                  marginTop: spacing[1],
+                }}>
+                  {errors[field]}
+                </div>
+              )}
             </div>
           ))}
         </div>

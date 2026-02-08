@@ -452,6 +452,19 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
               justifyContent: collapsed ? 'center' : 'flex-start',
             }}
           >
+            {user?.profile?.logo ? (
+              <img
+                src={user.profile.logo}
+                alt={user?.name}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: borderRadius.md,
+                  objectFit: 'cover',
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
             <div style={{
               width: 36,
               height: 36,
@@ -465,8 +478,9 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
               fontSize: typography.fontSize.sm,
               flexShrink: 0,
             }}>
-              {user?.avatar || user?.name?.charAt(0) || '?'}
+              {user?.name?.charAt(0) || '?'}
             </div>
+            )}
             <div className="sidebar-user-info" style={{ 
               flex: 1, 
               minWidth: 0,

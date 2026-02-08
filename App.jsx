@@ -333,9 +333,16 @@ export default function App() {
   // ============================================================================
   // Remaining Handlers
   // ============================================================================
-  const updateUserProfile = useCallback((updatedUser) => {
+  const updateUserProfile = useCallback(async (updatedUser) => {
     setUsers(prev => updateById(prev, updatedUser.id, updatedUser));
     if (currentUser.id === updatedUser.id) setCurrentUser(updatedUser);
+    // Persist to database
+    try {
+      const { usersService } = await import('./lib/services.js');
+      await usersService.update(updatedUser.id, { profile: updatedUser.profile });
+    } catch (err) {
+      console.error('Failed to save profile:', err);
+    }
   }, [currentUser]);
 
   const exportData = useCallback((options) => {
