@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { VIEWS, MODALS, STATUS, EMPTY_ITEM_FORM, EMPTY_RESERVATION_FORM, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_CATEGORY_SETTINGS, DEFAULT_LOCATIONS, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
+import { VIEWS, MODALS, STATUS, EMPTY_ITEM_FORM, EMPTY_RESERVATION_FORM, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_CATEGORY_SETTINGS, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
 import { colors } from './theme.js';
 import { updateById, findById } from './utils.js';
 import { useTheme } from './contexts/ThemeContext.jsx';
@@ -49,20 +49,17 @@ export default function App() {
   const {
     inventory, setInventory,
     packages, setPackages,
-    users, setUsers,
-    roles: contextRoles, setRoles,
-    specs: contextSpecs, setSpecs,
-    locations: contextLocations, setLocations,
-    categories: contextCategories, setCategories,
-    auditLog, setAuditLog,
-    packLists, setPackLists,
-    clients, setClients,
+    setUsers,
+    roles: contextRoles,
+    specs: contextSpecs,
+    categories: contextCategories,
+    setAuditLog,
+    setClients,
   } = dataContext;
 
   // Apply defaults for data that may not be loaded yet
   const roles = contextRoles?.length ? contextRoles : DEFAULT_ROLES;
   const specs = contextSpecs && Object.keys(contextSpecs).length ? contextSpecs : DEFAULT_SPECS;
-  const locations = contextLocations?.length ? contextLocations : DEFAULT_LOCATIONS;
   const categories = contextCategories?.length ? contextCategories : DEFAULT_CATEGORIES;
 
   // Local-only state (not persisted to DB yet)
