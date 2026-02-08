@@ -21,11 +21,12 @@ export const generateItemCode = (category, existingCodes = []) => {
   let code;
   let attempts = 0;
   const maxAttempts = 100;
+  const codes = existingCodes || [];
   
   do {
     code = prefix + Math.floor(1000 + Math.random() * 9000);
     attempts++;
-  } while (existingCodes.includes(code) && attempts < maxAttempts);
+  } while (codes.includes(code) && attempts < maxAttempts);
   
   if (attempts >= maxAttempts) {
     // Fallback to timestamp-based code if random generation fails
@@ -75,7 +76,9 @@ export const formatDate = (date) => {
 export const formatDateTime = (date) => {
   if (!date) return '-';
   try {
-    return new Date(date).toLocaleString('en-US', {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',

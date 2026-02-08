@@ -317,28 +317,26 @@ describe('Select', () => {
     { value: 'option3', label: 'Option 3' },
   ];
 
-  it('should render with label', () => {
-    render(<Select label="Choose" options={options} />);
-    expect(screen.getByText('Choose')).toBeInTheDocument();
-  });
-
-  it('should render all options', () => {
+  it('should render with placeholder', () => {
     render(<Select options={options} />);
-    expect(screen.getByRole('combobox')).toBeInTheDocument();
+    expect(screen.getByText('Select...')).toBeInTheDocument();
+  });
+
+  it('should render selected value', () => {
+    render(<Select options={options} value="option2" />);
+    expect(screen.getByText('Option 2')).toBeInTheDocument();
+  });
+
+  it('should render trigger button', () => {
+    render(<Select options={options} aria-label="Test select" />);
+    expect(screen.getByLabelText('Test select')).toBeInTheDocument();
+  });
+
+  it('should show options when clicked', () => {
+    render(<Select options={options} />);
+    fireEvent.click(screen.getByText('Select...'));
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
     expect(screen.getAllByRole('option')).toHaveLength(3);
-  });
-
-  it('should pass through select props', () => {
-    const handleChange = vi.fn();
-    render(<Select options={options} onChange={handleChange} />);
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'option2' } });
-    expect(handleChange).toHaveBeenCalled();
-  });
-
-  it('should forward ref', () => {
-    const ref = { current: null };
-    render(<Select ref={ref} options={options} />);
-    expect(ref.current).toBeInstanceOf(HTMLSelectElement);
   });
 });
 
