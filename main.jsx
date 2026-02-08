@@ -13,6 +13,23 @@ import { FilterProvider } from './contexts/FilterContext.jsx'
 import { NavigationProviderWithData } from './contexts/NavigationContext.jsx'
 import './index.css'
 
+// Handle stale chunk errors after deployments — force one reload to get fresh assets
+window.addEventListener('error', (event) => {
+  if (
+    event.message?.includes('Failed to fetch dynamically imported module') ||
+    event.message?.includes('Importing a module script failed') ||
+    event.error?.name === 'ChunkLoadError'
+  ) {
+    const reloaded = sessionStorage.getItem('chunk-reload');
+    if (!reloaded) {
+      sessionStorage.setItem('chunk-reload', '1');
+      window.location.reload();
+    }
+  }
+});
+// Clear the reload flag on successful load so future deploys can trigger it again
+sessionStorage.removeItem('chunk-reload');
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
