@@ -91,7 +91,6 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
     patchInventoryItem, patchUser, removeLocalUser,
     patchRole, addLocalRole, removeLocalRole,
     replaceLocations, patchClient,
-    addAuditLog,
   } = dataContext;
 
   // Destructure handlers
