@@ -116,11 +116,15 @@ describe('fromDb', () => {
     const result = fromDb(dbRow, RESERVATION_FIELD_MAP);
     expect(result.itemId).toBe('CAM-001');
     expect(result.clientId).toBe('client-1');
-    expect(result.startDate).toBe('2024-07-01');
-    expect(result.endDate).toBe('2024-07-05');
+    // After field map reorder, 'start'/'end' are the canonical keys from fromDb
+    expect(result.start).toBe('2024-07-01');
+    expect(result.end).toBe('2024-07-05');
     expect(result.contactName).toBe('Jane');
     expect(result.contactEmail).toBe('jane@test.com');
     expect(result.projectType).toBe('Wedding');
+    // Original DB columns are also preserved via spread
+    expect(result.start_date).toBe('2024-07-01');
+    expect(result.end_date).toBe('2024-07-05');
   });
 });
 
