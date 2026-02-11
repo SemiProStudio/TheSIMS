@@ -16,13 +16,14 @@ import { error as logError } from '../lib/logger.js';
 
 function PackagesView({ 
   packages, 
-  setPackages, 
+  dataContext: propDataContext, 
   inventory, 
   onViewItem,
   initialSelectedPackage = null,
   onPackageSelect,
 }) {
-  const dataContext = useData();
+  const ctxData = useData();
+  const dataContext = propDataContext || ctxData;
   const [selectedPackage, setSelectedPackageInternal] = useState(initialSelectedPackage);
   const [showCreate, setShowCreate] = useState(false);
   const [showDetailsPrompt, setShowDetailsPrompt] = useState(false); // Details popup
@@ -230,9 +231,7 @@ function PackagesView({
         }
       } else {
         // Fallback to local state
-        setPackages(prev => prev.map(pkg => 
-          pkg.id === editingPackage.id ? { ...pkg, ...updates } : pkg
-        ));
+        dataContext.patchPackage(editingPackage.id, updates);
       }
       
       // Return to the updated package detail
@@ -270,13 +269,13 @@ function PackagesView({
         const nextNum = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
         const localId = `PKG-${String(nextNum).padStart(3, '0')}`;
         const localPackage = { ...newPackage, id: localId };
-        setPackages(prev => [...prev, localPackage]);
+        dataContext.addLocalPackage(localPackage);
         setSelectedPackage(localPackage);
         setShowCreate(false);
         resetForm();
       }
     }
-  }, [formName, formDescription, formCategory, formItems, editingPackage, setPackages, setSelectedPackage, resetForm, packages, dataContext]);
+  }, [formName, formDescription, formCategory, formItems, editingPackage, setSelectedPackage, resetForm, packages, dataContext]);
 
   // Delete package - close detail first, then show confirm
   const handleDeleteClick = useCallback((pkg) => {
@@ -292,28 +291,23 @@ function PackagesView({
         await dataContext.deletePackage(id);
       } catch (err) {
         logError('Failed to delete package:', err);
-        // Fallback to local state
-        setPackages(prev => prev.filter(p => p.id !== id));
+        dataContext.removeLocalPackage(id);
       }
     } else {
-      setPackages(prev => prev.filter(p => p.id !== id));
+      dataContext.removeLocalPackage(id);
     }
     
     setSelectedPackage(null);
     setConfirmDelete({ isOpen: false, id: null, name: '' });
-  }, [confirmDelete, setPackages, setSelectedPackage, dataContext]);
+  }, [confirmDelete, setSelectedPackage, dataContext]);
 
   // Add suggested accessory to package
   const handleAddSuggested = useCallback((itemId) => {
     if (!selectedPackage) return;
     const newItems = [...selectedPackage.items, itemId];
-    setPackages(prev => prev.map(pkg => 
-      pkg.id === selectedPackage.id 
-        ? { ...pkg, items: newItems }
-        : pkg
-    ));
+    dataContext.patchPackage(selectedPackage.id, { items: newItems });
     setSelectedPackage(prev => ({ ...prev, items: newItems }));
-  }, [selectedPackage, setPackages, setSelectedPackage]);
+  }, [selectedPackage, setSelectedPackage, dataContext]);
 
   // Handle viewing item with proper back context
   const handleViewItem = useCallback((itemId) => {

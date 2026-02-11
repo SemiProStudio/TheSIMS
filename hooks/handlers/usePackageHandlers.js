@@ -4,11 +4,9 @@
 // ============================================================================
 import { useCallback } from 'react';
 import { VIEWS } from '../../constants.js';
-import { updateById, removeById } from '../../utils.js';
 
 export function usePackageHandlers({
   packages,
-  setPackages,
   inventory,
   selectedPackage,
   setSelectedPackage,
@@ -16,6 +14,7 @@ export function usePackageHandlers({
   categories,
   showConfirm,
   addChangeLog,
+  dataContext,
 }) {
   const deletePackage = useCallback((id) => {
     showConfirm({
@@ -24,23 +23,23 @@ export function usePackageHandlers({
       confirmText: 'Delete',
       variant: 'danger',
       onConfirm: () => {
-        setPackages(prev => removeById(prev, id));
+        dataContext.removeLocalPackage(id);
         if (selectedPackage?.id === id) {
           setSelectedPackage(null);
           setCurrentView(VIEWS.PACKAGES);
         }
       }
     });
-  }, [selectedPackage, showConfirm, setPackages, setSelectedPackage, setCurrentView]);
+  }, [selectedPackage, showConfirm, setSelectedPackage, setCurrentView, dataContext]);
 
   const addItemToPackage = useCallback((packageId, itemId) => {
     const pkg = packages.find(p => p.id === packageId);
     const item = inventory.find(i => i.id === itemId);
     
     if (pkg && item && !pkg.items.includes(itemId)) {
-      setPackages(prev => updateById(prev, packageId, p => ({
+      dataContext.patchPackage(packageId, p => ({
         items: [...p.items, itemId]
-      })));
+      }));
       
       addChangeLog({
         type: 'updated',
@@ -55,7 +54,7 @@ export function usePackageHandlers({
         }]
       });
     }
-  }, [packages, inventory, addChangeLog]);
+  }, [packages, inventory, addChangeLog, dataContext]);
 
   const addPackage = useCallback(() => {
     const newId = `pkg-${Date.now()}`;
@@ -67,7 +66,7 @@ export function usePackageHandlers({
       items: [],
       notes: []
     };
-    setPackages(prev => [...prev, newPackage]);
+    dataContext.addLocalPackage(newPackage);
     setSelectedPackage(newPackage);
     setCurrentView(VIEWS.PACKAGE_DETAIL);
     
@@ -79,11 +78,7 @@ export function usePackageHandlers({
       description: 'Created new package',
       changes: [{ field: 'package', oldValue: null, newValue: 'New Package' }]
     });
-  }, [categories, addChangeLog]);
+  }, [categories, addChangeLog, dataContext, setSelectedPackage, setCurrentView]);
 
-  return {
-    deletePackage,
-    addItemToPackage,
-    addPackage,
-  };
+  return { deletePackage, addItemToPackage, addPackage };
 }

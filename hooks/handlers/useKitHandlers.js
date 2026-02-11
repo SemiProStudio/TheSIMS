@@ -3,12 +3,10 @@
 // Extracted from App.jsx — manages kit/container items, accessories, and images
 // ============================================================================
 import { useCallback } from 'react';
-import { updateById } from '../../utils.js';
 import { error as logError } from '../../lib/logger.js';
 
 export function useKitHandlers({
   inventory,
-  setInventory,
   selectedItem,
   setSelectedItem,
   dataContext,
@@ -22,11 +20,11 @@ export function useKitHandlers({
   const setItemAsKit = useCallback((kitType) => {
     if (!selectedItem) return;
 
-    setInventory(prev => updateById(prev, selectedItem.id, {
+    dataContext.patchInventoryItem(selectedItem.id, {
       isKit: true,
       kitType: kitType,
       childItemIds: [],
-    }));
+    });
 
     setSelectedItem(prev => ({
       ...prev,
@@ -50,7 +48,7 @@ export function useKitHandlers({
       description: `Converted "${selectedItem.name}" to ${kitType}`,
       changes: [{ field: 'kitType', oldValue: null, newValue: kitType }]
     });
-  }, [selectedItem, currentUser, addAuditLog, addChangeLog]);
+  }, [selectedItem, currentUser, addAuditLog, addChangeLog, dataContext]);
 
   const addItemsToKit = useCallback((childIds) => {
     if (!selectedItem || !selectedItem.isKit) return;
@@ -58,12 +56,10 @@ export function useKitHandlers({
     const newChildIds = [...(selectedItem.childItemIds || []), ...childIds];
     const addedItems = inventory.filter(i => childIds.includes(i.id));
 
-    setInventory(prev => {
-      let updated = updateById(prev, selectedItem.id, { childItemIds: newChildIds });
-      childIds.forEach(childId => {
-        updated = updateById(updated, childId, { parentKitId: selectedItem.id });
-      });
-      return updated;
+    dataContext.mapInventory(item => {
+      if (item.id === selectedItem.id) return { ...item, childItemIds: newChildIds };
+      if (childIds.includes(item.id)) return { ...item, parentKitId: selectedItem.id };
+      return item;
     });
 
     setSelectedItem(prev => ({
@@ -90,7 +86,7 @@ export function useKitHandlers({
         newValue: `+ ${item.name} (${item.id})` 
       }))
     });
-  }, [selectedItem, currentUser, inventory, addAuditLog, addChangeLog]);
+  }, [selectedItem, currentUser, inventory, addAuditLog, addChangeLog, dataContext]);
 
   const removeItemFromKit = useCallback((childId) => {
     if (!selectedItem || !selectedItem.isKit) return;
@@ -98,10 +94,10 @@ export function useKitHandlers({
     const removedItem = inventory.find(i => i.id === childId);
     const newChildIds = (selectedItem.childItemIds || []).filter(id => id !== childId);
 
-    setInventory(prev => {
-      let updated = updateById(prev, selectedItem.id, { childItemIds: newChildIds });
-      updated = updateById(updated, childId, { parentKitId: null });
-      return updated;
+    dataContext.mapInventory(item => {
+      if (item.id === selectedItem.id) return { ...item, childItemIds: newChildIds };
+      if (item.id === childId) return { ...item, parentKitId: null };
+      return item;
     });
 
     setSelectedItem(prev => ({
@@ -123,20 +119,19 @@ export function useKitHandlers({
         }]
       });
     }
-  }, [selectedItem, inventory, addChangeLog]);
+  }, [selectedItem, inventory, addChangeLog, dataContext]);
 
   const clearKitItems = useCallback(() => {
     if (!selectedItem || !selectedItem.isKit) return;
 
     const childIds = selectedItem.childItemIds || [];
     const clearedItems = inventory.filter(i => childIds.includes(i.id));
+    const childIdSet = new Set(childIds);
 
-    setInventory(prev => {
-      let updated = updateById(prev, selectedItem.id, { childItemIds: [] });
-      childIds.forEach(childId => {
-        updated = updateById(updated, childId, { parentKitId: null });
-      });
-      return updated;
+    dataContext.mapInventory(item => {
+      if (item.id === selectedItem.id) return { ...item, childItemIds: [] };
+      if (childIdSet.has(item.id)) return { ...item, parentKitId: null };
+      return item;
     });
 
     setSelectedItem(prev => ({
@@ -165,7 +160,7 @@ export function useKitHandlers({
         }))
       });
     }
-  }, [selectedItem, currentUser, inventory, addAuditLog, addChangeLog]);
+  }, [selectedItem, currentUser, inventory, addAuditLog, addChangeLog, dataContext]);
 
   // ---- Required Accessories ----
 
@@ -178,7 +173,7 @@ export function useKitHandlers({
     const existingAccessories = targetItem.requiredAccessories || [];
     const newAccessories = [...new Set([...existingAccessories, ...accessoryIds])];
     
-    setInventory(prev => updateById(prev, itemId, { requiredAccessories: newAccessories }));
+    dataContext.patchInventoryItem(itemId, { requiredAccessories: newAccessories });
     
     if (selectedItem?.id === itemId) {
       setSelectedItem(prev => ({ ...prev, requiredAccessories: newAccessories }));
@@ -197,7 +192,7 @@ export function useKitHandlers({
         newValue: `${item.name} (${item.id})` 
       }))
     });
-  }, [inventory, selectedItem, addChangeLog]);
+  }, [inventory, selectedItem, addChangeLog, dataContext]);
 
   const removeRequiredAccessory = useCallback((itemId, accessoryId) => {
     if (!itemId || !accessoryId) return;
@@ -209,7 +204,7 @@ export function useKitHandlers({
     const existingAccessories = targetItem.requiredAccessories || [];
     const newAccessories = existingAccessories.filter(id => id !== accessoryId);
     
-    setInventory(prev => updateById(prev, itemId, { requiredAccessories: newAccessories }));
+    dataContext.patchInventoryItem(itemId, { requiredAccessories: newAccessories });
     
     if (selectedItem?.id === itemId) {
       setSelectedItem(prev => ({ ...prev, requiredAccessories: newAccessories }));
@@ -229,36 +224,27 @@ export function useKitHandlers({
         }]
       });
     }
-  }, [inventory, selectedItem, addChangeLog]);
+  }, [inventory, selectedItem, addChangeLog, dataContext]);
 
   // ---- Image ----
 
   const selectImage = useCallback(async (image) => {
     if (selectedItem) {
-      setInventory(prev => updateById(prev, selectedItem.id, { image }));
+      dataContext.patchInventoryItem(selectedItem.id, { image });
       setSelectedItem(prev => ({ ...prev, image }));
       
-      {
-        try {
-          await dataContext.updateItem(selectedItem.id, { image });
-        } catch (err) {
-          logError('Failed to save image:', err);
-        }
+      try {
+        await dataContext.updateItem(selectedItem.id, { image });
+      } catch (err) {
+        logError('Failed to save image:', err);
       }
     }
     closeModal();
   }, [selectedItem, closeModal, dataContext]);
 
   return {
-    // Kit
-    setItemAsKit,
-    addItemsToKit,
-    removeItemFromKit,
-    clearKitItems,
-    // Accessories
-    addRequiredAccessories,
-    removeRequiredAccessory,
-    // Image
+    setItemAsKit, addItemsToKit, removeItemFromKit, clearKitItems,
+    addRequiredAccessories, removeRequiredAccessory,
     selectImage,
   };
 }

@@ -4,12 +4,10 @@
 // ============================================================================
 import { useState, useCallback } from 'react';
 import { STATUS, MODALS } from '../../constants.js';
-import { updateById } from '../../utils.js';
 import { error as logError } from '../../lib/logger.js';
 
 export function useCheckoutHandlers({
   inventory,
-  setInventory,
   selectedItem,
   setSelectedItem,
   dataContext,
@@ -194,7 +192,7 @@ export function useCheckoutHandlers({
     const isEdit = !!editingMaintenanceRecord;
     const tempId = record.id;
 
-    setInventory(prev => updateById(prev, itemId, item => {
+    dataContext.patchInventoryItem(itemId, item => {
       const existingHistory = item.maintenanceHistory || [];
       let newHistory;
       
@@ -205,7 +203,7 @@ export function useCheckoutHandlers({
       }
       
       return { maintenanceHistory: newHistory };
-    }));
+    });
 
     if (selectedItem?.id === itemId) {
       setSelectedItem(prev => {
@@ -230,9 +228,9 @@ export function useCheckoutHandlers({
         const swapId = (history) => (history || []).map(m => 
           m.id === tempId ? { ...m, id: dbResult.id } : m
         );
-        setInventory(prev => updateById(prev, itemId, item => ({
+        dataContext.patchInventoryItem(itemId, item => ({
           maintenanceHistory: swapId(item.maintenanceHistory)
-        })));
+        }));
         if (selectedItem?.id === itemId) {
           setSelectedItem(prev => ({ ...prev, maintenanceHistory: swapId(prev.maintenanceHistory) }));
         }
@@ -266,13 +264,13 @@ export function useCheckoutHandlers({
     const itemId = selectedItem.id;
     const completedDate = newStatus === 'completed' ? new Date().toISOString().split('T')[0] : null;
 
-    setInventory(prev => updateById(prev, itemId, item => ({
+    dataContext.patchInventoryItem(itemId, item => ({
       maintenanceHistory: (item.maintenanceHistory || []).map(m => 
         m.id === recordId 
           ? { ...m, status: newStatus, completedDate: completedDate || m.completedDate, updatedAt: new Date().toISOString() }
           : m
       )
-    })));
+    }));
 
     setSelectedItem(prev => ({
       ...prev,

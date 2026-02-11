@@ -54,9 +54,10 @@ export default function AppModals({ handlers, currentUser }) {
   } = useModalContext();
 
   const {
-    inventory, setInventory, packages, users, setUsers,
+    inventory, packages, users,
     specs, locations, categories, categorySettings, auditLog, packLists, clients,
     refreshData,
+    addInventoryItems, addLocalUser,
   } = useData();
 
   const auth = useAuth();
@@ -210,7 +211,7 @@ export default function AppModals({ handlers, currentUser }) {
                 id: generateItemCode(item.category, inventory.map(i => i.id)),
                 image: null,
               }));
-              setInventory(prev => [...prev, ...newItems]);
+              addInventoryItems(newItems);
               addAuditLog({
                 type: 'csv_import',
                 description: `Imported ${newItems.length} items from CSV`,
@@ -267,7 +268,7 @@ export default function AppModals({ handlers, currentUser }) {
             existingEmails={users.map(u => u.email.toLowerCase())}
             onSave={async (newUser) => {
               // Optimistic local update
-              setUsers(prev => [...prev, newUser]);
+              addLocalUser(newUser);
               addAuditLog({
                 type: 'user_created',
                 description: `New user created: ${newUser.name} (${newUser.role?.name || newUser.roleId || 'User'})`,

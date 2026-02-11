@@ -526,7 +526,7 @@ const ClientDetailView = memo(function ClientDetailView({
 function ClientsView({ 
   clients = [], 
   inventory = [],
-  onUpdateClients,
+  dataContext: propDataContext,
   onViewReservation,
   onAddNote,
   onReplyNote,
@@ -534,7 +534,8 @@ function ClientsView({
   user,
   addAuditLog,
 }) {
-  const dataContext = useData();
+  const ctxData = useData();
+  const dataContext = propDataContext || ctxData;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClient, setSelectedClient] = useState(null);
   const [editingClient, setEditingClient] = useState(null);
@@ -616,33 +617,30 @@ function ClientsView({
     const exists = clients.find(c => c.id === clientData.id);
     if (exists) {
       // Update existing client
-      if (dataContext?.updateClient) {
-        try {
+      try {
+        if (dataContext?.updateClient) {
           await dataContext.updateClient(clientData.id, clientData);
-        } catch (err) {
-          logError('Failed to update client:', err);
-          onUpdateClients(clients.map(c => c.id === clientData.id ? clientData : c));
+        } else {
+          dataContext.patchClient(clientData.id, clientData);
         }
-      } else {
-        onUpdateClients(clients.map(c => c.id === clientData.id ? clientData : c));
+      } catch (err) {
+        logError('Failed to update client:', err);
+        dataContext.patchClient(clientData.id, clientData);
       }
     } else {
       // New client - create in database
-      if (dataContext?.createClient) {
-        try {
+      try {
+        if (dataContext?.createClient) {
           await dataContext.createClient(clientData);
-        } catch (err) {
-          logError('Failed to create client:', err);
-          onUpdateClients([...clients, clientData]);
         }
-      } else {
-        onUpdateClients([...clients, clientData]);
+      } catch (err) {
+        logError('Failed to create client:', err);
       }
       setSelectedClient(clientData);
     }
     setShowAddModal(false);
     setEditingClient(null);
-  }, [clients, onUpdateClients, dataContext]);
+  }, [clients, dataContext]);
   
   const handleDeleteClient = useCallback(async () => {
     if (deleteConfirm.client) {

@@ -80,14 +80,19 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
     showConfirm,
   } = useModalContext();
 
+  const dataContext = useData();
   const {
-    inventory, setInventory, packages, setPackages, users, setUsers,
-    roles, setRoles, specs, locations, setLocations,
+    inventory, packages, users,
+    roles, specs, locations,
     categories, categorySettings,
-    auditLog, clients, setClients,
-    packLists, setPackLists,
+    auditLog, clients,
+    packLists,
     updateCategories, updateSpecs,
-  } = useData();
+    patchInventoryItem, patchUser, removeLocalUser,
+    patchRole, addLocalRole, removeLocalRole,
+    replaceLocations, patchClient,
+    addAuditLog,
+  } = dataContext;
 
   // Destructure handlers
   const {
@@ -191,7 +196,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
           onUpdateMaintenance={openMaintenanceEditModal}
           onCompleteMaintenance={updateMaintenanceStatus}
           onUpdateValue={(newValue) => {
-            setInventory(prev => prev.map(i => i.id === selectedItem.id ? { ...i, currentValue: newValue } : i));
+            patchInventoryItem(selectedItem.id, { currentValue: newValue });
             setSelectedItem(prev => ({ ...prev, currentValue: newValue }));
           }}
           onSetAsKit={setItemAsKit}
@@ -214,7 +219,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
         <Suspense fallback={<ViewLoading message="Loading Packages..." />}>
           <PackagesView
             packages={packages}
-            setPackages={setPackages}
+            dataContext={dataContext}
             inventory={inventory}
             onViewItem={navigateToItem}
             initialSelectedPackage={selectedPackage}
@@ -227,7 +232,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
         <Suspense fallback={<ViewLoading message="Loading Pack Lists..." />}>
           <PackListsView
             packLists={packLists}
-            setPackLists={setPackLists}
+            dataContext={dataContext}
             inventory={inventory}
             packages={packages}
             categorySettings={categorySettings}
@@ -282,7 +287,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
           <ClientsView
             clients={clients}
             inventory={inventory}
-            onUpdateClients={setClients}
+            dataContext={dataContext}
             onViewReservation={navigateToReservation}
             onAddNote={clientNoteHandlers.add}
             onReplyNote={clientNoteHandlers.reply}
@@ -419,7 +424,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
                   confirmText: 'Delete',
                   variant: 'danger',
                   onConfirm: async () => {
-                    setUsers(prev => prev.filter(u => u.id !== userId));
+                    removeLocalUser(userId);
                     addAuditLog({
                       type: 'user_deleted',
                       description: `User deleted: ${userToDelete?.name || userId}`,
@@ -498,7 +503,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
               locations={locations}
               inventory={inventory}
               onSave={async (newLocations) => {
-                setLocations(newLocations);
+                replaceLocations(newLocations);
                 try {
                   await locationsService.syncAll(newLocations);
                 } catch (err) {
@@ -535,7 +540,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
                 const existing = roles.find(r => r.id === roleData.id);
                 if (existing) {
                   // Update existing role
-                  setRoles(prev => prev.map(r => r.id === roleData.id ? roleData : r));
+                  patchRole(roleData.id, roleData);
                   try {
                     await rolesService.update(roleData.id, {
                       name: roleData.name,
@@ -548,7 +553,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
                 } else {
                   // Create new role
                   const newRole = { ...roleData, id: roleData.id || `role_${generateId()}` };
-                  setRoles(prev => [...prev, newRole]);
+                  addLocalRole(newRole);
                   try {
                     await rolesService.create({
                       id: newRole.id,
@@ -563,13 +568,10 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
                 }
               }}
               onDeleteRole={async (roleId) => {
-                setRoles(prev => prev.filter(r => r.id !== roleId));
-                setUsers(prev => prev.map(u => 
-                  u.roleId === roleId ? { ...u, roleId: 'role_user' } : u
-                ));
+                removeLocalRole(roleId);
+                users.filter(u => u.roleId === roleId).forEach(u => patchUser(u.id, { roleId: 'role_user' }));
                 try {
                   await rolesService.delete(roleId);
-                  // Reassign affected users in DB
                   const affectedUsers = users.filter(u => u.roleId === roleId || u.role_id === roleId);
                   for (const u of affectedUsers) {
                     await usersService.updateRole(u.id, 'role_user');
@@ -579,9 +581,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
                 }
               }}
               onAssignUsers={async (roleId, userIds) => {
-                setUsers(prev => prev.map(u => 
-                  userIds.includes(u.id) ? { ...u, roleId } : u
-                ));
+                userIds.forEach(userId => patchUser(userId, { roleId }));
                 try {
                   for (const userId of userIds) {
                     await usersService.updateRole(userId, roleId);

@@ -6,7 +6,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { VIEWS, MODALS, STATUS, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
 import { colors } from './theme.js';
-import { updateById, findById } from './utils.js';
+import { findById } from './utils.js';
 import { useTheme } from './contexts/ThemeContext.jsx';
 import { PermissionsProvider } from './contexts/PermissionsContext.jsx';
 import { useAuth } from './lib/AuthContext.jsx';
@@ -48,14 +48,17 @@ export default function App() {
   const dataContext = useData();
 
   const {
-    inventory, setInventory,
-    packages, setPackages,
-    setUsers,
+    inventory,
+    packages,
     roles: contextRoles,
     specs: contextSpecs,
     categories: contextCategories,
-    setAuditLog,
-    setClients,
+    patchInventoryItem,
+    addInventoryItems,
+    removeInventoryItems,
+    mapInventory,
+    patchUser,
+    addAuditLog,
   } = dataContext;
 
   // Apply defaults for data that may not be loaded yet
@@ -147,7 +150,7 @@ export default function App() {
   // ============================================================================
   const handleSaveLayoutPrefs = useCallback(async (newPrefs) => {
     setCurrentUser(prev => ({ ...prev, layoutPrefs: newPrefs }));
-    setUsers(prev => updateById(prev, currentUser?.id, { layoutPrefs: newPrefs }));
+    patchUser(currentUser?.id, { layoutPrefs: newPrefs });
     // Persist to DB in the user's profile JSON
     if (currentUser?.id) {
       try {
@@ -190,10 +193,10 @@ export default function App() {
     const item = findById(inventory, id);
     if (item) {
       setSelectedItem(item);
-      setInventory(prev => updateById(prev, id, existingItem => ({
+      patchInventoryItem(id, existingItem => ({
         ...existingItem,
         viewCount: (existingItem.viewCount || 0) + 1
-      })));
+      }));
       setCurrentView(VIEWS.GEAR_DETAIL);
       setActiveModal(null);
       setItemBackContext(context);
@@ -203,7 +206,7 @@ export default function App() {
         .then(itemWithDetails => {
           if (itemWithDetails) {
             setSelectedItem(itemWithDetails);
-            setInventory(prev => updateById(prev, id, itemWithDetails));
+            patchInventoryItem(id, itemWithDetails);
           }
         })
         .catch(err => logError('Failed to load item details:', err));
@@ -275,7 +278,7 @@ export default function App() {
   // Inventory Actions
   // ============================================================================
   const inventoryActions = useInventoryActions({
-    dataContext, setInventory, setSelectedItem, setCurrentView, setAuditLog, setChangeLog, showConfirm,
+    dataContext, setSelectedItem, setCurrentView, setChangeLog, showConfirm,
     inventory, selectedItem, currentUser, currentView, specs,
     editingItemId, setEditingItemId, itemForm, setItemForm, resetItemForm, closeModal, openModal,
   });
@@ -301,7 +304,7 @@ export default function App() {
     maintenanceItem, setMaintenanceItem, editingMaintenanceRecord, setEditingMaintenanceRecord,
     openMaintenanceModal, saveMaintenance, updateMaintenanceStatus,
   } = useCheckoutHandlers({
-    inventory, setInventory, selectedItem, setSelectedItem,
+    inventory, selectedItem, setSelectedItem,
     dataContext, currentUser, openModal, closeModal, addAuditLog, addChangeLog,
   });
 
@@ -309,14 +312,14 @@ export default function App() {
     setItemAsKit, addItemsToKit, removeItemFromKit, clearKitItems,
     addRequiredAccessories, removeRequiredAccessory, selectImage,
   } = useKitHandlers({
-    inventory, setInventory, selectedItem, setSelectedItem,
+    inventory, selectedItem, setSelectedItem,
     dataContext, currentUser, closeModal, addAuditLog, addChangeLog,
   });
 
   const {
     saveReservation, openEditReservation, deleteReservation,
   } = useReservationHandlers({
-    inventory, setInventory, selectedItem, setSelectedItem,
+    inventory, selectedItem, setSelectedItem,
     dataContext, openModal, closeModal, addChangeLog, addAuditLog, currentUser,
     reservationForm, setReservationForm,
     editingReservationId, setEditingReservationId,
@@ -327,32 +330,32 @@ export default function App() {
   const {
     itemNoteHandlers, reservationNoteHandlers, clientNoteHandlers,
   } = useNoteHandlers({
-    selectedItem, setSelectedItem, setInventory,
+    selectedItem, setSelectedItem,
     selectedPackage, setSelectedPackage,
     selectedReservation, setSelectedReservation, selectedReservationItem,
-    setPackages, setClients, setAuditLog, dataContext, currentUser,
+    dataContext, currentUser,
   });
 
   const {
     addReminder, completeReminder, uncompleteReminder, deleteReminder,
   } = useReminderHandlers({
-    selectedItem, setSelectedItem, setInventory,
-    setAuditLog, dataContext, currentUser, showConfirm,
+    selectedItem, setSelectedItem,
+    dataContext, currentUser, showConfirm,
   });
 
   const {
     addItemToPackage,
   } = usePackageHandlers({
-    packages, setPackages, inventory,
+    packages, inventory,
     selectedPackage, setSelectedPackage, setCurrentView,
-    categories, showConfirm, addChangeLog,
+    categories, showConfirm, addChangeLog, dataContext,
   });
 
   // ============================================================================
   // Remaining Handlers
   // ============================================================================
   const updateUserProfile = useCallback(async (updatedUser) => {
-    setUsers(prev => updateById(prev, updatedUser.id, updatedUser));
+    patchUser(updatedUser.id, updatedUser);
     if (currentUser.id === updatedUser.id) setCurrentUser(updatedUser);
     // Persist to database
     try {
@@ -390,7 +393,7 @@ export default function App() {
     } catch (err) {
       logError('Failed to save notification preferences:', err);
     }
-    setUsers(prev => updateById(prev, currentUser.id, { notificationPreferences: prefs }));
+    patchUser(currentUser.id, { notificationPreferences: prefs });
     setCurrentUser(prev => ({ ...prev, notificationPreferences: prefs }));
   }, [dataContext, currentUser]);
 

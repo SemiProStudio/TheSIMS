@@ -4,12 +4,11 @@
 // ============================================================================
 import { useCallback } from 'react';
 import { VIEWS, MODALS } from '../../constants.js';
-import { generateId, updateById } from '../../utils.js';
+import { generateId } from '../../utils.js';
 import { error as logError } from '../../lib/logger.js';
 
 export function useReservationHandlers({
   inventory,
-  setInventory,
   selectedItem,
   setSelectedItem,
   dataContext,
@@ -52,11 +51,11 @@ export function useReservationHandlers({
         }
       }
       
-      setInventory(prev => updateById(prev, selectedReservationItem.id, item => ({
+      dataContext.patchInventoryItem(selectedReservationItem.id, item => ({
         reservations: (item.reservations || []).map(r => 
           r.id === editingReservationId ? updatedReservation : r
         )
-      })));
+      }));
 
       setSelectedReservation(updatedReservation);
       if (selectedItem?.id === selectedReservationItem.id) {
@@ -123,9 +122,9 @@ export function useReservationHandlers({
           firstCreatedReservation = { reservation, item: targetItem };
         }
         
-        setInventory(prev => updateById(prev, targetItemId, item => ({
+        dataContext.patchInventoryItem(targetItemId, item => ({
           reservations: [...(item.reservations || []), reservation]
-        })));
+        }));
 
         if (selectedItem?.id === targetItemId) {
           setSelectedItem(prev => ({
@@ -251,7 +250,7 @@ export function useReservationHandlers({
           }
         }
         
-        setInventory(prev => prev.map(invItem => {
+        dataContext.mapInventory(invItem => {
           if (itemIdsAffected.includes(invItem.id)) {
             return {
               ...invItem,
@@ -259,7 +258,7 @@ export function useReservationHandlers({
             };
           }
           return invItem;
-        }));
+        });
         
         if (itemIdsAffected.includes(currentSelectedItemId)) {
           setSelectedItem(prev => {
@@ -292,7 +291,7 @@ export function useReservationHandlers({
         });
       }
     });
-  }, [inventory, addChangeLog, addAuditLog, currentUser, dataContext, selectedItem?.id, selectedReservation?.id, showConfirm, setCurrentView, setInventory, setSelectedItem, setSelectedReservation]);
+  }, [inventory, addChangeLog, addAuditLog, currentUser, dataContext, selectedItem?.id, selectedReservation?.id, showConfirm, setCurrentView, setSelectedItem, setSelectedReservation]);
 
   return {
     saveReservation,

@@ -17,7 +17,7 @@ import { openPrintWindow } from '../lib/printUtil.js';
 
 function PackListsView({ 
   packLists, 
-  setPackLists, 
+  dataContext: propDataContext, 
   inventory, 
   packages,
   categorySettings,
@@ -27,7 +27,8 @@ function PackListsView({
   initialSelectedList = null,
   onListSelect,
 }) {
-  const dataContext = useData();
+  const ctxData = useData();
+  const dataContext = propDataContext || ctxData;
   const [selectedListInternal, setSelectedListInternal] = useState(initialSelectedList);
   const [showCreate, setShowCreate] = useState(false);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
@@ -324,10 +325,10 @@ function PackListsView({
           await dataContext.updatePackList(editingList.id, updatedList);
         } catch (err) {
           logError('Failed to update pack list:', err);
-          setPackLists(prev => prev.map(pl => pl.id === editingList.id ? updatedList : pl));
+          dataContext.patchPackList(editingList.id, updatedList);
         }
       } else {
-        setPackLists(prev => prev.map(pl => pl.id === editingList.id ? updatedList : pl));
+        dataContext.patchPackList(editingList.id, updatedList);
       }
       
       // Log update
@@ -378,7 +379,7 @@ function PackListsView({
       } else {
         // Fallback for no DB - generate local ID
         const localList = { ...newList, id: generateId(), createdAt: new Date().toISOString() };
-        setPackLists(prev => [...prev, localList]);
+        dataContext.addLocalPackList(localList);
         
         if (addAuditLog) {
           addAuditLog({
@@ -394,7 +395,7 @@ function PackListsView({
         setSelectedList(localList);
       }
     }
-  }, [listName, selectedPackageIds, selectedItemIds, itemQuantities, setPackLists, resetForm, addAuditLog, currentUser, editingList, setSelectedList, dataContext]);
+  }, [listName, selectedPackageIds, selectedItemIds, itemQuantities, resetForm, addAuditLog, currentUser, editingList, setSelectedList, dataContext]);
 
   // Delete pack list with audit logging
   const handleDelete = useCallback(async (id) => {
@@ -406,10 +407,10 @@ function PackListsView({
         await dataContext.deletePackList(id);
       } catch (err) {
         logError('Failed to delete pack list:', err);
-        setPackLists(prev => prev.filter(pl => pl.id !== id));
+        dataContext.removeLocalPackList(id);
       }
     } else {
-      setPackLists(prev => prev.filter(pl => pl.id !== id));
+      dataContext.removeLocalPackList(id);
     }
     
     // Log deletion
@@ -424,7 +425,7 @@ function PackListsView({
     
     if (selectedList?.id === id) setSelectedList(null);
     setConfirmDelete({ isOpen: false, id: null, name: '' });
-  }, [setPackLists, selectedList, addAuditLog, currentUser, packLists, dataContext]);
+  }, [selectedList, addAuditLog, currentUser, packLists, dataContext]);
 
   // Get items for a pack list
   const getListItems = useCallback((list) => {

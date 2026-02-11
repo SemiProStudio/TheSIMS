@@ -27,6 +27,7 @@ import {
 import { DEFAULT_ROLES, DEFAULT_LOCATIONS, DEFAULT_SPECS } from '../constants.js';
 import { log, error as logError } from './logger.js';
 import { validateReservation, validateClient, validateMaintenanceRecord } from './validators.js';
+import { updateById, removeById } from '../utils.js';
 
 // =============================================================================
 // CONTEXT
@@ -758,6 +759,93 @@ export function DataProvider({ children }) {
   }, []);
 
   // =============================================================================
+  // LOCAL STATE PATCH OPERATIONS
+  // Controlled API for optimistic UI updates. These only update local state —
+  // callers are responsible for persisting via service calls or DataContext ops.
+  // =============================================================================
+
+  // -- Inventory --
+  const patchInventoryItem = useCallback((id, updates) => {
+    setInventory(prev => updateById(prev, id, updates));
+  }, []);
+
+  const addInventoryItems = useCallback((items) => {
+    const arr = Array.isArray(items) ? items : [items];
+    setInventory(prev => [...prev, ...arr]);
+  }, []);
+
+  const removeInventoryItems = useCallback((ids) => {
+    const idSet = new Set(Array.isArray(ids) ? ids : [ids]);
+    setInventory(prev => prev.filter(item => !idSet.has(item.id)));
+  }, []);
+
+  const mapInventory = useCallback((mapFn) => {
+    setInventory(prev => prev.map(mapFn));
+  }, []);
+
+  // -- Packages --
+  const patchPackage = useCallback((id, updates) => {
+    setPackages(prev => updateById(prev, id, updates));
+  }, []);
+
+  const addLocalPackage = useCallback((pkg) => {
+    setPackages(prev => [...prev, pkg]);
+  }, []);
+
+  const removeLocalPackage = useCallback((id) => {
+    setPackages(prev => removeById(prev, id));
+  }, []);
+
+  // -- Pack Lists --
+  const patchPackList = useCallback((id, updates) => {
+    setPackLists(prev => updateById(prev, id, updates));
+  }, []);
+
+  const addLocalPackList = useCallback((list) => {
+    setPackLists(prev => [...prev, list]);
+  }, []);
+
+  const removeLocalPackList = useCallback((id) => {
+    setPackLists(prev => removeById(prev, id));
+  }, []);
+
+  // -- Clients --
+  const patchClient = useCallback((id, updates) => {
+    setClients(prev => updateById(prev, id, updates));
+  }, []);
+
+  // -- Users --
+  const patchUser = useCallback((id, updates) => {
+    setUsers(prev => updateById(prev, id, updates));
+  }, []);
+
+  const addLocalUser = useCallback((user) => {
+    setUsers(prev => [...prev, user]);
+  }, []);
+
+  const removeLocalUser = useCallback((id) => {
+    setUsers(prev => removeById(prev, id));
+  }, []);
+
+  // -- Roles --
+  const patchRole = useCallback((id, updates) => {
+    setRoles(prev => updateById(prev, id, updates));
+  }, []);
+
+  const addLocalRole = useCallback((role) => {
+    setRoles(prev => [...prev, role]);
+  }, []);
+
+  const removeLocalRole = useCallback((id) => {
+    setRoles(prev => removeById(prev, id));
+  }, []);
+
+  // -- Locations --
+  const replaceLocations = useCallback((newLocations) => {
+    setLocations(newLocations);
+  }, []);
+
+  // =============================================================================
   // CONTEXT VALUE
   // =============================================================================
 
@@ -783,15 +871,25 @@ export function DataProvider({ children }) {
     // Refresh function
     refreshData: loadData,
     
-    // Setters (for direct state updates from handler hooks)
-    setInventory,
-    setPackages,
-    setPackLists,
-    setClients,
-    setUsers,
-    setRoles,
-    setLocations,
-    setAuditLog,
+    // Local State Patch Operations (optimistic UI updates)
+    patchInventoryItem,
+    addInventoryItems,
+    removeInventoryItems,
+    mapInventory,
+    patchPackage,
+    addLocalPackage,
+    removeLocalPackage,
+    patchPackList,
+    addLocalPackList,
+    removeLocalPackList,
+    patchClient,
+    patchUser,
+    addLocalUser,
+    removeLocalUser,
+    patchRole,
+    addLocalRole,
+    removeLocalRole,
+    replaceLocations,
     
     // Inventory Operations
     updateItem,
@@ -897,7 +995,25 @@ export function DataProvider({ children }) {
     sendReservationEmail,
     updateCategories,
     updateSpecs,
-    addAuditLog
+    addAuditLog,
+    patchInventoryItem,
+    addInventoryItems,
+    removeInventoryItems,
+    mapInventory,
+    patchPackage,
+    addLocalPackage,
+    removeLocalPackage,
+    patchPackList,
+    addLocalPackList,
+    removeLocalPackList,
+    patchClient,
+    patchUser,
+    addLocalUser,
+    removeLocalUser,
+    patchRole,
+    addLocalRole,
+    removeLocalRole,
+    replaceLocations,
   ]);
 
   return (

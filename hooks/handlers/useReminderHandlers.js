@@ -3,13 +3,11 @@
 // Extracted from App.jsx — manages item reminder CRUD
 // ============================================================================
 import { useCallback } from 'react';
-import { getTodayISO, updateById } from '../../utils.js';
+import { getTodayISO } from '../../utils.js';
 
 export function useReminderHandlers({
   selectedItem,
   setSelectedItem,
-  setInventory,
-  setAuditLog,
   dataContext,
   currentUser,
   showConfirm,
@@ -20,9 +18,9 @@ export function useReminderHandlers({
     const tempId = reminder.id;
     const updatedReminders = [...(selectedItem.reminders || []), reminder];
     
-    setInventory(prev => updateById(prev, selectedItem.id, item => ({
+    dataContext.patchInventoryItem(selectedItem.id, item => ({
       reminders: [...(item.reminders || []), reminder]
-    })));
+    }));
     setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
     
     const dbResult = await dataContext.addItemReminder(selectedItem.id, {
@@ -33,19 +31,18 @@ export function useReminderHandlers({
       const swapId = (reminders) => (reminders || []).map(r => 
         r.id === tempId ? { ...r, id: dbResult.id } : r
       );
-      setInventory(prev => updateById(prev, selectedItem.id, item => ({
+      dataContext.patchInventoryItem(selectedItem.id, item => ({
         reminders: swapId(item.reminders)
-      })));
+      }));
       setSelectedItem(prev => ({ ...prev, reminders: swapId(prev.reminders) }));
     }
     
-    setAuditLog(prev => [...prev, {
+    dataContext.addAuditLog({
       type: 'reminder_added',
-      timestamp: new Date().toISOString(),
       description: `Reminder "${reminder.title}" added to ${selectedItem.name}`,
       user: currentUser.name,
       itemId: selectedItem.id
-    }]);
+    });
   }, [selectedItem, currentUser, dataContext]);
 
   const completeReminder = useCallback((reminderId) => {
@@ -58,22 +55,18 @@ export function useReminderHandlers({
       r.id === reminderId ? { ...r, completed: true, completedDate: getTodayISO() } : r
     );
     
-    setInventory(prev => updateById(prev, selectedItem.id, () => ({
+    dataContext.patchInventoryItem(selectedItem.id, () => ({
       reminders: updatedReminders
-    })));
+    }));
     setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
+    dataContext.updateItemReminder(reminderId, { completed: true, completedDate: getTodayISO() });
     
-    {
-      dataContext.updateItemReminder(reminderId, { completed: true, completedDate: getTodayISO() });
-    }
-    
-    setAuditLog(prev => [...prev, {
+    dataContext.addAuditLog({
       type: 'reminder_completed',
-      timestamp: new Date().toISOString(),
       description: `Reminder "${reminder.title}" completed for ${selectedItem.name}`,
       user: currentUser.name,
       itemId: selectedItem.id
-    }]);
+    });
   }, [selectedItem, currentUser, dataContext]);
 
   const uncompleteReminder = useCallback((reminderId) => {
@@ -86,14 +79,11 @@ export function useReminderHandlers({
       r.id === reminderId ? { ...r, completed: false, completedDate: null } : r
     );
     
-    setInventory(prev => updateById(prev, selectedItem.id, () => ({
+    dataContext.patchInventoryItem(selectedItem.id, () => ({
       reminders: updatedReminders
-    })));
+    }));
     setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
-    
-    {
-      dataContext.updateItemReminder(reminderId, { completed: false, completedDate: null });
-    }
+    dataContext.updateItemReminder(reminderId, { completed: false, completedDate: null });
   }, [selectedItem, dataContext]);
 
   const deleteReminder = useCallback((reminderId) => {
@@ -109,22 +99,14 @@ export function useReminderHandlers({
       onConfirm: () => {
         const updatedReminders = (selectedItem.reminders || []).filter(r => r.id !== reminderId);
         
-        setInventory(prev => updateById(prev, selectedItem.id, () => ({
+        dataContext.patchInventoryItem(selectedItem.id, () => ({
           reminders: updatedReminders
-        })));
+        }));
         setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
-        
-        {
-          dataContext.deleteItemReminder(reminderId);
-        }
+        dataContext.deleteItemReminder(reminderId);
       }
     });
-  }, [selectedItem, dataContext, showConfirm, setInventory, setSelectedItem]);
+  }, [selectedItem, dataContext, showConfirm, setSelectedItem]);
 
-  return {
-    addReminder,
-    completeReminder,
-    uncompleteReminder,
-    deleteReminder,
-  };
+  return { addReminder, completeReminder, uncompleteReminder, deleteReminder };
 }

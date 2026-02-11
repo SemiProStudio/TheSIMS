@@ -3,27 +3,20 @@
 // Extracted from App.jsx — manages note CRUD for all entity types
 // ============================================================================
 import { useState, useCallback, useMemo } from 'react';
-import { generateId, getTodayISO, updateById, addReplyToNote, markNoteDeleted, findNoteById } from '../../utils.js';
+import { generateId, getTodayISO, addReplyToNote, markNoteDeleted, findNoteById } from '../../utils.js';
 
 export function useNoteHandlers({
   selectedItem,
   setSelectedItem,
-  setInventory,
   selectedPackage,
   setSelectedPackage,
   selectedReservation,
   setSelectedReservation,
   selectedReservationItem,
-  setPackages,
-  setClients,
-  setAuditLog,
   dataContext,
   currentUser,
 }) {
-  // Client note selection state
   const [selectedClientId, setSelectedClientId] = useState(null);
-
-  // ---- Generic note handler factory (items/packages/reservations) ----
 
   const createNoteHandler = useCallback((entityType) => {
     const getEntity = () => {
@@ -41,19 +34,19 @@ export function useNoteHandlers({
 
     const updateCollection = (entityId, notesUpdater) => {
       if (entityType === 'item') {
-        setInventory(prev => updateById(prev, entityId, item => ({
+        dataContext.patchInventoryItem(entityId, item => ({
           notes: notesUpdater(item.notes)
-        })));
+        }));
       } else if (entityType === 'package') {
-        setPackages(prev => updateById(prev, entityId, pkg => ({
+        dataContext.patchPackage(entityId, pkg => ({
           notes: notesUpdater(pkg.notes || [])
-        })));
+        }));
       } else if (entityType === 'reservation') {
-        setInventory(prev => updateById(prev, selectedReservationItem.id, item => ({
+        dataContext.patchInventoryItem(selectedReservationItem.id, item => ({
           reservations: (item.reservations || []).map(r =>
             r.id === entityId ? { ...r, notes: notesUpdater(r.notes || []) } : r
           )
-        })));
+        }));
       }
     };
 
@@ -71,17 +64,8 @@ export function useNoteHandlers({
         if (!text?.trim() || !entity) return;
 
         const tempId = generateId();
-        const note = {
-          id: tempId,
-          user: currentUser.name,
-          date: getTodayISO(),
-          text: text.trim(),
-          replies: [],
-          deleted: false
-        };
-
-        const currentNotes = entity.notes || [];
-        const updatedNotes = [...currentNotes, note];
+        const note = { id: tempId, user: currentUser.name, date: getTodayISO(), text: text.trim(), replies: [], deleted: false };
+        const updatedNotes = [...(entity.notes || []), note];
 
         updateCollection(entity.id, () => updatedNotes);
         setEntity(prev => ({ ...prev, notes: updatedNotes }));
@@ -101,17 +85,9 @@ export function useNoteHandlers({
         if (!text?.trim() || !entity) return;
 
         const tempId = generateId();
-        const reply = {
-          id: tempId,
-          user: currentUser.name,
-          date: getTodayISO(),
-          text: text.trim(),
-          replies: [],
-          deleted: false,
-          parentId: parentId
-        };
-
+        const reply = { id: tempId, user: currentUser.name, date: getTodayISO(), text: text.trim(), replies: [], deleted: false, parentId };
         const updatedNotes = addReplyToNote(entity.notes || [], parentId, reply);
+
         updateCollection(entity.id, () => updatedNotes);
         setEntity(prev => ({ ...prev, notes: updatedNotes }));
         
@@ -131,14 +107,13 @@ export function useNoteHandlers({
 
         const note = findNoteById(entity.notes || [], noteId);
         if (note) {
-          setAuditLog(prev => [...prev, {
+          dataContext.addAuditLog({
             type: 'note_deleted',
-            timestamp: new Date().toISOString(),
             description: `Note deleted from ${entityType} ${entity.id}`,
             content: note.text,
             user: currentUser.name,
             itemId: entity.id
-          }]);
+          });
         }
 
         const updatedNotes = markNoteDeleted(entity.notes || [], noteId);
@@ -152,71 +127,29 @@ export function useNoteHandlers({
     };
   }, [selectedItem, selectedPackage, selectedReservation, selectedReservationItem, currentUser, dataContext, setSelectedReservation]);
 
-  // Memoized note handlers per entity type
   const itemNoteHandlers = useMemo(() => createNoteHandler('item'), [createNoteHandler]);
   const packageNoteHandlers = useMemo(() => createNoteHandler('package'), [createNoteHandler]);
   const reservationNoteHandlers = useMemo(() => createNoteHandler('reservation'), [createNoteHandler]);
 
-  // ---- Client notes ----
-
   const clientNoteHandlers = useMemo(() => ({
     add: (clientId, text) => {
       if (!text?.trim() || !clientId) return;
-      
-      const note = {
-        id: generateId(),
-        user: currentUser?.name || 'Unknown',
-        date: getTodayISO(),
-        text: text.trim(),
-        replies: [],
-        deleted: false
-      };
-      
-      setClients(prev => prev.map(client => 
-        client.id === clientId 
-          ? { ...client, clientNotes: [...(client.clientNotes || []), note] }
-          : client
-      ));
+      const note = { id: generateId(), user: currentUser?.name || 'Unknown', date: getTodayISO(), text: text.trim(), replies: [], deleted: false };
+      dataContext.patchClient(clientId, client => ({ clientNotes: [...(client.clientNotes || []), note] }));
     },
-    
     reply: (clientId, parentId, text) => {
       if (!text?.trim() || !clientId) return;
-      
-      const reply = {
-        id: generateId(),
-        user: currentUser?.name || 'Unknown',
-        date: getTodayISO(),
-        text: text.trim(),
-        replies: [],
-        deleted: false
-      };
-      
-      setClients(prev => prev.map(client => 
-        client.id === clientId 
-          ? { ...client, clientNotes: addReplyToNote(client.clientNotes || [], parentId, reply) }
-          : client
-      ));
+      const reply = { id: generateId(), user: currentUser?.name || 'Unknown', date: getTodayISO(), text: text.trim(), replies: [], deleted: false };
+      dataContext.patchClient(clientId, client => ({ clientNotes: addReplyToNote(client.clientNotes || [], parentId, reply) }));
     },
-    
     delete: (clientId, noteId) => {
       if (!clientId) return;
-      
-      setClients(prev => prev.map(client => 
-        client.id === clientId 
-          ? { ...client, clientNotes: markNoteDeleted(client.clientNotes || [], noteId) }
-          : client
-      ));
+      dataContext.patchClient(clientId, client => ({ clientNotes: markNoteDeleted(client.clientNotes || [], noteId) }));
     }
-  }), [currentUser]);
+  }), [currentUser, dataContext]);
 
   return {
-    // Note handlers by entity type
-    itemNoteHandlers,
-    packageNoteHandlers,
-    reservationNoteHandlers,
-    clientNoteHandlers,
-    // Client selection state
-    selectedClientId,
-    setSelectedClientId,
+    itemNoteHandlers, packageNoteHandlers, reservationNoteHandlers, clientNoteHandlers,
+    selectedClientId, setSelectedClientId,
   };
 }
