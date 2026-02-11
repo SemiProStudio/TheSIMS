@@ -7,6 +7,7 @@
 import { lazy, Suspense } from 'react';
 import { VIEWS, MODALS } from './constants.js';
 import { error as logError } from './lib/logger.js';
+import { rolesService, locationsService, usersService } from './lib/services.js';
 import { useNavigationContext } from './contexts/NavigationContext.jsx';
 import { useFilterContext } from './contexts/FilterContext.jsx';
 import { useModalContext } from './contexts/ModalContext.jsx';
@@ -417,7 +418,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
                   message: 'Are you sure you want to delete this user? This action cannot be undone.',
                   confirmText: 'Delete',
                   variant: 'danger',
-                  onConfirm: () => {
+                  onConfirm: async () => {
                     setUsers(prev => prev.filter(u => u.id !== userId));
                     addAuditLog({
                       type: 'user_deleted',
@@ -425,6 +426,11 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
                       user: currentUser?.name || 'Unknown',
                       itemId: userId
                     });
+                    try {
+                      await usersService.delete(userId);
+                    } catch (err) {
+                      logError('Failed to delete user:', err);
+                    }
                   }
                 });
               }}
@@ -491,7 +497,14 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
             <LocationsManager
               locations={locations}
               inventory={inventory}
-              onSave={(newLocations) => setLocations(newLocations)}
+              onSave={async (newLocations) => {
+                setLocations(newLocations);
+                try {
+                  await locationsService.syncAll(newLocations);
+                } catch (err) {
+                  logError('Failed to save locations:', err);
+                }
+              }}
               onClose={() => setCurrentView(VIEWS.ADMIN)}
             />
           </Suspense>
@@ -518,24 +531,64 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
             <RolesManager
               roles={roles}
               users={users}
-              onSaveRole={(roleData) => {
-                if (roleData.id) {
+              onSaveRole={async (roleData) => {
+                const existing = roles.find(r => r.id === roleData.id);
+                if (existing) {
+                  // Update existing role
                   setRoles(prev => prev.map(r => r.id === roleData.id ? roleData : r));
+                  try {
+                    await rolesService.update(roleData.id, {
+                      name: roleData.name,
+                      description: roleData.description || '',
+                      permissions: roleData.permissions || {},
+                    });
+                  } catch (err) {
+                    logError('Failed to update role:', err);
+                  }
                 } else {
-                  const newRole = { ...roleData, id: `role_${generateId()}` };
+                  // Create new role
+                  const newRole = { ...roleData, id: roleData.id || `role_${generateId()}` };
                   setRoles(prev => [...prev, newRole]);
+                  try {
+                    await rolesService.create({
+                      id: newRole.id,
+                      name: newRole.name,
+                      description: newRole.description || '',
+                      is_system: false,
+                      permissions: newRole.permissions || {},
+                    });
+                  } catch (err) {
+                    logError('Failed to create role:', err);
+                  }
                 }
               }}
-              onDeleteRole={(roleId) => {
+              onDeleteRole={async (roleId) => {
                 setRoles(prev => prev.filter(r => r.id !== roleId));
                 setUsers(prev => prev.map(u => 
                   u.roleId === roleId ? { ...u, roleId: 'role_user' } : u
                 ));
+                try {
+                  await rolesService.delete(roleId);
+                  // Reassign affected users in DB
+                  const affectedUsers = users.filter(u => u.roleId === roleId || u.role_id === roleId);
+                  for (const u of affectedUsers) {
+                    await usersService.updateRole(u.id, 'role_user');
+                  }
+                } catch (err) {
+                  logError('Failed to delete role:', err);
+                }
               }}
-              onAssignUsers={(roleId, userIds) => {
+              onAssignUsers={async (roleId, userIds) => {
                 setUsers(prev => prev.map(u => 
                   userIds.includes(u.id) ? { ...u, roleId } : u
                 ));
+                try {
+                  for (const userId of userIds) {
+                    await usersService.updateRole(userId, roleId);
+                  }
+                } catch (err) {
+                  logError('Failed to assign users:', err);
+                }
               }}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />

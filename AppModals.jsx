@@ -6,9 +6,11 @@
 import { lazy, Suspense } from 'react';
 import { VIEWS, MODALS } from './constants.js';
 import { generateItemCode } from './utils.js';
+import { error as logError } from './lib/logger.js';
 import { useNavigationContext } from './contexts/NavigationContext.jsx';
 import { useModalContext } from './contexts/ModalContext.jsx';
 import { useData } from './lib/DataContext.jsx';
+import { useAuth } from './lib/AuthContext.jsx';
 import { ModalLoading } from './components/Loading.jsx';
 import { ConfirmDialog } from './components/ui.jsx';
 
@@ -54,7 +56,10 @@ export default function AppModals({ handlers, currentUser }) {
   const {
     inventory, setInventory, packages, users, setUsers,
     specs, locations, categories, categorySettings, auditLog, packLists, clients,
+    refreshData,
   } = useData();
+
+  const auth = useAuth();
 
   // Destructure handlers
   const {
@@ -260,7 +265,8 @@ export default function AppModals({ handlers, currentUser }) {
         {activeModal === MODALS.ADD_USER && (
           <AddUserModal
             existingEmails={users.map(u => u.email.toLowerCase())}
-            onSave={(newUser) => {
+            onSave={async (newUser) => {
+              // Optimistic local update
               setUsers(prev => [...prev, newUser]);
               addAuditLog({
                 type: 'user_created',
@@ -269,6 +275,18 @@ export default function AppModals({ handlers, currentUser }) {
                 itemId: newUser.id
               });
               closeModal();
+
+              // Persist via Supabase Auth signUp — the handle_new_user trigger
+              // creates the public users row automatically
+              if (auth?.signUp && newUser.password) {
+                try {
+                  await auth.signUp(newUser.email, newUser.password, newUser.name);
+                  // Refresh users to get the DB-created record with real UUID
+                  if (refreshData) await refreshData();
+                } catch (err) {
+                  logError('Failed to create user in auth:', err);
+                }
+              }
             }}
             onClose={closeModal}
           />

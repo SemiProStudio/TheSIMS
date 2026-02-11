@@ -143,10 +143,22 @@ export default function App() {
   // ============================================================================
   // Layout Handlers
   // ============================================================================
-  const handleSaveLayoutPrefs = useCallback((newPrefs) => {
+  const handleSaveLayoutPrefs = useCallback(async (newPrefs) => {
     setCurrentUser(prev => ({ ...prev, layoutPrefs: newPrefs }));
     setUsers(prev => updateById(prev, currentUser?.id, { layoutPrefs: newPrefs }));
-  }, [currentUser?.id]);
+    // Persist to DB in the user's profile JSON
+    if (currentUser?.id) {
+      try {
+        const { usersService } = await import('./lib/services.js');
+        const currentProfile = currentUser.profile || {};
+        await usersService.update(currentUser.id, {
+          profile: { ...currentProfile, layoutPrefs: newPrefs }
+        });
+      } catch (err) {
+        console.error('Failed to save layout prefs:', err);
+      }
+    }
+  }, [currentUser?.id, currentUser?.profile]);
 
   const handleToggleCollapse = useCallback((view, sectionId) => {
     setCurrentUser(prev => {
@@ -158,6 +170,16 @@ export default function App() {
         newPrefs[view].sections[sectionId] = { visible: true, collapsed: false, order: 0 };
       }
       newPrefs[view].sections[sectionId].collapsed = !newPrefs[view].sections[sectionId].collapsed;
+
+      // Persist (fire and forget to avoid blocking UI)
+      if (prev.id) {
+        import('./lib/services.js').then(({ usersService }) => {
+          usersService.update(prev.id, {
+            profile: { ...(prev.profile || {}), layoutPrefs: newPrefs }
+          }).catch(() => {});
+        });
+      }
+
       return { ...prev, layoutPrefs: newPrefs };
     });
   }, []);
