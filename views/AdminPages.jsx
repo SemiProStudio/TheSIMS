@@ -728,6 +728,7 @@ export const CategoriesPage = memo(function CategoriesPage({
   const [editSettings, setEditSettings] = useState(structuredClone(categorySettings || {}));
   const [editSpecs, setEditSpecs] = useState(structuredClone(specs));
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [categoryError, setCategoryError] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -744,8 +745,13 @@ export const CategoriesPage = memo(function CategoriesPage({
 
   const handleAddCategory = () => {
     const name = newCategoryName.trim();
-    if (!name || editCategories.includes(name)) return;
+    if (!name) return;
+    if (editCategories.some(c => c.toLowerCase() === name.toLowerCase())) {
+      setCategoryError(`"${name}" already exists`);
+      return;
+    }
     
+    setCategoryError('');
     setEditCategories(prev => [...prev, name]);
     setEditSpecs(prev => ({ ...prev, [name]: [] }));
     setEditSettings(prev => ({ ...prev, [name]: { ...DEFAULT_NEW_CATEGORY_SETTINGS } }));
@@ -773,8 +779,8 @@ export const CategoriesPage = memo(function CategoriesPage({
   };
 
   const handleRenameCategory = (oldName, newName) => {
-    if (!newName.trim() || (newName !== oldName && editCategories.includes(newName))) return;
-    
+    if (!newName.trim()) return;
+    // Allow typing — duplicate check is visual only (blocks save)
     setEditCategories(prev => prev.map(c => c === oldName ? newName : c));
     setEditSpecs(prev => {
       const copy = { ...prev };
@@ -792,6 +798,17 @@ export const CategoriesPage = memo(function CategoriesPage({
       }
       return copy;
     });
+  };
+
+  const hasDuplicateCategories = useMemo(() => {
+    const names = editCategories.map(c => c.trim().toLowerCase()).filter(Boolean);
+    return names.length !== new Set(names).size;
+  }, [editCategories]);
+
+  const isDuplicateCategory = (name, index) => {
+    const trimmed = name.trim().toLowerCase();
+    if (!trimmed) return false;
+    return editCategories.some((c, i) => i !== index && c.trim().toLowerCase() === trimmed);
   };
 
   const handleSettingChange = (category, setting, value) => {
@@ -845,6 +862,7 @@ export const CategoriesPage = memo(function CategoriesPage({
   };
 
   const handleSave = () => {
+    if (hasDuplicateCategories) return;
     onSave(editCategories, editSpecs, editSettings);
     onBack();
   };
@@ -857,7 +875,9 @@ export const CategoriesPage = memo(function CategoriesPage({
         onBack={onBack}
         backLabel="Back to Admin"
         action={
-          <Button onClick={handleSave} icon={Save}>Save Changes</Button>
+          <Button onClick={handleSave} icon={Save} disabled={hasDuplicateCategories}>
+            {hasDuplicateCategories ? 'Fix Duplicates' : 'Save Changes'}
+          </Button>
         }
       />
 
@@ -877,17 +897,22 @@ export const CategoriesPage = memo(function CategoriesPage({
                     ref={addInputRef}
                     type="text"
                     value={newCategoryName}
-                    onChange={e => setNewCategoryName(e.target.value)}
+                    onChange={e => { setNewCategoryName(e.target.value); setCategoryError(''); }}
                     onKeyDown={e => {
                       if (e.key === 'Enter') handleAddCategory();
-                      if (e.key === 'Escape') { setShowAddForm(false); setNewCategoryName(''); }
+                      if (e.key === 'Escape') { setShowAddForm(false); setNewCategoryName(''); setCategoryError(''); }
                     }}
                     placeholder="Enter category name..."
-                    style={{ ...styles.input, flex: 1 }}
+                    style={{ ...styles.input, flex: 1, borderColor: categoryError ? colors.danger : undefined }}
                   />
                   <Button onClick={handleAddCategory} icon={Plus}>Add</Button>
-                  <Button variant="secondary" onClick={() => { setShowAddForm(false); setNewCategoryName(''); }}>Cancel</Button>
+                  <Button variant="secondary" onClick={() => { setShowAddForm(false); setNewCategoryName(''); setCategoryError(''); }}>Cancel</Button>
                 </div>
+                {categoryError && (
+                  <div style={{ fontSize: typography.fontSize.xs, color: colors.danger, marginTop: spacing[1] }}>
+                    {categoryError}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -920,12 +945,19 @@ export const CategoriesPage = memo(function CategoriesPage({
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3], marginBottom: spacing[3] }}>
                     <GripVertical size={16} color={colors.textMuted} style={{ flexShrink: 0, cursor: 'grab' }} />
-                    <input
-                      type="text"
-                      value={category}
-                      onChange={e => handleRenameCategory(category, e.target.value)}
-                      style={{ ...styles.input, flex: 1, fontWeight: typography.fontWeight.medium }}
-                    />
+                    <div style={{ flex: 1 }}>
+                      <input
+                        type="text"
+                        value={category}
+                        onChange={e => handleRenameCategory(category, e.target.value)}
+                        style={{ ...styles.input, width: '100%', fontWeight: typography.fontWeight.medium, borderColor: isDuplicateCategory(category, index) ? colors.danger : undefined }}
+                      />
+                      {isDuplicateCategory(category, index) && (
+                        <div style={{ fontSize: typography.fontSize.xs, color: colors.danger, marginTop: 2 }}>
+                          Duplicate category name
+                        </div>
+                      )}
+                    </div>
                     <Badge text={`${count} items`} color={count > 0 ? colors.primary : colors.textMuted} />
                     <button
                       onClick={() => handleRemoveCategory(category)}
