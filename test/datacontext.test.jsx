@@ -99,26 +99,6 @@ vi.mock('../lib/services.js', () => ({
   },
 }));
 
-// Mock demo data
-vi.mock('../data.js', () => ({
-  initialInventory: [
-    { id: 'CAM001', name: 'Test Camera', status: 'available' },
-    { id: 'LENS001', name: 'Test Lens', status: 'available' },
-  ],
-  initialPackages: [
-    { id: 'pkg-1', name: 'Interview Kit' },
-  ],
-  initialUsers: [
-    { id: 'user-1', name: 'Admin', role: 'admin' },
-  ],
-  initialAuditLog: [],
-  initialPackLists: [],
-  initialKits: [],
-  initialClients: [
-    { id: 'client-1', name: 'Test Client' },
-  ],
-}));
-
 vi.mock('../constants.js', () => ({
   DEFAULT_ROLES: [{ id: 'admin', name: 'Admin' }],
   DEFAULT_LOCATIONS: [{ id: 'loc-1', name: 'Main Storage' }],

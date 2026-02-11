@@ -200,10 +200,6 @@ export function DataProvider({ children }) {
   // INVENTORY OPERATIONS
   // =============================================================================
 
-  const updateInventory = useCallback(async (newInventory) => {
-    setInventory(newInventory);
-  }, []);
-
   const updateItem = useCallback(async (id, updates) => {
     try {
       await inventoryService.update(id, updates);
@@ -534,10 +530,6 @@ export function DataProvider({ children }) {
   // PACKAGES OPERATIONS
   // =============================================================================
 
-  const updatePackages = useCallback(async (newPackages) => {
-    setPackages(newPackages);
-  }, []);
-
   const createPackage = useCallback(async (pkg) => {
     let newPackage = pkg;
     
@@ -579,10 +571,6 @@ export function DataProvider({ children }) {
   // =============================================================================
   // PACK LISTS OPERATIONS
   // =============================================================================
-
-  const updatePackLists = useCallback(async (newPackLists) => {
-    setPackLists(newPackLists);
-  }, []);
 
   const createPackList = useCallback(async (packList) => {
     let newPackList = packList;
@@ -626,10 +614,6 @@ export function DataProvider({ children }) {
   // CLIENTS OPERATIONS
   // =============================================================================
 
-  const updateClients = useCallback(async (newClients) => {
-    setClients(newClients);
-  }, []);
-
   const createClient = useCallback(async (client) => {
     // Validate before writing
     const validation = validateClient(client);
@@ -672,30 +656,6 @@ export function DataProvider({ children }) {
     }
     
     setClients(prev => prev.filter(client => client.id !== id));
-  }, []);
-
-  // =============================================================================
-  // USERS OPERATIONS
-  // =============================================================================
-
-  const updateUsers = useCallback(async (newUsers) => {
-    setUsers(newUsers);
-  }, []);
-
-  // =============================================================================
-  // ROLES OPERATIONS
-  // =============================================================================
-
-  const updateRoles = useCallback(async (newRoles) => {
-    setRoles(newRoles);
-  }, []);
-
-  // =============================================================================
-  // LOCATIONS OPERATIONS
-  // =============================================================================
-
-  const updateLocations = useCallback(async (newLocations) => {
-    setLocations(newLocations);
   }, []);
 
   // =============================================================================
@@ -837,7 +797,6 @@ export function DataProvider({ children }) {
     setAuditLog,
     
     // Inventory Operations
-    updateInventory,
     updateItem,
     createItem,
     deleteItem,
@@ -867,19 +826,16 @@ export function DataProvider({ children }) {
     checkInItem,
     
     // Package Operations
-    updatePackages,
     createPackage,
     updatePackage,
     deletePackage,
     
     // Pack List Operations
-    updatePackLists,
     createPackList,
     updatePackList,
     deletePackList,
     
     // Client Operations
-    updateClients,
     createClient,
     updateClient,
     deleteClient,
@@ -892,9 +848,6 @@ export function DataProvider({ children }) {
     sendReservationEmail,
     
     // Other Operations
-    updateUsers,
-    updateRoles,
-    updateLocations,
     updateCategories,
     updateSpecs,
     addAuditLog
@@ -914,7 +867,6 @@ export function DataProvider({ children }) {
     specs,
     auditLog,
     loadData,
-    updateInventory,
     updateItem,
     createItem,
     deleteItem,
@@ -932,15 +884,12 @@ export function DataProvider({ children }) {
     deleteReservation,
     checkOutItem,
     checkInItem,
-    updatePackages,
     createPackage,
     updatePackage,
     deletePackage,
-    updatePackLists,
     createPackList,
     updatePackList,
     deletePackList,
-    updateClients,
     createClient,
     updateClient,
     deleteClient,
@@ -949,9 +898,6 @@ export function DataProvider({ children }) {
     sendCheckoutEmail,
     sendCheckinEmail,
     sendReservationEmail,
-    updateUsers,
-    updateRoles,
-    updateLocations,
     updateCategories,
     updateSpecs,
     addAuditLog
