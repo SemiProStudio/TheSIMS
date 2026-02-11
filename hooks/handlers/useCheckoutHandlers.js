@@ -5,6 +5,7 @@
 import { useState, useCallback } from 'react';
 import { STATUS, MODALS } from '../../constants.js';
 import { error as logError } from '../../lib/logger.js';
+import { useToast } from '../../contexts/ToastContext.jsx';
 
 export function useCheckoutHandlers({
   inventory,
@@ -17,6 +18,7 @@ export function useCheckoutHandlers({
   addAuditLog,
   addChangeLog,
 }) {
+  const { addToast } = useToast();
   // Local state
   const [checkoutItem, setCheckoutItem] = useState(null);
   const [checkinItemData, setCheckinItemData] = useState(null);
@@ -99,7 +101,7 @@ export function useCheckoutHandlers({
       }
     } catch (err) {
       logError('Checkout process failed:', err);
-      alert('Checkout failed: ' + (err.message || 'Please try again.'));
+      addToast('Checkout failed: ' + (err.message || 'Please try again.'), 'error');
     } finally {
       closeModal();
       setCheckoutItem(null);
@@ -168,7 +170,7 @@ export function useCheckoutHandlers({
     
     } catch (err) {
       logError('Checkin process failed:', err);
-      alert('Check-in failed: ' + (err.message || 'Please try again.'));
+      addToast('Check-in failed: ' + (err.message || 'Please try again.'), 'error');
     } finally {
       closeModal();
       setCheckinItemData(null);
@@ -192,6 +194,11 @@ export function useCheckoutHandlers({
     const isEdit = !!editingMaintenanceRecord;
     const tempId = record.id;
 
+    // Capture previous state for rollback
+    const currentItem = inventory.find(i => i.id === itemId);
+    const prevHistory = currentItem?.maintenanceHistory || [];
+
+    // Optimistic local update
     dataContext.patchInventoryItem(itemId, item => {
       const existingHistory = item.maintenanceHistory || [];
       let newHistory;
@@ -220,21 +227,31 @@ export function useCheckoutHandlers({
       });
     }
 
-    if (isEdit) {
-      dataContext.updateMaintenance(record.id, record);
-    } else {
-      const dbResult = await dataContext.addMaintenance(itemId, record);
-      if (dbResult?.id && dbResult.id !== tempId) {
-        const swapId = (history) => (history || []).map(m => 
-          m.id === tempId ? { ...m, id: dbResult.id } : m
-        );
-        dataContext.patchInventoryItem(itemId, item => ({
-          maintenanceHistory: swapId(item.maintenanceHistory)
-        }));
-        if (selectedItem?.id === itemId) {
-          setSelectedItem(prev => ({ ...prev, maintenanceHistory: swapId(prev.maintenanceHistory) }));
+    try {
+      if (isEdit) {
+        await dataContext.updateMaintenance(record.id, record);
+      } else {
+        const dbResult = await dataContext.addMaintenance(itemId, record);
+        if (dbResult?.id && dbResult.id !== tempId) {
+          const swapId = (history) => (history || []).map(m => 
+            m.id === tempId ? { ...m, id: dbResult.id } : m
+          );
+          dataContext.patchInventoryItem(itemId, item => ({
+            maintenanceHistory: swapId(item.maintenanceHistory)
+          }));
+          if (selectedItem?.id === itemId) {
+            setSelectedItem(prev => ({ ...prev, maintenanceHistory: swapId(prev.maintenanceHistory) }));
+          }
         }
       }
+    } catch (err) {
+      logError('Failed to save maintenance:', err);
+      // Rollback optimistic update
+      dataContext.patchInventoryItem(itemId, { maintenanceHistory: prevHistory });
+      if (selectedItem?.id === itemId) {
+        setSelectedItem(prev => ({ ...prev, maintenanceHistory: prevHistory }));
+      }
+      addToast('Maintenance save failed — changes reverted', 'error');
     }
 
     addAuditLog({
@@ -256,7 +273,7 @@ export function useCheckoutHandlers({
     closeModal();
     setMaintenanceItem(null);
     setEditingMaintenanceRecord(null);
-  }, [maintenanceItem, editingMaintenanceRecord, selectedItem, currentUser, closeModal, addAuditLog, addChangeLog]);
+  }, [maintenanceItem, editingMaintenanceRecord, selectedItem, inventory, currentUser, closeModal, addAuditLog, addChangeLog, addToast, dataContext]);
 
   const updateMaintenanceStatus = useCallback((recordId, newStatus) => {
     if (!selectedItem) return;

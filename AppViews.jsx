@@ -7,6 +7,7 @@
 import { lazy, Suspense } from 'react';
 import { VIEWS, MODALS } from './constants.js';
 import { error as logError } from './lib/logger.js';
+import { useToast } from './contexts/ToastContext.jsx';
 import { rolesService, locationsService, usersService } from './lib/services.js';
 import { useNavigationContext } from './contexts/NavigationContext.jsx';
 import { useFilterContext } from './contexts/FilterContext.jsx';
@@ -48,6 +49,7 @@ const SpecsPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ defau
 const CategoriesPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ default: m.CategoriesPage })));
 
 export default function AppViews({ handlers, currentUser, changeLog }) {
+  const { addToast } = useToast();
   // Read state from contexts
   const {
     currentView, setCurrentView,
@@ -434,6 +436,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
                       await usersService.delete(userId);
                     } catch (err) {
                       logError('Failed to delete user:', err);
+                      addToast('Failed to delete user', 'error');
                     }
                   }
                 });
@@ -507,6 +510,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
                   await locationsService.syncAll(newLocations);
                 } catch (err) {
                   logError('Failed to save locations:', err);
+                  addToast('Failed to save locations', 'error');
                 }
               }}
               onClose={() => setCurrentView(VIEWS.ADMIN)}
@@ -548,6 +552,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
                     });
                   } catch (err) {
                     logError('Failed to update role:', err);
+                    addToast('Failed to update role', 'error');
                   }
                 } else {
                   // Create new role
@@ -563,6 +568,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
                     });
                   } catch (err) {
                     logError('Failed to create role:', err);
+                    addToast('Failed to create role', 'error');
                   }
                 }
               }}
@@ -577,6 +583,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
                   }
                 } catch (err) {
                   logError('Failed to delete role:', err);
+                  addToast('Failed to delete role', 'error');
                 }
               }}
               onAssignUsers={async (roleId, userIds) => {
@@ -587,6 +594,7 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
                   }
                 } catch (err) {
                   logError('Failed to assign users:', err);
+                  addToast('Failed to assign users to role', 'error');
                 }
               }}
               onBack={() => setCurrentView(VIEWS.ADMIN)}

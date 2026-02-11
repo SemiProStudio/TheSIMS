@@ -4,9 +4,9 @@
 // =============================================================================
 
 import { useCallback, useState } from 'react';
-import { generateItemCode, updateById } from '../utils.js';
+import { generateItemCode } from '../utils.js';
 import { VIEWS, STATUS, MODALS } from '../constants.js';
-
+import { useToast } from '../contexts/ToastContext.jsx';
 import { error as logError } from '../lib/logger.js';
 
 /**
@@ -23,11 +23,9 @@ export function useInventoryActions({
   // DataContext for Supabase persistence
   dataContext,
   
-  // State setters (for operations not yet in DataContext)
-  setInventory,
+  // State setters
   setSelectedItem,
   setCurrentView,
-  setAuditLog,
   setChangeLog,
   setConfirmDialog,
   
@@ -52,6 +50,7 @@ export function useInventoryActions({
   // ============================================================================
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { addToast } = useToast();
   
   // ============================================================================
   // Bulk Action State
@@ -121,7 +120,7 @@ export function useInventoryActions({
         await dataContext.createItem(newItem);
       } else {
         // Fallback to local state only (demo mode without DataContext)
-        setInventory(prev => [...prev, newItem]);
+        dataContext.addInventoryItems(newItem);
       }
       
       // Log the creation
@@ -148,7 +147,7 @@ export function useInventoryActions({
             if (dataContext?.updateItem) {
               await dataContext.updateItem(id, { image: result.url });
             } else {
-              setInventory(prev => prev.map(i => i.id === id ? { ...i, image: result.url } : i));
+              dataContext.patchInventoryItem(id, { image: result.url });
             }
           }
         } catch (uploadErr) {
@@ -169,11 +168,12 @@ export function useInventoryActions({
     } catch (err) {
       logError('Failed to create item:', err);
       setError(err.message || 'Failed to create item');
+      addToast(err.message || 'Operation failed', 'error');
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [itemForm, inventory, specs, closeModal, resetItemForm, currentView, setCurrentView, setInventory, addChangeLog, dataContext]);
+  }, [itemForm, inventory, specs, closeModal, resetItemForm, currentView, setCurrentView, addChangeLog, dataContext]);
 
   // ============================================================================
   // Update Item - NOW PERSISTS TO SUPABASE
@@ -241,7 +241,7 @@ export function useInventoryActions({
         await dataContext.updateItem(editingItemId, updates);
       } else {
         // Fallback to local state only
-        setInventory(prev => updateById(prev, editingItemId, updates));
+        dataContext.patchInventoryItem(editingItemId, updates);
       }
       
       // Update selected item if it's the one being edited
@@ -271,11 +271,12 @@ export function useInventoryActions({
     } catch (err) {
       logError('Failed to update item:', err);
       setError(err.message || 'Failed to update item');
+      addToast(err.message || 'Operation failed', 'error');
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [itemForm, editingItemId, selectedItem, specs, closeModal, inventory, setInventory, setSelectedItem, setEditingItemId, addChangeLog, dataContext]);
+  }, [itemForm, editingItemId, selectedItem, specs, closeModal, inventory, setSelectedItem, setEditingItemId, addChangeLog, dataContext]);
 
   // ============================================================================
   // Delete Item - NOW PERSISTS TO SUPABASE (with confirmation)
@@ -298,7 +299,7 @@ export function useInventoryActions({
             await dataContext.deleteItem(id);
           } else {
             // Fallback to local state only
-            setInventory(prev => prev.filter(i => i.id !== id));
+            dataContext.removeInventoryItems(id);
           }
           
           // Log the deletion
@@ -326,13 +327,14 @@ export function useInventoryActions({
         } catch (err) {
           logError('Failed to delete item:', err);
           setError(err.message || 'Failed to delete item');
+      addToast(err.message || 'Operation failed', 'error');
           setConfirmDialog(prev => ({ ...prev, isOpen: false }));
         } finally {
           setIsLoading(false);
         }
       }
     });
-  }, [selectedItem, inventory, setInventory, setSelectedItem, setCurrentView, setConfirmDialog, addChangeLog, dataContext]);
+  }, [selectedItem, inventory, setSelectedItem, setCurrentView, setConfirmDialog, addChangeLog, dataContext]);
 
   // ============================================================================
   // Bulk Action Handler
@@ -383,12 +385,9 @@ export function useInventoryActions({
       
       // If no dataContext, update local state directly
       if (!dataContext?.updateItem) {
-        setInventory(prev => prev.map(item => {
-          if (bulkActionIds.includes(item.id)) {
-            return { ...item, status: newStatus };
-          }
-          return item;
-        }));
+        dataContext.mapInventory(item => 
+          bulkActionIds.includes(item.id) ? { ...item, status: newStatus } : item
+        );
       }
       
       addChangeLog({
@@ -411,10 +410,11 @@ export function useInventoryActions({
     } catch (err) {
       logError('Failed to apply bulk status:', err);
       setError(err.message || 'Failed to update items');
+      addToast(err.message || 'Operation failed', 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [bulkActionIds, inventory, setInventory, addChangeLog, closeModal, dataContext]);
+  }, [bulkActionIds, inventory, addChangeLog, closeModal, dataContext]);
 
   const applyBulkLocation = useCallback(async (newLocation) => {
     setIsLoading(true);
@@ -435,12 +435,9 @@ export function useInventoryActions({
       }
       
       if (!dataContext?.updateItem) {
-        setInventory(prev => prev.map(item => {
-          if (bulkActionIds.includes(item.id)) {
-            return { ...item, location: newLocation };
-          }
-          return item;
-        }));
+        dataContext.mapInventory(item => 
+          bulkActionIds.includes(item.id) ? { ...item, location: newLocation } : item
+        );
       }
       
       addChangeLog({
@@ -463,10 +460,11 @@ export function useInventoryActions({
     } catch (err) {
       logError('Failed to apply bulk location:', err);
       setError(err.message || 'Failed to update items');
+      addToast(err.message || 'Operation failed', 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [bulkActionIds, inventory, setInventory, addChangeLog, addAuditLog, closeModal, dataContext]);
+  }, [bulkActionIds, inventory, addChangeLog, addAuditLog, closeModal, dataContext]);
 
   const applyBulkCategory = useCallback(async (newCategory) => {
     setIsLoading(true);
@@ -487,12 +485,9 @@ export function useInventoryActions({
       }
       
       if (!dataContext?.updateItem) {
-        setInventory(prev => prev.map(item => {
-          if (bulkActionIds.includes(item.id)) {
-            return { ...item, category: newCategory, specs: {} };
-          }
-          return item;
-        }));
+        dataContext.mapInventory(item => 
+          bulkActionIds.includes(item.id) ? { ...item, category: newCategory, specs: {} } : item
+        );
       }
       
       addChangeLog({
@@ -515,10 +510,11 @@ export function useInventoryActions({
     } catch (err) {
       logError('Failed to apply bulk category:', err);
       setError(err.message || 'Failed to update items');
+      addToast(err.message || 'Operation failed', 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [bulkActionIds, inventory, setInventory, addChangeLog, addAuditLog, closeModal, dataContext]);
+  }, [bulkActionIds, inventory, addChangeLog, addAuditLog, closeModal, dataContext]);
 
   const applyBulkDelete = useCallback(async () => {
     setIsLoading(true);
@@ -535,7 +531,7 @@ export function useInventoryActions({
       }
       
       if (!dataContext?.deleteItem) {
-        setInventory(prev => prev.filter(item => !bulkActionIds.includes(item.id)));
+        dataContext.removeInventoryItems(bulkActionIds);
       }
       
       // Clear selection if current item was deleted
@@ -564,10 +560,11 @@ export function useInventoryActions({
     } catch (err) {
       logError('Failed to apply bulk delete:', err);
       setError(err.message || 'Failed to delete items');
+      addToast(err.message || 'Operation failed', 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [bulkActionIds, inventory, selectedItem, setInventory, setSelectedItem, setCurrentView, addChangeLog, closeModal, dataContext]);
+  }, [bulkActionIds, inventory, selectedItem, setSelectedItem, setCurrentView, addChangeLog, closeModal, dataContext]);
 
   // ============================================================================
   // Edit Item Helper

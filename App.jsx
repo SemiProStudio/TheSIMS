@@ -14,6 +14,7 @@ import { useData } from './lib/DataContext.jsx';
 import { FullPageLoading } from './components/Loading.jsx';
 import { SkipLink } from './components/ui.jsx';
 import { log, error as logError } from './lib/logger.js';
+import { useToast } from './contexts/ToastContext.jsx';
 import { usersService } from './lib/services.js';
 
 // Custom hooks for state management
@@ -46,6 +47,7 @@ export default function App() {
   // ============================================================================
   const auth = useAuth();
   const dataContext = useData();
+  const { addToast } = useToast();
 
   const {
     inventory,
@@ -160,6 +162,7 @@ export default function App() {
         });
       } catch (err) {
         logError('Failed to save layout prefs:', err);
+        addToast('Layout preferences may not have saved', 'warning');
       }
     }
   }, [currentUser?.id, currentUser?.profile]);
@@ -357,6 +360,7 @@ export default function App() {
       await usersService.update(updatedUser.id, { profile: updatedUser.profile });
     } catch (err) {
       logError('Failed to save profile:', err);
+      addToast('Profile changes may not have saved', 'warning');
     }
     // Audit log
     addAuditLog({
@@ -387,6 +391,7 @@ export default function App() {
       await dataContext.saveNotificationPreferences(currentUser.id, prefs);
     } catch (err) {
       logError('Failed to save notification preferences:', err);
+      addToast('Notification preferences may not have saved', 'warning');
     }
     patchUser(currentUser.id, { notificationPreferences: prefs });
     setCurrentUser(prev => ({ ...prev, notificationPreferences: prefs }));

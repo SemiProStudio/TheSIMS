@@ -8,6 +8,7 @@ import { DataProvider } from './lib/DataContext.jsx'
 import { PWAProvider } from './lib/PWAContext.jsx'
 import UpdateBanner from './components/UpdateBanner.jsx'
 import { ErrorBoundary } from './components/ErrorBoundary.jsx'
+import { ToastProvider } from './contexts/ToastContext.jsx'
 import { SidebarProvider } from './contexts/SidebarContext.jsx'
 import { ModalProvider } from './contexts/ModalContext.jsx'
 import { FilterProvider } from './contexts/FilterContext.jsx'
@@ -34,6 +35,7 @@ sessionStorage.removeItem('chunk-reload');
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
+      <ToastProvider>
       <ThemeProvider>
         <PWAProvider>
           <UpdateBanner />
@@ -53,6 +55,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           </AuthProvider>
         </PWAProvider>
       </ThemeProvider>
+      </ToastProvider>
     </ErrorBoundary>
   </React.StrictMode>,
 )

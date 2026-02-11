@@ -1830,3 +1830,9 @@ button:disabled,
 .btn-icon.danger:hover {
   background: rgba(var(--danger-rgb), 0.1);
 }
+
+/* Toast animation */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
