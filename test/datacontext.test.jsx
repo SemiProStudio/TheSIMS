@@ -284,7 +284,7 @@ describe('DataProvider', () => {
       });
     });
 
-    it('should provide setters', async () => {
+    it('should provide patch operations', async () => {
       let capturedContext = null;
       
       render(
@@ -294,10 +294,13 @@ describe('DataProvider', () => {
       );
       
       await waitFor(() => {
-        expect(typeof capturedContext?.setInventory).toBe('function');
-        expect(typeof capturedContext?.setPackages).toBe('function');
-        expect(typeof capturedContext?.setClients).toBe('function');
-        expect(typeof capturedContext?.setUsers).toBe('function');
+        expect(typeof capturedContext?.patchInventoryItem).toBe('function');
+        expect(typeof capturedContext?.addInventoryItems).toBe('function');
+        expect(typeof capturedContext?.removeInventoryItems).toBe('function');
+        expect(typeof capturedContext?.mapInventory).toBe('function');
+        expect(typeof capturedContext?.patchPackage).toBe('function');
+        expect(typeof capturedContext?.patchClient).toBe('function');
+        expect(typeof capturedContext?.patchUser).toBe('function');
       });
     });
   });
