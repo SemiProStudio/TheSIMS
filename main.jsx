@@ -6,6 +6,7 @@ import { ThemeProvider } from './contexts/ThemeContext.jsx'
 import { AuthProvider } from './lib/AuthContext.jsx'
 import { DataProvider } from './lib/DataContext.jsx'
 import { PWAProvider } from './lib/PWAContext.jsx'
+import UpdateBanner from './components/UpdateBanner.jsx'
 import { ErrorBoundary } from './components/ErrorBoundary.jsx'
 import { SidebarProvider } from './contexts/SidebarContext.jsx'
 import { ModalProvider } from './contexts/ModalContext.jsx'
@@ -35,6 +36,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <ThemeProvider>
         <PWAProvider>
+          <UpdateBanner />
           <AuthProvider>
             <DataProvider>
               <SidebarProvider>

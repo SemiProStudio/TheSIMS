@@ -197,13 +197,34 @@ export function usePWA() {
         });
         
         setSwStatus('installed');
+        
+        // Periodically check for SW updates (every 30 minutes)
+        // This catches deploys that happen while the tab is open
+        const updateInterval = setInterval(() => {
+          registration.update().catch(() => {});
+        }, 30 * 60 * 1000);
+        
+        // Also check on visibility change (user returns to tab)
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === 'visible') {
+            registration.update().catch(() => {});
+          }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        // Cleanup
+        return () => {
+          clearInterval(updateInterval);
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
       } catch (error) {
         logError('[PWA] Service worker registration failed:', error);
         setSwStatus('idle');
       }
     };
 
-    registerSW();
+    const cleanup = registerSW();
+    return () => { cleanup?.then?.(fn => fn?.()); };
   }, []);
 
   /**
