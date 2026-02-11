@@ -17,7 +17,7 @@ BEGIN
   SET view_count = COALESCE(view_count, 0) + 1
   WHERE id = item_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- INCREMENT CHECKOUT COUNT
@@ -33,7 +33,7 @@ BEGIN
   SET checkout_count = COALESCE(checkout_count, 0) + 1
   WHERE id = item_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- GET ITEM WITH DETAILS
@@ -76,7 +76,7 @@ BEGIN
   
   RETURN result;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- SEARCH INVENTORY
@@ -102,7 +102,7 @@ BEGIN
     name
   LIMIT max_results;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- GET DASHBOARD STATISTICS
@@ -155,7 +155,7 @@ BEGIN
   
   RETURN result;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- GET CLIENT RENTAL SUMMARY
@@ -203,7 +203,7 @@ BEGIN
   
   RETURN result;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- CHECK ITEM AVAILABILITY
@@ -239,7 +239,7 @@ BEGIN
   
   RETURN conflicting_count = 0;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- GET AVAILABLE ITEMS FOR DATE RANGE
@@ -266,7 +266,7 @@ BEGIN
     )
   ORDER BY i.category_name, i.name;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- GRANT EXECUTE PERMISSIONS

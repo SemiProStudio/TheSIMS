@@ -679,7 +679,7 @@ BEGIN
     RETURN FALSE;
   END IF;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public;
 
 -- Helper function to check if user is admin
 CREATE OR REPLACE FUNCTION is_admin()
@@ -691,7 +691,7 @@ BEGIN
     AND users.role_id = 'role_admin'
   );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Admin-only policies
 CREATE POLICY "admin_roles" ON roles FOR ALL TO authenticated USING (is_admin());
@@ -745,7 +745,7 @@ BEGIN
   );
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Trigger to create user profile on signup
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
