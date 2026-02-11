@@ -2,7 +2,7 @@
 // Admin Pages - Full page versions of Add Item, Edit Specs, Edit Categories
 // ============================================================================
 
-import React, { memo, useState, useEffect, useRef, useMemo } from 'react';
+import React, { memo, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Plus, Save, Trash2, GripVertical, Search } from 'lucide-react';
 import { CONDITION, DEFAULT_NEW_CATEGORY_SETTINGS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
@@ -393,10 +393,26 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
     }));
   };
 
+  const [duplicateError, setDuplicateError] = useState('');
+
+  const isDuplicateFieldName = useCallback((name, excludeIndex = -1) => {
+    const trimmed = name.trim().toLowerCase();
+    if (!trimmed) return false;
+    return (editSpecs[selectedCategory] || []).some((field, i) => 
+      i !== excludeIndex && field.name.trim().toLowerCase() === trimmed
+    );
+  }, [editSpecs, selectedCategory]);
+
   const handleAddField = () => {
     const name = newFieldName.trim();
     if (!name) return;
     
+    if (isDuplicateFieldName(name)) {
+      setDuplicateError(`"${name}" already exists in this category`);
+      return;
+    }
+    
+    setDuplicateError('');
     const newIndex = (editSpecs[selectedCategory] || []).length;
     setEditSpecs(prev => ({
       ...prev,
@@ -412,6 +428,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
   const handleCancelAdd = () => {
     setShowAddForm(false);
     setNewFieldName('');
+    setDuplicateError('');
   };
 
   const removeField = (index) => {
@@ -485,7 +502,16 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
   const requiredCount = currentSpecs.filter(f => f.required).length;
   const canDrag = !searchFilter && !showOnlyRequired;
 
+  // Check for any duplicate field names across all categories
+  const hasDuplicates = useMemo(() => {
+    return Object.values(editSpecs).some(fields => {
+      const names = fields.map(f => f.name.trim().toLowerCase()).filter(Boolean);
+      return names.length !== new Set(names).size;
+    });
+  }, [editSpecs]);
+
   const handleSave = () => {
+    if (hasDuplicates) return;
     onSave(editSpecs);
     onBack();
   };
@@ -498,7 +524,9 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
         onBack={onBack}
         backLabel="Back to Admin"
         action={
-          <Button onClick={handleSave} icon={Save}>Save Changes</Button>
+          <Button onClick={handleSave} icon={Save} disabled={hasDuplicates}>
+            {hasDuplicates ? 'Fix Duplicates' : 'Save Changes'}
+          </Button>
         }
       />
 
@@ -541,17 +569,22 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
                       ref={addInputRef}
                       type="text"
                       value={newFieldName}
-                      onChange={e => setNewFieldName(e.target.value)}
+                      onChange={e => { setNewFieldName(e.target.value); setDuplicateError(''); }}
                       onKeyDown={e => {
                         if (e.key === 'Enter') handleAddField();
                         if (e.key === 'Escape') handleCancelAdd();
                       }}
                       placeholder="Enter field name..."
-                      style={{ ...styles.input, flex: 1 }}
+                      style={{ ...styles.input, flex: 1, borderColor: duplicateError ? colors.danger : undefined }}
                     />
                     <Button onClick={handleAddField} icon={Plus}>Add</Button>
                     <Button variant="secondary" onClick={handleCancelAdd}>Cancel</Button>
                   </div>
+                  {duplicateError && (
+                    <div style={{ fontSize: typography.fontSize.xs, color: colors.danger, marginTop: spacing[1] }}>
+                      {duplicateError}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -610,12 +643,24 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
                       {canDrag && (
                         <GripVertical size={16} color={colors.textMuted} style={{ flexShrink: 0, cursor: 'grab' }} />
                       )}
-                      <input
-                        type="text"
-                        value={field.name}
-                        onChange={e => handleFieldChange(field.originalIndex, 'name', e.target.value)}
-                        style={{ ...styles.input, flex: 1 }}
-                      />
+                      {(() => {
+                        const isDup = isDuplicateFieldName(field.name, field.originalIndex);
+                        return (
+                          <div style={{ flex: 1, position: 'relative' }}>
+                            <input
+                              type="text"
+                              value={field.name}
+                              onChange={e => handleFieldChange(field.originalIndex, 'name', e.target.value)}
+                              style={{ ...styles.input, width: '100%', borderColor: isDup ? colors.danger : undefined }}
+                            />
+                            {isDup && (
+                              <div style={{ fontSize: typography.fontSize.xs, color: colors.danger, marginTop: 2 }}>
+                                Duplicate field name
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                       <label style={{ display: 'flex', alignItems: 'center', gap: spacing[1], cursor: 'pointer', whiteSpace: 'nowrap' }}>
                         <input
                           type="checkbox"
@@ -816,10 +861,10 @@ export const CategoriesPage = memo(function CategoriesPage({
         }
       />
 
-      <Card>
-        <div style={{ padding: spacing[5] }}>
+      <Card style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <div style={{ padding: spacing[5], flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           {/* Add New Category */}
-          <div style={{ marginBottom: spacing[5] }}>
+          <div style={{ marginBottom: spacing[5], flexShrink: 0 }}>
             {!showAddForm ? (
               <Button variant="secondary" onClick={() => setShowAddForm(true)} icon={Plus} style={{ width: '100%', justifyContent: 'center' }}>
                 Add New Category
@@ -848,7 +893,7 @@ export const CategoriesPage = memo(function CategoriesPage({
           </div>
 
           {/* Categories List */}
-          <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
             {editCategories.map((category, index) => {
               const count = getCategoryCount(category);
               const settings = editSettings[category] || {};
