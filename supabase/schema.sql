@@ -526,6 +526,100 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_user ON audit_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_item ON audit_log(item_id);
 
 -- =============================================================================
+-- NOTIFICATION PREFERENCES TABLE
+-- Stores per-user notification settings
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS notification_preferences (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  
+  -- Email notification toggles
+  email_enabled BOOLEAN DEFAULT true,
+  
+  -- Due date reminders
+  due_date_reminders BOOLEAN DEFAULT true,
+  due_date_reminder_days INTEGER[] DEFAULT '{1, 3}',
+  overdue_notifications BOOLEAN DEFAULT true,
+  
+  -- Reservation notifications
+  reservation_confirmations BOOLEAN DEFAULT true,
+  reservation_reminders BOOLEAN DEFAULT true,
+  reservation_reminder_days INTEGER DEFAULT 1,
+  
+  -- Maintenance notifications
+  maintenance_reminders BOOLEAN DEFAULT true,
+  
+  -- Checkout notifications
+  checkout_confirmations BOOLEAN DEFAULT true,
+  checkin_confirmations BOOLEAN DEFAULT true,
+  
+  -- Admin notifications
+  admin_low_stock_alerts BOOLEAN DEFAULT false,
+  admin_damage_reports BOOLEAN DEFAULT true,
+  admin_overdue_summary BOOLEAN DEFAULT false,
+  admin_overdue_summary_frequency VARCHAR(20) DEFAULT 'daily',
+  
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  
+  UNIQUE(user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_notification_prefs_user ON notification_preferences(user_id);
+
+-- =============================================================================
+-- NOTIFICATION LOG TABLE
+-- Tracks sent notifications for deduplication and history
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS notification_log (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  email VARCHAR(255) NOT NULL,
+  
+  notification_type VARCHAR(100) NOT NULL,
+  subject VARCHAR(500),
+  status VARCHAR(50) DEFAULT 'pending',
+  error_message TEXT,
+  
+  item_id VARCHAR(20),
+  reservation_id UUID,
+  reminder_id UUID,
+  
+  dedup_key VARCHAR(255),
+  external_id VARCHAR(255),
+  
+  scheduled_for TIMESTAMPTZ,
+  sent_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_notification_log_user ON notification_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_notification_log_type ON notification_log(notification_type);
+CREATE INDEX IF NOT EXISTS idx_notification_log_status ON notification_log(status);
+CREATE INDEX IF NOT EXISTS idx_notification_log_dedup ON notification_log(dedup_key);
+CREATE INDEX IF NOT EXISTS idx_notification_log_created ON notification_log(created_at DESC);
+
+-- =============================================================================
+-- EMAIL TEMPLATES TABLE
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS email_templates (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  
+  template_key VARCHAR(100) NOT NULL UNIQUE,
+  name VARCHAR(255) NOT NULL,
+  subject VARCHAR(500) NOT NULL,
+  body_html TEXT NOT NULL,
+  body_text TEXT,
+  
+  variables JSONB DEFAULT '[]',
+  
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- =============================================================================
 -- ROW LEVEL SECURITY (RLS)
 -- =============================================================================
 
@@ -550,6 +644,9 @@ ALTER TABLE pack_lists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pack_list_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pack_list_packages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notification_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notification_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_templates ENABLE ROW LEVEL SECURITY;
 
 -- =============================================================================
 -- RLS POLICIES - Read access for authenticated users
@@ -705,6 +802,24 @@ CREATE POLICY "admin_insert_users" ON users FOR INSERT TO authenticated WITH CHE
 CREATE POLICY "admin_update_users" ON users FOR UPDATE TO authenticated USING (is_admin());
 CREATE POLICY "admin_delete_users" ON users FOR DELETE TO authenticated USING (is_admin());
 
+-- Notification preferences: users manage their own
+CREATE POLICY "Users can view own notification preferences" ON notification_preferences
+  FOR SELECT TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "Users can update own notification preferences" ON notification_preferences
+  FOR UPDATE TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "Users can insert own notification preferences" ON notification_preferences
+  FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+
+-- Notification log: users see their own
+CREATE POLICY "Users can view own notification log" ON notification_log
+  FOR SELECT TO authenticated USING (user_id = auth.uid());
+
+-- Email templates: read-only for users, admin can modify
+CREATE POLICY "Users can view email templates" ON email_templates
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Admin can modify email templates" ON email_templates
+  FOR ALL TO authenticated USING (is_admin());
+
 -- =============================================================================
 -- FUNCTIONS & TRIGGERS
 -- =============================================================================
@@ -730,6 +845,7 @@ CREATE TRIGGER update_reservations_updated_at BEFORE UPDATE ON reservations FOR 
 CREATE TRIGGER update_maintenance_updated_at BEFORE UPDATE ON maintenance_records FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER update_packages_updated_at BEFORE UPDATE ON packages FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER update_pack_lists_updated_at BEFORE UPDATE ON pack_lists FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER update_notification_preferences_updated_at BEFORE UPDATE ON notification_preferences FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- Function to create user profile after signup
 CREATE OR REPLACE FUNCTION handle_new_user()

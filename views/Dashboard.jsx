@@ -11,7 +11,7 @@ import {
 import { STATUS, DASHBOARD_SECTIONS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatDate, getStatusColor, getTodayISO, isReminderDue } from '../utils.js';
-import { Badge, StatCard, SearchInput, Button, CollapsibleSection } from '../components/ui.jsx';
+import { Badge, StatCard, SearchInput, Button, CollapsibleSection, PageHeader } from '../components/ui.jsx';
 import { usePermissions } from '../contexts/PermissionsContext.jsx';
 
 // Panel color CSS variables for dashboard sections
@@ -594,14 +594,14 @@ function Dashboard({
   return (
     <>
       {/* Header */}
-      <div className="page-header">
-        <h2 className="page-title">Dashboard</h2>
-        {onCustomizeLayout && (
+      <PageHeader
+        title="Dashboard"
+        action={onCustomizeLayout && (
           <Button variant="secondary" onClick={onCustomizeLayout} icon={Layout}>
             Customize
           </Button>
         )}
-      </div>
+      />
 
       {/* Render sections in order */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>

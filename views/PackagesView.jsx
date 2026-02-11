@@ -7,7 +7,7 @@ import React, { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import { Plus, Package, Trash2, ArrowLeft, ChevronRight, Edit2, AlertTriangle, Lightbulb } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatMoney, getStatusColor } from '../utils.js';
-import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog } from '../components/ui.jsx';
+import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import { useData } from '../lib/DataContext.jsx';
@@ -333,9 +333,7 @@ function PackagesView({
     const isNameEmpty = !formName.trim();
     return (
       <>
-        <div className="page-header">
-          <h2 className="page-title">Packages</h2>
-        </div>
+        <PageHeader title="Packages" />
         
         <div className="modal-backdrop" style={styles.modal}>
           <div style={{ ...styles.modalBox, maxWidth: 450 }} onClick={e => e.stopPropagation()}>
@@ -404,25 +402,22 @@ function PackagesView({
         maxHeight: 'calc(100vh - 60px)', 
         overflow: 'hidden' 
       }}>
-        <div className="page-header" style={{ flexShrink: 0 }}>
-          <div>
-            <h2 className="page-title">{editingPackage ? `Edit: ${formName}` : `Create: ${formName}`}</h2>
-            <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted, marginTop: 4 }}>
-              {formItems.length} items selected
-              {formDescription && <span> • {formDescription}</span>}
+        <PageHeader
+          title={editingPackage ? `Edit: ${formName}` : `Create: ${formName}`}
+          subtitle={`${formItems.length} items selected${formDescription ? ` • ${formDescription}` : ''}`}
+          action={
+            <div style={{ display: 'flex', gap: spacing[2] }}>
+              <Button variant="secondary" onClick={handleCancel}>Cancel</Button>
+              <Button 
+                onClick={handleSave} 
+                disabled={formItems.length === 0}
+                icon={editingPackage ? Edit2 : Plus}
+              >
+                {editingPackage ? 'Save Changes' : 'Create Package'}
+              </Button>
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: spacing[2] }}>
-            <Button variant="secondary" onClick={handleCancel}>Cancel</Button>
-            <Button 
-              onClick={handleSave} 
-              disabled={formItems.length === 0}
-              icon={editingPackage ? Edit2 : Plus}
-            >
-              {editingPackage ? 'Save Changes' : 'Create Package'}
-            </Button>
-          </div>
-        </div>
+          }
+        />
 
         <Card padding={false} style={{ 
           flex: '1 1 auto', 
@@ -608,10 +603,10 @@ function PackagesView({
   // ============================================================================
   return (
     <>
-      <div className="page-header">
-        <h2 className="page-title">Packages</h2>
-        <Button onClick={handleStartCreate} icon={Plus}>Create Package</Button>
-      </div>
+      <PageHeader
+        title="Packages"
+        action={<Button onClick={handleStartCreate} icon={Plus}>Create Package</Button>}
+      />
 
       <div style={{ marginBottom: spacing[4], maxWidth: 300 }}>
         <SearchInput value={packageSearch} onChange={setPackageSearch} onClear={() => setPackageSearch('')} placeholder="Search packages..." />

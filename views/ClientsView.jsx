@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatMoney } from '../utils.js';
-import { Card, Button, SearchInput, Badge, ConfirmDialog, CollapsibleSection } from '../components/ui.jsx';
+import { Card, Button, SearchInput, Badge, ConfirmDialog, CollapsibleSection, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import NotesSection from '../components/NotesSection.jsx';
 import { useData } from '../lib/DataContext.jsx';
@@ -718,19 +718,15 @@ function ClientsView({
   return (
     <div>
       {/* Header */}
-      <div className="page-header">
-        <div>
-          <h2 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-            <Users size={24} /> Clients
-          </h2>
-          <p style={{ margin: `${spacing[1]}px 0 0`, color: colors.textMuted, fontSize: typography.fontSize.sm }}>
-            {clients.length} total clients
-          </p>
-        </div>
-        <Button onClick={() => setShowAddModal(true)} icon={Plus}>
-          Add Client
-        </Button>
-      </div>
+      <PageHeader
+        title="Clients"
+        subtitle={`${clients.length} total clients`}
+        action={
+          <Button onClick={() => setShowAddModal(true)} icon={Plus}>
+            Add Client
+          </Button>
+        }
+      />
       
       {/* Filters */}
       <Card style={{ marginBottom: spacing[4] }}>

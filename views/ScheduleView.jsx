@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Calendar, List, Clock, MapPin, Plus, Package } f
 import { SCHEDULE_MODES, SCHEDULE_PERIODS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatDate } from '../utils.js';
-import { Badge, Card, Button } from '../components/ui.jsx';
+import { Badge, Card, Button, PageHeader } from '../components/ui.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 
 function ScheduleView({
@@ -109,90 +109,85 @@ function ScheduleView({
   return (
     <>
       {/* Header */}
-      <div className="page-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
-          {/* Back to Month button - show when in Day view with Calendar mode */}
-          {isDay && scheduleMode === SCHEDULE_MODES.CALENDAR && (
-            <Button variant="secondary" onClick={goToMonthView} icon={ArrowLeft}>
-              Month
-            </Button>
-          )}
-          <h2 className="page-title">Schedule</h2>
-        </div>
+      <PageHeader
+        title="Schedule"
+        onBack={isDay && scheduleMode === SCHEDULE_MODES.CALENDAR ? goToMonthView : undefined}
+        backLabel="Month"
+        action={
+          <div style={{ display: 'flex', gap: spacing[3], alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* New Reservation Button */}
+            {onAddReservation && (
+              <Button onClick={onAddReservation} icon={Plus} style={{ marginRight: spacing[2] }}>New</Button>
+            )}
 
-        <div style={{ display: 'flex', gap: spacing[3], alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* New Reservation Button */}
-          {onAddReservation && (
-            <Button onClick={onAddReservation} icon={Plus} style={{ marginRight: spacing[2] }}>New</Button>
-          )}
-
-          {/* List/Calendar Toggle */}
-          <div style={{ display: 'flex', background: `${withOpacity(colors.primary, 15)}`, borderRadius: borderRadius.lg }}>
-            <button 
-              onClick={() => setScheduleMode(SCHEDULE_MODES.LIST)} 
-              title="List View" 
-              style={{ 
-                ...styles.btnSec, 
-                border: 'none', 
-                background: scheduleMode === SCHEDULE_MODES.LIST ? `${withOpacity(colors.primary, 30)}` : 'transparent', 
-                color: scheduleMode === SCHEDULE_MODES.LIST ? colors.primary : colors.textSecondary,
-                padding: '12px 14px'
-              }}
-            >
-              <List size={16} />
-            </button>
-            <button 
-              onClick={() => setScheduleMode(SCHEDULE_MODES.CALENDAR)} 
-              title="Calendar View" 
-              style={{ 
-                ...styles.btnSec, 
-                border: 'none', 
-                background: scheduleMode === SCHEDULE_MODES.CALENDAR ? `${withOpacity(colors.primary, 30)}` : 'transparent', 
-                color: scheduleMode === SCHEDULE_MODES.CALENDAR ? colors.primary : colors.textSecondary,
-                padding: '12px 14px'
-              }}
-            >
-              <Calendar size={16} />
-            </button>
-          </div>
-
-          {/* Day/Week/Month Toggle */}
-          <div style={{ display: 'flex', background: `${withOpacity(colors.primary, 15)}`, borderRadius: borderRadius.lg }}>
-            {Object.values(SCHEDULE_PERIODS).map(v => (
+            {/* List/Calendar Toggle */}
+            <div style={{ display: 'flex', background: `${withOpacity(colors.primary, 15)}`, borderRadius: borderRadius.lg }}>
               <button 
-                key={v} 
-                onClick={() => setScheduleView(v)} 
+                onClick={() => setScheduleMode(SCHEDULE_MODES.LIST)} 
+                title="List View" 
                 style={{ 
                   ...styles.btnSec, 
                   border: 'none', 
-                  background: scheduleView === v ? `${withOpacity(colors.primary, 30)}` : 'transparent', 
-                  color: scheduleView === v ? colors.primary : colors.textSecondary,
-                  fontWeight: scheduleView === v ? typography.fontWeight.medium : typography.fontWeight.normal,
-                  textTransform: 'capitalize', 
-                  fontSize: typography.fontSize.sm, 
+                  background: scheduleMode === SCHEDULE_MODES.LIST ? `${withOpacity(colors.primary, 30)}` : 'transparent', 
+                  color: scheduleMode === SCHEDULE_MODES.LIST ? colors.primary : colors.textSecondary,
                   padding: '12px 14px'
                 }}
               >
-                {v}
+                <List size={16} />
               </button>
-            ))}
-          </div>
+              <button 
+                onClick={() => setScheduleMode(SCHEDULE_MODES.CALENDAR)} 
+                title="Calendar View" 
+                style={{ 
+                  ...styles.btnSec, 
+                  border: 'none', 
+                  background: scheduleMode === SCHEDULE_MODES.CALENDAR ? `${withOpacity(colors.primary, 30)}` : 'transparent', 
+                  color: scheduleMode === SCHEDULE_MODES.CALENDAR ? colors.primary : colors.textSecondary,
+                  padding: '12px 14px'
+                }}
+              >
+                <Calendar size={16} />
+              </button>
+            </div>
 
-          {/* Navigation */}
-          <div style={{ display: 'flex', gap: spacing[1], alignItems: 'center' }}>
-            <Button variant="secondary" onClick={() => navigate(-1)} icon={ArrowLeft} style={{ padding: '12px 14px' }} />
-            <DatePicker 
-              value={scheduleDate} 
-              onChange={e => setScheduleDate(e.target.value)} 
-              style={{ width: '160px' }}
-              showTodayButton={false}
-              clearable={false}
-              aria-label="Schedule date"
-            />
-            <Button variant="secondary" onClick={() => navigate(1)} icon={ArrowRight} style={{ padding: '12px 14px' }} />
+            {/* Day/Week/Month Toggle */}
+            <div style={{ display: 'flex', background: `${withOpacity(colors.primary, 15)}`, borderRadius: borderRadius.lg }}>
+              {Object.values(SCHEDULE_PERIODS).map(v => (
+                <button 
+                  key={v} 
+                  onClick={() => setScheduleView(v)} 
+                  style={{ 
+                    ...styles.btnSec, 
+                    border: 'none', 
+                    background: scheduleView === v ? `${withOpacity(colors.primary, 30)}` : 'transparent', 
+                    color: scheduleView === v ? colors.primary : colors.textSecondary,
+                    fontWeight: scheduleView === v ? typography.fontWeight.medium : typography.fontWeight.normal,
+                    textTransform: 'capitalize', 
+                    fontSize: typography.fontSize.sm, 
+                    padding: '12px 14px'
+                  }}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+
+            {/* Navigation */}
+            <div style={{ display: 'flex', gap: spacing[1], alignItems: 'center' }}>
+              <Button variant="secondary" onClick={() => navigate(-1)} icon={ArrowLeft} style={{ padding: '12px 14px' }} />
+              <DatePicker 
+                value={scheduleDate} 
+                onChange={e => setScheduleDate(e.target.value)} 
+                style={{ width: '160px' }}
+                showTodayButton={false}
+                clearable={false}
+                aria-label="Schedule date"
+              />
+              <Button variant="secondary" onClick={() => navigate(1)} icon={ArrowRight} style={{ padding: '12px 14px' }} />
+            </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* List View */}
       {scheduleMode === SCHEDULE_MODES.LIST && (

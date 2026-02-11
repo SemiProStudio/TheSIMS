@@ -9,7 +9,7 @@ import React, { memo, useMemo, useState, useCallback, useEffect } from 'react';
 import { Search, Plus, Grid, List, CheckSquare, Square, MinusSquare, X, Bookmark, BookmarkPlus, Trash2, ChevronDown } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity, zIndex } from '../theme.js';
 import { getStatusColor, filterBySearch, filterByCategory, filterByStatus, generateId } from '../utils.js';
-import { Badge, Card, Button, SearchInput, Pagination } from '../components/ui.jsx';
+import { Badge, Card, Button, SearchInput, Pagination, PageHeader } from '../components/ui.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import { Select } from '../components/Select.jsx';
 import { useDebounce, usePagination } from '../hooks/index.js';
@@ -686,42 +686,36 @@ function GearList({
       {!canEditGearList && <ViewOnlyBanner functionId="gear_list" />}
 
       {/* Header */}
-      <div className="page-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
-          <div>
-            <h2 className="page-title">Gear List</h2>
-            <p style={{ margin: `${spacing[1]}px 0 0`, color: colors.textMuted, fontSize: typography.fontSize.sm }}>
-              {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'} 
-              {hasActiveFilters && ` (filtered)`}
-            </p>
+      <PageHeader
+        title="Gear List"
+        subtitle={`${filteredItems.length} ${filteredItems.length === 1 ? 'item' : 'items'}${hasActiveFilters ? ' (filtered)' : ''}`}
+        action={
+          <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center', flexWrap: 'wrap' }}>
+            {canEditGearList && (
+              <Button onClick={onAddItem} icon={Plus}>
+                Add Item
+              </Button>
+            )}
+            <SavedViewsDropdown
+              savedViews={savedViews}
+              currentFilters={currentFilters}
+              onLoadView={loadView}
+              onSaveView={saveCurrentView}
+              onDeleteView={deleteView}
+              hasActiveFilters={hasActiveFilters}
+            />
+            {canEditGearList && !selectionMode ? (
+              <Button variant="secondary" onClick={() => setSelectionMode(true)} icon={CheckSquare}>
+                Multiple Selection
+              </Button>
+            ) : selectionMode ? (
+              <Button variant="secondary" onClick={() => setSelectionMode(false)} icon={X}>
+                Cancel Selection
+              </Button>
+            ) : null}
           </div>
-          {canEditGearList && (
-            <Button onClick={onAddItem} icon={Plus}>
-              Add Item
-            </Button>
-          )}
-        </div>
-        <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
-          {/* Saved Views Dropdown */}
-          <SavedViewsDropdown
-            savedViews={savedViews}
-            currentFilters={currentFilters}
-            onLoadView={loadView}
-            onSaveView={saveCurrentView}
-            onDeleteView={deleteView}
-            hasActiveFilters={hasActiveFilters}
-          />
-          {canEditGearList && !selectionMode ? (
-            <Button variant="secondary" onClick={() => setSelectionMode(true)} icon={CheckSquare}>
-              Multiple Selection
-            </Button>
-          ) : selectionMode ? (
-            <Button variant="secondary" onClick={() => setSelectionMode(false)} icon={X}>
-              Cancel Selection
-            </Button>
-          ) : null}
-        </div>
-      </div>
+        }
+      />
 
       {/* Selection Toolbar */}
       {selectionMode && (

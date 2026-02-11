@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { VIEWS, MODALS, STATUS, EMPTY_ITEM_FORM, EMPTY_RESERVATION_FORM, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
+import { VIEWS, MODALS, STATUS, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
 import { colors } from './theme.js';
 import { updateById, findById } from './utils.js';
 import { useTheme } from './contexts/ThemeContext.jsx';
@@ -14,6 +14,7 @@ import { useData } from './lib/DataContext.jsx';
 import { FullPageLoading } from './components/Loading.jsx';
 import { SkipLink } from './components/ui.jsx';
 import { log, error as logError } from './lib/logger.js';
+import { usersService } from './lib/services.js';
 
 // Custom hooks for state management
 import { useInventoryActions } from './hooks/index.js';
@@ -116,6 +117,7 @@ export default function App() {
     editingReservationId, setEditingReservationId,
     itemForm, setItemForm,
     reservationForm, setReservationForm,
+    resetItemForm, resetReservationForm,
     showConfirm,
   } = useModalContext();
 
@@ -149,7 +151,6 @@ export default function App() {
     // Persist to DB in the user's profile JSON
     if (currentUser?.id) {
       try {
-        const { usersService } = await import('./lib/services.js');
         const currentProfile = currentUser.profile || {};
         await usersService.update(currentUser.id, {
           profile: { ...currentProfile, layoutPrefs: newPrefs }
@@ -173,11 +174,9 @@ export default function App() {
 
       // Persist (fire and forget to avoid blocking UI)
       if (prev.id) {
-        import('./lib/services.js').then(({ usersService }) => {
-          usersService.update(prev.id, {
-            profile: { ...(prev.profile || {}), layoutPrefs: newPrefs }
-          }).catch(() => {});
-        });
+        usersService.update(prev.id, {
+          profile: { ...(prev.profile || {}), layoutPrefs: newPrefs }
+        }).catch(() => {});
       }
 
       return { ...prev, layoutPrefs: newPrefs };
@@ -269,8 +268,6 @@ export default function App() {
   // ============================================================================
   // Form Helpers
   // ============================================================================
-  const resetItemForm = useCallback(() => setItemForm(EMPTY_ITEM_FORM), []);
-  const resetReservationForm = useCallback(() => setReservationForm(EMPTY_RESERVATION_FORM), []);
   const openModal = useCallback((modalId) => setActiveModal(modalId), []);
   const closeModal = useCallback(() => setActiveModal(null), []);
 
@@ -359,7 +356,6 @@ export default function App() {
     if (currentUser.id === updatedUser.id) setCurrentUser(updatedUser);
     // Persist to database
     try {
-      const { usersService } = await import('./lib/services.js');
       await usersService.update(updatedUser.id, { profile: updatedUser.profile });
     } catch (err) {
       console.error('Failed to save profile:', err);

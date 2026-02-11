@@ -8,7 +8,7 @@ import React, { memo, useState, useCallback, useMemo } from 'react';
 import { Plus, Package, Trash2, ArrowLeft, Download, Printer, Copy, Box, Layers, ChevronRight, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, generateId, getStatusColor } from '../utils.js';
-import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog } from '../components/ui.jsx';
+import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { useData } from '../lib/DataContext.jsx';
 
@@ -544,9 +544,7 @@ function PackListsView({
     const isNameEmpty = !listName.trim();
     return (
       <>
-        <div className="page-header">
-          <h2 className="page-title">Pack Lists</h2>
-        </div>
+        <PageHeader title="Pack Lists" />
         
         <div className="modal-backdrop" style={styles.modal}>
           <div style={{ ...styles.modalBox, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
@@ -592,20 +590,18 @@ function PackListsView({
         padding: spacing[4]
       }}>
         {/* Header with create/save button and tally at top */}
-        <div className="page-header" style={{ flexShrink: 0, marginBottom: spacing[4] }}>
-          <div>
-            <h2 className="page-title">{isEditing ? 'Edit' : 'Create'} Pack List: {listName}</h2>
-            <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted, marginTop: 4 }}>
-              {selectedPackageIds.length} packages, {selectedItemIds.length} items selected
+        <PageHeader
+          title={`${isEditing ? 'Edit' : 'Create'} Pack List: ${listName}`}
+          subtitle={`${selectedPackageIds.length} packages, ${selectedItemIds.length} items selected`}
+          action={
+            <div style={{ display: 'flex', gap: spacing[2] }}>
+              <Button variant="secondary" onClick={handleCancel}>Cancel</Button>
+              <Button onClick={handleSave} disabled={selectedItemIds.length === 0} icon={isEditing ? Edit2 : Plus}>
+                {isEditing ? 'Save Changes' : 'Create Pack List'}
+              </Button>
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: spacing[2] }}>
-            <Button variant="secondary" onClick={handleCancel}>Cancel</Button>
-            <Button onClick={handleSave} disabled={selectedItemIds.length === 0} icon={isEditing ? Edit2 : Plus}>
-              {isEditing ? 'Save Changes' : 'Create Pack List'}
-            </Button>
-          </div>
-        </div>
+          }
+        />
 
         {/* Panels with fixed height and scroll */}
         <div style={{ 
@@ -903,10 +899,10 @@ function PackListsView({
   
   return (
     <>
-      <div className="page-header">
-        <h2 className="page-title">Pack Lists</h2>
-        <Button onClick={handleStartCreate} icon={Plus}>Create Pack List</Button>
-      </div>
+      <PageHeader
+        title="Pack Lists"
+        action={<Button onClick={handleStartCreate} icon={Plus}>Create Pack List</Button>}
+      />
 
       <div style={{ marginBottom: spacing[4], maxWidth: 300 }}>
         <SearchInput value={packListSearch} onChange={setPackListSearch} onClear={() => setPackListSearch('')} placeholder="Search pack lists..." />

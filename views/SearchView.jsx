@@ -7,7 +7,7 @@ import { Search, Eye, X, Filter } from 'lucide-react';
 import { STATUS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { getStatusColor } from '../utils.js';
-import { Badge, Card, Button, SearchInput } from '../components/ui.jsx';
+import { Badge, Card, Button, SearchInput, PageHeader } from '../components/ui.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import { MultiSelectDropdown } from '../components/MultiSelectDropdown.jsx';
 
@@ -74,9 +74,7 @@ function SearchView({
 
   return (
     <>
-      <div className="page-header">
-        <h2 className="page-title">Search</h2>
-      </div>
+      <PageHeader title="Search" />
 
       {/* Filters Bar */}
       <Card style={{ marginBottom: spacing[4], padding: spacing[3] }}>

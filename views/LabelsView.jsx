@@ -7,7 +7,7 @@ import { Search, Printer, Download, Check, Package, Layers } from 'lucide-react'
 import QRCode from 'qrcode';
 import { LABEL_FORMATS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { Card, CardHeader, Button, SearchInput, Badge } from '../components/ui.jsx';
+import { Card, CardHeader, Button, SearchInput, Badge, PageHeader } from '../components/ui.jsx';
 
 import { error as logError } from '../lib/logger.js';
 import { openPrintWindow } from '../lib/printUtil.js';
@@ -763,13 +763,15 @@ function LabelsView({ inventory, packages = [], user }) {
 
   return (
     <>
-      <div className="page-header">
-        <h2 className="page-title">Labels</h2>
-        <div style={{ display: 'flex', gap: spacing[2] }}>
-          <Button variant="secondary" onClick={handlePrint} disabled={selectedItems.length === 0} icon={Printer}>Print ({selectedItems.length})</Button>
-          <Button onClick={handleDownload} disabled={selectedItems.length === 0} icon={Download}>Download</Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Labels"
+        action={
+          <div style={{ display: 'flex', gap: spacing[2] }}>
+            <Button variant="secondary" onClick={handlePrint} disabled={selectedItems.length === 0} icon={Printer}>Print ({selectedItems.length})</Button>
+            <Button onClick={handleDownload} disabled={selectedItems.length === 0} icon={Download}>Download</Button>
+          </div>
+        }
+      />
 
       <div className="responsive-sidebar-first" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Settings Panel */}
