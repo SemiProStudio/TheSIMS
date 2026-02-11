@@ -7,6 +7,8 @@
 -- =============================================================================
 -- INCREMENT VIEW COUNT — add auth + existence check
 -- =============================================================================
+DROP FUNCTION IF EXISTS increment_view_count(VARCHAR);
+
 CREATE OR REPLACE FUNCTION increment_view_count(item_id VARCHAR)
 RETURNS void AS $$
 BEGIN
@@ -20,11 +22,13 @@ BEGIN
   SET view_count = COALESCE(view_count, 0) + 1
   WHERE id = item_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- INCREMENT CHECKOUT COUNT — add auth + existence check
 -- =============================================================================
+DROP FUNCTION IF EXISTS increment_checkout_count(VARCHAR);
+
 CREATE OR REPLACE FUNCTION increment_checkout_count(item_id VARCHAR)
 RETURNS void AS $$
 BEGIN
@@ -38,7 +42,7 @@ BEGIN
   SET checkout_count = COALESCE(checkout_count, 0) + 1
   WHERE id = item_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- Notes on other SECURITY DEFINER functions (no changes needed):
@@ -54,3 +58,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- get_item_with_details(): DEFINER to bypass RLS for joining multiple tables.
 --   Takes item_id VARCHAR used in parameterized query. Low risk.
 -- =============================================================================
+
+-- Re-grant execute after DROP/CREATE
+GRANT EXECUTE ON FUNCTION increment_view_count(VARCHAR) TO authenticated;
+GRANT EXECUTE ON FUNCTION increment_checkout_count(VARCHAR) TO authenticated;
