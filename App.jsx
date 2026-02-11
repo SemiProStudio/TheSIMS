@@ -290,11 +290,6 @@ export default function App() {
     openEditItem, addChangeLog,
   } = inventoryActions;
 
-  // Audit Log Helper
-  const addAuditLog = useCallback((entry) => {
-    dataContext.addAuditLog(entry);
-  }, [dataContext]);
-
   // ============================================================================
   // Domain Handler Hooks
   // ============================================================================
