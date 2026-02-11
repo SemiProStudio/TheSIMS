@@ -783,7 +783,7 @@ export function DataProvider({ children }) {
     // Refresh function
     refreshData: loadData,
     
-    // Setters (for direct state updates)
+    // Setters (for direct state updates from handler hooks)
     setInventory,
     setPackages,
     setPackLists,
@@ -791,9 +791,6 @@ export function DataProvider({ children }) {
     setUsers,
     setRoles,
     setLocations,
-    setCategories,
-    setCategorySettings,
-    setSpecs,
     setAuditLog,
     
     // Inventory Operations

@@ -156,7 +156,7 @@ export default function App() {
           profile: { ...currentProfile, layoutPrefs: newPrefs }
         });
       } catch (err) {
-        console.error('Failed to save layout prefs:', err);
+        logError('Failed to save layout prefs:', err);
       }
     }
   }, [currentUser?.id, currentUser?.profile]);
@@ -358,7 +358,7 @@ export default function App() {
     try {
       await usersService.update(updatedUser.id, { profile: updatedUser.profile });
     } catch (err) {
-      console.error('Failed to save profile:', err);
+      logError('Failed to save profile:', err);
     }
     // Audit log
     addAuditLog({

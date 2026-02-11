@@ -4,6 +4,7 @@
 // =============================================================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { log, error as logError } from '../lib/logger.js';
 
 /**
  * PWA installation status
@@ -44,12 +45,12 @@ export function usePWA() {
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      console.log('[PWA] Online');
+      log('[PWA] Online');
     };
     
     const handleOffline = () => {
       setIsOnline(false);
-      console.log('[PWA] Offline');
+      log('[PWA] Offline');
     };
     
     window.addEventListener('online', handleOnline);
@@ -75,7 +76,7 @@ export function usePWA() {
       setInstallPrompt(e);
       setInstallStatus(InstallStatus.AVAILABLE);
       
-      console.log('[PWA] Install prompt available');
+      log('[PWA] Install prompt available');
     };
     
     const handleAppInstalled = () => {
@@ -83,7 +84,7 @@ export function usePWA() {
       setInstallPrompt(null);
       setInstallStatus(InstallStatus.INSTALLED);
       
-      console.log('[PWA] App installed');
+      log('[PWA] App installed');
     };
     
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -105,7 +106,7 @@ export function usePWA() {
    */
   const promptInstall = useCallback(async () => {
     if (!deferredPrompt.current) {
-      console.log('[PWA] No install prompt available');
+      log('[PWA] No install prompt available');
       return { outcome: 'unavailable' };
     }
     
@@ -115,7 +116,7 @@ export function usePWA() {
     // Wait for user choice
     const { outcome } = await deferredPrompt.current.userChoice;
     
-    console.log('[PWA] Install prompt outcome:', outcome);
+    log('[PWA] Install prompt outcome:', outcome);
     
     if (outcome === 'accepted') {
       setInstallStatus(InstallStatus.INSTALLED);
@@ -135,7 +136,7 @@ export function usePWA() {
    */
   const dismissInstall = useCallback(() => {
     setInstallStatus(InstallStatus.DISMISSED);
-    console.log('[PWA] Install dismissed');
+    log('[PWA] Install dismissed');
   }, []);
 
   // ============================================================================
@@ -144,7 +145,7 @@ export function usePWA() {
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) {
-      console.log('[PWA] Service workers not supported');
+      log('[PWA] Service workers not supported');
       return;
     }
 
@@ -157,7 +158,7 @@ export function usePWA() {
         });
         
         setSwRegistration(registration);
-        console.log('[PWA] Service worker registered');
+        log('[PWA] Service worker registered');
         
         // Check for updates
         registration.addEventListener('updatefound', () => {
@@ -170,11 +171,11 @@ export function usePWA() {
                   // New update available
                   setUpdateAvailable(true);
                   setSwStatus('updated');
-                  console.log('[PWA] Update available');
+                  log('[PWA] Update available');
                 } else {
                   // First install
                   setSwStatus('installed');
-                  console.log('[PWA] Service worker installed');
+                  log('[PWA] Service worker installed');
                 }
               }
             });
@@ -197,7 +198,7 @@ export function usePWA() {
         
         setSwStatus('installed');
       } catch (error) {
-        console.error('[PWA] Service worker registration failed:', error);
+        logError('[PWA] Service worker registration failed:', error);
         setSwStatus('idle');
       }
     };
@@ -217,7 +218,7 @@ export function usePWA() {
     swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
     setUpdateAvailable(false);
     
-    console.log('[PWA] Updating service worker');
+    log('[PWA] Updating service worker');
   }, [swRegistration]);
 
   /**
@@ -228,9 +229,9 @@ export function usePWA() {
     
     try {
       await swRegistration.update();
-      console.log('[PWA] Checked for updates');
+      log('[PWA] Checked for updates');
     } catch (error) {
-      console.error('[PWA] Update check failed:', error);
+      logError('[PWA] Update check failed:', error);
     }
   }, [swRegistration]);
 
@@ -241,7 +242,7 @@ export function usePWA() {
     if ('caches' in window) {
       const cacheNames = await caches.keys();
       await Promise.all(cacheNames.map((name) => caches.delete(name)));
-      console.log('[PWA] Cache cleared');
+      log('[PWA] Cache cleared');
     }
   }, []);
 
@@ -254,12 +255,12 @@ export function usePWA() {
    */
   const requestNotificationPermission = useCallback(async () => {
     if (!('Notification' in window)) {
-      console.log('[PWA] Notifications not supported');
+      log('[PWA] Notifications not supported');
       return 'unsupported';
     }
     
     const permission = await Notification.requestPermission();
-    console.log('[PWA] Notification permission:', permission);
+    log('[PWA] Notification permission:', permission);
     return permission;
   }, []);
 
@@ -275,7 +276,7 @@ export function usePWA() {
    */
   const sendNotification = useCallback((title, options = {}) => {
     if (!notificationsEnabled) {
-      console.log('[PWA] Notifications not enabled');
+      log('[PWA] Notifications not enabled');
       return null;
     }
     

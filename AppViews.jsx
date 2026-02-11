@@ -82,8 +82,8 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
 
   const {
     inventory, setInventory, packages, setPackages, users, setUsers,
-    roles, setRoles, specs, setSpecs, locations, setLocations,
-    categories, setCategories, categorySettings, setCategorySettings,
+    roles, setRoles, specs, locations, setLocations,
+    categories, categorySettings,
     auditLog, clients, setClients,
     packLists, setPackLists,
     updateCategories, updateSpecs,
