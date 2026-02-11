@@ -53,6 +53,7 @@ export function DataProvider({ children }) {
   const [roles, setRoles] = useState([]);
   const [locations, setLocations] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [categorySettings, setCategorySettings] = useState({});
   const [specs, setSpecs] = useState({});
   const [auditLog, setAuditLog] = useState([]);
 
@@ -95,7 +96,18 @@ export function DataProvider({ children }) {
       });
 
       setInventory(inventoryData || []);
-      setCategories(categoriesData?.map(c => c.name) || []);
+      // Extract category names and settings from DB records
+      const catNames = (categoriesData || []).map(c => c.name);
+      const catSettings = {};
+      (categoriesData || []).forEach(c => {
+        catSettings[c.name] = {
+          trackQuantity: c.track_quantity || false,
+          trackSerialNumbers: c.track_serial_numbers !== false,
+          lowStockThreshold: c.low_stock_threshold || 0,
+        };
+      });
+      setCategories(catNames);
+      setCategorySettings(catSettings);
       setUsers(usersData || []);
       setRoles(rolesData || DEFAULT_ROLES);
       setLocations(locationsData || []);
@@ -690,8 +702,14 @@ export function DataProvider({ children }) {
   // CATEGORIES OPERATIONS
   // =============================================================================
 
-  const updateCategories = useCallback(async (newCategories) => {
+  const updateCategories = useCallback(async (newCategories, newSettings = {}) => {
     setCategories(newCategories);
+    setCategorySettings(newSettings);
+    try {
+      await categoriesService.syncAll(newCategories, newSettings);
+    } catch (err) {
+      logError('Failed to save categories:', err);
+    }
   }, []);
 
   // =============================================================================
@@ -700,6 +718,15 @@ export function DataProvider({ children }) {
 
   const updateSpecs = useCallback(async (newSpecs) => {
     setSpecs(newSpecs);
+    try {
+      // Upsert specs for each category
+      const promises = Object.entries(newSpecs).map(([categoryName, fields]) =>
+        specsService.upsert(categoryName, fields)
+      );
+      await Promise.all(promises);
+    } catch (err) {
+      logError('Failed to save specs:', err);
+    }
   }, []);
 
   // =============================================================================
@@ -789,6 +816,7 @@ export function DataProvider({ children }) {
     roles,
     locations,
     categories,
+    categorySettings,
     specs,
     auditLog,
     
@@ -804,6 +832,7 @@ export function DataProvider({ children }) {
     setRoles,
     setLocations,
     setCategories,
+    setCategorySettings,
     setSpecs,
     setAuditLog,
     
@@ -881,6 +910,7 @@ export function DataProvider({ children }) {
     roles,
     locations,
     categories,
+    categorySettings,
     specs,
     auditLog,
     loadData,

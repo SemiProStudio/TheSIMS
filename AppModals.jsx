@@ -32,7 +32,7 @@ const BulkDeleteModal = lazy(() => import('./modals/BulkModals.jsx').then(m => (
 const AddUserModal = lazy(() => import('./modals/AddUserModal.jsx').then(m => ({ default: m.AddUserModal })));
 const ImagePreviewModal = lazy(() => import('./modals/ImagePreviewModal.jsx'));
 
-export default function AppModals({ handlers, currentUser, categorySettings }) {
+export default function AppModals({ handlers, currentUser }) {
   // Read state from contexts
   const {
     selectedItem, setSelectedItem,
@@ -53,7 +53,7 @@ export default function AppModals({ handlers, currentUser, categorySettings }) {
 
   const {
     inventory, setInventory, packages, users, setUsers,
-    specs, locations, categories, auditLog, packLists, clients,
+    specs, locations, categories, categorySettings, auditLog, packLists, clients,
   } = useData();
 
   // Destructure handlers

@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { VIEWS, MODALS, STATUS, EMPTY_ITEM_FORM, EMPTY_RESERVATION_FORM, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_CATEGORY_SETTINGS, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
+import { VIEWS, MODALS, STATUS, EMPTY_ITEM_FORM, EMPTY_RESERVATION_FORM, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
 import { colors } from './theme.js';
 import { updateById, findById } from './utils.js';
 import { useTheme } from './contexts/ThemeContext.jsx';
@@ -62,8 +62,7 @@ export default function App() {
   const specs = contextSpecs && Object.keys(contextSpecs).length ? contextSpecs : DEFAULT_SPECS;
   const categories = contextCategories?.length ? contextCategories : DEFAULT_CATEGORIES;
 
-  // Local-only state (not persisted to DB yet)
-  const [categorySettings, setCategorySettings] = useState(DEFAULT_CATEGORY_SETTINGS);
+  // Local-only state
   const [changeLog, setChangeLog] = useState([]);
 
   // ============================================================================
@@ -405,7 +404,7 @@ export default function App() {
     setItemAsKit, addItemsToKit, removeItemFromKit, clearKitItems,
     addRequiredAccessories, removeRequiredAccessory, selectImage,
     addItemToPackage, updateMaintenanceStatus, updateUserProfile,
-    addAuditLog, setCategorySettings, resetItemForm, resetReservationForm,
+    addAuditLog, resetItemForm, resetReservationForm,
     openModal, closeModal,
     saveNotificationPreferences,
   }), [
@@ -422,7 +421,7 @@ export default function App() {
     setItemAsKit, addItemsToKit, removeItemFromKit, clearKitItems,
     addRequiredAccessories, removeRequiredAccessory, selectImage,
     addItemToPackage, updateMaintenanceStatus, updateUserProfile,
-    addAuditLog, setCategorySettings, resetItemForm, resetReservationForm,
+    addAuditLog, resetItemForm, resetReservationForm,
     openModal, closeModal,
     saveNotificationPreferences,
   ]);
@@ -540,7 +539,6 @@ export default function App() {
           <AppViews
             handlers={viewHandlers}
             currentUser={currentUser}
-            categorySettings={categorySettings}
             changeLog={changeLog}
           />
         </main>
@@ -548,7 +546,6 @@ export default function App() {
         <AppModals
           handlers={modalHandlers}
           currentUser={currentUser}
-          categorySettings={categorySettings}
         />
       </div>
     </PermissionsProvider>

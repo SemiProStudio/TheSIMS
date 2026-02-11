@@ -46,7 +46,7 @@ const ItemFormPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ de
 const SpecsPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ default: m.SpecsPage })));
 const CategoriesPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ default: m.CategoriesPage })));
 
-export default function AppViews({ handlers, currentUser, categorySettings, changeLog }) {
+export default function AppViews({ handlers, currentUser, changeLog }) {
   // Read state from contexts
   const {
     currentView, setCurrentView,
@@ -82,8 +82,10 @@ export default function AppViews({ handlers, currentUser, categorySettings, chan
   const {
     inventory, setInventory, packages, setPackages, users, setUsers,
     roles, setRoles, specs, setSpecs, locations, setLocations,
-    categories, setCategories, auditLog, clients, setClients,
+    categories, setCategories, categorySettings, setCategorySettings,
+    auditLog, clients, setClients,
     packLists, setPackLists,
+    updateCategories, updateSpecs,
   } = useData();
 
   // Destructure handlers
@@ -101,7 +103,7 @@ export default function AppViews({ handlers, currentUser, categorySettings, chan
     setItemAsKit, addItemsToKit, removeItemFromKit, clearKitItems,
     addRequiredAccessories, removeRequiredAccessory, selectImage,
     addItemToPackage, updateMaintenanceStatus, updateUserProfile,
-    addAuditLog, setCategorySettings, resetItemForm, resetReservationForm,
+    addAuditLog, resetItemForm, resetReservationForm,
     openModal, closeModal,
   } = handlers;
 
@@ -348,7 +350,7 @@ export default function AppViews({ handlers, currentUser, categorySettings, chan
           <Suspense fallback={<ViewLoading message="Loading Specs Editor..." />}>
             <SpecsPage
               specs={specs}
-              onSave={(newSpecs) => setSpecs(newSpecs)}
+              onSave={(newSpecs) => updateSpecs(newSpecs)}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />
           </Suspense>
@@ -364,9 +366,8 @@ export default function AppViews({ handlers, currentUser, categorySettings, chan
               specs={specs}
               categorySettings={categorySettings}
               onSave={(newCategories, newSpecs, newSettings) => {
-                setCategories(newCategories);
-                setSpecs(newSpecs);
-                setCategorySettings(newSettings);
+                updateCategories(newCategories, newSettings);
+                updateSpecs(newSpecs);
               }}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />
