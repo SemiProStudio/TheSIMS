@@ -652,10 +652,7 @@ function ClientsView({
           await dataContext.deleteClient(clientToDelete.id);
         } catch (err) {
           logError('Failed to delete client:', err);
-          onUpdateClients(clients.filter(c => c.id !== clientToDelete.id));
         }
-      } else {
-        onUpdateClients(clients.filter(c => c.id !== clientToDelete.id));
       }
       
       // Log deletion
@@ -669,7 +666,7 @@ function ClientsView({
       }
     }
     setDeleteConfirm({ isOpen: false, client: null });
-  }, [clients, onUpdateClients, deleteConfirm.client, addAuditLog, user, dataContext]);
+  }, [clients, deleteConfirm.client, addAuditLog, user, dataContext]);
   
   // Detail view
   if (selectedClient) {
@@ -691,9 +688,8 @@ function ClientsView({
           <ClientFormModal
             client={editingClient}
             onSave={(updated) => {
-              onUpdateClients(clients.map(c => c.id === updated.id ? updated : c));
+              dataContext.patchClient(updated.id, updated);
               setEditingClient(null);
-              // Update selectedClient to reflect changes
               setSelectedClient(updated);
             }}
             onClose={() => setEditingClient(null)}
