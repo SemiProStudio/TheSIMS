@@ -205,6 +205,17 @@ export function useInventoryActions({
             changes.push({ field: label, oldValue: oldVal, newValue: newVal });
           }
         });
+
+        // Track image changes separately (don't log the full data URL)
+        const oldImg = originalItem.image || null;
+        const newImg = updates.image || null;
+        if (oldImg !== newImg) {
+          changes.push({ 
+            field: 'image', 
+            oldValue: oldImg ? 'had image' : 'no image', 
+            newValue: newImg ? 'image updated' : 'image removed' 
+          });
+        }
       }
 
       // Use DataContext method - persists to Supabase AND updates local state

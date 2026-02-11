@@ -13,6 +13,7 @@ import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 import { useItemForm } from '../components/ItemForm.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
+import ImageCropEditor from '../components/ImageCropEditor.jsx';
 import { SmartPasteModal } from './SmartPasteModal.jsx';
 
 // Re-export SmartPasteModal for consumers who import from ItemModal
@@ -23,6 +24,7 @@ export { SmartPasteModal };
 // ============================================================================
 export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, setItemForm, specs, categories, categorySettings, locations, inventory, onSave, onClose, onDelete }) {
   const [showSmartPaste, setShowSmartPaste] = useState(false);
+  const [cropSrc, setCropSrc] = useState(null);
   
   // Use the shared ItemForm hook for validation and computed values
   const {
@@ -122,6 +124,21 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
           {/* Image Upload Section */}
           <div style={{ marginBottom: spacing[4] }}>
             <label style={styles.label}>Image (Optional)</label>
+            
+            {cropSrc ? (
+              /* Crop editor mode */
+              <ImageCropEditor
+                imageSrc={cropSrc}
+                onCropComplete={(croppedDataUrl) => {
+                  handleChange('image', croppedDataUrl);
+                  setCropSrc(null);
+                }}
+                onCancel={() => setCropSrc(null)}
+                outputSize={600}
+                cropShape="square"
+                title="Crop item image"
+              />
+            ) : (
             <div style={{ 
               display: 'flex', 
               alignItems: 'center', 
@@ -147,6 +164,20 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
                     <p style={{ margin: 0, fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
                       Image attached
                     </p>
+                    <button
+                      onClick={() => setCropSrc(itemForm.image)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: colors.primary,
+                        fontSize: typography.fontSize.sm,
+                        cursor: 'pointer',
+                        padding: 0,
+                        marginTop: spacing[1],
+                      }}
+                    >
+                      Resize / Crop
+                    </button>
                     <button
                       onClick={() => handleChange('image', null)}
                       style={{
@@ -183,18 +214,21 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
                   <div style={{ flex: 1 }}>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
                       id="item-image-upload"
                       style={{ display: 'none' }}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
+                          if (file.size > 5 * 1024 * 1024) return;
+                          if (!file.type.startsWith('image/')) return;
                           const reader = new FileReader();
                           reader.onload = (event) => {
-                            handleChange('image', event.target.result);
+                            setCropSrc(event.target.result);
                           };
                           reader.readAsDataURL(file);
                         }
+                        if (e.target) e.target.value = '';
                       }}
                     />
                     <label 
@@ -220,6 +254,7 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
                 </>
               )}
             </div>
+            )}
           </div>
           
           {/* Name and Brand */}
