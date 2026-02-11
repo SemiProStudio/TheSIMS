@@ -114,9 +114,27 @@ function ProfileModal({ user, onSave, onClose }) {
     if (e.target) e.target.value = '';
   };
 
-  const handleCropComplete = (croppedDataUrl) => {
-    handleChange('logo', croppedDataUrl);
+  const [logoUploading, setLogoUploading] = useState(false);
+
+  const handleCropComplete = async (croppedDataUrl) => {
     setCropSrc(null);
+    
+    // Upload to Supabase Storage if user has an ID
+    if (user?.id) {
+      setLogoUploading(true);
+      try {
+        const { storageService } = await import('../lib/index.js');
+        const result = await storageService.uploadFromDataUrl(croppedDataUrl, `profiles/${user.id}`);
+        handleChange('logo', result.url);
+      } catch (err) {
+        // Fall back to data URL
+        handleChange('logo', croppedDataUrl);
+      } finally {
+        setLogoUploading(false);
+      }
+    } else {
+      handleChange('logo', croppedDataUrl);
+    }
   };
 
   const handleCropCancel = () => {
@@ -182,8 +200,9 @@ function ProfileModal({ user, onSave, onClose }) {
                   variant="secondary"
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={logoUploading}
                 >
-                  Upload Photo
+                  {logoUploading ? 'Uploading...' : 'Upload Photo'}
                 </Button>
                 {profile.logo && (
                   <>

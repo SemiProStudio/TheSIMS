@@ -139,6 +139,24 @@ export function useInventoryActions({
         itemId: id,
       });
       
+      // If image is a base64 data URL, upload to storage and update the item
+      if (newItem.image && newItem.image.startsWith('data:')) {
+        try {
+          const { storageService } = await import('../lib/index.js');
+          const result = await storageService.uploadFromDataUrl(newItem.image, id);
+          if (result?.url && !result.url.startsWith('data:')) {
+            if (dataContext?.updateItem) {
+              await dataContext.updateItem(id, { image: result.url });
+            } else {
+              setInventory(prev => prev.map(i => i.id === id ? { ...i, image: result.url } : i));
+            }
+          }
+        } catch (uploadErr) {
+          logError('Failed to upload image to storage after item creation:', uploadErr);
+          // Non-fatal — item was created with base64 fallback
+        }
+      }
+      
       closeModal();
       resetItemForm?.();
       

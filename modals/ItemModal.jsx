@@ -3,7 +3,7 @@
 // Add and edit inventory items with Smart Paste support
 // ============================================================================
 
-import React, { memo, useState, useRef, useEffect } from 'react';
+import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { CONDITION } from '../constants.js';
@@ -25,6 +25,7 @@ export { SmartPasteModal };
 export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, setItemForm, specs, categories, categorySettings, locations, inventory, onSave, onClose, onDelete }) {
   const [showSmartPaste, setShowSmartPaste] = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
+  const [imageUploading, setImageUploading] = useState(false);
   
   // Use the shared ItemForm hook for validation and computed values
   const {
@@ -52,6 +53,26 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
     categories,
   });
   
+  // Image crop handler — uploads to Supabase Storage when editing, stores base64 for new items
+  const handleCropComplete = useCallback(async (croppedDataUrl) => {
+    setCropSrc(null);
+    
+    if (isEdit && itemId) {
+      setImageUploading(true);
+      try {
+        const { storageService } = await import('../lib/index.js');
+        const result = await storageService.uploadFromDataUrl(croppedDataUrl, itemId);
+        handleChange('image', result.url);
+      } catch (err) {
+        handleChange('image', croppedDataUrl);
+      } finally {
+        setImageUploading(false);
+      }
+    } else {
+      handleChange('image', croppedDataUrl);
+    }
+  }, [isEdit, itemId, handleChange]);
+
   // Handle save with validation
   const handleSave = () => {
     if (validateAll()) {
@@ -129,10 +150,7 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
               /* Crop editor mode */
               <ImageCropEditor
                 imageSrc={cropSrc}
-                onCropComplete={(croppedDataUrl) => {
-                  handleChange('image', croppedDataUrl);
-                  setCropSrc(null);
-                }}
+                onCropComplete={handleCropComplete}
                 onCancel={() => setCropSrc(null)}
                 outputSize={600}
                 cropShape="square"
@@ -147,6 +165,7 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
               border: `1px dashed ${colors.border}`,
               borderRadius: borderRadius.md,
               background: colors.bgLight,
+              opacity: imageUploading ? 0.6 : 1,
             }}>
               {itemForm.image ? (
                 <>
@@ -162,7 +181,7 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
                   />
                   <div style={{ flex: 1 }}>
                     <p style={{ margin: 0, fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
-                      Image attached
+                      {imageUploading ? 'Uploading...' : 'Image attached'}
                     </p>
                     <button
                       onClick={() => setCropSrc(itemForm.image)}
