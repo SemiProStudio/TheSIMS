@@ -22,8 +22,6 @@ function SearchView({
   setSelectedCategories,
   selectedStatuses,
   setSelectedStatuses,
-  selectedIds,
-  setSelectedIds,
   onViewItem
 }) {
   // Filter inventory
@@ -49,12 +47,6 @@ function SearchView({
 
     return result;
   }, [inventory, searchQuery, selectedCategories, selectedStatuses]);
-
-  const toggleItem = useCallback((id) => {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  }, [setSelectedIds]);
 
   const clearAllFilters = useCallback(() => {
     setSearchQuery('');
@@ -84,12 +76,6 @@ function SearchView({
     <>
       <div className="page-header">
         <h2 className="page-title">Search</h2>
-        {selectedIds.length > 0 && (
-          <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
-            <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>{selectedIds.length} selected</span>
-            <Button variant="secondary" onClick={() => setSelectedIds([])}>Clear</Button>
-          </div>
-        )}
       </div>
 
       {/* Filters Bar */}
@@ -183,12 +169,6 @@ function SearchView({
       <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
         {filteredItems.map(item => (
           <Card key={item.id} style={{ padding: spacing[3], display: 'flex', alignItems: 'center', gap: spacing[3] }}>
-            <input
-              type="checkbox"
-              checked={selectedIds.includes(item.id)}
-              onChange={() => toggleItem(item.id)}
-              style={{ accentColor: colors.primary, width: '18px', height: '18px', cursor: 'pointer' }}
-            />
             <div onClick={() => onViewItem(item.id)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: spacing[3], cursor: 'pointer' }}>
               {item.image ? (
                 <OptimizedImage 

@@ -264,8 +264,6 @@ export default function AppViews({ handlers, currentUser, categorySettings, chan
           setSelectedCategories={setSelectedCategories}
           selectedStatuses={selectedStatuses}
           setSelectedStatuses={setSelectedStatuses}
-          selectedIds={selectedIds}
-          setSelectedIds={setSelectedIds}
           onViewItem={navigateToItem}
         />
       )}
