@@ -169,6 +169,7 @@ export const MODALS = {
   EXPORT: 'export',
   PROFILE: 'profile',
   IMAGE_SELECT: 'image-select',
+  IMAGE_PREVIEW: 'image-preview',
   CSV_IMPORT: 'csv-import',
   DATABASE_EXPORT: 'database-export',
   CHECK_OUT: 'check-out',

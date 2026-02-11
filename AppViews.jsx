@@ -199,7 +199,7 @@ export default function AppViews({ handlers, currentUser, categorySettings, chan
           onAddAccessory={addRequiredAccessories}
           onRemoveAccessory={removeRequiredAccessory}
           onViewItem={navigateToItem}
-          onSelectImage={() => openModal(MODALS.IMAGE_SELECT)}
+          onSelectImage={() => selectedItem?.image ? openModal(MODALS.IMAGE_PREVIEW) : openModal(MODALS.IMAGE_SELECT)}
           onViewReservation={(r) => navigateToReservation(r, selectedItem)}
           onCustomizeLayout={() => setCurrentView(VIEWS.CUSTOMIZE_ITEM_DETAIL)}
           onToggleCollapse={handleToggleCollapse}

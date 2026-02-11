@@ -30,6 +30,7 @@ const BulkLocationModal = lazy(() => import('./modals/BulkModals.jsx').then(m =>
 const BulkCategoryModal = lazy(() => import('./modals/BulkModals.jsx').then(m => ({ default: m.BulkCategoryModal })));
 const BulkDeleteModal = lazy(() => import('./modals/BulkModals.jsx').then(m => ({ default: m.BulkDeleteModal })));
 const AddUserModal = lazy(() => import('./modals/AddUserModal.jsx').then(m => ({ default: m.AddUserModal })));
+const ImagePreviewModal = lazy(() => import('./modals/ImagePreviewModal.jsx'));
 
 export default function AppModals({ handlers, currentUser, categorySettings }) {
   // Read state from contexts
@@ -150,6 +151,23 @@ export default function AppModals({ handlers, currentUser, categorySettings }) {
             currentImage={selectedItem?.image}
             itemId={selectedItem?.id}
             onSelect={selectImage}
+            onClose={closeModal}
+          />
+        )}
+
+        {activeModal === MODALS.IMAGE_PREVIEW && selectedItem?.image && (
+          <ImagePreviewModal
+            imageSrc={selectedItem.image}
+            itemName={selectedItem.name}
+            onReplace={() => {
+              closeModal();
+              // Small delay so the first modal closes before the next opens
+              setTimeout(() => openModal(MODALS.IMAGE_SELECT), 50);
+            }}
+            onRemove={() => {
+              selectImage(null);
+              closeModal();
+            }}
             onClose={closeModal}
           />
         )}
