@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { STATUS, DASHBOARD_SECTIONS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { formatDate, getStatusColor, getTodayISO, isReminderDue } from '../utils.js';
+import { formatDate, getStatusColor, getTodayISO, isReminderDue } from '../utils';
 import { Badge, StatCard, SearchInput, Button, CollapsibleSection, PageHeader } from '../components/ui.jsx';
 import { usePermissions } from '../contexts/PermissionsContext.jsx';
 

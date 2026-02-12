@@ -7,7 +7,7 @@ import React, { memo, useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import jsQR from 'jsqr';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { getStatusColor } from '../utils.js';
+import { getStatusColor } from '../utils';
 import { Badge, Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 

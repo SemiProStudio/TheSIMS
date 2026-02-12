@@ -12,10 +12,10 @@ import { rolesService, locationsService, usersService } from './lib/services.js'
 import { useNavigationContext } from './contexts/NavigationContext.jsx';
 import { useFilterContext } from './contexts/FilterContext.jsx';
 import { useModalContext } from './contexts/ModalContext.jsx';
-import { useData } from './lib/DataContext.jsx';
+import { useData } from './contexts/DataContext.jsx';
 import { PermissionGate } from './contexts/PermissionsContext.jsx';
 import { ViewLoading } from './components/Loading.jsx';
-import { generateId } from './utils.js';
+import { generateId } from './utils';
 
 // Core (eagerly loaded)
 import Dashboard from './views/Dashboard.jsx';

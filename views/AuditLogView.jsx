@@ -7,7 +7,7 @@ import React, { memo } from 'react';
 import PropTypes from 'prop-types';
 import { Clock } from 'lucide-react';
 import { colors, spacing, typography } from '../theme.js';
-import { formatDateTime } from '../utils.js';
+import { formatDateTime } from '../utils';
 import { Badge, Card, EmptyState, PageHeader } from '../components/ui.jsx';
 
 export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {

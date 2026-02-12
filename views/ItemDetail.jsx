@@ -6,7 +6,7 @@
 import React, { memo, useMemo, useState, useEffect } from 'react';
 import { CheckCircle, RefreshCw, Edit, QrCode, Trash2, Calendar, Plus, Upload, Layout, DollarSign, Clock, Bell, Wrench, MessageSquare, History, Settings, Package, ChevronDown, ChevronUp, Eye } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { formatDate, formatMoney, getStatusColor, getConditionColor } from '../utils.js';
+import { formatDate, formatMoney, getStatusColor, getConditionColor } from '../utils';
 import { ITEM_DETAIL_SECTIONS } from '../constants.js';
 import { Badge, Card, Button, CollapsibleSection, BackButton } from '../components/ui.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';

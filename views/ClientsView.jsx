@@ -9,11 +9,11 @@ import {
   Clock, DollarSign, Star, MessageSquare, X
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { formatMoney } from '../utils.js';
+import { formatMoney } from '../utils';
 import { Card, Button, SearchInput, Badge, ConfirmDialog, CollapsibleSection, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import NotesSection from '../components/NotesSection.jsx';
-import { useData } from '../lib/DataContext.jsx';
+import { useData } from '../contexts/DataContext.jsx';
 
 import { error as logError } from '../lib/logger.js';
 

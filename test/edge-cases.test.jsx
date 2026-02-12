@@ -32,7 +32,7 @@ import {
   validateCSVData,
   exportToCSV,
   calculateDepreciation,
-} from '../utils.js';
+} from '../utils';
 
 // =============================================================================
 // Null/Undefined Input Tests

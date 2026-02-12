@@ -5,7 +5,7 @@
 // =============================================================================
 
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { getTodayISO } from '../utils.js';
+import { getTodayISO } from '../utils';
 
 const FilterContext = createContext(null);
 

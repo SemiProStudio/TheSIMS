@@ -6,7 +6,7 @@
 import React, { memo, useState, useCallback } from 'react';
 import { Plus, Reply, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { formatDate } from '../utils.js';
+import { formatDate } from '../utils';
 
 // Single note component with replies
 const Note = memo(function Note({

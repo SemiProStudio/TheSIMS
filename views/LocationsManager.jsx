@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { LOCATION_TYPES } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { flattenLocations } from '../utils.js';
+import { flattenLocations } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 

@@ -8,7 +8,7 @@ import PropTypes from 'prop-types';
 import { Download, Package, BarChart3, AlertTriangle, Wrench, DollarSign, Building2, Eye } from 'lucide-react';
 import { VIEWS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatMoney } from '../utils.js';
+import { formatMoney } from '../utils';
 import { Card, Button, PageHeader } from '../components/ui.jsx';
 
 export const ReportsPanel = memo(function ReportsPanel({ 

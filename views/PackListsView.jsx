@@ -7,10 +7,10 @@
 import React, { memo, useState, useCallback, useMemo } from 'react';
 import { Plus, Package, Trash2, ArrowLeft, Download, Printer, Copy, Box, Layers, ChevronRight, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, generateId, getStatusColor } from '../utils.js';
+import { formatDate, generateId, getStatusColor } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
-import { useData } from '../lib/DataContext.jsx';
+import { useData } from '../contexts/DataContext.jsx';
 
 import { error as logError } from '../lib/logger.js';
 import { openPrintWindow } from '../lib/printUtil.js';

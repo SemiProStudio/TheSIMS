@@ -8,7 +8,7 @@ import { Shield, Plus, Edit2, Trash2, Save, X, Users, Eye, EyeOff, Pencil, Chevr
 import { colors, styles, spacing, borderRadius, typography, withOpacity, zIndex } from '../theme.js';
 import { APP_FUNCTIONS, PERMISSION_LEVELS } from '../constants.js';
 import { Button, Card, Badge } from '../components/ui.jsx';
-import { generateId } from '../utils.js';
+import { generateId } from '../utils';
 
 // Permission level badge colors
 const getPermissionColor = (level) => {

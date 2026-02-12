@@ -4,9 +4,9 @@
 // =============================================================================
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { getSupabase, auth } from './supabase.js';
-import { usersService } from './services.js';
-import { log, error as logError } from './logger.js';
+import { getSupabase, auth } from '../lib/supabase.js';
+import { usersService } from '../lib/services.js';
+import { log, error as logError } from '../lib/logger.js';
 
 // Context
 const AuthContext = createContext(null);

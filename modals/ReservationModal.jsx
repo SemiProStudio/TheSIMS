@@ -8,7 +8,7 @@ import PropTypes from 'prop-types';
 import { Plus, Save, AlertTriangle, Search, X, Package } from 'lucide-react';
 import { PROJECT_TYPES } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { getAllReservationConflicts } from '../utils.js';
+import { getAllReservationConflicts } from '../utils';
 import { Button, Badge } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';

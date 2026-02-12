@@ -8,7 +8,7 @@ import PropTypes from 'prop-types';
 import { Trash2 } from 'lucide-react';
 import { STATUS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { flattenLocations } from '../utils.js';
+import { flattenLocations } from '../utils';
 import { Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';

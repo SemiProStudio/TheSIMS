@@ -9,7 +9,7 @@ import {
   Bell, AlertTriangle, DollarSign, ChevronDown, ChevronUp, Filter
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { formatDate, formatDateTime, formatMoney } from '../utils.js';
+import { formatDate, formatDateTime, formatMoney } from '../utils';
 import { Badge } from './ui.jsx';
 import { Select } from './Select.jsx';
 

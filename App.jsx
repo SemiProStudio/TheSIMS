@@ -6,11 +6,11 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { VIEWS, MODALS, STATUS, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
 import { colors } from './theme.js';
-import { findById } from './utils.js';
+import { findById } from './utils';
 import { useTheme } from './contexts/ThemeContext.jsx';
 import { PermissionsProvider } from './contexts/PermissionsContext.jsx';
-import { useAuth } from './lib/AuthContext.jsx';
-import { useData } from './lib/DataContext.jsx';
+import { useAuth } from './contexts/AuthContext.jsx';
+import { useData } from './contexts/DataContext.jsx';
 import { FullPageLoading } from './components/Loading.jsx';
 import { SkipLink } from './components/ui.jsx';
 import { log, error as logError } from './lib/logger.js';

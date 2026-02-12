@@ -29,7 +29,7 @@ import {
   isReminderDue,
   calculateDepreciation,
   DEPRECIATION_METHODS,
-} from '../utils.js';
+} from '../utils';
 
 // =============================================================================
 // ID Generation Tests

@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { generateItemCode, flattenLocations } from '../utils.js';
+import { generateItemCode, flattenLocations } from '../utils';
 import { validateItem } from '../lib/validators.js';
 
 import { warn } from '../lib/logger.js';

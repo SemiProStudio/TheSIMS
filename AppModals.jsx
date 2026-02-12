@@ -5,12 +5,12 @@
 
 import { lazy, Suspense } from 'react';
 import { VIEWS, MODALS } from './constants.js';
-import { generateItemCode } from './utils.js';
+import { generateItemCode } from './utils';
 import { error as logError } from './lib/logger.js';
 import { useNavigationContext } from './contexts/NavigationContext.jsx';
 import { useModalContext } from './contexts/ModalContext.jsx';
-import { useData } from './lib/DataContext.jsx';
-import { useAuth } from './lib/AuthContext.jsx';
+import { useData } from './contexts/DataContext.jsx';
+import { useAuth } from './contexts/AuthContext.jsx';
 import { ModalLoading } from './components/Loading.jsx';
 import { ConfirmDialog } from './components/ui.jsx';
 

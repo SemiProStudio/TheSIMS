@@ -6,8 +6,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { VIEWS } from '../constants.js';
-import { useData } from '../lib/DataContext.jsx';
-import { useAuth } from '../lib/AuthContext.jsx';
+import { useData } from './DataContext.jsx';
+import { useAuth } from './AuthContext.jsx';
 
 const NavigationContext = createContext(null);
 

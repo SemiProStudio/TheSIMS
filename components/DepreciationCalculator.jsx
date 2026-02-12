@@ -6,7 +6,7 @@
 import React, { memo, useState, useMemo } from 'react';
 import { TrendingDown, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { formatMoney, calculateDepreciation, DEFAULT_USEFUL_LIFE, DEPRECIATION_METHODS } from '../utils.js';
+import { formatMoney, calculateDepreciation, DEFAULT_USEFUL_LIFE, DEPRECIATION_METHODS } from '../utils';
 import { Badge, Card, CardHeader, Button } from './ui.jsx';
 import { Select } from './Select.jsx';
 

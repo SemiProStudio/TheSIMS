@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { KIT_TYPES } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { formatMoney, getStatusColor } from '../utils.js';
+import { formatMoney, getStatusColor } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput } from './ui.jsx';
 
 // Get kit type label

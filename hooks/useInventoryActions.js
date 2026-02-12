@@ -4,7 +4,7 @@
 // =============================================================================
 
 import { useCallback, useState } from 'react';
-import { generateItemCode } from '../utils.js';
+import { generateItemCode } from '../utils';
 import { VIEWS, STATUS, MODALS } from '../constants.js';
 import { useToast } from '../contexts/ToastContext.jsx';
 import { error as logError } from '../lib/logger.js';

@@ -7,7 +7,7 @@ import React, { memo, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Download, Building2, Users, FileText, DollarSign } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatMoney } from '../utils.js';
+import { formatMoney } from '../utils';
 import { Badge, Card, CardHeader, StatCard, EmptyState, Button, PageHeader } from '../components/ui.jsx';
 
 export const ClientReportPanel = memo(function ClientReportPanel({ 

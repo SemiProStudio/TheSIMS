@@ -7,7 +7,7 @@ import React, { memo, useState } from 'react';
 import { Wrench, Plus, Check, Clock, AlertTriangle, DollarSign, Building2, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { MAINTENANCE_STATUS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { formatDate, formatMoney } from '../utils.js';
+import { formatDate, formatMoney } from '../utils';
 import { Badge, Button } from './ui.jsx';
 
 // Get status color for maintenance

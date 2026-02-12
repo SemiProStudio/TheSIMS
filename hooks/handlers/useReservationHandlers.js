@@ -4,7 +4,7 @@
 // ============================================================================
 import { useCallback } from 'react';
 import { VIEWS, MODALS } from '../../constants.js';
-import { generateId } from '../../utils.js';
+import { generateId } from '../../utils';
 import { error as logError } from '../../lib/logger.js';
 
 export function useReservationHandlers({
