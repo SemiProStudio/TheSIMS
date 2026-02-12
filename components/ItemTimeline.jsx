@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatDate, formatDateTime, formatMoney } from '../utils.js';
-import { Badge, Card, CardHeader, Button } from './ui.jsx';
+import { Badge } from './ui.jsx';
 import { Select } from './Select.jsx';
 
 // Event type configuration
@@ -361,21 +361,17 @@ function ItemTimeline({ item }) {
   ];
 
   return (
-    <Card padding={false}>
-      <CardHeader
-        title="Item Timeline"
-        icon={Clock}
-        action={
+    <>
+      <div style={{ padding: spacing[4] }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: spacing[3] }}>
           <Select
             value={filter}
             onChange={e => setFilter(e.target.value)}
             options={filterOptions}
-            style={{ width: 120 }}
+            style={{ width: 140 }}
             aria-label="Filter timeline"
           />
-        }
-      />
-      <div style={{ padding: spacing[4] }}>
+        </div>
         {displayedEvents.length === 0 ? (
           <div style={{ textAlign: 'center', padding: spacing[6], color: colors.textMuted }}>
             <Clock size={32} style={{ marginBottom: spacing[2], opacity: 0.3 }} />
@@ -431,7 +427,7 @@ function ItemTimeline({ item }) {
           </>
         )}
       </div>
-    </Card>
+    </>
   );
 }
 

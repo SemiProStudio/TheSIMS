@@ -4,6 +4,7 @@
 // =============================================================================
 
 import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { colors, spacing, borderRadius, typography } from '../theme.js';
@@ -283,8 +284,7 @@ const DatePicker = memo(function DatePicker({
   const [hoveredDay, setHoveredDay] = useState(null);
   const [hoveredNav, setHoveredNav] = useState(null);
   const [isFocused, setIsFocused] = useState(false);
-  const [openAbove, setOpenAbove] = useState(false);
-  const [openLeft, setOpenLeft] = useState(false);
+  const [popupPos, setPopupPos] = useState({ top: 0, left: 0, openAbove: false });
   
   const containerRef = useRef(null);
   const inputRef = useRef(null);
@@ -292,17 +292,26 @@ const DatePicker = memo(function DatePicker({
 
   const selectedDate = value ? parseDate(value) : null;
 
-  // Check if popup should open above or to the left
+  // Calculate popup position when opening
   useEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-      const spaceRight = window.innerWidth - rect.left;
+      const openAbove = spaceBelow < 350 && spaceAbove > spaceBelow;
+      const popupWidth = 300;
       
-      setOpenAbove(spaceBelow < 350 && spaceAbove > spaceBelow);
-      // Popup is ~300px wide, check if it would overflow
-      setOpenLeft(spaceRight < 320);
+      let left = rect.left;
+      // Keep popup on screen horizontally
+      if (left + popupWidth > window.innerWidth - 16) {
+        left = Math.max(16, rect.right - popupWidth);
+      }
+      
+      setPopupPos({
+        top: openAbove ? rect.top : rect.bottom + 4,
+        left,
+        openAbove,
+      });
     }
   }, [isOpen]);
 
@@ -311,7 +320,10 @@ const DatePicker = memo(function DatePicker({
     if (!isOpen) return;
 
     const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      if (
+        containerRef.current && !containerRef.current.contains(e.target) &&
+        popupRef.current && !popupRef.current.contains(e.target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -529,10 +541,23 @@ const DatePicker = memo(function DatePicker({
         </div>
       </div>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <div 
           ref={popupRef}
-          style={{ ...styles.popup, ...(openAbove ? styles.popupAbove : {}), ...(openLeft ? styles.popupLeft : {}) }}
+          style={{
+            position: 'fixed',
+            top: popupPos.openAbove ? undefined : popupPos.top,
+            bottom: popupPos.openAbove ? `${window.innerHeight - popupPos.top + 4}px` : undefined,
+            left: popupPos.left,
+            zIndex: 10002,
+            background: colors.bgCard,
+            border: `1px solid ${colors.border}`,
+            borderRadius: borderRadius.lg,
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.4)',
+            padding: spacing[3],
+            minWidth: '280px',
+            animation: 'fadeIn 150ms ease',
+          }}
           role="dialog"
           aria-label="Choose date"
         >
@@ -608,7 +633,8 @@ const DatePicker = memo(function DatePicker({
               )}
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
