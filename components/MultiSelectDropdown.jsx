@@ -292,4 +292,4 @@ MultiSelectDropdown.propTypes = {
 };
 
 export { MultiSelectDropdown };
-export default MultiSelectDropdown;
+export default memo(MultiSelectDropdown);

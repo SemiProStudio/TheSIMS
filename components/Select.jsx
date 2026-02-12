@@ -4,7 +4,7 @@
 // Uses React Portal to escape stacking context issues (e.g., backdrop-filter)
 // ============================================================================
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
 import {colors, typography, borderRadius} from '../theme.js';
 import { ChevronDown } from 'lucide-react';
@@ -283,4 +283,4 @@ export function Select({
   );
 }
 
-export default Select;
+export default memo(Select);

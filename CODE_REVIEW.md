@@ -10,7 +10,7 @@
 |---|------|----------|--------|
 | 1.1 | App.jsx God Component | HIGH | ✅ Phases 2-3 refactoring (handlers extracted, DataContext API, raw setters eliminated) |
 | 1.2 | Duplicate Files | MEDIUM | ✅ Cleaned up in Phase 1-2 |
-| 1.3 | Flat File Structure | MEDIUM | ⏳ Deferred |
+| 1.3 | Flat File Structure | MEDIUM | ✅ Contexts consolidated, utils relocated |
 | 1.4 | ui.jsx Monolith | LOW | ⏳ Deferred |
 | 2.1 | Optimistic Updates Without Rollback | HIGH | ✅ Toast system + rollback for maintenance |
 | 2.2 | Dual Data Paths | MEDIUM | ✅ Removed 180 lines of local-only fallbacks |
@@ -24,7 +24,7 @@
 | 3.5 | Supabase Anon Key Exposure | LOW | ✅ By design |
 | 4.1 | Service Worker Cache-First | CRITICAL | ✅ Rewritten with correct strategies + update banner |
 | 4.2 | Full Table Loads on Every Mount | HIGH | ⏳ Requires TanStack Query or similar |
-| 4.3 | App.jsx Not Memoized | MEDIUM | ⏳ Requires route-based architecture |
+| 4.3 | App.jsx Not Memoized | MEDIUM | ✅ AppViews, AppModals, + 4 components wrapped in memo |
 | 4.4 | Inline Style Objects | LOW | ⏳ Deferred |
 | 5.1 | 184 Console Statements | MEDIUM | ✅ Phase 3a logger system |
 | 5.2 | document.write for Print | LOW | ⏳ Deferred |

@@ -3,11 +3,11 @@
 // Hamburger menu + logo + user dropdown for mobile viewports
 // ============================================================================
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { colors, spacing, typography, borderRadius } from '../theme.js';
 import { VIEWS, MODALS } from '../constants.js';
 
-export default function MobileHeader({
+export default memo(function MobileHeader({
   currentUser,
   onOpenSidebar,
   onOpenModal,
@@ -198,4 +198,4 @@ export default function MobileHeader({
       )}
     </div>
   );
-}
+});

@@ -4,7 +4,7 @@
 // Reads state from contexts; receives assembled handlers from App.
 // ============================================================================
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, memo } from 'react';
 import { VIEWS, MODALS } from './constants.js';
 import { error as logError } from './lib/logger.js';
 import { useToast } from './contexts/ToastContext.jsx';
@@ -48,7 +48,7 @@ const ItemFormPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ de
 const SpecsPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ default: m.SpecsPage })));
 const CategoriesPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ default: m.CategoriesPage })));
 
-export default function AppViews({ handlers, currentUser, changeLog }) {
+export default memo(function AppViews({ handlers, currentUser, changeLog }) {
   const { addToast } = useToast();
   // Read state from contexts
   const {
@@ -615,4 +615,4 @@ export default function AppViews({ handlers, currentUser, changeLog }) {
       )}
     </div>
   );
-}
+});

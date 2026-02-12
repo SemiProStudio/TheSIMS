@@ -3,7 +3,7 @@
 // Renders the active modal based on activeModal from ModalContext.
 // ============================================================================
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, memo } from 'react';
 import { VIEWS, MODALS } from './constants.js';
 import { generateItemCode } from './utils';
 import { error as logError } from './lib/logger.js';
@@ -34,7 +34,7 @@ const BulkDeleteModal = lazy(() => import('./modals/BulkModals.jsx').then(m => (
 const AddUserModal = lazy(() => import('./modals/AddUserModal.jsx').then(m => ({ default: m.AddUserModal })));
 const ImagePreviewModal = lazy(() => import('./modals/ImagePreviewModal.jsx'));
 
-export default function AppModals({ handlers, currentUser }) {
+export default memo(function AppModals({ handlers, currentUser }) {
   // Read state from contexts
   const {
     selectedItem, setSelectedItem,
@@ -344,4 +344,4 @@ export default function AppModals({ handlers, currentUser }) {
       />
     </>
   );
-}
+});
