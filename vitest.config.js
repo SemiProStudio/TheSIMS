@@ -11,15 +11,24 @@ export default defineConfig({
     exclude: ['node_modules/', 'dist/', 'e2e/'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json-summary', 'html'],
       exclude: [
         'node_modules/',
         'test/',
+        'e2e/',
         '**/*.d.ts',
         '**/*.config.*',
         'data.js', // Demo data
         'themes-data.js', // Theme definitions
+        'public/', // Static assets
       ],
+      thresholds: {
+        // Baseline thresholds — ratchet up as coverage improves
+        statements: 20,
+        branches: 15,
+        functions: 15,
+        lines: 20,
+      },
     },
   },
 });

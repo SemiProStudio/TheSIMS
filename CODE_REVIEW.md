@@ -11,7 +11,7 @@
 | 1.1 | App.jsx God Component | HIGH | ✅ Phases 2-3 refactoring (handlers extracted, DataContext API, raw setters eliminated) |
 | 1.2 | Duplicate Files | MEDIUM | ✅ Cleaned up in Phase 1-2 |
 | 1.3 | Flat File Structure | MEDIUM | ✅ Contexts consolidated, utils relocated |
-| 1.4 | ui.jsx Monolith | LOW | ⏳ Deferred |
+| 1.4 | ui.jsx Monolith | LOW | ✅ Already split into ui/ directory, ui.jsx is just a re-export |
 | 2.1 | Optimistic Updates Without Rollback | HIGH | ✅ Toast system + rollback for maintenance |
 | 2.2 | Dual Data Paths | MEDIUM | ✅ Removed 180 lines of local-only fallbacks |
 | 2.3 | Field Name Mapping Fragility | MEDIUM | ✅ fieldMap.js already canonical |
@@ -27,7 +27,7 @@
 | 4.3 | App.jsx Not Memoized | MEDIUM | ✅ AppViews, AppModals, + 4 components wrapped in memo |
 | 4.4 | Inline Style Objects | LOW | ⏳ Deferred |
 | 5.1 | 184 Console Statements | MEDIUM | ✅ Phase 3a logger system |
-| 5.2 | document.write for Print | LOW | ⏳ Deferred |
+| 5.2 | document.write for Print | LOW | ✅ Replaced with Blob URL approach |
 | 5.3 | PropTypes vs TypeScript | LOW | ⏳ Deferred |
 | 5.4 | No ESLint/Prettier in CI | LOW | ✅ Already in CI workflow |
 | 6.1 | Test Coverage Unknown | MEDIUM | ⏳ 705+ tests passing |
