@@ -260,7 +260,7 @@ const AddReminderForm = memo(function AddReminderForm({ onAdd, onCancel }) {
         />
       </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: spacing[3], marginBottom: spacing[3] }}>
         <div>
           <label style={{ ...styles.label, color: showDateError ? colors.danger : undefined }}>
             Due Date *
@@ -270,7 +270,7 @@ const AddReminderForm = memo(function AddReminderForm({ onAdd, onCancel }) {
             onChange={e => handleChange('dueDate', e.target.value)}
             min={getTodayISO()}
             error={showDateError}
-            placeholder="Select due date"
+            placeholder="Select date"
             aria-label="Due date"
           />
         </div>
