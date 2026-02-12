@@ -115,13 +115,8 @@ export function useInventoryActions({
         checkoutCount: 0
       };
 
-      // Use DataContext method - persists to Supabase AND updates local state
-      if (dataContext?.createItem) {
-        await dataContext.createItem(newItem);
-      } else {
-        // Fallback to local state only (demo mode without DataContext)
-        dataContext.addInventoryItems(newItem);
-      }
+      // Persist to Supabase AND update local state
+      await dataContext.createItem(newItem);
       
       // Log the creation
       addChangeLog({
@@ -144,11 +139,7 @@ export function useInventoryActions({
           const { storageService } = await import('../lib/index.js');
           const result = await storageService.uploadFromDataUrl(newItem.image, id);
           if (result?.url && !result.url.startsWith('data:')) {
-            if (dataContext?.updateItem) {
               await dataContext.updateItem(id, { image: result.url });
-            } else {
-              dataContext.patchInventoryItem(id, { image: result.url });
-            }
           }
         } catch (uploadErr) {
           logError('Failed to upload image to storage after item creation:', uploadErr);
@@ -237,13 +228,8 @@ export function useInventoryActions({
         }
       }
 
-      // Use DataContext method - persists to Supabase AND updates local state
-      if (dataContext?.updateItem) {
-        await dataContext.updateItem(editingItemId, updates);
-      } else {
-        // Fallback to local state only
-        dataContext.patchInventoryItem(editingItemId, updates);
-      }
+      // Persist to Supabase AND update local state
+      await dataContext.updateItem(editingItemId, updates);
       
       // Update selected item if it's the one being edited
       if (selectedItem?.id === editingItemId) {
@@ -296,13 +282,8 @@ export function useInventoryActions({
         setError(null);
         
         try {
-          // Use DataContext method - deletes from Supabase AND updates local state
-          if (dataContext?.deleteItem) {
-            await dataContext.deleteItem(id);
-          } else {
-            // Fallback to local state only
-            dataContext.removeInventoryItems(id);
-          }
+          // Delete from Supabase AND update local state
+          await dataContext.deleteItem(id);
           
           // Log the deletion
           addChangeLog({
@@ -374,23 +355,13 @@ export function useInventoryActions({
     try {
       const updatedItems = [];
       
-      // Update each item
+      // Update each item via Supabase + local state
       for (const itemId of bulkActionIds) {
         const item = inventory.find(i => i.id === itemId);
         if (item) {
           updatedItems.push({ id: item.id, name: item.name, oldStatus: item.status });
-          
-          if (dataContext?.updateItem) {
-            await dataContext.updateItem(itemId, { status: newStatus });
-          }
+          await dataContext.updateItem(itemId, { status: newStatus });
         }
-      }
-      
-      // If no dataContext, update local state directly
-      if (!dataContext?.updateItem) {
-        dataContext.mapInventory(item => 
-          bulkActionIds.includes(item.id) ? { ...item, status: newStatus } : item
-        );
       }
       
       addChangeLog({
@@ -431,17 +402,8 @@ export function useInventoryActions({
         const item = inventory.find(i => i.id === itemId);
         if (item) {
           updatedItems.push({ id: item.id, name: item.name, oldLocation: item.location });
-          
-          if (dataContext?.updateItem) {
-            await dataContext.updateItem(itemId, { location: newLocation });
-          }
+          await dataContext.updateItem(itemId, { location: newLocation });
         }
-      }
-      
-      if (!dataContext?.updateItem) {
-        dataContext.mapInventory(item => 
-          bulkActionIds.includes(item.id) ? { ...item, location: newLocation } : item
-        );
       }
       
       addChangeLog({
@@ -482,17 +444,8 @@ export function useInventoryActions({
         const item = inventory.find(i => i.id === itemId);
         if (item) {
           updatedItems.push({ id: item.id, name: item.name, oldCategory: item.category });
-          
-          if (dataContext?.updateItem) {
-            await dataContext.updateItem(itemId, { category: newCategory, specs: {} });
-          }
+          await dataContext.updateItem(itemId, { category: newCategory, specs: {} });
         }
-      }
-      
-      if (!dataContext?.updateItem) {
-        dataContext.mapInventory(item => 
-          bulkActionIds.includes(item.id) ? { ...item, category: newCategory, specs: {} } : item
-        );
       }
       
       addChangeLog({
@@ -529,15 +482,9 @@ export function useInventoryActions({
     try {
       const deletedItems = inventory.filter(i => bulkActionIds.includes(i.id));
       
-      // Delete each item
+      // Delete each item via Supabase + local state
       for (const itemId of bulkActionIds) {
-        if (dataContext?.deleteItem) {
-          await dataContext.deleteItem(itemId);
-        }
-      }
-      
-      if (!dataContext?.deleteItem) {
-        dataContext.removeInventoryItems(bulkActionIds);
+        await dataContext.deleteItem(itemId);
       }
       
       // Clear selection if current item was deleted

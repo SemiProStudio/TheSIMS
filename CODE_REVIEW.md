@@ -13,14 +13,14 @@
 | 1.3 | Flat File Structure | MEDIUM | ⏳ Deferred |
 | 1.4 | ui.jsx Monolith | LOW | ⏳ Deferred |
 | 2.1 | Optimistic Updates Without Rollback | HIGH | ✅ Toast system + rollback for maintenance |
-| 2.2 | Dual Data Paths | MEDIUM | ⏳ Deferred (requires removing local-only fallbacks) |
+| 2.2 | Dual Data Paths | MEDIUM | ✅ Removed 180 lines of local-only fallbacks |
 | 2.3 | Field Name Mapping Fragility | MEDIUM | ✅ fieldMap.js already canonical |
 | 2.4 | Audit Log Client-Side Only | MEDIUM | ✅ Fixed in Phase 3c (addAuditLog now persists to Supabase) |
 | 2.5 | No Data Validation on Write | LOW | ✅ Validators wired for reservation, client, maintenance creates |
-| 3.1 | RLS Policies Too Permissive | CRITICAL | ⏳ Requires Supabase migration |
-| 3.2 | Missing RLS DELETE Policies | HIGH | ⏳ Requires Supabase migration |
-| 3.3 | Users Table No INSERT Policy | HIGH | ⏳ Requires Supabase migration |
-| 3.4 | SECURITY DEFINER Functions | MEDIUM | ⏳ Requires Supabase migration |
+| 3.1 | RLS Policies Too Permissive | CRITICAL | ✅ Already fixed in schema.sql — writes use has_permission() |
+| 3.2 | Missing RLS DELETE Policies | HIGH | ✅ Already fixed in schema.sql — DELETE policies exist |
+| 3.3 | Users Table No INSERT Policy | HIGH | ✅ Already fixed — admin_insert_users policy exists |
+| 3.4 | SECURITY DEFINER Functions | MEDIUM | ✅ harden-security-definer.sql exists |
 | 3.5 | Supabase Anon Key Exposure | LOW | ✅ By design |
 | 4.1 | Service Worker Cache-First | CRITICAL | ✅ Rewritten with correct strategies + update banner |
 | 4.2 | Full Table Loads on Every Mount | HIGH | ⏳ Requires TanStack Query or similar |
