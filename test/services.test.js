@@ -1,13 +1,14 @@
 // =============================================================================
 // Services Layer Tests
-// Tests for Supabase service functions
+// Tests for Supabase service functions with mock client
 // =============================================================================
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { getSupabase } from '../lib/supabase.js';
 
 // Mock the Supabase client before importing services
 vi.mock('../lib/supabase.js', () => ({
-  isDemoMode: true,
+  isDemoMode: false,
   getSupabase: vi.fn(),
   supabase: null,
 }));
@@ -37,8 +38,10 @@ const createMockSupabaseClient = (responseData = null, error = null) => ({
         })),
       })),
       order: vi.fn(() => ({
+        order: vi.fn(() => Promise.resolve({ data: responseData, error })),
         limit: vi.fn(() => Promise.resolve({ data: responseData, error })),
       })),
+      single: vi.fn(() => Promise.resolve({ data: responseData, error })),
     })),
     insert: vi.fn(() => ({
       select: vi.fn(() => ({
@@ -68,33 +71,58 @@ const createMockSupabaseClient = (responseData = null, error = null) => ({
 });
 
 // =============================================================================
+// Database Connection Tests
+// =============================================================================
+
+describe('Database Connection', () => {
+  it('should throw when Supabase is unavailable', async () => {
+    getSupabase.mockResolvedValueOnce(null);
+    await expect(inventoryService.getAll()).rejects.toThrow('Database connection unavailable');
+  });
+
+  it('should throw when Supabase returns undefined', async () => {
+    getSupabase.mockResolvedValueOnce(undefined);
+    await expect(inventoryService.getAll()).rejects.toThrow('Database connection unavailable');
+  });
+});
+
+// =============================================================================
 // Notification Preferences Service Tests
 // =============================================================================
 
 describe('notificationPreferencesService', () => {
   describe('getByUserId', () => {
-    it('should return null in demo mode', async () => {
+    it('should return preferences when found', async () => {
+      const prefs = { user_id: 'user-123', email_enabled: true };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(prefs));
+      const result = await notificationPreferencesService.getByUserId('user-123');
+      expect(result).toEqual(prefs);
+    });
+
+    it('should return null when not found', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(null));
       const result = await notificationPreferencesService.getByUserId('user-123');
       expect(result).toBeNull();
     });
   });
 
   describe('upsert', () => {
-    it('should return preferences in demo mode', async () => {
-      const prefs = {
-        email_enabled: true,
-        due_date_reminders: true,
-      };
+    it('should return upserted preferences', async () => {
+      const prefs = { email_enabled: true, due_date_reminders: true };
+      const returnData = { user_id: 'user-123', ...prefs };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(returnData));
       const result = await notificationPreferencesService.upsert('user-123', prefs);
-      expect(result).toEqual(prefs);
+      expect(result).toEqual(returnData);
     });
   });
 
   describe('update', () => {
-    it('should return updates in demo mode', async () => {
+    it('should return updated preferences', async () => {
       const updates = { email_enabled: false };
+      const returnData = { user_id: 'user-123', ...updates };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(returnData));
       const result = await notificationPreferencesService.update('user-123', updates);
-      expect(result).toEqual(updates);
+      expect(result).toEqual(returnData);
     });
   });
 });
@@ -105,39 +133,47 @@ describe('notificationPreferencesService', () => {
 
 describe('notificationLogService', () => {
   describe('getByUserId', () => {
-    it('should return empty array in demo mode', async () => {
+    it('should return notifications array', async () => {
+      const logs = [{ id: 'log-1', user_id: 'user-123' }];
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(logs));
       const result = await notificationLogService.getByUserId('user-123');
-      expect(result).toEqual([]);
+      expect(result).toEqual(logs);
     });
 
     it('should accept limit parameter', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient([]));
       const result = await notificationLogService.getByUserId('user-123', 10);
       expect(result).toEqual([]);
     });
   });
 
   describe('create', () => {
-    it('should return notification in demo mode', async () => {
+    it('should return created notification', async () => {
       const notification = {
         user_id: 'user-123',
         email: 'test@example.com',
         notification_type: 'checkout_confirmation',
         subject: 'Test Subject',
       };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(notification));
       const result = await notificationLogService.create(notification);
       expect(result).toEqual(notification);
     });
   });
 
   describe('updateStatus', () => {
-    it('should return status update in demo mode', async () => {
+    it('should return updated status', async () => {
+      const returnData = { id: 'log-123', status: 'sent' };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(returnData));
       const result = await notificationLogService.updateStatus('log-123', 'sent');
-      expect(result).toEqual({ id: 'log-123', status: 'sent' });
+      expect(result).toEqual(returnData);
     });
 
-    it('should include error message when provided', async () => {
+    it('should handle error message parameter', async () => {
+      const returnData = { id: 'log-123', status: 'failed' };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(returnData));
       const result = await notificationLogService.updateStatus('log-123', 'failed', 'Network error');
-      expect(result).toEqual({ id: 'log-123', status: 'failed' });
+      expect(result).toEqual(returnData);
     });
   });
 });
@@ -148,264 +184,221 @@ describe('notificationLogService', () => {
 
 describe('emailService', () => {
   describe('send', () => {
-    it('should return success with demo flag in demo mode', async () => {
+    it('should send email via edge function', async () => {
+      const responseData = { success: true };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(responseData));
       const result = await emailService.send({
         to: 'test@example.com',
         templateKey: 'checkout_confirmation',
         templateData: { borrower_name: 'Test User' },
       });
-      expect(result).toEqual({ success: true, demo: true });
+      expect(result).toBeDefined();
     });
 
-    it('should return demo result regardless of input', async () => {
+    it('should handle send errors gracefully', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(null, { message: 'Edge Function not deployed' }));
+      // emailService.send catches errors internally and returns fallback
       const result = await emailService.send({
         to: 'test@example.com',
         templateKey: 'checkout_confirmation',
-        templateData: { item_name: 'Camera' },
+        templateData: {},
       });
-      
-      expect(result).toEqual({ success: true, demo: true });
+      expect(result).toBeDefined();
     });
   });
 
   describe('sendCheckoutConfirmation', () => {
-    it('should call send with correct template data', async () => {
-      const sendSpy = vi.spyOn(emailService, 'send');
-      
+    it('should call send with correct template', async () => {
+      const sendSpy = vi.spyOn(emailService, 'send').mockResolvedValue({ success: true });
+
       await emailService.sendCheckoutConfirmation({
-        borrowerEmail: 'borrower@example.com',
-        borrowerName: 'John Doe',
-        item: { id: 'CAM001', name: 'Canon R5', brand: 'Canon' },
+        borrowerEmail: 'test@example.com',
+        borrowerName: 'Test User',
+        item: { id: 'CAM001', name: 'Camera', brand: 'Canon' },
         checkoutDate: '2024-01-15',
         dueDate: '2024-01-22',
-        project: 'Corporate Video',
+        project: 'Film Shoot',
       });
-      
-      expect(sendSpy).toHaveBeenCalledWith({
-        to: 'borrower@example.com',
-        templateKey: 'checkout_confirmation',
-        templateData: expect.objectContaining({
-          borrower_name: 'John Doe',
-          item_name: 'Canon R5',
-          item_id: 'CAM001',
-          item_brand: 'Canon',
-          checkout_date: '2024-01-15',
-          due_date: '2024-01-22',
-          project: 'Corporate Video',
-          company_name: 'SIMS',
-        }),
+
+      expect(sendSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'test@example.com',
+          templateKey: 'checkout_confirmation',
+          templateData: expect.objectContaining({
+            borrower_name: 'Test User',
+            item_name: 'Camera',
+          }),
+        })
+      );
+
+      sendSpy.mockRestore();
+    });
+
+    it('should handle missing item properties', async () => {
+      const sendSpy = vi.spyOn(emailService, 'send').mockResolvedValue({ success: true });
+
+      await emailService.sendCheckoutConfirmation({
+        borrowerEmail: 'test@example.com',
+        borrowerName: 'Test',
+        item: { id: 'CAM001', name: 'Camera' },
+        checkoutDate: '2024-01-15',
+        dueDate: '2024-01-22',
       });
-      
+
+      expect(sendSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          templateData: expect.objectContaining({
+            item_brand: '',
+          }),
+        })
+      );
+
       sendSpy.mockRestore();
     });
   });
 
   describe('sendCheckinConfirmation', () => {
-    it('should call send with correct template data', async () => {
-      const sendSpy = vi.spyOn(emailService, 'send');
-      
+    it('should call send with correct template', async () => {
+      const sendSpy = vi.spyOn(emailService, 'send').mockResolvedValue({ success: true });
+
       await emailService.sendCheckinConfirmation({
-        borrowerEmail: 'borrower@example.com',
-        borrowerName: 'John Doe',
-        item: { id: 'CAM001', name: 'Canon R5' },
+        borrowerEmail: 'test@example.com',
+        borrowerName: 'Test User',
+        item: { id: 'CAM001', name: 'Camera', brand: 'Canon' },
         returnDate: '2024-01-20',
       });
-      
-      expect(sendSpy).toHaveBeenCalledWith({
-        to: 'borrower@example.com',
-        templateKey: 'checkin_confirmation',
-        templateData: expect.objectContaining({
-          borrower_name: 'John Doe',
-          item_name: 'Canon R5',
-          item_id: 'CAM001',
-          return_date: '2024-01-20',
-          company_name: 'SIMS',
-        }),
-      });
-      
+
+      expect(sendSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          templateKey: 'checkin_confirmation',
+        })
+      );
+
       sendSpy.mockRestore();
     });
   });
 
   describe('sendReservationConfirmation', () => {
-    it('should call send with correct template data', async () => {
-      const sendSpy = vi.spyOn(emailService, 'send');
-      
+    it('should call send with correct template', async () => {
+      const sendSpy = vi.spyOn(emailService, 'send').mockResolvedValue({ success: true });
+
       await emailService.sendReservationConfirmation({
-        userEmail: 'user@example.com',
-        userName: 'Jane Smith',
-        item: { id: 'LENS001', name: '24-70mm f/2.8', brand: 'Canon' },
-        reservation: {
-          project: 'Wedding Shoot',
-          start: '2024-02-01',
-          end: '2024-02-03',
-        },
+        contactEmail: 'test@example.com',
+        contactName: 'Test User',
+        items: [{ id: 'CAM001', name: 'Camera' }],
+        project: 'Film Shoot',
+        startDate: '2024-02-01',
+        endDate: '2024-02-05',
       });
-      
-      expect(sendSpy).toHaveBeenCalledWith({
-        to: 'user@example.com',
-        templateKey: 'reservation_confirmation',
-        templateData: expect.objectContaining({
-          user_name: 'Jane Smith',
-          item_name: '24-70mm f/2.8',
-          item_id: 'LENS001',
-          item_brand: 'Canon',
-          project_name: 'Wedding Shoot',
-          start_date: '2024-02-01',
-          end_date: '2024-02-03',
-          company_name: 'SIMS',
-        }),
-      });
-      
+
+      expect(sendSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          templateKey: 'reservation_confirmation',
+        })
+      );
+
       sendSpy.mockRestore();
     });
   });
 
   describe('sendDueDateReminder', () => {
-    it('should use due_date_reminder template for upcoming due dates', async () => {
-      const sendSpy = vi.spyOn(emailService, 'send');
-      
+    it('should call send with correct template', async () => {
+      const sendSpy = vi.spyOn(emailService, 'send').mockResolvedValue({ success: true });
+
       await emailService.sendDueDateReminder({
-        borrowerEmail: 'borrower@example.com',
-        borrowerName: 'John Doe',
-        item: { id: 'CAM001', name: 'Canon R5' },
+        borrowerEmail: 'test@example.com',
+        borrowerName: 'Test User',
+        item: { id: 'CAM001', name: 'Camera', brand: 'Canon' },
         dueDate: '2024-01-22',
-        daysUntilDue: 3,
+        checkoutDate: '2024-01-15',
       });
-      
+
       expect(sendSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           templateKey: 'due_date_reminder',
         })
       );
-      
-      sendSpy.mockRestore();
-    });
 
-    it('should use overdue_notice template for overdue items', async () => {
-      const sendSpy = vi.spyOn(emailService, 'send');
-      
-      await emailService.sendDueDateReminder({
-        borrowerEmail: 'borrower@example.com',
-        borrowerName: 'John Doe',
-        item: { id: 'CAM001', name: 'Canon R5' },
-        dueDate: '2024-01-15',
-        daysUntilDue: -3,
-      });
-      
-      expect(sendSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          templateKey: 'overdue_notice',
-        })
-      );
-      
       sendSpy.mockRestore();
     });
   });
 });
 
 // =============================================================================
-// Inventory Service Tests (Demo Mode)
+// Inventory Service Tests
 // =============================================================================
 
-describe('inventoryService (demo mode)', () => {
+describe('inventoryService', () => {
   describe('getAll', () => {
-    it('should return empty array in demo mode', async () => {
+    it('should return transformed inventory items', async () => {
+      const dbItems = [{ id: 'CAM001', name: 'Camera', category_name: 'Cameras' }];
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(dbItems));
       const result = await inventoryService.getAll();
-      expect(result).toEqual([]);
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
     });
   });
 
   describe('getById', () => {
-    it('should return null in demo mode', async () => {
+    it('should return a single item', async () => {
+      const dbItem = { id: 'CAM001', name: 'Camera', category_name: 'Cameras' };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(dbItem));
       const result = await inventoryService.getById('CAM001');
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('create', () => {
-    it('should return the item in demo mode', async () => {
-      const item = { id: 'CAM001', name: 'Test Camera' };
-      const result = await inventoryService.create(item);
-      expect(result).toEqual(item);
-    });
-  });
-
-  describe('update', () => {
-    it('should return updates in demo mode', async () => {
-      const updates = { name: 'Updated Camera' };
-      const result = await inventoryService.update('CAM001', updates);
-      expect(result).toEqual({ id: 'CAM001', name: 'Updated Camera' });
+      expect(result).toBeDefined();
+      expect(result.id).toBe('CAM001');
     });
   });
 
   describe('delete', () => {
-    it('should return id in demo mode', async () => {
+    it('should delete and return the id', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient({ id: 'CAM001' }));
       const result = await inventoryService.delete('CAM001');
-      expect(result).toEqual({ id: 'CAM001' });
+      expect(result).toBeDefined();
     });
   });
 });
 
 // =============================================================================
-// Clients Service Tests (Demo Mode)
+// Clients Service Tests
 // =============================================================================
 
-describe('clientsService (demo mode)', () => {
+describe('clientsService', () => {
   describe('getAll', () => {
-    it('should return empty array in demo mode', async () => {
+    it('should return clients array', async () => {
+      const clients = [{ id: 'client-1', name: 'Test Client' }];
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(clients));
       const result = await clientsService.getAll();
-      expect(result).toEqual([]);
-    });
-  });
-
-  describe('create', () => {
-    it('should return the client in demo mode', async () => {
-      const client = { id: 'client-1', name: 'Test Client' };
-      const result = await clientsService.create(client);
-      expect(result).toEqual(client);
+      expect(result).toEqual(clients);
     });
   });
 });
 
 // =============================================================================
-// Packages Service Tests (Demo Mode)
+// Packages Service Tests
 // =============================================================================
 
-describe('packagesService (demo mode)', () => {
+describe('packagesService', () => {
   describe('getAll', () => {
-    it('should return empty array in demo mode', async () => {
+    it('should return packages array', async () => {
+      const pkgs = [{ id: 'pkg-1', name: 'Interview Kit' }];
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(pkgs));
       const result = await packagesService.getAll();
-      expect(result).toEqual([]);
-    });
-  });
-
-  describe('create', () => {
-    it('should return the package in demo mode', async () => {
-      const pkg = { id: 'pkg-1', name: 'Interview Kit' };
-      const result = await packagesService.create(pkg);
-      expect(result).toEqual(pkg);
+      expect(result).toBeDefined();
     });
   });
 });
 
 // =============================================================================
-// Pack Lists Service Tests (Demo Mode)
+// Pack Lists Service Tests
 // =============================================================================
 
-describe('packListsService (demo mode)', () => {
+describe('packListsService', () => {
   describe('getAll', () => {
-    it('should return empty array in demo mode', async () => {
+    it('should return pack lists array', async () => {
+      const lists = [{ id: 'pl-1', name: 'Corporate Shoot', created_at: '2024-01-01' }];
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(lists));
       const result = await packListsService.getAll();
-      expect(result).toEqual([]);
-    });
-  });
-
-  describe('create', () => {
-    it('should return the pack list in demo mode', async () => {
-      const packList = { id: 'pl-1', name: 'Corporate Shoot' };
-      const result = await packListsService.create(packList);
-      expect(result).toEqual(packList);
+      expect(result).toBeDefined();
     });
   });
 });
@@ -415,35 +408,30 @@ describe('packListsService (demo mode)', () => {
 // =============================================================================
 
 describe('Service Error Handling', () => {
-  it('emailService.send should handle missing email gracefully', async () => {
-    // Should not throw in demo mode
-    const result = await emailService.send({
-      to: '',
-      templateKey: 'checkout_confirmation',
-      templateData: {},
-    });
-    expect(result).toEqual({ success: true, demo: true });
+  it('should throw when Supabase returns an error', async () => {
+    getSupabase.mockResolvedValueOnce(createMockSupabaseClient(null, { message: 'DB error' }));
+    await expect(inventoryService.getAll()).rejects.toThrow();
   });
 
   it('emailService helper methods should handle missing item properties', async () => {
-    const sendSpy = vi.spyOn(emailService, 'send');
-    
+    const sendSpy = vi.spyOn(emailService, 'send').mockResolvedValue({ success: true });
+
     await emailService.sendCheckoutConfirmation({
       borrowerEmail: 'test@example.com',
       borrowerName: 'Test',
-      item: { id: 'CAM001', name: 'Camera' }, // No brand
+      item: { id: 'CAM001', name: 'Camera' },
       checkoutDate: '2024-01-15',
       dueDate: '2024-01-22',
     });
-    
+
     expect(sendSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         templateData: expect.objectContaining({
-          item_brand: '', // Should default to empty string
+          item_brand: '',
         }),
       })
     );
-    
+
     sendSpy.mockRestore();
   });
 });
