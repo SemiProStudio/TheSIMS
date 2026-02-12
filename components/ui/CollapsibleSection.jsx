@@ -42,6 +42,10 @@ export function CollapsibleSection({
       <div
         className="collapsible-header"
         onClick={onToggleCollapse}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleCollapse(); } }}
+        role="button"
+        tabIndex={0}
+        aria-expanded={!collapsed}
         style={{
           '--section-accent-color': accentColor,
           padding: `${spacing[3]}px ${spacing[4]}px`,
