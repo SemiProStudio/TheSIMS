@@ -24,10 +24,10 @@ export default defineConfig({
       ],
       thresholds: {
         // Baseline thresholds — ratchet up as coverage improves
-        statements: 20,
-        branches: 15,
-        functions: 15,
-        lines: 20,
+        statements: 40,
+        branches: 40,
+        functions: 35,
+        lines: 40,
       },
     },
   },
