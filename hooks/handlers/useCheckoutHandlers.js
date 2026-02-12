@@ -99,6 +99,8 @@ export function useCheckoutHandlers({
           project
         }).catch(err => logError('Email send failed:', err));
       }
+      
+      addToast(`${checkoutItem?.name || 'Item'} checked out to ${borrowerName}`, 'success');
     } catch (err) {
       logError('Checkout process failed:', err);
       addToast('Checkout failed: ' + (err.message || 'Please try again.'), 'error');
@@ -167,6 +169,8 @@ export function useCheckoutHandlers({
         returnDate
       }).catch(err => logError('Email send failed:', err));
     }
+    
+    addToast(`${checkinItemData?.name || 'Item'} checked in successfully`, 'success');
     
     } catch (err) {
       logError('Checkin process failed:', err);

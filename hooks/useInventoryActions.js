@@ -158,6 +158,7 @@ export function useInventoryActions({
       
       closeModal();
       resetItemForm?.();
+      addToast(`${newItem.name} added to inventory`, 'success');
       
       // If on the Add Item page, navigate back to Gear List
       if (currentView === VIEWS.ADD_ITEM) {
@@ -268,6 +269,7 @@ export function useInventoryActions({
       
       closeModal();
       setEditingItemId(null);
+      addToast('Item updated', 'success');
     } catch (err) {
       logError('Failed to update item:', err);
       setError(err.message || 'Failed to update item');
@@ -324,6 +326,7 @@ export function useInventoryActions({
           }
           
           setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+          addToast(`${itemToDelete?.name || 'Item'} deleted`, 'success');
         } catch (err) {
           logError('Failed to delete item:', err);
           setError(err.message || 'Failed to delete item');
@@ -405,6 +408,7 @@ export function useInventoryActions({
         description: `Bulk status change to "${newStatus}" for ${bulkActionIds.length} items`,
       });
       
+      addToast(`Status updated for ${bulkActionIds.length} items`, 'success');
       closeModal();
       setBulkActionIds([]);
     } catch (err) {
@@ -455,6 +459,7 @@ export function useInventoryActions({
         description: `Bulk location change to "${newLocation}" for ${bulkActionIds.length} items`,
       });
       
+      addToast(`Location updated for ${bulkActionIds.length} items`, 'success');
       closeModal();
       setBulkActionIds([]);
     } catch (err) {
@@ -505,6 +510,7 @@ export function useInventoryActions({
         description: `Bulk category change to "${newCategory}" for ${bulkActionIds.length} items`,
       });
       
+      addToast(`Category updated for ${bulkActionIds.length} items`, 'success');
       closeModal();
       setBulkActionIds([]);
     } catch (err) {
@@ -555,6 +561,7 @@ export function useInventoryActions({
         description: `Bulk deleted ${bulkActionIds.length} items`,
       });
       
+      addToast(`${bulkActionIds.length} items deleted`, 'success');
       closeModal();
       setBulkActionIds([]);
     } catch (err) {

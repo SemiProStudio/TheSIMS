@@ -4,6 +4,40 @@
 
 ---
 
+## Completion Tracker
+
+| # | Item | Severity | Status |
+|---|------|----------|--------|
+| 1.1 | App.jsx God Component | HIGH | ✅ Phases 2-3 refactoring (handlers extracted, DataContext API, raw setters eliminated) |
+| 1.2 | Duplicate Files | MEDIUM | ✅ Cleaned up in Phase 1-2 |
+| 1.3 | Flat File Structure | MEDIUM | ⏳ Deferred |
+| 1.4 | ui.jsx Monolith | LOW | ⏳ Deferred |
+| 2.1 | Optimistic Updates Without Rollback | HIGH | ✅ Toast system + rollback for maintenance |
+| 2.2 | Dual Data Paths | MEDIUM | ⏳ Deferred (requires removing local-only fallbacks) |
+| 2.3 | Field Name Mapping Fragility | MEDIUM | ✅ fieldMap.js already canonical |
+| 2.4 | Audit Log Client-Side Only | MEDIUM | ✅ Fixed in Phase 3c (addAuditLog now persists to Supabase) |
+| 2.5 | No Data Validation on Write | LOW | ✅ Validators wired for reservation, client, maintenance creates |
+| 3.1 | RLS Policies Too Permissive | CRITICAL | ⏳ Requires Supabase migration |
+| 3.2 | Missing RLS DELETE Policies | HIGH | ⏳ Requires Supabase migration |
+| 3.3 | Users Table No INSERT Policy | HIGH | ⏳ Requires Supabase migration |
+| 3.4 | SECURITY DEFINER Functions | MEDIUM | ⏳ Requires Supabase migration |
+| 3.5 | Supabase Anon Key Exposure | LOW | ✅ By design |
+| 4.1 | Service Worker Cache-First | CRITICAL | ✅ Rewritten with correct strategies + update banner |
+| 4.2 | Full Table Loads on Every Mount | HIGH | ⏳ Requires TanStack Query or similar |
+| 4.3 | App.jsx Not Memoized | MEDIUM | ⏳ Requires route-based architecture |
+| 4.4 | Inline Style Objects | LOW | ⏳ Deferred |
+| 5.1 | 184 Console Statements | MEDIUM | ✅ Phase 3a logger system |
+| 5.2 | document.write for Print | LOW | ⏳ Deferred |
+| 5.3 | PropTypes vs TypeScript | LOW | ⏳ Deferred |
+| 5.4 | No ESLint/Prettier in CI | LOW | ✅ Already in CI workflow |
+| 6.1 | Test Coverage Unknown | MEDIUM | ⏳ 705+ tests passing |
+| 6.2 | No Tests for Services | MEDIUM | ⏳ Deferred |
+| 7.1 | Service Worker Versioning | HIGH | ✅ Fixed with §4.1 |
+| 7.2 | No Environment Separation | MEDIUM | ⏳ Requires Supabase project linking |
+| 7.3 | No Database Migration System | MEDIUM | ⏳ Requires Supabase CLI setup |
+
+---
+
 ## Executive Summary
 
 SIMS is a well-featured inventory management SPA (~49K lines of application JS/JSX) built with React 18 + Supabase + Vite, deployed on Vercel as a PWA. It has a solid foundation — authentication, role-based permissions, lazy loading, error boundaries, and a proper service layer. However, several structural and security issues merit attention, particularly around the **service worker caching strategy**, **RLS policy gaps**, **App.jsx god component**, and **state synchronization complexity**. The items below are sorted by impact within each section.
