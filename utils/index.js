@@ -3,8 +3,8 @@
 // Pure functions with no side effects for data transformation and formatting
 // ============================================================================
 
-import { CATEGORY_PREFIXES, STATUS, CONDITION } from './constants.js';
-import { colors } from './theme.js';
+import { CATEGORY_PREFIXES, STATUS, CONDITION } from '../constants.js';
+import { colors } from '../theme.js';
 
 // ============================================================================
 // ID Generation
