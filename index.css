@@ -42,7 +42,7 @@
   /* Text - Improved contrast ratios */
   --text-primary: #e8ecf0;         /* Was #e2e6ea, now 14.1:1 on dark */
   --text-secondary: rgba(232, 236, 240, 0.75);  /* Was 0.65, now ~8.4:1 */
-  --text-muted: rgba(232, 236, 240, 0.55);      /* Was 0.40, now ~4.8:1 */
+  --text-muted: rgba(232, 236, 240, 0.62);      /* Was 0.55, bumped for readability */
   
   /* Borders */
   --border: rgba(106, 154, 184, 0.25);  /* Updated to match new primary */

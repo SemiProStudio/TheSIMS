@@ -105,8 +105,8 @@ export const withOpacity = (color, percent) => {
 export const typography = {
   fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   fontSize: {
-    xs: '10px',
-    sm: '12px',
+    xs: '12px',
+    sm: '13px',
     base: '14px',
     md: '15px',
     lg: '16px',

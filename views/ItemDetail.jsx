@@ -35,7 +35,7 @@ const getItemStyle = (panelColor) => ({
   background: withOpacity(panelColor, 20),
   border: `1px solid ${withOpacity(panelColor, 50)}`,
   borderRadius: borderRadius.md,
-  padding: spacing[3],
+  padding: `${spacing[3]}px ${spacing[4]}px`,
   marginBottom: spacing[2],
 });
 
@@ -443,11 +443,11 @@ function ItemDetail({
           >
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: spacing[3] }}>
               {(specsExpanded ? allSpecs : allSpecs.slice(0, 10)).map((spec) => (
-                <div key={spec.name}>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, textTransform: 'uppercase', marginBottom: spacing[1] }}>
+                <div key={spec.name} style={getItemStyle(SECTION_COLORS.specs)}>
+                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: spacing[1] }}>
                     {spec.name}
                   </div>
-                  <div style={{ color: colors.textPrimary, fontSize: typography.fontSize.sm }}>
+                  <div style={{ color: colors.textPrimary, fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.medium }}>
                     {spec.value}
                   </div>
                 </div>
@@ -487,15 +487,15 @@ function ItemDetail({
             onToggleCollapse={() => toggleCollapse('reservations')}
             action={canEditItems && <button onClick={onAddReservation} style={{ ...styles.btn, padding: `${spacing[1]}px ${spacing[2]}px`, fontSize: typography.fontSize.xs }}><Plus size={12} /></button>}
           >
-            <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+            <div style={{ maxHeight: 280, overflowY: 'auto' }}>
               {!item.reservations || item.reservations.length === 0 ? (
-                <p style={{ color: colors.textMuted, textAlign: 'center', fontSize: typography.fontSize.sm, margin: 0, padding: spacing[3] }}>No reservations</p>
+                <p style={{ color: colors.textMuted, textAlign: 'center', fontSize: typography.fontSize.sm, margin: 0, padding: spacing[4] }}>No reservations</p>
               ) : item.reservations.map(r => (
                 <div key={r.id} onClick={() => onViewReservation?.(r)} style={{ ...getItemStyle(reservationsColor), cursor: 'pointer' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{r.project}</div>
-                      <div style={{ fontSize: typography.fontSize.xs, color: colors.primary }}>{formatDate(r.start)} → {formatDate(r.end)}</div>
+                      <div style={{ fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{r.project}</div>
+                      <div style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary, marginTop: spacing[1] }}>{formatDate(r.start)} → {formatDate(r.end)}</div>
                     </div>
                     {canEditItems && (
                       <button onClick={(e) => { e.stopPropagation(); onDeleteReservation(item.id, r.id); }} style={{ background: 'none', border: 'none', color: colors.textMuted, cursor: 'pointer', padding: spacing[1] }}>
@@ -636,14 +636,14 @@ function ItemDetail({
             collapsed={isCollapsed('checkoutHistory')}
             onToggleCollapse={() => toggleCollapse('checkoutHistory')}
           >
-            <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+            <div style={{ maxHeight: 280, overflowY: 'auto' }}>
               {[...item.checkoutHistory].reverse().slice(0, 8).map((entry, idx) => (
                 <div key={entry.id || idx} style={getItemStyle(checkoutColor)}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[1] }}>
                     <Badge text={entry.type === 'checkout' ? 'Out' : 'In'} color={entry.type === 'checkout' ? colors.checkedOut : colors.available} size="xs" />
-                    <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>{entry.type === 'checkout' ? entry.checkedOutDate : entry.returnDate}</span>
+                    <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>{entry.type === 'checkout' ? entry.checkedOutDate : entry.returnDate}</span>
                   </div>
-                  <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
+                  <div style={{ fontSize: typography.fontSize.base, color: colors.textPrimary }}>
                     {entry.type === 'checkout' ? entry.borrowerName : `Returned by ${entry.returnedBy}`}
                   </div>
                 </div>
@@ -667,21 +667,21 @@ function ItemDetail({
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
               <div style={getItemStyle(valueColor)}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>Purchase Price</span>
-                  <span style={{ color: colors.textPrimary, fontSize: typography.fontSize.sm }}>{formatMoney(item.purchasePrice)}</span>
+                  <span style={{ color: colors.textPrimary, fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.medium }}>{formatMoney(item.purchasePrice)}</span>
                 </div>
               </div>
               <div style={getItemStyle(valueColor)}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>Current Value</span>
-                  <span style={{ color: colors.available, fontWeight: typography.fontWeight.semibold, fontSize: typography.fontSize.sm }}>{formatMoney(item.currentValue)}</span>
+                  <span style={{ color: colors.available, fontWeight: typography.fontWeight.semibold, fontSize: typography.fontSize.base }}>{formatMoney(item.currentValue)}</span>
                 </div>
               </div>
               <div style={getItemStyle(valueColor)}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>Purchase Date</span>
-                  <span style={{ color: colors.textPrimary, fontSize: typography.fontSize.sm }}>{formatDate(item.purchaseDate)}</span>
+                  <span style={{ color: colors.textPrimary, fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.medium }}>{formatDate(item.purchaseDate)}</span>
                 </div>
               </div>
             </div>
