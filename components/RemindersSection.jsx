@@ -260,7 +260,7 @@ const AddReminderForm = memo(function AddReminderForm({ onAdd, onCancel }) {
         />
       </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: spacing[3], marginBottom: spacing[3] }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3], marginBottom: spacing[3] }}>
         <div>
           <label style={{ ...styles.label, color: showDateError ? colors.danger : undefined }}>
             Due Date *
@@ -287,8 +287,8 @@ const AddReminderForm = memo(function AddReminderForm({ onAdd, onCancel }) {
       </div>
       
       <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
-        <Button variant="secondary" size="sm" onClick={onCancel}>Cancel</Button>
-        <Button size="sm" onClick={handleSubmit} disabled={!isValid} icon={Plus}>
+        <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+        <Button onClick={handleSubmit} disabled={!isValid} icon={Plus}>
           Add Reminder
         </Button>
       </div>
