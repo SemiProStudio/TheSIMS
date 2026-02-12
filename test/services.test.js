@@ -37,10 +37,12 @@ const createMockSupabaseClient = (responseData = null, error = null) => ({
           limit: vi.fn(() => Promise.resolve({ data: responseData, error })),
         })),
       })),
-      order: vi.fn(() => ({
-        order: vi.fn(() => Promise.resolve({ data: responseData, error })),
-        limit: vi.fn(() => Promise.resolve({ data: responseData, error })),
-      })),
+      order: vi.fn(() => {
+        const result = Promise.resolve({ data: responseData, error });
+        result.order = vi.fn(() => result);
+        result.limit = vi.fn(() => result);
+        return result;
+      }),
       single: vi.fn(() => Promise.resolve({ data: responseData, error })),
     })),
     insert: vi.fn(() => ({
@@ -283,12 +285,10 @@ describe('emailService', () => {
       const sendSpy = vi.spyOn(emailService, 'send').mockResolvedValue({ success: true });
 
       await emailService.sendReservationConfirmation({
-        contactEmail: 'test@example.com',
-        contactName: 'Test User',
-        items: [{ id: 'CAM001', name: 'Camera' }],
-        project: 'Film Shoot',
-        startDate: '2024-02-01',
-        endDate: '2024-02-05',
+        userEmail: 'test@example.com',
+        userName: 'Test User',
+        item: { id: 'CAM001', name: 'Camera', brand: 'Canon' },
+        reservation: { project: 'Film Shoot', start: '2024-02-01', end: '2024-02-05' },
       });
 
       expect(sendSpy).toHaveBeenCalledWith(
@@ -380,7 +380,7 @@ describe('clientsService', () => {
 describe('packagesService', () => {
   describe('getAll', () => {
     it('should return packages array', async () => {
-      const pkgs = [{ id: 'pkg-1', name: 'Interview Kit' }];
+      const pkgs = [{ id: 'pkg-1', name: 'Interview Kit', package_items: [] }];
       getSupabase.mockResolvedValueOnce(createMockSupabaseClient(pkgs));
       const result = await packagesService.getAll();
       expect(result).toBeDefined();
@@ -395,7 +395,7 @@ describe('packagesService', () => {
 describe('packListsService', () => {
   describe('getAll', () => {
     it('should return pack lists array', async () => {
-      const lists = [{ id: 'pl-1', name: 'Corporate Shoot', created_at: '2024-01-01' }];
+      const lists = [{ id: 'pl-1', name: 'Corporate Shoot', created_at: '2024-01-01', pack_list_items: [], pack_list_packages: [] }];
       getSupabase.mockResolvedValueOnce(createMockSupabaseClient(lists));
       const result = await packListsService.getAll();
       expect(result).toBeDefined();
