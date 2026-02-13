@@ -24,7 +24,7 @@ export function useItemForm({
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   
-  const categorySpecs = specs[itemForm.category] || [];
+  const categorySpecs = useMemo(() => specs[itemForm.category] || [], [specs, itemForm.category]);
   
   // Generate item code only once per category - memoize to prevent regeneration on every render
   const existingIds = useMemo(() => inventory.map(i => i.id), [inventory]);
@@ -61,11 +61,11 @@ export function useItemForm({
   }, [itemForm.serialNumber, itemForm.name, isEdit, inventory, itemId]);
   
   // Get settings for the selected category
-  const currentCategorySettings = categorySettings?.[itemForm.category] || { 
+  const currentCategorySettings = useMemo(() => categorySettings?.[itemForm.category] || { 
     trackQuantity: false, 
     trackSerialNumbers: true,
     lowStockThreshold: 0 
-  };
+  }, [categorySettings, itemForm.category]);
   
   // Check if all required specification fields are filled
   const requiredSpecsFilled = useMemo(() => {

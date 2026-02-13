@@ -64,7 +64,7 @@ export class ErrorBoundary extends React.Component {
             <h1 style={styles.title}>Something went wrong</h1>
             
             <p style={styles.message}>
-              We're sorry, but something unexpected happened. 
+              We&apos;re sorry, but something unexpected happened. 
               Please try refreshing the page or contact support if the problem persists.
             </p>
 
@@ -206,7 +206,7 @@ export function SectionErrorBoundary({ children, name = 'This section' }) {
           margin: '20px',
         }}>
           <p style={{ margin: '0 0 12px 0' }}>
-            {name} encountered an error and couldn't load.
+            {name} encountered an error and couldn&apos;t load.
           </p>
           <button
             onClick={() => window.location.reload()}

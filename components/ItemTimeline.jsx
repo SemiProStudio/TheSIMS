@@ -3,7 +3,7 @@
 // Displays a unified chronological history of all item events
 // ============================================================================
 
-import React, { memo, useState, useMemo } from 'react';
+import { memo, useState, useMemo } from 'react';
 import { 
   Clock, CheckCircle, RefreshCw, Wrench, MessageSquare, Calendar, 
   Bell, AlertTriangle, DollarSign, ChevronDown, ChevronUp, Filter

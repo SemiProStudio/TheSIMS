@@ -3,10 +3,10 @@
 // Used for profile photos and item images
 // ============================================================================
 
-import React, { memo, useState, useRef, useCallback, useEffect } from 'react';
+import { memo, useState, useRef, useCallback, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { ZoomIn, ZoomOut, RotateCcw, Check, X } from 'lucide-react';
-import { colors, spacing, borderRadius, typography } from '../theme.js';
+import { colors, spacing, typography } from '../theme.js';
 import { Button } from './ui.jsx';
 
 // ============================================================================
@@ -222,8 +222,6 @@ const ImageCropEditor = memo(function ImageCropEditor({
   const handleCropComplete = useCallback(() => {
     if (!imageRef.current) return;
     const cropArea = getCropArea();
-    const borderRadius = cropShape === 'circle' ? outputSize / 2 : 
-                          cropShape === 'rounded-square' ? cropBorderRadius * (outputSize / 200) : 0;
     const dataUrl = cropImageToCanvas(imageRef.current, cropArea, outputSize, 0);
     // Always output square — the display layer handles rounding
     onCropComplete(dataUrl);

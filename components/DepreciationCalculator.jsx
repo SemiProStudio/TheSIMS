@@ -276,7 +276,7 @@ function DepreciationCalculator({ item, onUpdateValue }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {depreciation.schedule.map((row, idx) => {
+                    {depreciation.schedule.map((row, _idx) => {
                       const isCurrent = row.year === Math.ceil(depreciation.ageInYears);
                       return (
                         <tr
