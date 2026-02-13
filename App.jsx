@@ -56,9 +56,6 @@ export default function App() {
     specs: contextSpecs,
     categories: contextCategories,
     patchInventoryItem,
-    addInventoryItems,
-    removeInventoryItems,
-    mapInventory,
     patchUser,
     addAuditLog,
   } = dataContext;
@@ -165,7 +162,7 @@ export default function App() {
         addToast('Layout preferences may not have saved', 'warning');
       }
     }
-  }, [currentUser?.id, currentUser?.profile]);
+  }, [currentUser?.id, currentUser?.profile, addToast, patchUser]);
 
   const handleToggleCollapse = useCallback((view, sectionId) => {
     setCurrentUser(prev => {
@@ -214,46 +211,46 @@ export default function App() {
         })
         .catch(err => logError('Failed to load item details:', err));
     }
-  }, [inventory, dataContext]);
+  }, [inventory, dataContext, patchInventoryItem, setActiveModal, setCurrentView, setItemBackContext, setSelectedItem]);
 
   const navigateToReservation = useCallback((reservation, item) => {
     setSelectedReservation(reservation);
     setSelectedReservationItem(item);
     setCurrentView(VIEWS.RESERVATION_DETAIL);
     window.scrollTo(0, 0);
-  }, []);
+  }, [setSelectedReservation, setSelectedReservationItem, setCurrentView]);
 
   const navigateToFilteredSearch = useCallback((catFilter, statFilter) => {
     setCategoryFilter(catFilter);
     setStatusFilter(statFilter);
     setSearchQuery('');
     setCurrentView(VIEWS.GEAR_LIST);
-  }, []);
+  }, [setCategoryFilter, setStatusFilter, setSearchQuery, setCurrentView]);
 
   const navigateToAlerts = useCallback(() => {
     setCategoryFilter('all');
     setStatusFilter(STATUS.NEEDS_ATTENTION);
     setSearchQuery('');
     setCurrentView(VIEWS.GEAR_LIST);
-  }, []);
+  }, [setCategoryFilter, setStatusFilter, setSearchQuery, setCurrentView]);
 
   const navigateToOverdue = useCallback(() => {
     setCategoryFilter('all');
     setStatusFilter(STATUS.OVERDUE);
     setSearchQuery('');
     setCurrentView(VIEWS.GEAR_LIST);
-  }, []);
+  }, [setCategoryFilter, setStatusFilter, setSearchQuery, setCurrentView]);
 
   const navigateToLowStock = useCallback(() => {
     setCategoryFilter('all');
     setStatusFilter('low-stock');
     setSearchQuery('');
     setCurrentView(VIEWS.GEAR_LIST);
-  }, []);
+  }, [setCategoryFilter, setStatusFilter, setSearchQuery, setCurrentView]);
 
   const navigateToReservations = useCallback(() => {
     setCurrentView(VIEWS.SCHEDULE);
-  }, []);
+  }, [setCurrentView]);
 
   const handleNavigate = useCallback((viewId) => {
     setActiveModal(null);
@@ -269,13 +266,13 @@ export default function App() {
       setScheduleDate(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`);
     }
     setCurrentView(viewId);
-  }, [setScheduleDate]);
+  }, [setActiveModal, setCategoryFilter, setStatusFilter, setSearchQuery, setSelectedPackage, setSelectedPackList, setScheduleDate, setCurrentView]);
 
   // ============================================================================
   // Form Helpers
   // ============================================================================
-  const openModal = useCallback((modalId) => setActiveModal(modalId), []);
-  const closeModal = useCallback(() => setActiveModal(null), []);
+  const openModal = useCallback((modalId) => setActiveModal(modalId), [setActiveModal]);
+  const closeModal = useCallback(() => setActiveModal(null), [setActiveModal]);
 
   // ============================================================================
   // Inventory Actions
