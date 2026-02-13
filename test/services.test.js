@@ -475,12 +475,15 @@ describe('reservationsService', () => {
       const reservation = {
         item_id: 'CAM001',
         client_id: 'client-1',
+        start: '2025-06-01',
+        end: '2025-06-05',
         start_date: '2025-06-01',
         end_date: '2025-06-05',
         status: 'confirmed',
+        project: 'Film Shoot',
+        user: 'Test User',
       };
       const dbResponse = { id: 'res-new', ...reservation };
-      // First call for create, second for potential status update
       getSupabase.mockResolvedValue(createMockSupabaseClient(dbResponse));
       const result = await reservationsService.create(reservation);
       expect(result).toBeDefined();
@@ -529,6 +532,8 @@ describe('maintenanceService', () => {
     it('should create a valid maintenance record', async () => {
       const record = {
         item_id: 'CAM001',
+        type: 'repair',
+        description: 'Sensor cleaning',
         maintenance_type: 'repair',
         status: 'scheduled',
         scheduled_date: '2025-06-01',
@@ -659,7 +664,7 @@ describe('inventoryService (extended)', () => {
     it('should create and return a transformed item', async () => {
       const dbItem = { id: 'CAM002', name: 'New Camera', category_name: 'Cameras', status: 'available' };
       getSupabase.mockResolvedValueOnce(createMockSupabaseClient(dbItem));
-      const result = await inventoryService.create({ name: 'New Camera', category_name: 'Cameras' });
+      const result = await inventoryService.create({ name: 'New Camera', category: 'Cameras', category_name: 'Cameras' });
       expect(result).toBeDefined();
       expect(result.id).toBe('CAM002');
     });
@@ -679,13 +684,18 @@ describe('inventoryService (extended)', () => {
     it('should return item with nested details', async () => {
       const dbItem = {
         id: 'CAM001', name: 'Camera', category_name: 'Cameras',
-        checkout_history: [], maintenance_records: [], reservations: [],
-        item_notes: [], item_reminders: [],
       };
-      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(dbItem));
+      // getByIdWithDetails makes 6 parallel calls (getById + 5 related services)
+      // Use persistent mock that returns empty arrays for all
+      getSupabase.mockResolvedValue(createMockSupabaseClient(dbItem));
       const result = await inventoryService.getByIdWithDetails('CAM001');
       expect(result).toBeDefined();
       expect(result.id).toBe('CAM001');
+      expect(result).toHaveProperty('notes');
+      expect(result).toHaveProperty('reminders');
+      expect(result).toHaveProperty('reservations');
+      // Reset to avoid leaking into other tests
+      getSupabase.mockReset();
     });
   });
 });
