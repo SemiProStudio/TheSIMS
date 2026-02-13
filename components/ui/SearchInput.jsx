@@ -1,6 +1,6 @@
 import { useState, memo } from 'react';
 import PropTypes from 'prop-types';
-import { Search } from 'lucide-react';
+
 import { colors, styles, spacing, typography } from '../../theme.js';
 
 // ============================================================================

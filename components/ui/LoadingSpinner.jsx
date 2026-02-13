@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import PropTypes from 'prop-types';
-import { colors, borderRadius, withOpacity } from '../../theme.js';
+import { colors, withOpacity } from '../../theme.js';
 
 // ============================================================================
 // LoadingSpinner - Loading indicator

@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import PropTypes from 'prop-types';
-import { Image } from 'lucide-react';
+
 import { colors, borderRadius, withOpacity } from '../../theme.js';
 
 // ============================================================================

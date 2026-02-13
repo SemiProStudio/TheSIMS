@@ -39,7 +39,7 @@ export const StatCard = memo(function StatCard({
           justifyContent: 'center',
         }}
       >
-        <Icon size={24} color={color} />
+        {Icon && <Icon size={24} color={color} />}
       </div>
       <div
         style={{
