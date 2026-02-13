@@ -96,6 +96,7 @@ export const Pagination = memo(function Pagination({
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
+          aria-label="Previous page"
           style={{
             ...pageButtonStyle(false),
             opacity: page === 1 ? 0.5 : 1,
@@ -118,6 +119,8 @@ export const Pagination = memo(function Pagination({
             <button
               key={pageNum}
               onClick={() => onPageChange(pageNum)}
+              aria-label={`Page ${pageNum}`}
+              aria-current={pageNum === page ? 'page' : undefined}
               style={pageButtonStyle(pageNum === page)}
             >
               {pageNum}
@@ -129,6 +132,7 @@ export const Pagination = memo(function Pagination({
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages}
+          aria-label="Next page"
           style={{
             ...pageButtonStyle(false),
             opacity: page === totalPages ? 0.5 : 1,

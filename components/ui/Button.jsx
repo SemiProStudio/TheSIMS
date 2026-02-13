@@ -1,6 +1,6 @@
 import { memo, forwardRef } from 'react';
 import PropTypes from 'prop-types';
-import { styles } from '../../theme.js';
+
 
 // ============================================================================
 // Button - Primary and secondary buttons

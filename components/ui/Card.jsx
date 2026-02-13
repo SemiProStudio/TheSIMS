@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import PropTypes from 'prop-types';
-import { styles, spacing } from '../../theme.js';
+import { spacing } from '../../theme.js';
 
 // ============================================================================
 // Card - Container component

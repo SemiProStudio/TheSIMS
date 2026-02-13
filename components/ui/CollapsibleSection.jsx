@@ -1,4 +1,3 @@
-import React from 'react';
 import { colors, borderRadius, spacing, typography } from '../../theme.js';
 
 // Helper to apply opacity to a color (supports hex, CSS variables, and rgb/rgba)

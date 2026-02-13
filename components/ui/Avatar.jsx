@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import PropTypes from 'prop-types';
-import { Image } from 'lucide-react';
 import { colors, borderRadius, typography } from '../../theme.js';
 
 // ============================================================================
@@ -33,6 +32,7 @@ export const Avatar = memo(function Avatar({
 
   return (
     <div
+      aria-label={name ? `Avatar for ${name}` : 'Avatar'}
       style={{
         width: size,
         height: size,
