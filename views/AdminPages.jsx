@@ -2,7 +2,7 @@
 // Admin Pages - Full page versions of Add Item, Edit Specs, Edit Categories
 // ============================================================================
 
-import React, { memo, useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { memo, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Plus, Save, Trash2, GripVertical, Search } from 'lucide-react';
 import { CONDITION, DEFAULT_NEW_CATEGORY_SETTINGS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';

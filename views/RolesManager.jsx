@@ -3,7 +3,7 @@
 // Manage user roles and permissions
 // ============================================================================
 
-import React, { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { Shield, Plus, Edit2, Trash2, Save, X, Users, Eye, EyeOff, Pencil, ChevronDown, ChevronRight } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity, zIndex } from '../theme.js';
 import { APP_FUNCTIONS, PERMISSION_LEVELS } from '../constants.js';

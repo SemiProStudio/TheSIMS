@@ -2,7 +2,7 @@
 // Clients View - Client & Project Management (Phase 6)
 // ============================================================================
 
-import React, { memo, useState, useCallback, useMemo, useEffect } from 'react';
+import { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import { 
   Users, Plus, Search, Building2, Mail, Phone, Calendar, 
   Package, ChevronRight, Edit2, Trash2, MapPin, FileText,

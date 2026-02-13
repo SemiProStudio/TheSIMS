@@ -3,7 +3,7 @@
 // Supports collapsible sections with user-customizable order and visibility
 // ============================================================================
 
-import React, { memo, useState, useMemo, useEffect } from 'react';
+import { memo, useState, useMemo, useEffect } from 'react';
 import {
   Package, CheckCircle, Clock, AlertTriangle, Calendar,
   ChevronRight, Search, Bell, TrendingDown, Layout

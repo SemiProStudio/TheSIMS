@@ -3,7 +3,7 @@
 // Full-size image view with options to replace or remove
 // ============================================================================
 
-import React, { memo } from 'react';
+import { memo } from 'react';
 import PropTypes from 'prop-types';
 import { Pencil, Trash2, X } from 'lucide-react';
 import { colors, spacing, borderRadius, typography } from '../theme.js';

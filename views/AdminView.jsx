@@ -3,7 +3,7 @@
 // Navigation hub for admin functions
 // ============================================================================
 
-import React, { memo } from 'react';
+import { memo } from 'react';
 import PropTypes from 'prop-types';
 import { Users, Shield, MapPin, Sliders, FolderTree, Clock, FileText } from 'lucide-react';
 import { VIEWS } from '../constants.js';

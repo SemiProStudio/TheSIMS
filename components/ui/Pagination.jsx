@@ -1,10 +1,10 @@
+import { memo } from 'react';
+import PropTypes from 'prop-types';
+import { colors, styles, spacing, typography } from '../../theme.js';
+
 // ============================================================================
 // Pagination - Page navigation component
 // ============================================================================
-
-import React, { memo } from 'react';
-import PropTypes from 'prop-types';
-import { colors, spacing, typography, styles } from './shared.js';
 
 export const Pagination = memo(function Pagination({
   page,
@@ -27,18 +27,32 @@ export const Pagination = memo(function Pagination({
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
+      // Always show first page
       pages.push(1);
       
+      // Calculate middle pages
       let start = Math.max(2, page - 1);
       let end = Math.min(totalPages - 1, page + 1);
       
-      if (page <= 3) end = 4;
-      if (page >= totalPages - 2) start = totalPages - 3;
+      // Adjust if at beginning
+      if (page <= 3) {
+        end = 4;
+      }
+      // Adjust if at end
+      if (page >= totalPages - 2) {
+        start = totalPages - 3;
+      }
       
+      // Add ellipsis before middle pages if needed
       if (start > 2) pages.push('...');
+      
+      // Add middle pages
       for (let i = start; i <= end; i++) pages.push(i);
+      
+      // Add ellipsis after middle pages if needed
       if (end < totalPages - 1) pages.push('...');
       
+      // Always show last page
       pages.push(totalPages);
     }
     
@@ -58,17 +72,15 @@ export const Pagination = memo(function Pagination({
   });
 
   return (
-    <nav 
-      aria-label="Pagination"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginTop: spacing[5],
-        paddingTop: spacing[4],
-        borderTop: `1px solid ${colors.borderLight}`,
-      }}
-    >
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginTop: spacing[5],
+      paddingTop: spacing[4],
+      borderTop: `1px solid ${colors.borderLight}`,
+    }}>
+      {/* Item count */}
       {showItemCount && (
         <div style={{ 
           fontSize: typography.fontSize.sm, 
@@ -78,11 +90,12 @@ export const Pagination = memo(function Pagination({
         </div>
       )}
 
+      {/* Page navigation */}
       <div style={{ display: 'flex', gap: spacing[1], alignItems: 'center' }}>
+        {/* Previous button */}
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          aria-label="Previous page"
           style={{
             ...pageButtonStyle(false),
             opacity: page === 1 ? 0.5 : 1,
@@ -92,6 +105,7 @@ export const Pagination = memo(function Pagination({
           ‹
         </button>
 
+        {/* Page numbers */}
         {getPageNumbers().map((pageNum, idx) => (
           pageNum === '...' ? (
             <span key={`ellipsis-${idx}`} style={{ 
@@ -104,8 +118,6 @@ export const Pagination = memo(function Pagination({
             <button
               key={pageNum}
               onClick={() => onPageChange(pageNum)}
-              aria-label={`Page ${pageNum}`}
-              aria-current={pageNum === page ? 'page' : undefined}
               style={pageButtonStyle(pageNum === page)}
             >
               {pageNum}
@@ -113,10 +125,10 @@ export const Pagination = memo(function Pagination({
           )
         ))}
 
+        {/* Next button */}
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages}
-          aria-label="Next page"
           style={{
             ...pageButtonStyle(false),
             opacity: page === totalPages ? 0.5 : 1,
@@ -126,17 +138,23 @@ export const Pagination = memo(function Pagination({
           ›
         </button>
       </div>
-    </nav>
+    </div>
   );
 });
 
 Pagination.propTypes = {
-  page: PropTypes.number.isRequired,
+  /** Current page (1-indexed) */
+  currentPage: PropTypes.number.isRequired,
+  /** Total number of pages */
   totalPages: PropTypes.number.isRequired,
-  totalItems: PropTypes.number.isRequired,
-  pageSize: PropTypes.number.isRequired,
+  /** Page change handler */
   onPageChange: PropTypes.func.isRequired,
-  showItemCount: PropTypes.bool,
+  /** Items per page options */
+  itemsPerPageOptions: PropTypes.arrayOf(PropTypes.number),
+  /** Current items per page */
+  itemsPerPage: PropTypes.number,
+  /** Items per page change handler */
+  onItemsPerPageChange: PropTypes.func,
+  /** Total items count */
+  totalItems: PropTypes.number,
 };
-
-export default Pagination;

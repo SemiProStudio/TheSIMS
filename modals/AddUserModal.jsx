@@ -3,7 +3,7 @@
 // Modal for adding new users to the system
 // ============================================================================
 
-import React, { memo, useState } from 'react';
+import { memo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Plus } from 'lucide-react';
 import { colors, styles, spacing, typography } from '../theme.js';

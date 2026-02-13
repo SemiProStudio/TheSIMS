@@ -3,7 +3,7 @@
 // Import product specs from pasted text, PDF, or TXT files
 // ============================================================================
 
-import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
+import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Upload, FileText, ChevronDown, ChevronUp, AlertCircle, Check, X as XIcon } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';

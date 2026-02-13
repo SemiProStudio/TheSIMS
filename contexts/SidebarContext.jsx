@@ -4,7 +4,7 @@
 // sidebar-dependent components — not the entire App tree.
 // =============================================================================
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
 const SidebarContext = createContext(null);
 

@@ -3,7 +3,7 @@
 // Overview of inventory, clients, and activity with navigation to detailed reports
 // ============================================================================
 
-import React, { memo, useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Download, Package, BarChart3, AlertTriangle, Wrench, DollarSign, Building2, Eye } from 'lucide-react';
 import { VIEWS } from '../constants.js';

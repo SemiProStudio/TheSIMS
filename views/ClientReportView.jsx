@@ -3,7 +3,7 @@
 // Clients ranked by reservation activity
 // ============================================================================
 
-import React, { memo, useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Download, Building2, Users, FileText, DollarSign } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';

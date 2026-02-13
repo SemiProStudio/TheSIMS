@@ -1,11 +1,11 @@
+import { memo } from 'react';
+import PropTypes from 'prop-types';
+import { colors, spacing, typography } from '../../theme.js';
+import { LoadingSpinner } from './LoadingSpinner.jsx';
+
 // ============================================================================
 // LoadingOverlay - Full-screen or container loading state
 // ============================================================================
-
-import React, { memo } from 'react';
-import PropTypes from 'prop-types';
-import { colors, spacing, typography } from './shared.js';
-import { LoadingSpinner } from './LoadingSpinner.jsx';
 
 export const LoadingOverlay = memo(function LoadingOverlay({ 
   message = 'Loading...',
@@ -14,28 +14,23 @@ export const LoadingOverlay = memo(function LoadingOverlay({
   const containerStyle = fullScreen ? {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(0, 0, 0, 0.7)',
+    background: 'rgba(0,0,0,0.7)',
     zIndex: 1000,
   } : {
     position: 'absolute',
     inset: 0,
-    background: `color-mix(in srgb, ${colors.bgDark} 80%, transparent)`,
+    background: `${colors.bgDark}cc`,
   };
 
   return (
-    <div 
-      role="status"
-      aria-live="polite"
-      aria-label={message}
-      style={{
-        ...containerStyle,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: spacing[3],
-      }}
-    >
+    <div style={{
+      ...containerStyle,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing[3],
+    }}>
       <LoadingSpinner size={32} />
       <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>
         {message}
@@ -45,8 +40,8 @@ export const LoadingOverlay = memo(function LoadingOverlay({
 });
 
 LoadingOverlay.propTypes = {
-  message: PropTypes.string,
-  fullScreen: PropTypes.bool,
+  /** Loading text */
+  text: PropTypes.string,
+  /** Show as inline rather than overlay */
+  inline: PropTypes.bool,
 };
-
-export default LoadingOverlay;

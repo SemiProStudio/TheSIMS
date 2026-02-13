@@ -2,7 +2,7 @@
 // Accessibility Components
 // ============================================================================
 
-import React, { memo } from 'react';
+import { memo } from 'react';
 import PropTypes from 'prop-types';
 import { colors, spacing, borderRadius, typography } from './shared.js';
 

@@ -1,23 +1,20 @@
+import { memo } from 'react';
+import PropTypes from 'prop-types';
+import { colors, spacing, typography } from '../../theme.js';
+import { BackButton } from './BackButton.jsx';
+
 // ============================================================================
 // PageHeader - Consistent page title with optional subtitle and actions
 // ============================================================================
 
-import React, { memo } from 'react';
-import PropTypes from 'prop-types';
-import { colors, spacing, typography } from './shared.js';
-import { BackButton } from './BackButton.jsx';
-
 export const PageHeader = memo(function PageHeader({ 
   title, 
-  subtitle,
-  actions, 
-  action, // alias for actions (backward compat)
+  subtitle, 
+  action,
   backButton,
   onBack,
   backLabel = 'Back',
 }) {
-  const actionContent = actions || action;
-  
   return (
     <>
       {(backButton || onBack) && (
@@ -41,20 +38,23 @@ export const PageHeader = memo(function PageHeader({
             </p>
           )}
         </div>
-        {actionContent}
+        {action}
       </div>
     </>
   );
 });
 
 PageHeader.propTypes = {
+  /** Page title */
   title: PropTypes.string.isRequired,
+  /** Optional subtitle */
   subtitle: PropTypes.string,
-  actions: PropTypes.node,
+  /** Action button(s) to render on the right */
   action: PropTypes.node,
+  /** Whether to show back button (deprecated, use onBack) */
   backButton: PropTypes.bool,
+  /** Callback for back button click */
   onBack: PropTypes.func,
+  /** Label for back button */
   backLabel: PropTypes.string,
 };
-
-export default PageHeader;

@@ -3,7 +3,7 @@
 // Add and edit reservations with multi-item search selection
 // ============================================================================
 
-import React, { memo, useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { memo, useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Plus, Save, AlertTriangle, Search, X, Package } from 'lucide-react';
 import { PROJECT_TYPES } from '../constants.js';

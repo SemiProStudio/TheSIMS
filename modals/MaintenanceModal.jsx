@@ -3,7 +3,7 @@
 // Add and edit maintenance records for equipment
 // ============================================================================
 
-import React, { memo, useState } from 'react';
+import { memo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Save } from 'lucide-react';
 import { MAINTENANCE_TYPES } from '../constants.js';

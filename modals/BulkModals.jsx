@@ -3,7 +3,7 @@
 // Modals for bulk status, location, category changes and deletion
 // ============================================================================
 
-import React, { memo, useState, useEffect, useMemo } from 'react';
+import { memo, useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Trash2 } from 'lucide-react';
 import { STATUS } from '../constants.js';

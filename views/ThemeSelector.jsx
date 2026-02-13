@@ -3,7 +3,7 @@
 // Full-page theme selection with visual previews
 // ============================================================================
 
-import React, { memo, useState } from 'react';
+import { memo, useState } from 'react';
 import { Palette, Check, Shuffle, Settings, Sliders } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { useTheme } from '../contexts/ThemeContext.jsx';

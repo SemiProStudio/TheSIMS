@@ -3,7 +3,7 @@
 // Tracks and displays all changes made to items, kits, and packages
 // ============================================================================
 
-import React, { memo, useState, useMemo, useCallback } from 'react';
+import { memo, useState, useMemo, useCallback } from 'react';
 import { History, Search, Package, ChevronRight, Clock, User, Edit2, Plus, Trash2, RefreshCw, ArrowRight, X } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatDate, formatDateTime } from '../utils';

@@ -1,57 +1,38 @@
-// ============================================================================
-// LoadingSpinner - Simple loading indicator
-// ============================================================================
-
-import React, { memo } from 'react';
+import { memo } from 'react';
 import PropTypes from 'prop-types';
-import { colors } from './shared.js';
+import { colors, borderRadius, withOpacity } from '../../theme.js';
+
+// ============================================================================
+// LoadingSpinner - Loading indicator
+// ============================================================================
 
 export const LoadingSpinner = memo(function LoadingSpinner({ 
   size = 24, 
   color = colors.primary,
-  className,
+  style: customStyle 
 }) {
   return (
-    <div 
-      role="status"
-      aria-live="polite"
-      aria-label="Loading"
-      className={className}
-      style={{ 
-        width: size, 
-        height: size,
-        display: 'inline-block',
-      }}
-    >
-      <svg 
-        width={size} 
-        height={size} 
-        viewBox="0 0 24 24" 
-        style={{ 
-          animation: 'spin 1s linear infinite',
-        }}
-      >
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <circle
-          cx="12"
-          cy="12"
-          r="10"
-          stroke={color}
-          strokeWidth="3"
-          fill="none"
-          strokeLinecap="round"
-          strokeDasharray="60"
-          strokeDashoffset="20"
-        />
-      </svg>
+    <div style={{
+      width: size,
+      height: size,
+      border: `2px solid ${withOpacity(color, 30)}`,
+      borderTopColor: color,
+      borderRadius: '50%',
+      animation: 'spin 0.8s linear infinite',
+      ...customStyle,
+    }}>
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 });
 
 LoadingSpinner.propTypes = {
+  /** Spinner size in pixels */
   size: PropTypes.number,
+  /** Spinner color */
   color: PropTypes.string,
-  className: PropTypes.string,
 };
-
-export default LoadingSpinner;

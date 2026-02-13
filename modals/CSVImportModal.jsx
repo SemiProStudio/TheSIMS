@@ -3,7 +3,7 @@
 // Import inventory items from CSV file with template download
 // ============================================================================
 
-import React, { memo, useState, useRef } from 'react';
+import { memo, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Upload, Download } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';

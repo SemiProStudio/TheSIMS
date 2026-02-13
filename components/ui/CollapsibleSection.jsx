@@ -20,7 +20,7 @@ export function CollapsibleSection({
   title,
   icon: Icon,
   badge,
-  badgeColor,
+  _badgeColor,
   collapsed,
   onToggleCollapse,
   action,

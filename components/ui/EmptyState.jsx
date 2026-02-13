@@ -1,11 +1,11 @@
-// ============================================================================
-// EmptyState - Placeholder for empty data states
-// ============================================================================
-
-import React, { memo } from 'react';
+import { memo } from 'react';
 import PropTypes from 'prop-types';
-import { colors, spacing, typography, borderRadius } from './shared.js';
+import { colors, borderRadius, spacing, typography, withOpacity } from '../../theme.js';
 import { Card } from './Card.jsx';
+
+// ============================================================================
+// EmptyState - No data placeholder
+// ============================================================================
 
 export const EmptyState = memo(function EmptyState({ 
   icon: Icon, 
@@ -21,31 +21,27 @@ export const EmptyState = memo(function EmptyState({
             width: 64,
             height: 64,
             margin: '0 auto 16px',
-            borderRadius: borderRadius.full,
-            background: `color-mix(in srgb, ${colors.primary} 10%, transparent)`,
+            background: `${withOpacity(colors.primary, 20)}`,
+            borderRadius: borderRadius['2xl'],
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Icon size={28} color={colors.textMuted} aria-hidden="true" />
+          <Icon size={32} color={colors.primary} />
         </div>
       )}
-      <h3 style={{ 
-        margin: 0, 
-        marginBottom: spacing[2], 
-        color: colors.textPrimary,
-        fontSize: typography.fontSize.lg,
-      }}>
+      <h3
+        style={{
+          margin: '0 0 8px',
+          fontSize: typography.fontSize.lg,
+          color: colors.textPrimary,
+        }}
+      >
         {title}
       </h3>
       {description && (
-        <p style={{ 
-          margin: 0, 
-          marginBottom: action ? spacing[4] : 0, 
-          color: colors.textMuted,
-          fontSize: typography.fontSize.sm,
-        }}>
+        <p style={{ color: colors.textMuted, marginBottom: spacing[5] }}>
           {description}
         </p>
       )}
@@ -55,10 +51,12 @@ export const EmptyState = memo(function EmptyState({
 });
 
 EmptyState.propTypes = {
-  icon: PropTypes.elementType,
+  /** Lucide icon component */
+  icon: PropTypes.elementType.isRequired,
+  /** Title text */
   title: PropTypes.string.isRequired,
+  /** Description text */
   description: PropTypes.string,
+  /** Action button element */
   action: PropTypes.node,
 };
-
-export default EmptyState;

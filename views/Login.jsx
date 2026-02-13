@@ -2,7 +2,7 @@
 // Login Component
 // ============================================================================
 
-import React, { memo, useState } from 'react';
+import { memo, useState } from 'react';
 import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
 import { Spinner } from '../components/Loading.jsx';
 

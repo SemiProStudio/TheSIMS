@@ -3,7 +3,7 @@
 // Allows drag-to-reorder and visibility control for Dashboard/Item Detail sections
 // ============================================================================
 
-import React, { memo, useState, useCallback, useRef } from 'react';
+import { memo, useState, useCallback, useRef } from 'react';
 import { Save, Layout, RotateCcw, Eye, EyeOff, GripVertical } from 'lucide-react';
 import { DASHBOARD_SECTIONS, ITEM_DETAIL_SECTIONS, DEFAULT_LAYOUT_PREFS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';

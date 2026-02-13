@@ -1,10 +1,10 @@
-// ============================================================================
-// Input - Text input with label and error state
-// ============================================================================
-
-import React, { memo, forwardRef } from 'react';
+import { memo, forwardRef } from 'react';
 import PropTypes from 'prop-types';
-import { colors, spacing, typography } from './shared.js';
+import { colors, spacing, typography } from '../../theme.js';
+
+// ============================================================================
+// Input - Form input field
+// ============================================================================
 
 export const Input = memo(forwardRef(function Input(
   { 
@@ -61,12 +61,22 @@ export const Input = memo(forwardRef(function Input(
 }));
 
 Input.propTypes = {
+  /** Label text */
   label: PropTypes.string,
+  /** Error message */
   error: PropTypes.string,
-  icon: PropTypes.elementType,
-  style: PropTypes.object,
-  containerStyle: PropTypes.object,
-  className: PropTypes.string,
+  /** Helper text */
+  helper: PropTypes.string,
+  /** Whether field is required */
+  required: PropTypes.bool,
+  /** Input type */
+  type: PropTypes.string,
+  /** Placeholder text */
+  placeholder: PropTypes.string,
+  /** Current value */
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  /** Change handler */
+  onChange: PropTypes.func,
+  /** Disabled state */
+  disabled: PropTypes.bool,
 };
-
-export default Input;

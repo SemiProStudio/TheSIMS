@@ -1,10 +1,11 @@
-// ============================================================================
-// Avatar - User avatar with initials fallback
-// ============================================================================
-
-import React, { memo } from 'react';
+import { memo } from 'react';
 import PropTypes from 'prop-types';
-import { colors, borderRadius, typography } from './shared.js';
+import { Image } from 'lucide-react';
+import { colors, borderRadius, typography } from '../../theme.js';
+
+// ============================================================================
+// Avatar - User avatar
+// ============================================================================
 
 export const Avatar = memo(function Avatar({ 
   name, 
@@ -18,7 +19,7 @@ export const Avatar = memo(function Avatar({
     return (
       <img
         src={src}
-        alt={name || 'User avatar'}
+        alt={name}
         style={{
           width: size,
           height: size,
@@ -32,7 +33,6 @@ export const Avatar = memo(function Avatar({
 
   return (
     <div
-      aria-label={name ? `Avatar for ${name}` : 'User avatar'}
       style={{
         width: size,
         height: size,
@@ -53,10 +53,12 @@ export const Avatar = memo(function Avatar({
 });
 
 Avatar.propTypes = {
+  /** User name for initials */
   name: PropTypes.string,
+  /** Image source URL */
   src: PropTypes.string,
+  /** Avatar size in pixels */
   size: PropTypes.number,
-  style: PropTypes.object,
+  /** Custom background color */
+  color: PropTypes.string,
 };
-
-export default Avatar;

@@ -3,7 +3,7 @@
 // Display and download QR codes for inventory items
 // ============================================================================
 
-import React, { memo, useRef, useEffect } from 'react';
+import { memo, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Download } from 'lucide-react';
 import { colors, spacing, borderRadius } from '../theme.js';

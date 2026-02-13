@@ -1,100 +1,83 @@
+import { memo } from 'react';
+import PropTypes from 'prop-types';
+import { colors, borderRadius, spacing, typography } from '../../theme.js';
+
 // ============================================================================
 // StatCard - Dashboard statistic card
 // ============================================================================
 
-import React, { memo } from 'react';
-import PropTypes from 'prop-types';
-import { colors, spacing, typography, borderRadius } from './shared.js';
-
 export const StatCard = memo(function StatCard({ 
-  label, 
+  icon: Icon, 
   value, 
-  icon: Icon,
+  label, 
   color = colors.primary,
   onClick,
-  trend,
-  trendUp,
 }) {
-  const isClickable = !!onClick;
-  
   return (
     <div
       onClick={onClick}
-      role={isClickable ? 'button' : undefined}
-      tabIndex={isClickable ? 0 : undefined}
-      onKeyDown={isClickable ? (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick?.(e);
-        }
-      } : undefined}
       style={{
-        background: colors.bgLight,
-        borderRadius: borderRadius.lg,
-        padding: spacing[4],
+        padding: spacing[5],
+        textAlign: 'center',
+        borderRadius: borderRadius.xl,
         border: `1px solid ${colors.border}`,
-        cursor: isClickable ? 'pointer' : 'default',
-        transition: 'all 150ms ease',
+        background: colors.bgLight,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        ...(onClick && { cursor: 'pointer' }),
       }}
     >
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        marginBottom: spacing[2],
-      }}>
-        <span style={{ 
-          color: colors.textMuted, 
-          fontSize: typography.fontSize.xs,
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-        }}>
-          {label}
-        </span>
-        {Icon && (
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: borderRadius.md,
-              background: `color-mix(in srgb, ${color} 15%, transparent)`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Icon size={16} color={color} aria-hidden="true" />
-          </div>
-        )}
+      <div
+        style={{
+          width: 48,
+          height: 48,
+          margin: '0 auto 12px',
+          background: colors.bgMedium,
+          border: `1px solid ${colors.border}`,
+          borderRadius: borderRadius.xl,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Icon size={24} color={color} />
       </div>
-      <div style={{ 
-        fontSize: typography.fontSize['2xl'],
-        fontWeight: typography.fontWeight.semibold,
-        color: colors.textPrimary,
-      }}>
+      <div
+        style={{
+          fontSize: typography.fontSize['2xl'],
+          fontWeight: typography.fontWeight.bold,
+          color: color,
+          marginBottom: spacing[1],
+        }}
+      >
         {value}
       </div>
-      {trend !== undefined && (
-        <div style={{
-          marginTop: spacing[1],
+      <div
+        style={{
           fontSize: typography.fontSize.xs,
-          color: trendUp ? colors.success : colors.danger,
-        }}>
-          {trendUp ? '↑' : '↓'} {trend}%
-        </div>
-      )}
+          color: colors.textMuted,
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px',
+        }}
+      >
+        {label}
+      </div>
     </div>
   );
 });
 
 StatCard.propTypes = {
+  /** Lucide icon component */
+  icon: PropTypes.elementType.isRequired,
+  /** Stat label */
   label: PropTypes.string.isRequired,
+  /** Stat value */
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  icon: PropTypes.elementType,
+  /** Icon and accent color */
   color: PropTypes.string,
+  /** Click handler */
   onClick: PropTypes.func,
-  trend: PropTypes.number,
-  trendUp: PropTypes.bool,
+  /** Trend indicator: 'up' or 'down' */
+  trend: PropTypes.oneOf(['up', 'down']),
+  /** Trend percentage value */
+  trendValue: PropTypes.string,
 };
-
-export default StatCard;

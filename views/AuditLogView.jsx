@@ -3,7 +3,7 @@
 // Historical record of deleted notes and system events
 // ============================================================================
 
-import React, { memo } from 'react';
+import { memo } from 'react';
 import PropTypes from 'prop-types';
 import { Clock } from 'lucide-react';
 import { colors, spacing, typography } from '../theme.js';

@@ -3,7 +3,7 @@
 // Camera-based QR code scanning with quick checkout/checkin actions
 // ============================================================================
 
-import React, { memo, useState, useRef, useEffect } from 'react';
+import { memo, useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import jsQR from 'jsqr';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';

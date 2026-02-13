@@ -4,7 +4,7 @@
 // components re-render on view changes — not the entire App tree.
 // =============================================================================
 
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { VIEWS } from '../constants.js';
 import { useData } from './DataContext.jsx';
 import { useAuth } from './AuthContext.jsx';

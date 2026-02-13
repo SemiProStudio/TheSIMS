@@ -331,7 +331,6 @@ function RemindersSection({
       return new Date(a.dueDate) - new Date(b.dueDate);
     });
   
-  const activeReminders = sortedReminders.filter(r => !r.completed);
   
   return (
     <>

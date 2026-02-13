@@ -2,7 +2,7 @@
 // Layout Components - Grid, Flex, Divider
 // ============================================================================
 
-import React, { memo } from 'react';
+import { memo } from 'react';
 import PropTypes from 'prop-types';
 import { colors, spacing } from './shared.js';
 

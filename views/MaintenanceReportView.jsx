@@ -3,7 +3,7 @@
 // All maintenance records across inventory
 // ============================================================================
 
-import React, { memo, useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Wrench, Clock, AlertTriangle, DollarSign, Building2 } from 'lucide-react';
 import { colors, spacing, borderRadius, typography } from '../theme.js';

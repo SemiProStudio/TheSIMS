@@ -3,7 +3,7 @@
 // User management interface
 // ============================================================================
 
-import React, { memo } from 'react';
+import { memo } from 'react';
 import PropTypes from 'prop-types';
 import { Plus, Trash2 } from 'lucide-react';
 import { colors, spacing, borderRadius, typography } from '../theme.js';

@@ -3,7 +3,7 @@
 // Full backup/export of all inventory data
 // ============================================================================
 
-import React, { memo, useState } from 'react';
+import { memo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Download } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';

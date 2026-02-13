@@ -3,7 +3,7 @@
 // Provides PWA functionality (install prompt, offline status, service worker)
 // =============================================================================
 
-import React, { createContext, useContext, useMemo } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import { usePWA, InstallStatus } from '../hooks/usePWA.js';
 
 // Create context

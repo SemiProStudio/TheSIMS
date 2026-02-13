@@ -3,7 +3,7 @@
 // User preferences for email notifications
 // ============================================================================
 
-import React, { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { Mail, Calendar, Clock, AlertTriangle, CheckCircle, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { Card, Button } from '../components/ui.jsx';

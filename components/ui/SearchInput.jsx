@@ -1,101 +1,104 @@
-// ============================================================================
-// SearchInput - Search input with icon and clear button
-// ============================================================================
-
-import React, { memo, useRef } from 'react';
+import { useState, memo } from 'react';
 import PropTypes from 'prop-types';
-import { Search, X } from 'lucide-react';
-import { colors, spacing, borderRadius, typography } from './shared.js';
+import { Search } from 'lucide-react';
+import { colors, styles, spacing, typography } from '../../theme.js';
+
+// ============================================================================
+// SearchInput - Search input with icon
+// ============================================================================
 
 export const SearchInput = memo(function SearchInput({ 
   value, 
   onChange, 
-  onClear,
   placeholder = 'Search...',
-  autoFocus = false,
-  onKeyDown,
-  fullWidth = true,
-  size = 'md',
+  onClear,
+  'aria-label': ariaLabel = 'Search',
+  id,
+  style: customStyle = {},
+  ...props 
 }) {
-  const inputRef = useRef(null);
-  const isSmall = size === 'sm';
-
-  const handleClear = () => {
-    if (onClear) {
-      onClear();
-    } else {
-      onChange('');
-    }
-    inputRef.current?.focus();
-  };
-
+  const inputId = id || `search-input-${Math.random().toString(36).substr(2, 9)}`;
+  const [isFocused, setIsFocused] = useState(false);
+  
   return (
-    <div 
+    <div
       role="search"
-      style={{ 
-        position: 'relative', 
-        width: fullWidth ? '100%' : 'auto',
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: spacing[2],
+        ...styles.input,
+        padding: '12px 16px',
+        ...(isFocused && {
+          borderColor: colors.primary,
+          boxShadow: `0 0 0 2px color-mix(in srgb, ${colors.primary} 20%, transparent)`,
+        }),
+        ...customStyle,
       }}
     >
-      <div
-        style={{
-          position: 'absolute',
-          left: spacing[3],
-          top: '50%',
-          transform: 'translateY(-50%)',
-          color: colors.textMuted,
-          pointerEvents: 'none',
-          display: 'flex',
-          alignItems: 'center',
-        }}
+      <svg 
+        width={18} 
+        height={18} 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke={colors.textMuted} 
+        strokeWidth="2"
         aria-hidden="true"
       >
-        <Search size={isSmall ? 14 : 16} />
-      </div>
+        <circle cx="11" cy="11" r="8" />
+        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
       <input
-        ref={inputRef}
-        type="search"
-        role="searchbox"
+        id={inputId}
+        type="text"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={onKeyDown}
+        onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        autoFocus={autoFocus}
-        aria-label={placeholder}
+        aria-label={ariaLabel}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         style={{
-          width: '100%',
-          padding: isSmall 
-            ? `${spacing[2]}px ${spacing[8]}px ${spacing[2]}px ${spacing[8]}px`
-            : `${spacing[3]}px ${spacing[10]}px ${spacing[3]}px ${spacing[10]}px`,
-          background: `color-mix(in srgb, ${colors.primary} 10%, transparent)`,
-          border: `1px solid ${colors.border}`,
-          borderRadius: borderRadius.lg,
+          background: 'none',
+          border: 'none',
           color: colors.textPrimary,
-          fontSize: isSmall ? typography.fontSize.xs : typography.fontSize.sm,
+          flex: 1,
           outline: 'none',
+          fontSize: typography.fontSize.base,
+          padding: 0,
+          margin: 0,
+          // Hide any native styling
+          WebkitAppearance: 'none',
+          MozAppearance: 'none',
+          appearance: 'none',
+          boxShadow: 'none',
         }}
+        {...props}
       />
       {value && onClear && (
         <button
-          onClick={handleClear}
+          onClick={onClear}
           type="button"
           aria-label="Clear search"
           style={{
-            position: 'absolute',
-            right: spacing[2],
-            top: '50%',
-            transform: 'translateY(-50%)',
             background: 'none',
             border: 'none',
             color: colors.textMuted,
             cursor: 'pointer',
-            padding: spacing[1],
-            display: 'flex',
-            alignItems: 'center',
-            borderRadius: borderRadius.sm,
+            padding: 2,
           }}
         >
-          <X size={isSmall ? 12 : 14} aria-hidden="true" />
+          <svg 
+            width={14} 
+            height={14} 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2"
+            aria-hidden="true"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
         </button>
       )}
     </div>
@@ -103,14 +106,16 @@ export const SearchInput = memo(function SearchInput({
 });
 
 SearchInput.propTypes = {
+  /** Search value */
   value: PropTypes.string.isRequired,
+  /** Change handler */
   onChange: PropTypes.func.isRequired,
-  onClear: PropTypes.func,
+  /** Placeholder text */
   placeholder: PropTypes.string,
-  autoFocus: PropTypes.bool,
-  onKeyDown: PropTypes.func,
-  fullWidth: PropTypes.bool,
-  size: PropTypes.oneOf(['sm', 'md']),
+  /** Debounce delay in ms */
+  debounceMs: PropTypes.number,
+  /** Focus handler */
+  onFocus: PropTypes.func,
+  /** Blur handler */
+  onBlur: PropTypes.func,
 };
-
-export default SearchInput;

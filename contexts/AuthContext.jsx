@@ -3,7 +3,7 @@
 // Provides authentication state and methods using Supabase Auth
 // =============================================================================
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getSupabase, auth } from '../lib/supabase.js';
 import { usersService } from '../lib/services.js';
 import { log, error as logError } from '../lib/logger.js';

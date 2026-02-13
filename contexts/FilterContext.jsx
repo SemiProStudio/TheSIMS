@@ -4,7 +4,7 @@
 // components re-render on search/filter changes — not the entire App tree.
 // =============================================================================
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { getTodayISO } from '../utils';
 
 const FilterContext = createContext(null);

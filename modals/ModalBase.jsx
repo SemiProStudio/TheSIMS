@@ -3,7 +3,7 @@
 // Shared modal wrapper and header components with accessibility
 // ============================================================================
 
-import React, { memo, useRef, useEffect, useCallback } from 'react';
+import { memo, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { X } from 'lucide-react';
 import { colors, styles, spacing, typography } from '../theme.js';

@@ -4,7 +4,7 @@
 // re-renders modal-dependent components — not the entire App tree.
 // =============================================================================
 
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import { MODALS, EMPTY_ITEM_FORM, EMPTY_RESERVATION_FORM } from '../constants.js';
 
 const ModalContext = createContext(null);

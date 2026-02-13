@@ -2,7 +2,7 @@
 // Profile Modal Component
 // ============================================================================
 
-import React, { memo, useState, useRef } from 'react';
+import { memo, useState, useRef } from 'react';
 import { X, Upload, Save, User } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { Button } from '../components/ui.jsx';

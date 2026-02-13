@@ -3,7 +3,7 @@
 // Upload and manage item images with storage integration
 // ============================================================================
 
-import React, { memo, useState, useRef } from 'react';
+import { memo, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Upload, Image, Trash2 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography } from '../theme.js';

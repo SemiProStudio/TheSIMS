@@ -2,7 +2,7 @@
 // Theme Context - Manages theme switching with CSS variables
 // ============================================================================
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { themes, generateRandomTheme, DEFAULT_CUSTOM_THEME } from '../themes-data.js';
 import { announce } from '../utils/accessibility.js';
 

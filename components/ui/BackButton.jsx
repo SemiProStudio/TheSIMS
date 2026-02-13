@@ -1,18 +1,18 @@
+import { memo } from 'react';
+import PropTypes from 'prop-types';
+import { ArrowLeft } from 'lucide-react';
+import { colors, styles, spacing } from '../../theme.js';
+
 // ============================================================================
 // BackButton - Consistent back navigation
 // ============================================================================
-
-import React, { memo } from 'react';
-import PropTypes from 'prop-types';
-import { ArrowLeft } from 'lucide-react';
-import { colors, styles, spacing } from './shared.js';
 
 export const BackButton = memo(function BackButton({ onClick, children = 'Back' }) {
   return (
     <button 
       onClick={onClick} 
       type="button"
-      aria-label="Go back"
+      aria-label={`Go back: ${children}`}
       style={{ 
         ...styles.btnSec, 
         marginBottom: spacing[4], 
@@ -32,8 +32,8 @@ export const BackButton = memo(function BackButton({ onClick, children = 'Back' 
 });
 
 BackButton.propTypes = {
+  /** Click handler */
   onClick: PropTypes.func.isRequired,
+  /** Button text */
   children: PropTypes.node,
 };
-
-export default BackButton;

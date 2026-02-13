@@ -3,7 +3,7 @@
 // Supports collapsible sections with user-customizable order and visibility
 // ============================================================================
 
-import React, { memo, useMemo, useState, useEffect } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import { CheckCircle, RefreshCw, Edit, QrCode, Trash2, Calendar, Plus, Upload, Layout, DollarSign, Clock, Bell, Wrench, MessageSquare, History, Settings, Package, ChevronDown, ChevronUp, Eye } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatDate, formatMoney, getStatusColor, getConditionColor } from '../utils';

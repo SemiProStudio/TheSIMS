@@ -3,7 +3,7 @@
 // Manages hierarchical locations (Building > Room > Shelf)
 // ============================================================================
 
-import React, { memo, useState, useMemo, useCallback } from 'react';
+import { memo, useState, useMemo, useCallback } from 'react';
 import { 
   Building2, DoorOpen, Archive, Layers, Box, MapPin, 
   Plus, Trash2, Edit, ChevronRight, ChevronDown, Save,

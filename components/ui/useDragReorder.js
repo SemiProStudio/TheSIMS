@@ -1,14 +1,8 @@
-// ============================================================================
-// DragReorder - Hook and components for drag-to-reorder functionality
-// ============================================================================
-
-import { memo, useState, useCallback, useRef } from 'react';
-import PropTypes from 'prop-types';
-import { GripVertical } from 'lucide-react';
-import { colors, withOpacity } from './shared.js';
+import { useState, useCallback, useRef } from 'react';
+import { colors, withOpacity } from '../../theme.js';
 
 // ============================================================================
-// useDragReorder - Hook for drag-to-reorder list functionality
+// DraggableList - Reusable drag-to-reorder list
 // ============================================================================
 
 export function useDragReorder(items, onReorder) {
@@ -77,7 +71,7 @@ export function useDragReorder(items, onReorder) {
   }, [handleDragStart, handleDragEnd, handleDragOver, handleDragLeave, handleDrop]);
 
   const getDragStyle = useCallback((index, canDrag = true) => ({
-    background: dragOverIndex === index ? `${withOpacity(colors.primary, 0.2)}` : undefined,
+    background: dragOverIndex === index ? `${withOpacity(colors.primary, 20)}` : undefined,
     borderTop: dragOverIndex === index ? `2px solid ${colors.primary}` : '2px solid transparent',
     cursor: canDrag ? 'grab' : 'default',
     userSelect: 'none',
@@ -91,31 +85,3 @@ export function useDragReorder(items, onReorder) {
     getDragStyle,
   };
 }
-
-// ============================================================================
-// DragHandle - Visual grip handle for draggable items
-// ============================================================================
-
-export const DragHandle = memo(function DragHandle({ canDrag = true, size = 16 }) {
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        cursor: canDrag ? 'grab' : 'default',
-        color: canDrag ? colors.textMuted : colors.textMuted,
-        opacity: canDrag ? 1 : 0.3,
-      }}
-      aria-hidden="true"
-    >
-      <GripVertical size={size} />
-    </span>
-  );
-});
-
-DragHandle.propTypes = {
-  canDrag: PropTypes.bool,
-  size: PropTypes.number,
-};
-
-export default { useDragReorder, DragHandle };

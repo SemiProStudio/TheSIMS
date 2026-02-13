@@ -2,7 +2,7 @@
 // Search View Component
 // ============================================================================
 
-import React, { memo, useMemo, useCallback } from 'react';
+import { memo, useMemo, useCallback } from 'react';
 import { Search, Eye, X, Filter } from 'lucide-react';
 import { STATUS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';

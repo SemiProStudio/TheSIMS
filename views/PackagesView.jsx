@@ -3,7 +3,7 @@
 // Manages package templates - create, edit, view packages
 // ============================================================================
 
-import React, { memo, useState, useCallback, useMemo, useEffect } from 'react';
+import { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import { Plus, Package, Trash2, ArrowLeft, ChevronRight, Edit2, AlertTriangle, Lightbulb } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatMoney, getStatusColor } from '../utils';

@@ -2,7 +2,7 @@
 // Labels View Component
 // ============================================================================
 
-import React, { memo, useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { memo, useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Search, Printer, Download, Check, Package, Layers } from 'lucide-react';
 import QRCode from 'qrcode';
 import { LABEL_FORMATS } from '../constants.js';

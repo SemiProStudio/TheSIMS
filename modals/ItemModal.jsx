@@ -3,7 +3,7 @@
 // Add and edit inventory items with Smart Paste support
 // ============================================================================
 
-import React, { memo, useState, useRef, useEffect, useCallback } from 'react';
+import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { CONDITION } from '../constants.js';
