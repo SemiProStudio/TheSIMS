@@ -685,16 +685,17 @@ describe('inventoryService (extended)', () => {
       const dbItem = {
         id: 'CAM001', name: 'Camera', category_name: 'Cameras',
       };
-      // getByIdWithDetails makes 6 parallel calls (getById + 5 related services)
-      // Use persistent mock that returns empty arrays for all
-      getSupabase.mockResolvedValue(createMockSupabaseClient(dbItem));
+      // getByIdWithDetails calls getById first (needs item), then 5 sub-services (need arrays).
+      // First call returns the item, subsequent calls return empty arrays.
+      getSupabase
+        .mockResolvedValueOnce(createMockSupabaseClient(dbItem))   // getById
+        .mockResolvedValue(createMockSupabaseClient([]));           // notes, reminders, reservations, etc.
       const result = await inventoryService.getByIdWithDetails('CAM001');
       expect(result).toBeDefined();
       expect(result.id).toBe('CAM001');
       expect(result).toHaveProperty('notes');
       expect(result).toHaveProperty('reminders');
       expect(result).toHaveProperty('reservations');
-      // Reset to avoid leaking into other tests
       getSupabase.mockReset();
     });
   });
