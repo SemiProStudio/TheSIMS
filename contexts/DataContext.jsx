@@ -20,11 +20,10 @@ import {
   rolesService,
   auditLogService,
   notificationPreferencesService,
-  emailService,
-  checkoutHistoryService
+  emailService
 } from '../lib/services.js';
 
-import { DEFAULT_ROLES, DEFAULT_LOCATIONS, DEFAULT_SPECS } from '../constants.js';
+import { DEFAULT_ROLES } from '../constants.js';
 import { log, error as logError } from '../lib/logger.js';
 import { validateReservation, validateClient, validateMaintenanceRecord } from '../lib/validators.js';
 import { updateById, removeById } from '../utils';
