@@ -74,6 +74,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
   } = useFilterContext();
 
   const {
+    setEditingReservationId,
     itemForm, setItemForm,
     showConfirm,
   } = useModalContext();
@@ -88,7 +89,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     updateCategories, updateSpecs,
     patchInventoryItem, patchUser, removeLocalUser,
     patchRole, addLocalRole, removeLocalRole,
-    replaceLocations, patchClient,
+    replaceLocations,
   } = dataContext;
 
   // Destructure handlers
@@ -102,12 +103,12 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     openMaintenanceEditModal,
     itemNoteHandlers, clientNoteHandlers, reservationNoteHandlers,
     addReminder, completeReminder, uncompleteReminder, deleteReminder,
-    openEditReservation, deleteReservation, saveReservation,
+    openEditReservation, deleteReservation,
     setItemAsKit, addItemsToKit, removeItemFromKit, clearKitItems,
-    addRequiredAccessories, removeRequiredAccessory, selectImage,
-    addItemToPackage, updateMaintenanceStatus, updateUserProfile,
+    addRequiredAccessories, removeRequiredAccessory,
+    addItemToPackage, updateMaintenanceStatus,
     addAuditLog, resetItemForm, resetReservationForm,
-    openModal, closeModal,
+    openModal,
   } = handlers;
 
   return (

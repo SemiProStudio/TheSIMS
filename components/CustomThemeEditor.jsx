@@ -2,7 +2,7 @@
 // Custom Theme Editor - Streamlined color customization
 // ============================================================================
 
-import React, { memo, useState, useCallback, useEffect, useMemo } from 'react';
+import { memo, useState, useCallback, useMemo } from 'react';
 import { Save, Palette, RotateCcw, ChevronDown, ChevronRight, AlertTriangle, CheckCircle } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { BackButton, Button, Card } from './ui.jsx';
@@ -58,7 +58,7 @@ const ColorPicker = memo(function ColorPicker({ color, onChange }) {
 
 // Collapsible category section
 const CategorySection = memo(function CategorySection({ 
-  categoryKey, category, expanded, onToggle, themeColors, selectedColor, onSelectColor, onColorChange 
+  categoryKey, category, expanded, onToggle, themeColors, selectedColor, onSelectColor, _onColorChange 
 }) {
   return (
     <div style={{ borderBottom: `1px solid ${colors.border}` }}>

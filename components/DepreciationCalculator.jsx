@@ -3,7 +3,7 @@
 // Calculates and displays item depreciation using multiple methods
 // ============================================================================
 
-import React, { memo, useState, useMemo } from 'react';
+import { memo, useState, useMemo } from 'react';
 import { TrendingDown, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatMoney, calculateDepreciation, DEFAULT_USEFUL_LIFE, DEPRECIATION_METHODS } from '../utils';

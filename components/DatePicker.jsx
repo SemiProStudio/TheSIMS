@@ -3,7 +3,7 @@
 // Custom themed date picker with calendar popup
 // =============================================================================
 
-import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
