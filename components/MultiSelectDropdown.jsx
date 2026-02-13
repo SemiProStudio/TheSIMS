@@ -3,7 +3,7 @@
 // Dropdown with multiple checkbox selections
 // =============================================================================
 
-import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
 import { ChevronDown, Check, X } from 'lucide-react';

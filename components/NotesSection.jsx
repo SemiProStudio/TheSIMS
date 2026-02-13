@@ -3,7 +3,7 @@
 // Reusable threaded notes with replies
 // ============================================================================
 
-import React, { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { Plus, Reply, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatDate } from '../utils';
@@ -231,9 +231,6 @@ function NotesSection({
       handleSubmitNote();
     }
   }, [handleSubmitNote]);
-
-  // Filter out deleted notes at the root level for display count
-  const visibleNotes = notes.filter(n => !n.deleted);
 
   return (
     <>

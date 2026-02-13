@@ -3,7 +3,7 @@
 // Displays thumbnails for fast loading, with option for full-size images
 // =============================================================================
 
-import React, { useState, useRef, useEffect, memo } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import PropTypes from 'prop-types';
 import { getThumbnailUrl } from '../lib/index.js';
 import { colors, borderRadius } from '../theme.js';

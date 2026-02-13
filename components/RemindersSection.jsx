@@ -3,10 +3,10 @@
 // Allows users to set one-time or recurring reminders for items
 // ============================================================================
 
-import React, { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { Bell, Plus, Trash2, Calendar, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { formatDate, generateId, getTodayISO, getNextDueDate, isReminderDue } from '../utils';
+import { formatDate, generateId, getTodayISO, isReminderDue } from '../utils';
 import { Button } from './ui.jsx';
 import { Select } from './Select.jsx';
 import { DatePicker } from './DatePicker.jsx';
@@ -332,7 +332,6 @@ function RemindersSection({
     });
   
   const activeReminders = sortedReminders.filter(r => !r.completed);
-  const dueCount = activeReminders.filter(r => isReminderDue(r)).length;
   
   return (
     <>

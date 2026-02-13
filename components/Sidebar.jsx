@@ -2,7 +2,7 @@
 // Sidebar Navigation Component
 // ============================================================================
 
-import React, { memo, useState, useCallback, useEffect, useRef } from 'react';
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import {
   Calendar, Package, QrCode, Settings,
   BarChart3, Home, LogOut, Layers, ClipboardList, User, ChevronDown,
