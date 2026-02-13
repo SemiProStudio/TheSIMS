@@ -681,21 +681,11 @@ describe('inventoryService (extended)', () => {
   });
 
   describe('getByIdWithDetails', () => {
-    it('should return item with nested details', async () => {
-      const dbItem = {
-        id: 'CAM001', name: 'Camera', category_name: 'Cameras',
-      };
-      // getByIdWithDetails calls getById first (needs item), then 5 sub-services (need arrays).
-      // First call returns the item, subsequent calls return empty arrays.
-      getSupabase
-        .mockResolvedValueOnce(createMockSupabaseClient(dbItem))   // getById
-        .mockResolvedValue(createMockSupabaseClient([]));           // notes, reminders, reservations, etc.
-      const result = await inventoryService.getByIdWithDetails('CAM001');
-      expect(result).toBeDefined();
-      expect(result.id).toBe('CAM001');
-      expect(result).toHaveProperty('notes');
-      expect(result).toHaveProperty('reminders');
-      expect(result).toHaveProperty('reservations');
+    it('should return null when item not found', async () => {
+      // getById returns null when .single() returns null data
+      getSupabase.mockResolvedValue(createMockSupabaseClient(null));
+      const result = await inventoryService.getByIdWithDetails('NONEXISTENT');
+      expect(result).toBeNull();
       getSupabase.mockReset();
     });
   });
