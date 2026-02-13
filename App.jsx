@@ -364,7 +364,7 @@ export default function App() {
       type: 'profile_updated',
       description: `${updatedUser.name || 'User'} updated their profile`,
     });
-  }, [currentUser, addAuditLog]);
+  }, [currentUser, addAuditLog, addToast, patchUser]);
 
   const exportData = useCallback((options) => {
     const items = selectedIds.length
@@ -392,7 +392,7 @@ export default function App() {
     }
     patchUser(currentUser.id, { notificationPreferences: prefs });
     setCurrentUser(prev => ({ ...prev, notificationPreferences: prefs }));
-  }, [dataContext, currentUser]);
+  }, [dataContext, currentUser, addToast, patchUser]);
 
   const openMaintenanceEditModal = useCallback((record) => {
     setEditingMaintenanceRecord(record);
@@ -403,7 +403,7 @@ export default function App() {
   const handleMobileNavigate = useCallback((view) => {
     setSidebarOpen(false);
     handleNavigate(view);
-  }, [handleNavigate]);
+  }, [handleNavigate, setSidebarOpen]);
 
   // ============================================================================
   // Handler Objects (passed to AppViews and AppModals)

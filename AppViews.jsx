@@ -56,7 +56,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     selectedItem, setSelectedItem,
     selectedPackage, setSelectedPackage,
     selectedPackList, setSelectedPackList,
-    selectedReservation, setSelectedReservation,
+    selectedReservation,
     selectedReservationItem,
     itemBackContext, setItemBackContext,
   } = useNavigationContext();
@@ -71,14 +71,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     scheduleView, setScheduleView,
     scheduleMode, setScheduleMode,
     scheduleDate, setScheduleDate,
-    selectedIds, setSelectedIds,
   } = useFilterContext();
 
   const {
-    editingItemId,
-    editingReservationId, setEditingReservationId,
     itemForm, setItemForm,
-    reservationForm, setReservationForm,
     showConfirm,
   } = useModalContext();
 
