@@ -3,25 +3,16 @@
 // Displays and manages kit/container parent-child relationships
 // ============================================================================
 
-import React, { memo, useState, useMemo } from 'react';
+import { memo, useState, useMemo } from 'react';
 import { 
   Package, Plus, X, ChevronRight, Box, Layers, Link2, Unlink,
-  Search, AlertTriangle
+  AlertTriangle
 } from 'lucide-react';
 import { KIT_TYPES } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatMoney, getStatusColor } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput } from './ui.jsx';
 
-// Get kit type label
-const getKitTypeLabel = (type) => {
-  switch (type) {
-    case KIT_TYPES.KIT: return 'Kit';
-    case KIT_TYPES.CONTAINER: return 'Container';
-    case KIT_TYPES.BUNDLE: return 'Bundle';
-    default: return 'Kit';
-  }
-};
 
 // Get kit type color
 const getKitTypeColor = (type) => {

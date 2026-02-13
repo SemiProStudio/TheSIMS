@@ -3,7 +3,7 @@
 // Displays maintenance history and allows adding new maintenance records
 // ============================================================================
 
-import React, { memo, useState } from 'react';
+import { memo, useState } from 'react';
 import { Wrench, Plus, Check, Clock, AlertTriangle, DollarSign, Building2, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { MAINTENANCE_STATUS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
@@ -44,7 +44,7 @@ const formatStatus = (status) => {
 };
 
 // Single maintenance entry component
-const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, onEdit, panelColor }) {
+const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _onEdit, panelColor }) {
   const [expanded, setExpanded] = useState(false);
   const StatusIcon = getMaintenanceStatusIcon(entry.status);
   const statusColor = getMaintenanceStatusColor(entry.status);
@@ -184,7 +184,7 @@ const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, onE
                   fontStyle: 'italic',
                 }}
               >
-                "{entry.notes}"
+                &quot;{entry.notes}&quot;
               </div>
             )}
 

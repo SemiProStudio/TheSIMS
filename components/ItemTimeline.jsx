@@ -6,7 +6,7 @@
 import { memo, useState, useMemo } from 'react';
 import { 
   Clock, CheckCircle, RefreshCw, Wrench, MessageSquare, Calendar, 
-  Bell, AlertTriangle, DollarSign, ChevronDown, ChevronUp, Filter
+  Bell, AlertTriangle, DollarSign, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatDate, formatDateTime, formatMoney } from '../utils';

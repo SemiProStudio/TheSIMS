@@ -3,7 +3,7 @@
 // Spinners, skeletons, and loading indicators
 // =============================================================================
 
-import React, { Suspense } from 'react';
+import React from 'react';
 
 // =============================================================================
 // SPINNER

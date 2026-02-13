@@ -225,7 +225,7 @@ const ImageCropEditor = memo(function ImageCropEditor({
     const dataUrl = cropImageToCanvas(imageRef.current, cropArea, outputSize, 0);
     // Always output square — the display layer handles rounding
     onCropComplete(dataUrl);
-  }, [getCropArea, outputSize, cropShape, cropBorderRadius, onCropComplete]);
+  }, [getCropArea, outputSize, onCropComplete]);
 
   // ============================================================================
   // Crop overlay shape
