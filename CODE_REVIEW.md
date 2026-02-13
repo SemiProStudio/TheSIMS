@@ -30,8 +30,8 @@
 | 5.2 | document.write for Print | LOW | ✅ Replaced with Blob URL approach |
 | 5.3 | PropTypes vs TypeScript | LOW | ⏳ Deferred |
 | 5.4 | No ESLint/Prettier in CI | LOW | ✅ Already in CI workflow |
-| 6.1 | Test Coverage Unknown | MEDIUM | ⏳ 705+ tests passing |
-| 6.2 | No Tests for Services | MEDIUM | ⏳ Deferred |
+| 6.1 | Test Coverage Unknown | MEDIUM | ✅ 42% statements, 44% branches, 37.5% functions — thresholds enforced in CI |
+| 6.2 | No Tests for Services | MEDIUM | ✅ 51 tests across 13 services |
 | 7.1 | Service Worker Versioning | HIGH | ✅ Fixed with §4.1 |
 | 7.2 | No Environment Separation | MEDIUM | ⏳ Requires Supabase project linking |
 | 7.3 | No Database Migration System | MEDIUM | ⏳ Requires Supabase CLI setup |

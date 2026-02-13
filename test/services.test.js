@@ -22,50 +22,42 @@ import {
   clientsService,
   packagesService,
   packListsService,
+  reservationsService,
+  maintenanceService,
+  categoriesService,
+  locationsService,
+  usersService,
+  checkoutHistoryService,
 } from '../lib/services.js';
 
 // =============================================================================
 // Mock Supabase Response Helpers
 // =============================================================================
 
+// Builds a chainable mock that resolves to { data, error } when awaited.
+// Every method returns the same thenable chain, so any Supabase pattern works:
+// .from().select().eq().order(), .from().select().eq().neq().order(), etc.
+function createChain(responseData, error) {
+  const result = Promise.resolve({ data: responseData, error });
+  const chain = () => {
+    const handler = {
+      get(_, prop) {
+        // Terminal methods that return a plain promise
+        if (prop === 'single') return () => Promise.resolve({ data: responseData, error });
+        // Promise protocol — makes the chain itself awaitable
+        if (prop === 'then') return result.then.bind(result);
+        if (prop === 'catch') return result.catch.bind(result);
+        // Everything else returns the same chainable proxy
+        return (..._args) => new Proxy({}, handler);
+      }
+    };
+    return new Proxy({}, handler);
+  };
+  return chain();
+}
+
 const createMockSupabaseClient = (responseData = null, error = null) => ({
-  from: vi.fn(() => ({
-    select: vi.fn(() => ({
-      eq: vi.fn(() => ({
-        single: vi.fn(() => Promise.resolve({ data: responseData, error })),
-        order: vi.fn(() => ({
-          limit: vi.fn(() => Promise.resolve({ data: responseData, error })),
-        })),
-      })),
-      order: vi.fn(() => {
-        const result = Promise.resolve({ data: responseData, error });
-        result.order = vi.fn(() => result);
-        result.limit = vi.fn(() => result);
-        return result;
-      }),
-      single: vi.fn(() => Promise.resolve({ data: responseData, error })),
-    })),
-    insert: vi.fn(() => ({
-      select: vi.fn(() => ({
-        single: vi.fn(() => Promise.resolve({ data: responseData, error })),
-      })),
-    })),
-    update: vi.fn(() => ({
-      eq: vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({ data: responseData, error })),
-        })),
-      })),
-    })),
-    upsert: vi.fn(() => ({
-      select: vi.fn(() => ({
-        single: vi.fn(() => Promise.resolve({ data: responseData, error })),
-      })),
-    })),
-    delete: vi.fn(() => ({
-      eq: vi.fn(() => Promise.resolve({ data: responseData, error })),
-    })),
-  })),
+  from: vi.fn(() => createChain(responseData, error)),
   functions: {
     invoke: vi.fn(() => Promise.resolve({ data: responseData, error })),
   },
@@ -413,6 +405,11 @@ describe('Service Error Handling', () => {
     await expect(inventoryService.getAll()).rejects.toThrow();
   });
 
+  it('should throw on error for any service', async () => {
+    getSupabase.mockResolvedValueOnce(createMockSupabaseClient(null, { message: 'Not found' }));
+    await expect(clientsService.getAll()).rejects.toThrow();
+  });
+
   it('emailService helper methods should handle missing item properties', async () => {
     const sendSpy = vi.spyOn(emailService, 'send').mockResolvedValue({ success: true });
 
@@ -433,5 +430,299 @@ describe('Service Error Handling', () => {
     );
 
     sendSpy.mockRestore();
+  });
+});
+
+// =============================================================================
+// Reservations Service Tests
+// =============================================================================
+
+describe('reservationsService', () => {
+  describe('getAll', () => {
+    it('should return transformed reservations', async () => {
+      const dbData = [{
+        id: 'res-1',
+        item_id: 'CAM001',
+        client_id: 'client-1',
+        start_date: '2024-02-01',
+        end_date: '2024-02-05',
+        status: 'confirmed',
+        project: 'Film Shoot',
+        notes: 'Handle with care',
+        item: { id: 'CAM001', name: 'Camera', category_name: 'Cameras', brand: 'Canon', status: 'available' },
+        client: { id: 'client-1', name: 'Test Client', type: 'company', email: 'a@b.com', phone: '555' },
+      }];
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(dbData));
+      const result = await reservationsService.getAll();
+      expect(result).toHaveLength(1);
+      expect(result[0]).toHaveProperty('id', 'res-1');
+    });
+
+    it('should return empty array when no reservations', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient([]));
+      const result = await reservationsService.getAll();
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('create', () => {
+    it('should reject invalid reservations', async () => {
+      // Missing required fields — validator should reject
+      await expect(reservationsService.create({})).rejects.toThrow();
+    });
+
+    it('should create a valid reservation', async () => {
+      const reservation = {
+        item_id: 'CAM001',
+        client_id: 'client-1',
+        start_date: '2025-06-01',
+        end_date: '2025-06-05',
+        status: 'confirmed',
+      };
+      const dbResponse = { id: 'res-new', ...reservation };
+      // First call for create, second for potential status update
+      getSupabase.mockResolvedValue(createMockSupabaseClient(dbResponse));
+      const result = await reservationsService.create(reservation);
+      expect(result).toBeDefined();
+      expect(result.id).toBe('res-new');
+    });
+  });
+
+  describe('delete', () => {
+    it('should return deleted id', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(null));
+      const result = await reservationsService.delete('res-1');
+      expect(result).toEqual({ id: 'res-1' });
+    });
+  });
+});
+
+// =============================================================================
+// Maintenance Service Tests
+// =============================================================================
+
+describe('maintenanceService', () => {
+  describe('getAll', () => {
+    it('should return transformed maintenance records', async () => {
+      const dbData = [{
+        id: 'maint-1',
+        item_id: 'CAM001',
+        maintenance_type: 'repair',
+        status: 'scheduled',
+        scheduled_date: '2024-03-01',
+        description: 'Sensor cleaning',
+        cost: 150,
+        item: { id: 'CAM001', name: 'Camera', category_name: 'Cameras', brand: 'Canon' },
+      }];
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(dbData));
+      const result = await maintenanceService.getAll();
+      expect(result).toHaveLength(1);
+      expect(result[0]).toHaveProperty('id', 'maint-1');
+    });
+  });
+
+  describe('create', () => {
+    it('should reject invalid maintenance records', async () => {
+      await expect(maintenanceService.create({})).rejects.toThrow();
+    });
+
+    it('should create a valid maintenance record', async () => {
+      const record = {
+        item_id: 'CAM001',
+        maintenance_type: 'repair',
+        status: 'scheduled',
+        scheduled_date: '2025-06-01',
+      };
+      const dbResponse = { id: 'maint-new', ...record };
+      getSupabase.mockResolvedValue(createMockSupabaseClient(dbResponse));
+      const result = await maintenanceService.create(record);
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('delete', () => {
+    it('should return deleted id', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(null));
+      const result = await maintenanceService.delete('maint-1');
+      expect(result).toEqual({ id: 'maint-1' });
+    });
+  });
+});
+
+// =============================================================================
+// Categories Service Tests
+// =============================================================================
+
+describe('categoriesService', () => {
+  describe('getAll', () => {
+    it('should return categories array', async () => {
+      const cats = [{ id: 1, name: 'Cameras' }, { id: 2, name: 'Lenses' }];
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(cats));
+      const result = await categoriesService.getAll();
+      expect(result).toEqual(cats);
+    });
+  });
+
+  describe('create', () => {
+    it('should create a category', async () => {
+      const cat = { id: 3, name: 'Audio' };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(cat));
+      const result = await categoriesService.create({ name: 'Audio' });
+      expect(result).toEqual(cat);
+    });
+  });
+
+  describe('delete', () => {
+    it('should delete a category by name', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(null));
+      const result = await categoriesService.delete('Audio');
+      expect(result).toBeDefined();
+    });
+  });
+});
+
+// =============================================================================
+// Locations Service Tests
+// =============================================================================
+
+describe('locationsService', () => {
+  describe('getAll', () => {
+    it('should return locations array', async () => {
+      const locs = [{ id: 'loc-1', name: 'Studio A', parent_id: null }];
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(locs));
+      const result = await locationsService.getAll();
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('create', () => {
+    it('should create a location', async () => {
+      const loc = { id: 'loc-new', name: 'Studio B' };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(loc));
+      const result = await locationsService.create({ name: 'Studio B' });
+      expect(result).toEqual(loc);
+    });
+  });
+
+  describe('delete', () => {
+    it('should delete a location', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(null));
+      const result = await locationsService.delete('loc-1');
+      expect(result).toBeDefined();
+    });
+  });
+});
+
+// =============================================================================
+// Users Service Tests
+// =============================================================================
+
+describe('usersService', () => {
+  describe('getAll', () => {
+    it('should return users array', async () => {
+      const users = [{ id: 'user-1', email: 'a@b.com', display_name: 'Test' }];
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(users));
+      const result = await usersService.getAll();
+      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+    });
+  });
+});
+
+// =============================================================================
+// Checkout History Service Tests
+// =============================================================================
+
+describe('checkoutHistoryService', () => {
+  describe('create', () => {
+    it('should create a checkout record', async () => {
+      const record = {
+        item_id: 'CAM001',
+        borrower_name: 'Test User',
+        checked_out_at: '2024-01-15',
+        status: 'checked_out',
+      };
+      const dbResponse = { id: 'co-1', ...record };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(dbResponse));
+      const result = await checkoutHistoryService.create(record);
+      expect(result).toBeDefined();
+    });
+  });
+});
+
+// =============================================================================
+// Inventory Service Extended Tests
+// =============================================================================
+
+describe('inventoryService (extended)', () => {
+  describe('create', () => {
+    it('should create and return a transformed item', async () => {
+      const dbItem = { id: 'CAM002', name: 'New Camera', category_name: 'Cameras', status: 'available' };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(dbItem));
+      const result = await inventoryService.create({ name: 'New Camera', category_name: 'Cameras' });
+      expect(result).toBeDefined();
+      expect(result.id).toBe('CAM002');
+    });
+  });
+
+  describe('update', () => {
+    it('should update and return transformed item', async () => {
+      const dbItem = { id: 'CAM001', name: 'Updated Camera', category_name: 'Cameras' };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(dbItem));
+      const result = await inventoryService.update('CAM001', { name: 'Updated Camera' });
+      expect(result).toBeDefined();
+      expect(result.name).toBe('Updated Camera');
+    });
+  });
+
+  describe('getByIdWithDetails', () => {
+    it('should return item with nested details', async () => {
+      const dbItem = {
+        id: 'CAM001', name: 'Camera', category_name: 'Cameras',
+        checkout_history: [], maintenance_records: [], reservations: [],
+        item_notes: [], item_reminders: [],
+      };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(dbItem));
+      const result = await inventoryService.getByIdWithDetails('CAM001');
+      expect(result).toBeDefined();
+      expect(result.id).toBe('CAM001');
+    });
+  });
+});
+
+// =============================================================================
+// Clients Service Extended Tests
+// =============================================================================
+
+describe('clientsService (extended)', () => {
+  describe('create', () => {
+    it('should create a client', async () => {
+      const client = { id: 'client-new', name: 'New Client', type: 'individual' };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(client));
+      const result = await clientsService.create({ name: 'New Client', type: 'individual' });
+      expect(result).toEqual(client);
+    });
+
+    it('should reject invalid clients', async () => {
+      // clientsService.create validates via validateClient
+      await expect(clientsService.create({})).rejects.toThrow();
+    });
+  });
+
+  describe('getById', () => {
+    it('should return a single client', async () => {
+      const client = { id: 'client-1', name: 'Test Client' };
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(client));
+      const result = await clientsService.getById('client-1');
+      expect(result).toEqual(client);
+    });
+  });
+
+  describe('delete', () => {
+    it('should delete a client', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(null));
+      const result = await clientsService.delete('client-1');
+      expect(result).toBeDefined();
+    });
   });
 });
