@@ -221,12 +221,12 @@ export function ModalProvider({ children }) {
   const handleConfirm = useCallback(() => {
     if (confirmDialog.onConfirm) confirmDialog.onConfirm();
     closeConfirm();
-  }, [confirmDialog.onConfirm, closeConfirm]);
+  }, [confirmDialog, closeConfirm]);
 
   const handleCancel = useCallback(() => {
     if (confirmDialog.onCancel) confirmDialog.onCancel();
     closeConfirm();
-  }, [confirmDialog.onCancel, closeConfirm]);
+  }, [confirmDialog, closeConfirm]);
 
   // ============================================================================
   // Form Helpers
