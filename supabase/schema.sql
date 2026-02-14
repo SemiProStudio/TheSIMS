@@ -679,7 +679,7 @@ CREATE POLICY "read_audit_log" ON audit_log FOR SELECT TO authenticated USING (t
 -- =============================================================================
 
 -- Users can update their own profile
-CREATE POLICY "update_own_profile" ON users FOR UPDATE TO authenticated USING (auth.uid() = id);
+CREATE POLICY "update_own_profile" ON users FOR UPDATE TO authenticated USING (id = (select auth.uid()));
 
 -- Inventory: requires gear_list edit permission
 CREATE POLICY "write_inventory" ON inventory FOR INSERT TO authenticated WITH CHECK (has_permission('gear_list', 'edit'));
@@ -723,20 +723,25 @@ CREATE POLICY "write_packages" ON packages FOR INSERT TO authenticated WITH CHEC
 CREATE POLICY "edit_packages" ON packages FOR UPDATE TO authenticated USING (has_permission('gear_list', 'edit'));
 CREATE POLICY "remove_packages" ON packages FOR DELETE TO authenticated USING (has_permission('gear_list', 'edit'));
 
-CREATE POLICY "write_package_items" ON package_items FOR ALL TO authenticated USING (has_permission('gear_list', 'edit'));
+CREATE POLICY "insert_package_items" ON package_items FOR INSERT TO authenticated WITH CHECK (has_permission('gear_list', 'edit'));
+CREATE POLICY "edit_package_items" ON package_items FOR UPDATE TO authenticated USING (has_permission('gear_list', 'edit'));
+CREATE POLICY "remove_package_items" ON package_items FOR DELETE TO authenticated USING (has_permission('gear_list', 'edit'));
 CREATE POLICY "write_package_notes" ON package_notes FOR INSERT TO authenticated WITH CHECK (has_permission('gear_list', 'edit'));
 CREATE POLICY "edit_package_notes" ON package_notes FOR UPDATE TO authenticated USING (has_permission('gear_list', 'edit'));
 CREATE POLICY "delete_package_notes" ON package_notes FOR DELETE TO authenticated USING (has_permission('gear_list', 'edit'));
 
 -- Pack lists: requires pack_lists edit permission
-CREATE POLICY "write_pack_lists" ON pack_lists FOR ALL TO authenticated USING (has_permission('pack_lists', 'edit'));
-CREATE POLICY "write_pack_list_items" ON pack_list_items FOR ALL TO authenticated USING (has_permission('pack_lists', 'edit'));
-CREATE POLICY "write_pack_list_packages" ON pack_list_packages FOR ALL TO authenticated USING (has_permission('pack_lists', 'edit'));
+CREATE POLICY "insert_pack_lists" ON pack_lists FOR INSERT TO authenticated WITH CHECK (has_permission('pack_lists', 'edit'));
+CREATE POLICY "edit_pack_lists" ON pack_lists FOR UPDATE TO authenticated USING (has_permission('pack_lists', 'edit'));
+CREATE POLICY "remove_pack_lists" ON pack_lists FOR DELETE TO authenticated USING (has_permission('pack_lists', 'edit'));
 
--- Pack list delete policies
-CREATE POLICY "delete_pack_lists" ON pack_lists FOR DELETE TO authenticated USING (has_permission('pack_lists', 'edit'));
-CREATE POLICY "delete_pack_list_items" ON pack_list_items FOR DELETE TO authenticated USING (has_permission('pack_lists', 'edit'));
-CREATE POLICY "delete_pack_list_packages" ON pack_list_packages FOR DELETE TO authenticated USING (has_permission('pack_lists', 'edit'));
+CREATE POLICY "insert_pack_list_items" ON pack_list_items FOR INSERT TO authenticated WITH CHECK (has_permission('pack_lists', 'edit'));
+CREATE POLICY "edit_pack_list_items" ON pack_list_items FOR UPDATE TO authenticated USING (has_permission('pack_lists', 'edit'));
+CREATE POLICY "remove_pack_list_items" ON pack_list_items FOR DELETE TO authenticated USING (has_permission('pack_lists', 'edit'));
+
+CREATE POLICY "insert_pack_list_packages" ON pack_list_packages FOR INSERT TO authenticated WITH CHECK (has_permission('pack_lists', 'edit'));
+CREATE POLICY "edit_pack_list_packages" ON pack_list_packages FOR UPDATE TO authenticated USING (has_permission('pack_lists', 'edit'));
+CREATE POLICY "remove_pack_list_packages" ON pack_list_packages FOR DELETE TO authenticated USING (has_permission('pack_lists', 'edit'));
 
 -- Locations: requires admin_locations edit permission
 CREATE POLICY "write_locations" ON locations FOR INSERT TO authenticated WITH CHECK (has_permission('admin_locations', 'edit'));
@@ -760,7 +765,7 @@ BEGIN
   SELECT r.permissions INTO user_permissions
   FROM users u
   JOIN roles r ON r.id = u.role_id
-  WHERE u.id = auth.uid();
+  WHERE u.id = (select auth.uid());
 
   IF user_permissions IS NULL THEN
     RETURN FALSE;
@@ -784,17 +789,23 @@ RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM users 
-    WHERE users.id = auth.uid() 
+    WHERE users.id = (select auth.uid())
     AND users.role_id = 'role_admin'
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Admin-only policies
-CREATE POLICY "admin_roles" ON roles FOR ALL TO authenticated USING (is_admin());
+-- Admin-only policies (per-action to avoid duplicate SELECT paths with read_* policies)
+CREATE POLICY "admin_insert_roles" ON roles FOR INSERT TO authenticated WITH CHECK (is_admin());
+CREATE POLICY "admin_update_roles" ON roles FOR UPDATE TO authenticated USING (is_admin());
+CREATE POLICY "admin_delete_roles" ON roles FOR DELETE TO authenticated USING (is_admin());
 CREATE POLICY "admin_delete_inventory" ON inventory FOR DELETE TO authenticated USING (is_admin());
-CREATE POLICY "admin_categories" ON categories FOR ALL TO authenticated USING (is_admin());
-CREATE POLICY "admin_specs" ON specs FOR ALL TO authenticated USING (is_admin());
+CREATE POLICY "admin_insert_categories" ON categories FOR INSERT TO authenticated WITH CHECK (is_admin());
+CREATE POLICY "admin_update_categories" ON categories FOR UPDATE TO authenticated USING (is_admin());
+CREATE POLICY "admin_delete_categories" ON categories FOR DELETE TO authenticated USING (is_admin());
+CREATE POLICY "admin_insert_specs" ON specs FOR INSERT TO authenticated WITH CHECK (is_admin());
+CREATE POLICY "admin_update_specs" ON specs FOR UPDATE TO authenticated USING (is_admin());
+CREATE POLICY "admin_delete_specs" ON specs FOR DELETE TO authenticated USING (is_admin());
 CREATE POLICY "admin_delete_locations" ON locations FOR DELETE TO authenticated USING (is_admin());
 
 -- Admin user management
@@ -804,21 +815,25 @@ CREATE POLICY "admin_delete_users" ON users FOR DELETE TO authenticated USING (i
 
 -- Notification preferences: users manage their own
 CREATE POLICY "Users can view own notification preferences" ON notification_preferences
-  FOR SELECT TO authenticated USING (user_id = auth.uid());
+  FOR SELECT TO authenticated USING (user_id = (select auth.uid()));
 CREATE POLICY "Users can update own notification preferences" ON notification_preferences
-  FOR UPDATE TO authenticated USING (user_id = auth.uid());
+  FOR UPDATE TO authenticated USING (user_id = (select auth.uid()));
 CREATE POLICY "Users can insert own notification preferences" ON notification_preferences
-  FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+  FOR INSERT TO authenticated WITH CHECK (user_id = (select auth.uid()));
 
 -- Notification log: users see their own
 CREATE POLICY "Users can view own notification log" ON notification_log
-  FOR SELECT TO authenticated USING (user_id = auth.uid());
+  FOR SELECT TO authenticated USING (user_id = (select auth.uid()));
 
 -- Email templates: read-only for users, admin can modify
 CREATE POLICY "Users can view email templates" ON email_templates
   FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Admin can modify email templates" ON email_templates
-  FOR ALL TO authenticated USING (is_admin());
+CREATE POLICY "Admin can insert email templates" ON email_templates
+  FOR INSERT TO authenticated WITH CHECK (is_admin());
+CREATE POLICY "Admin can update email templates" ON email_templates
+  FOR UPDATE TO authenticated USING (is_admin());
+CREATE POLICY "Admin can delete email templates" ON email_templates
+  FOR DELETE TO authenticated USING (is_admin());
 
 -- =============================================================================
 -- FUNCTIONS & TRIGGERS
