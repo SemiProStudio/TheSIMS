@@ -666,7 +666,7 @@ function ClientsView({
       }
     }
     setDeleteConfirm({ isOpen: false, client: null });
-  }, [clients, deleteConfirm.client, addAuditLog, user, dataContext]);
+  }, [deleteConfirm.client, addAuditLog, user, dataContext]);
   
   // Detail view
   if (selectedClient) {

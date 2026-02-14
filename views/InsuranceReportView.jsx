@@ -11,13 +11,13 @@ import { formatMoney, sanitizeCSVCell } from '../utils';
 import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 
-export const InsuranceReportPanel = memo(function InsuranceReportPanel({ 
-  inventory, 
-  categories, 
-  currentUser,
-  onViewItem, 
-  onExport, 
-  onBack 
+export const InsuranceReportPanel = memo(function InsuranceReportPanel({
+  inventory,
+  categories,
+  currentUser: _currentUser,
+  onViewItem,
+  onExport,
+  onBack
 }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('value-desc');

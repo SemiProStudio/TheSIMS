@@ -47,11 +47,11 @@ const Checkbox = memo(function Checkbox({ checked, indeterminate, onChange, size
 });
 
 // Saved Views Dropdown Component
-const SavedViewsDropdown = memo(function SavedViewsDropdown({ 
-  savedViews, 
-  currentFilters,
-  onLoadView, 
-  onSaveView, 
+const SavedViewsDropdown = memo(function SavedViewsDropdown({
+  savedViews,
+  currentFilters: _currentFilters,
+  onLoadView,
+  onSaveView,
   onDeleteView,
   hasActiveFilters,
 }) {
@@ -677,7 +677,7 @@ function GearList({
   } = usePagination(filteredItems, pageSize);
 
   // Reset to page 1 when filters change
-  useMemo(() => {
+  useEffect(() => {
     goToPage(1);
   }, [debouncedSearch, categoryFilter, statusFilter, pageSize, goToPage]);
 

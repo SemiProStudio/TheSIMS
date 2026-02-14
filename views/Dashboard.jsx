@@ -41,8 +41,7 @@ function Dashboard({
   const [quickSearch, setQuickSearch] = useState('');
   
   // Permissions
-  const { canEdit } = usePermissions();
-  const canEditDashboard = canEdit('dashboard');
+  const { canEdit: _canEdit } = usePermissions();
   
   // Local state for collapsed sections (for immediate UI response)
   const [collapsedSections, setCollapsedSections] = useState(() => {
@@ -98,10 +97,19 @@ function Dashboard({
 
   // Get sections sorted by order
   const sectionOrder = useMemo(() => {
+    const getOrder = (sectionId) => {
+      const defaultSection = Object.values(DASHBOARD_SECTIONS).find(s => s.id === sectionId);
+      const pref = layoutPrefs?.sections?.[sectionId];
+      return pref?.order ?? defaultSection?.order ?? 99;
+    };
+    const isVisible = (sectionId) => {
+      const pref = layoutPrefs?.sections?.[sectionId];
+      return pref?.visible !== false;
+    };
     const sections = ['stats', 'quickSearch', 'alerts', 'reminders', 'lowStock', 'reservations'];
     return sections
-      .filter(id => showSection(id))
-      .map(id => ({ id, order: getSectionPref(id).order }))
+      .filter(id => isVisible(id))
+      .map(id => ({ id, order: getOrder(id) }))
       .sort((a, b) => a.order - b.order)
       .map(s => s.id);
   }, [layoutPrefs]);
