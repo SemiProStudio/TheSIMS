@@ -43,7 +43,7 @@ export function useReminderHandlers({
       user: currentUser.name,
       itemId: selectedItem.id
     });
-  }, [selectedItem, currentUser, dataContext]);
+  }, [selectedItem, setSelectedItem, currentUser, dataContext]);
 
   const completeReminder = useCallback((reminderId) => {
     if (!selectedItem) return;
@@ -67,7 +67,7 @@ export function useReminderHandlers({
       user: currentUser.name,
       itemId: selectedItem.id
     });
-  }, [selectedItem, currentUser, dataContext]);
+  }, [selectedItem, setSelectedItem, currentUser, dataContext]);
 
   const uncompleteReminder = useCallback((reminderId) => {
     if (!selectedItem) return;
@@ -84,7 +84,7 @@ export function useReminderHandlers({
     }));
     setSelectedItem(prev => ({ ...prev, reminders: updatedReminders }));
     dataContext.updateItemReminder(reminderId, { completed: false, completedDate: null });
-  }, [selectedItem, dataContext]);
+  }, [selectedItem, setSelectedItem, dataContext]);
 
   const deleteReminder = useCallback((reminderId) => {
     if (!selectedItem) return;

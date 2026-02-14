@@ -108,10 +108,10 @@ export function useCheckoutHandlers({
       closeModal();
       setCheckoutItem(null);
     }
-  }, [currentUser, selectedItem, setSelectedItem, checkoutItem, closeModal, addAuditLog, addChangeLog, addToast, dataContext, inventory]);
+  }, [currentUser, selectedItem, setSelectedItem, checkoutItem, closeModal, addAuditLog, addChangeLog, addToast, dataContext]);
 
   const processCheckin = useCallback(async (checkinData) => {
-    const { itemId, returnedBy, condition, conditionChanged, conditionAtCheckout, conditionNotes, returnNotes, damageReported, damageDescription, returnDate, returnTime } = checkinData;
+    const { itemId, returnedBy, condition, conditionChanged, conditionAtCheckout, conditionNotes, returnNotes, damageReported, damageDescription, returnDate } = checkinData;
     
     try {
     const currentItem = inventory.find(i => i.id === itemId);

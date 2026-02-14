@@ -38,11 +38,6 @@ export function useReservationHandlers({
         dueBack: reservationForm.end
       };
 
-      const currentItem = inventory.find(i => i.id === selectedReservationItem.id);
-      const updatedReservations = (currentItem.reservations || []).map(r => 
-        r.id === editingReservationId ? updatedReservation : r
-      );
-      
       {
         try {
           await dataContext.updateReservation(editingReservationId, reservationForm);
@@ -172,7 +167,7 @@ export function useReservationHandlers({
     
     closeModal();
     resetReservationForm();
-  }, [reservationForm, editingReservationId, selectedItem, selectedReservationItem, closeModal, resetReservationForm, navigateToReservation, addChangeLog, dataContext, inventory]);
+  }, [reservationForm, editingReservationId, selectedItem, setSelectedItem, selectedReservationItem, closeModal, resetReservationForm, navigateToReservation, addChangeLog, addAuditLog, currentUser, setSelectedReservation, dataContext, inventory]);
 
   const openEditReservation = useCallback((reservation) => {
     setEditingReservationId(reservation.id);
@@ -187,7 +182,7 @@ export function useReservationHandlers({
       location: reservation.location || ''
     });
     openModal(MODALS.ADD_RESERVATION);
-  }, [openModal]);
+  }, [openModal, setEditingReservationId, setReservationForm]);
 
   const deleteReservation = useCallback((itemId, resId) => {
     const item = inventory.find(i => i.id === itemId);

@@ -125,7 +125,7 @@ export function useNoteHandlers({
         }
       }
     };
-  }, [selectedItem, selectedPackage, selectedReservation, selectedReservationItem, currentUser, dataContext, setSelectedReservation]);
+  }, [selectedItem, setSelectedItem, selectedPackage, setSelectedPackage, selectedReservation, setSelectedReservation, selectedReservationItem, currentUser, dataContext]);
 
   const itemNoteHandlers = useMemo(() => createNoteHandler('item'), [createNoteHandler]);
   const packageNoteHandlers = useMemo(() => createNoteHandler('package'), [createNoteHandler]);

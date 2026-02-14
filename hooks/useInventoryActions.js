@@ -165,7 +165,7 @@ export function useInventoryActions({
     } finally {
       setIsLoading(false);
     }
-  }, [itemForm, inventory, specs, closeModal, resetItemForm, currentView, setCurrentView, addChangeLog, dataContext]);
+  }, [itemForm, inventory, specs, closeModal, resetItemForm, currentView, setCurrentView, addChangeLog, addAuditLog, addToast, dataContext]);
 
   // ============================================================================
   // Update Item - NOW PERSISTS TO SUPABASE
