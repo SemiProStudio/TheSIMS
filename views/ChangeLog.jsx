@@ -4,9 +4,9 @@
 // ============================================================================
 
 import { memo, useState, useMemo, useCallback } from 'react';
-import { History, Search, Package, ChevronRight, Clock, User, Edit2, Plus, Trash2, RefreshCw, ArrowRight, X } from 'lucide-react';
+import { History, Package, ChevronRight, Clock, User, Edit2, Plus, Trash2, RefreshCw, ArrowRight } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { formatDate, formatDateTime } from '../utils';
+import { formatDateTime } from '../utils';
 import { Card, Button, SearchInput, Badge, BackButton, PageHeader } from '../components/ui.jsx';
 
 // Change type icons and colors
@@ -313,7 +313,7 @@ function ChangeLog({
   }, [searchQuery, allItems]);
   
   // Handle view item from change entry
-  const handleViewItem = useCallback((itemId, itemType) => {
+  const handleViewItem = useCallback((itemId, _itemType) => {
     const item = allItems.find(i => i.id === itemId);
     if (item) {
       setSelectedItem(item);
@@ -390,7 +390,7 @@ function ChangeLog({
             color: colors.textMuted,
             borderTop: `1px solid ${colors.border}`,
           }}>
-            No items, kits or packages found matching "{searchQuery}"
+            No items, kits or packages found matching &quot;{searchQuery}&quot;
           </div>
         )}
       </Card>

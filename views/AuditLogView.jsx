@@ -54,7 +54,7 @@ export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {
                   marginTop: spacing[1], 
                   fontStyle: 'italic' 
                 }}>
-                  "{entry.content}"
+                  &quot;{entry.content}&quot;
                 </div>
               )}
               <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: spacing[1] }}>
