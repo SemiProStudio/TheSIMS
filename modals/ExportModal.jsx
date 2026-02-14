@@ -10,7 +10,7 @@ import { colors, styles, spacing, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
-export const ExportModal = memo(function ExportModal({ onExport, onClose, user }) {
+export const ExportModal = memo(function ExportModal({ onExport, onClose, user: _user }) {
   const [format, setFormat] = useState('csv');
   const [columns, setColumns] = useState(['id', 'name', 'category', 'status', 'value']);
   const [includeBranding, setIncludeBranding] = useState(false);

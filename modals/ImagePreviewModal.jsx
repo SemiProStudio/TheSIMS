@@ -6,7 +6,7 @@
 import { memo } from 'react';
 import PropTypes from 'prop-types';
 import { Pencil, Trash2, X } from 'lucide-react';
-import { colors, spacing, borderRadius, typography } from '../theme.js';
+import { spacing, borderRadius } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 
 const ImagePreviewModal = memo(function ImagePreviewModal({

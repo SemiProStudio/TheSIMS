@@ -13,12 +13,12 @@ import ImageCropEditor from '../components/ImageCropEditor.jsx';
 
 import { error as logError } from '../lib/logger.js';
 
-export const ImageSelectorModal = memo(function ImageSelectorModal({ 
-  images, 
-  currentImage, 
+export const ImageSelectorModal = memo(function ImageSelectorModal({
+  images: _images,
+  currentImage,
   itemId,
-  onSelect, 
-  onClose 
+  onSelect,
+  onClose
 }) {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [cropSrc, setCropSrc] = useState(null);

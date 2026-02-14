@@ -29,7 +29,7 @@ export const CSVImportModal = memo(function CSVImportModal({ categories, specs, 
     
     // Add spec columns for each category
     const specColumns = [];
-    Object.entries(specs).forEach(([category, specList]) => {
+    Object.entries(specs).forEach(([_category, specList]) => {
       if (Array.isArray(specList)) {
         specList.forEach(spec => {
           const colName = `spec:${spec.name}`;

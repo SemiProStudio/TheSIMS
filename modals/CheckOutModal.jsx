@@ -11,12 +11,12 @@ import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
-export const CheckOutModal = memo(function CheckOutModal({ 
-  item, 
-  users, 
+export const CheckOutModal = memo(function CheckOutModal({
+  item,
+  users: _users,
   currentUser,
-  onCheckOut, 
-  onClose 
+  onCheckOut,
+  onClose
 }) {
   const [formData, setFormData] = useState({
     borrowerName: currentUser?.name || '',
@@ -263,7 +263,7 @@ export const CheckOutModal = memo(function CheckOutModal({
                 I confirm the item is in <strong>{item.condition}</strong> condition at checkout
               </span>
               <p style={{ color: colors.textMuted, fontSize: typography.fontSize.xs, margin: `${spacing[1]}px 0 0` }}>
-                You'll be asked to verify the condition again at check-in
+                You&apos;ll be asked to verify the condition again at check-in
               </p>
             </div>
           </label>

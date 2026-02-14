@@ -3,7 +3,7 @@
 // Add and edit inventory items with Smart Paste support
 // ============================================================================
 
-import { memo, useState, useRef, useEffect, useCallback } from 'react';
+import { memo, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { CONDITION } from '../constants.js';
@@ -30,7 +30,6 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
   // Use the shared ItemForm hook for validation and computed values
   const {
     isValid,
-    errors,
     getFieldError,
     validateAll,
     handleBlur,
