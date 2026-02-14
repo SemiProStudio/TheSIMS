@@ -5,7 +5,7 @@
 // ============================================================================
 
 import React, { memo, useState, useCallback, useMemo } from 'react';
-import { Plus, Package, Trash2, ArrowLeft, Download, Printer, Copy, Box, Layers, ChevronRight, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft, Download, Printer, Copy, Box, Layers, ChevronRight, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, generateId, getStatusColor } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog, PageHeader } from '../components/ui.jsx';

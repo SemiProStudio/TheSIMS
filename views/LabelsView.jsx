@@ -53,7 +53,7 @@ const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
 });
 
 // Label Preview Component
-const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isPackage, containedItems }) {
+const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isPackage: _isPackage, containedItems }) {
   if (!item) return null;
   
   const scale = 0.5;
@@ -505,7 +505,7 @@ function LabelsView({ inventory, packages = [], user }) {
   }, []);
 
   // Generate label HTML that matches preview
-  const generateLabelHTML = useCallback((item, format, isKit = false, isPackage = false, containedItems = []) => {
+  const generateLabelHTML = useCallback((item, format, isKit = false, _isPackage = false, containedItems = []) => {
     const widthPx = format.width * 96; // 96 DPI for screen/PDF
     const heightPx = format.height * 96;
     const isBranding = format.id.startsWith('branding');

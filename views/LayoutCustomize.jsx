@@ -6,7 +6,7 @@
 import { memo, useState, useCallback, useRef } from 'react';
 import { Save, Layout, RotateCcw, Eye, EyeOff, GripVertical } from 'lucide-react';
 import { DASHBOARD_SECTIONS, ITEM_DETAIL_SECTIONS, DEFAULT_LAYOUT_PREFS } from '../constants.js';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { Button, BackButton, Card } from '../components/ui.jsx';
 
 // Context configuration

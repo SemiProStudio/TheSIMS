@@ -7,7 +7,7 @@ import { memo, useState, useMemo, useCallback } from 'react';
 import { 
   Building2, DoorOpen, Archive, Layers, Box, MapPin, 
   Plus, Trash2, Edit, ChevronRight, ChevronDown, Save,
-  FolderTree, Search
+  FolderTree
 } from 'lucide-react';
 import { LOCATION_TYPES } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
@@ -44,11 +44,6 @@ const LocationTreeItem = memo(function LocationTreeItem({
   const isExpanded = expandedIds.has(location.id);
   const itemCount = itemCounts[location.id] || 0;
   
-  // Get full path for display
-  const getLocationPath = (loc) => {
-    return loc.name;
-  };
-
   return (
     <div>
       <div
@@ -325,30 +320,6 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
       return next;
     });
   }, []);
-
-  // Find location by ID in tree
-  const findLocationById = (locations, id) => {
-    for (const loc of locations) {
-      if (loc.id === id) return loc;
-      if (loc.children) {
-        const found = findLocationById(loc.children, id);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-
-  // Find parent of location
-  const findParentOfLocation = (locations, id, parent = null) => {
-    for (const loc of locations) {
-      if (loc.id === id) return parent;
-      if (loc.children) {
-        const found = findParentOfLocation(loc.children, id, loc);
-        if (found !== undefined) return found;
-      }
-    }
-    return undefined;
-  };
 
   // Add child location
   const handleAddChild = (parent) => {

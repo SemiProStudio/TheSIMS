@@ -6,7 +6,7 @@
 import { memo, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Wrench, Clock, AlertTriangle, DollarSign, Building2 } from 'lucide-react';
-import { colors, spacing, borderRadius, typography } from '../theme.js';
+import { colors, spacing, typography } from '../theme.js';
 import { formatDate, formatMoney } from '../utils';
 import { Badge, Card, CardHeader, StatCard, PageHeader } from '../components/ui.jsx';
 
