@@ -48,7 +48,7 @@ export function useKitHandlers({
       description: `Converted "${selectedItem.name}" to ${kitType}`,
       changes: [{ field: 'kitType', oldValue: null, newValue: kitType }]
     });
-  }, [selectedItem, currentUser, addAuditLog, addChangeLog, dataContext]);
+  }, [selectedItem, setSelectedItem, currentUser, addAuditLog, addChangeLog, dataContext]);
 
   const addItemsToKit = useCallback((childIds) => {
     if (!selectedItem || !selectedItem.isKit) return;
@@ -86,7 +86,7 @@ export function useKitHandlers({
         newValue: `+ ${item.name} (${item.id})` 
       }))
     });
-  }, [selectedItem, currentUser, inventory, addAuditLog, addChangeLog, dataContext]);
+  }, [selectedItem, setSelectedItem, currentUser, inventory, addAuditLog, addChangeLog, dataContext]);
 
   const removeItemFromKit = useCallback((childId) => {
     if (!selectedItem || !selectedItem.isKit) return;
@@ -119,7 +119,7 @@ export function useKitHandlers({
         }]
       });
     }
-  }, [selectedItem, inventory, addChangeLog, dataContext]);
+  }, [selectedItem, setSelectedItem, inventory, addChangeLog, dataContext]);
 
   const clearKitItems = useCallback(() => {
     if (!selectedItem || !selectedItem.isKit) return;
@@ -160,7 +160,7 @@ export function useKitHandlers({
         }))
       });
     }
-  }, [selectedItem, currentUser, inventory, addAuditLog, addChangeLog, dataContext]);
+  }, [selectedItem, setSelectedItem, currentUser, inventory, addAuditLog, addChangeLog, dataContext]);
 
   // ---- Required Accessories ----
 
@@ -192,7 +192,7 @@ export function useKitHandlers({
         newValue: `${item.name} (${item.id})` 
       }))
     });
-  }, [inventory, selectedItem, addChangeLog, dataContext]);
+  }, [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext]);
 
   const removeRequiredAccessory = useCallback((itemId, accessoryId) => {
     if (!itemId || !accessoryId) return;
@@ -224,7 +224,7 @@ export function useKitHandlers({
         }]
       });
     }
-  }, [inventory, selectedItem, addChangeLog, dataContext]);
+  }, [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext]);
 
   // ---- Image ----
 
@@ -240,7 +240,7 @@ export function useKitHandlers({
       }
     }
     closeModal();
-  }, [selectedItem, closeModal, dataContext]);
+  }, [selectedItem, setSelectedItem, closeModal, dataContext]);
 
   return {
     setItemAsKit, addItemsToKit, removeItemFromKit, clearKitItems,

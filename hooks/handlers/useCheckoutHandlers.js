@@ -108,7 +108,7 @@ export function useCheckoutHandlers({
       closeModal();
       setCheckoutItem(null);
     }
-  }, [currentUser, selectedItem, checkoutItem, closeModal, addAuditLog, addChangeLog, dataContext, inventory]);
+  }, [currentUser, selectedItem, setSelectedItem, checkoutItem, closeModal, addAuditLog, addChangeLog, addToast, dataContext, inventory]);
 
   const processCheckin = useCallback(async (checkinData) => {
     const { itemId, returnedBy, condition, conditionChanged, conditionAtCheckout, conditionNotes, returnNotes, damageReported, damageDescription, returnDate, returnTime } = checkinData;
@@ -179,7 +179,7 @@ export function useCheckoutHandlers({
       closeModal();
       setCheckinItemData(null);
     }
-  }, [currentUser, selectedItem, checkinItemData, closeModal, addAuditLog, addChangeLog, dataContext, inventory]);
+  }, [currentUser, selectedItem, setSelectedItem, checkinItemData, closeModal, addAuditLog, addChangeLog, addToast, dataContext, inventory]);
 
   // ---- Maintenance ----
 
@@ -277,7 +277,7 @@ export function useCheckoutHandlers({
     closeModal();
     setMaintenanceItem(null);
     setEditingMaintenanceRecord(null);
-  }, [maintenanceItem, editingMaintenanceRecord, selectedItem, inventory, currentUser, closeModal, addAuditLog, addChangeLog, addToast, dataContext]);
+  }, [maintenanceItem, editingMaintenanceRecord, selectedItem, setSelectedItem, inventory, currentUser, closeModal, addAuditLog, addChangeLog, addToast, dataContext]);
 
   const updateMaintenanceStatus = useCallback((recordId, newStatus) => {
     if (!selectedItem) return;
@@ -308,7 +308,7 @@ export function useCheckoutHandlers({
       user: currentUser?.name || 'Unknown',
       itemId: itemId
     });
-  }, [selectedItem, currentUser, addAuditLog]);
+  }, [selectedItem, setSelectedItem, currentUser, addAuditLog, dataContext]);
 
   return {
     // Checkout state
