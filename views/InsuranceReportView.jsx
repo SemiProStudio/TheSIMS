@@ -14,7 +14,7 @@ import { Select } from '../components/Select.jsx';
 export const InsuranceReportPanel = memo(function InsuranceReportPanel({
   inventory,
   categories,
-  currentUser: _currentUser,
+  currentUser,
   onViewItem,
   onExport,
   onBack
@@ -202,7 +202,7 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((item, idx) => (
+                {filteredItems.map((item) => (
                   <tr
                     key={item.id}
                     onClick={() => onViewItem(item.id)}

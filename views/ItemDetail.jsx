@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { memo, useMemo, useState, useEffect } from 'react';
-import { CheckCircle, RefreshCw, Edit, QrCode, Trash2, Calendar, Plus, Upload, Layout, DollarSign, Clock, Bell, Wrench, MessageSquare, History, Settings, Package, ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { CheckCircle, RefreshCw, Edit, QrCode, Trash2, Calendar, Plus, Upload, Layout, DollarSign, Clock, Bell, Wrench, MessageSquare, History, Settings, Package, ChevronDown, ChevronUp } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatDate, formatMoney, getStatusColor, getConditionColor } from '../utils';
 import { ITEM_DETAIL_SECTIONS } from '../constants.js';
@@ -375,16 +375,6 @@ function ItemDetail({
     }
   }, [layoutPrefs]);
 
-  const getSectionPref = (sectionId) => {
-    const defaultSection = Object.values(ITEM_DETAIL_SECTIONS).find(s => s.id === sectionId);
-    const pref = layoutPrefs?.sections?.[sectionId];
-    return {
-      visible: pref?.visible !== false,
-      order: pref?.order ?? defaultSection?.order ?? 99,
-    };
-  };
-
-  const showSection = (sectionId) => getSectionPref(sectionId).visible;
   const isCollapsed = (sectionId) => collapsedSections[sectionId] || false;
   
   const toggleCollapse = (sectionId) => {
@@ -419,10 +409,18 @@ function ItemDetail({
   }, [item, categorySpecs, currentCategorySettings]);
 
   const sortedSections = useMemo(() => {
+    const getPref = (sectionId) => {
+      const defaultSection = Object.values(ITEM_DETAIL_SECTIONS).find(s => s.id === sectionId);
+      const pref = layoutPrefs?.sections?.[sectionId];
+      return {
+        visible: pref?.visible !== false,
+        order: pref?.order ?? defaultSection?.order ?? 99,
+      };
+    };
     const sectionIds = ['specifications', 'reservations', 'notes', 'reminders', 'addToKit', 'maintenance', 'timeline', 'checkoutHistory', 'value', 'depreciation'];
     return sectionIds
-      .filter(id => getSectionPref(id).visible)
-      .map(id => ({ id, order: getSectionPref(id).order }))
+      .filter(id => getPref(id).visible)
+      .map(id => ({ id, order: getPref(id).order }))
       .sort((a, b) => a.order - b.order)
       .map(s => s.id);
   }, [layoutPrefs]);

@@ -67,19 +67,6 @@ function Dashboard({
     }
   }, [layoutPrefs]);
 
-  // Get section preferences with defaults
-  const getSectionPref = (sectionId) => {
-    const defaultSection = Object.values(DASHBOARD_SECTIONS).find(s => s.id === sectionId);
-    const pref = layoutPrefs?.sections?.[sectionId];
-    return {
-      visible: pref?.visible !== false,
-      order: pref?.order ?? defaultSection?.order ?? 99,
-    };
-  };
-
-  // Check if section should be shown
-  const showSection = (sectionId) => getSectionPref(sectionId).visible;
-  
   // Check if section is collapsed (use local state)
   const isCollapsed = (sectionId) => collapsedSections[sectionId] || false;
   
