@@ -319,7 +319,7 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
 function ItemDetail({ 
   item, inventory, packages, specs, categorySettings, layoutPrefs, 
   onBack, backLabel = 'Back to Gear List',
-  onCheckout, onCheckin, onEdit, onDelete, onShowQR, 
+  onCheckout, onCheckin, onEdit, onDelete: _onDelete, onShowQR,
   onAddReservation, onDeleteReservation, 
   onAddNote, onReplyNote, onDeleteNote, 
   onSelectImage, onViewReservation, 
@@ -327,7 +327,7 @@ function ItemDetail({
   onAddMaintenance, onUpdateMaintenance, onCompleteMaintenance, 
   onUpdateValue, 
   onAddAccessory, onRemoveAccessory,
-  onSetAsKit, onAddToKit, onAddToPackage, onRemoveFromKit, onClearKit, onViewItem, 
+  onSetAsKit: _onSetAsKit, onAddToKit: _onAddToKit, onAddToPackage, onRemoveFromKit: _onRemoveFromKit, onClearKit: _onClearKit, onViewItem,
   onCustomizeLayout, onToggleCollapse, 
   user 
 }) {
@@ -336,14 +336,7 @@ function ItemDetail({
   const [specsExpanded, setSpecsExpanded] = useState(false);
 
   const isCheckedOut = item?.status === 'checked-out';
-  const categorySpecs = item ? (specs[item.category] || []) : [];
-  
-  // Get category settings for quantity display
-  const currentCategorySettings = (item && categorySettings?.[item.category]) || { 
-    trackQuantity: false, 
-    trackSerialNumbers: true 
-  };
-  
+
   const [collapsedSections, setCollapsedSections] = useState(() => {
     const initial = {};
     Object.values(ITEM_DETAIL_SECTIONS).forEach(s => {
@@ -377,27 +370,34 @@ function ItemDetail({
 
   const allSpecs = useMemo(() => {
     if (!item) return [];
+
+    const catSpecs = item ? (specs[item.category] || []) : [];
+    const catSettings = (item && categorySettings?.[item.category]) || {
+      trackQuantity: false,
+      trackSerialNumbers: true
+    };
+
     const baseSpecs = [
       { name: 'Location', value: item.location || '-' },
       { name: 'Serial Number', value: item.serialNumber || '-' },
     ];
-    
+
     // Add quantity info if category tracks it
-    if (currentCategorySettings.trackQuantity) {
+    if (catSettings.trackQuantity) {
       baseSpecs.push(
         { name: 'Quantity', value: item.quantity ?? 1 },
         { name: 'Reorder Point', value: item.reorderPoint ?? 0 }
       );
     }
-    
+
     // Add category-specific specs
-    const catSpecs = categorySpecs.map(spec => ({ 
-      name: spec.name, 
-      value: item.specs?.[spec.name] || '-' 
+    const specEntries = catSpecs.map(spec => ({
+      name: spec.name,
+      value: item.specs?.[spec.name] || '-'
     }));
-    
-    return [...baseSpecs, ...catSpecs];
-  }, [item, categorySpecs, currentCategorySettings]);
+
+    return [...baseSpecs, ...specEntries];
+  }, [item, specs, categorySettings]);
 
   const sortedSections = useMemo(() => {
     const getPref = (sectionId) => {

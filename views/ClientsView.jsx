@@ -4,7 +4,7 @@
 
 import { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  Users, Plus, Search, Building2, Mail, Phone, Calendar,
+  Users, Plus, Building2, Mail, Phone, Calendar,
   ChevronRight, Edit2, Trash2, MapPin,
   Star, MessageSquare, X
 } from 'lucide-react';

@@ -6,7 +6,7 @@
 // ============================================================================
 
 import { memo, useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { Search, Plus, Grid, List, CheckSquare, Square, MinusSquare, X, Bookmark, BookmarkPlus, Trash2, ChevronDown } from 'lucide-react';
+import { Plus, Grid, List, CheckSquare, Square, MinusSquare, X, Bookmark, BookmarkPlus, Trash2, ChevronDown } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity, zIndex } from '../theme.js';
 import { getStatusColor, filterBySearch, filterByCategory, filterByStatus, generateId } from '../utils';
 import { Badge, Card, Button, SearchInput, Pagination, PageHeader } from '../components/ui.jsx';

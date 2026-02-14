@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { memo, useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { Search, Printer, Download, Check, Package, Layers } from 'lucide-react';
+import { Printer, Download, Check, Package, Layers } from 'lucide-react';
 import QRCode from 'qrcode';
 import { LABEL_FORMATS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
