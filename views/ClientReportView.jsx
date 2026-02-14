@@ -7,7 +7,7 @@ import { memo, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Download, Building2, Users, FileText, DollarSign } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatMoney } from '../utils';
+import { formatMoney, sanitizeCSVCell } from '../utils';
 import { Badge, Card, CardHeader, StatCard, EmptyState, Button, PageHeader } from '../components/ui.jsx';
 
 export const ClientReportPanel = memo(function ClientReportPanel({ 
@@ -64,8 +64,8 @@ export const ClientReportPanel = memo(function ClientReportPanel({
     ]);
     
     const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      headers.map(h => sanitizeCSVCell(h)).join(','),
+      ...rows.map(row => row.map(cell => sanitizeCSVCell(cell)).join(','))
     ].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

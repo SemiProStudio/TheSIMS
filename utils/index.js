@@ -479,6 +479,32 @@ export const isReminderDue = (reminder) => {
 };
 
 // ============================================================================
+// CSV Export Utilities
+// ============================================================================
+
+/**
+ * Sanitize a cell value for safe CSV export.
+ * - Converts null/undefined to empty quoted string
+ * - Prefixes formula-triggering characters (=, +, -, @, \t, \r) with a
+ *   single-quote to prevent formula injection when opened in Excel/Sheets
+ * - Escapes embedded double quotes by doubling them (RFC 4180)
+ * - Always wraps the value in double quotes for consistent parsing
+ *
+ * @param {*} value - The cell value to sanitize
+ * @returns {string} A safely quoted CSV cell string
+ */
+export function sanitizeCSVCell(value) {
+  if (value === null || value === undefined) return '""';
+  let str = String(value);
+  // Prefix formula-triggering characters to prevent CSV injection
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = "'" + str;
+  }
+  // Escape double quotes and always wrap in quotes
+  return '"' + str.replace(/"/g, '""') + '"';
+}
+
+// ============================================================================
 // Depreciation Utilities
 // ============================================================================
 

@@ -9,6 +9,7 @@ import { Upload, Download } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
+import { sanitizeCSVCell } from '../utils';
 
 export const CSVImportModal = memo(function CSVImportModal({ categories, specs, onImport, onClose }) {
   const [file, setFile] = useState(null);
@@ -56,10 +57,8 @@ export const CSVImportModal = memo(function CSVImportModal({ categories, specs, 
     });
     
     const csvContent = [
-      allHeaders.join(','),
-      ...paddedRows.map(row => row.map(cell => 
-        cell.includes(',') || cell.includes('"') ? `"${cell.replace(/"/g, '""')}"` : cell
-      ).join(','))
+      allHeaders.map(h => sanitizeCSVCell(h)).join(','),
+      ...paddedRows.map(row => row.map(cell => sanitizeCSVCell(cell)).join(','))
     ].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });

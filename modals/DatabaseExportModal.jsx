@@ -9,6 +9,7 @@ import { Download } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
+import { sanitizeCSVCell } from '../utils';
 
 export const DatabaseExportModal = memo(function DatabaseExportModal({ 
   inventory, 
@@ -74,26 +75,18 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({
       const allHeaders = [...headers, ...Array.from(specHeaders)];
       
       const rows = inventory.map(item => {
-        const row = headers.map(h => {
-          const val = item[h];
-          if (val === null || val === undefined) return '';
-          return String(val);
-        });
-        
+        const row = headers.map(h => item[h]);
+
         // Add spec values
         Array.from(specHeaders).forEach(specHeader => {
           const specName = specHeader.replace('spec:', '');
           row.push(item.specs?.[specName] || '');
         });
-        
-        return row.map(cell => 
-          cell.includes(',') || cell.includes('"') || cell.includes('\n') 
-            ? `"${cell.replace(/"/g, '""')}"` 
-            : cell
-        ).join(',');
+
+        return row.map(cell => sanitizeCSVCell(cell)).join(',');
       });
-      
-      const csvContent = [allHeaders.join(','), ...rows].join('\n');
+
+      const csvContent = [allHeaders.map(h => sanitizeCSVCell(h)).join(','), ...rows].join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

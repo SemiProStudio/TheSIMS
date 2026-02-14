@@ -6,7 +6,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { VIEWS, MODALS, STATUS, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
 import { colors } from './theme.js';
-import { findById } from './utils';
+import { findById, sanitizeCSVCell } from './utils';
 import { useTheme } from './contexts/ThemeContext.jsx';
 import { PermissionsProvider } from './contexts/PermissionsContext.jsx';
 import { useAuth } from './contexts/AuthContext.jsx';
@@ -371,15 +371,18 @@ export default function App() {
       ? inventory.filter(i => selectedIds.includes(i.id))
       : inventory;
     if (options.format === 'csv') {
-      const headers = options.columns.join(',');
+      const headers = options.columns.map(col => sanitizeCSVCell(col)).join(',');
       const rows = items.map(i =>
-        options.columns.map(col => col === 'value' ? i.currentValue : i[col] || '').join(',')
+        options.columns.map(col => sanitizeCSVCell(col === 'value' ? i.currentValue : i[col])).join(',')
       );
-      const csv = headers + '\n' + rows.join('\n');
+      const csvContent = headers + '\n' + rows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      a.href = url;
       a.download = 'inventory.csv';
       a.click();
+      URL.revokeObjectURL(url);
     }
   }, [inventory, selectedIds]);
 
