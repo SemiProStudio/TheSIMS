@@ -679,7 +679,7 @@ function GearList({
   // Reset to page 1 when filters change
   useMemo(() => {
     goToPage(1);
-  }, [debouncedSearch, categoryFilter, statusFilter, pageSize]);
+  }, [debouncedSearch, categoryFilter, statusFilter, pageSize, goToPage]);
 
   return (
     <>

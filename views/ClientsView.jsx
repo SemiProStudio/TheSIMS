@@ -6,7 +6,7 @@ import { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import {
   Users, Plus, Search, Building2, Mail, Phone, Calendar,
   Package, ChevronRight, Edit2, Trash2, MapPin, FileText,
-  Star, MessageSquare
+  Star, MessageSquare, X
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatMoney } from '../utils';

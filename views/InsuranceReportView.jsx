@@ -6,7 +6,7 @@
 import { memo, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Download, DollarSign, TrendingDown, Package } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
+import { colors, spacing, borderRadius, typography } from '../theme.js';
 import { formatMoney, sanitizeCSVCell } from '../utils';
 import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
