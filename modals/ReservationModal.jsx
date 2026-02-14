@@ -121,7 +121,7 @@ const ItemSearch = memo(function ItemSearch({
               color: colors.textMuted,
               fontSize: typography.fontSize.sm 
             }}>
-              No items found matching "{searchQuery}"
+              No items found matching &quot;{searchQuery}&quot;
             </div>
           ) : (
             searchResults.map(item => (

@@ -325,7 +325,7 @@ function ProfileModal({ user, onSave, onClose }) {
         }}>
           <strong style={{ color: colors.textPrimary }}>Branding Settings</strong>
           <p style={{ margin: `${spacing[2]}px 0 0` }}>
-            Fields marked "Show on labels" will be included when generating labels or reports with branding enabled.
+            Fields marked &quot;Show on labels&quot; will be included when generating labels or reports with branding enabled.
           </p>
         </div>
       </div>

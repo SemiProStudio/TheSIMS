@@ -10,7 +10,7 @@ import { Card, Badge, Button, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 import { useItemForm } from '../components/ItemForm.jsx';
-import { SmartPasteModal } from '../modals/ItemModal.jsx';
+import { SmartPasteModal } from '../modals/SmartPasteModal.jsx';
 
 // ============================================================================
 // Add/Edit Item Page
@@ -245,7 +245,7 @@ export const ItemFormPage = memo(function ItemFormPage({
                 />
                 {duplicateSerialNumber && (
                   <span style={{ color: colors.danger, fontSize: typography.fontSize.xs, display: 'block', marginTop: spacing[1] }}>
-                    Serial number already exists on "{duplicateSerialNumber.name}" ({duplicateSerialNumber.id})
+                    Serial number already exists on &quot;{duplicateSerialNumber.name}&quot; ({duplicateSerialNumber.id})
                   </span>
                 )}
               </div>

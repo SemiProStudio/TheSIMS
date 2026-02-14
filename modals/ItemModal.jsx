@@ -16,9 +16,6 @@ import { Modal, ModalHeader } from './ModalBase.jsx';
 import ImageCropEditor from '../components/ImageCropEditor.jsx';
 import { SmartPasteModal } from './SmartPasteModal.jsx';
 
-// Re-export SmartPasteModal for consumers who import from ItemModal
-export { SmartPasteModal };
-
 // ============================================================================
 // Item Modal (Add/Edit)
 // ============================================================================
@@ -425,7 +422,7 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
               />
               {duplicateSerialNumber && (
                 <span style={{ color: colors.danger, fontSize: typography.fontSize.xs, display: 'block', marginTop: spacing[1] }}>
-                  Serial number already exists on "{duplicateSerialNumber.name}" ({duplicateSerialNumber.id})
+                  Serial number already exists on &quot;{duplicateSerialNumber.name}&quot; ({duplicateSerialNumber.id})
                 </span>
               )}
             </div>

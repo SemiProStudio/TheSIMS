@@ -367,6 +367,8 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
 // ============================================================================
 // Smart Paste Modal Component
 // ============================================================================
+const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'tiff', 'tif', 'bmp'];
+
 export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, onClose, existingItem }) {
   const [inputText, setInputText] = useState('');
   const [inputMode, setInputMode] = useState('paste'); // 'paste' | 'file' | 'url'
@@ -515,8 +517,6 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     setPasteHistory(getPasteHistory());
   }, [inputText, specs, communityAliases, savePasteHistory, getPasteHistory]);
 
-  const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'tiff', 'tif', 'bmp'];
-
   const handleFileImport = useCallback(async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -604,7 +604,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
       const mappings = { ...(prev._manualMappings || {}) };
       if (!specName) {
         // Find and remove old mapping for this index
-        for (const [key, val] of Object.entries(prev)) {
+        for (const [key] of Object.entries(prev)) {
           if (key === '_manualMappings') continue;
         }
       } else {
