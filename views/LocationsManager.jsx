@@ -263,17 +263,6 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
   const itemCounts = useMemo(() => {
     const counts = {};
     
-    // Helper to get all location IDs including nested
-    const getAllLocationIds = (loc) => {
-      const ids = [loc.id];
-      if (loc.children) {
-        loc.children.forEach(child => {
-          ids.push(...getAllLocationIds(child));
-        });
-      }
-      return ids;
-    };
-
     // Build a map of location name to ID for fuzzy matching
     const locationNameToId = {};
     const processLocation = (loc, parentPath = '') => {

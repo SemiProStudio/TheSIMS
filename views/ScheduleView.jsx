@@ -18,7 +18,7 @@ function ScheduleView({
   setScheduleDate,
   scheduleMode,
   setScheduleMode,
-  onViewItem,
+  onViewItem: _onViewItem,
   onViewReservation,
   onAddReservation
 }) {

@@ -168,7 +168,7 @@ function ReservationDetail({ reservation, item, onBack, onEdit, onDelete, onAddN
           <Card padding={false}>
             <CardHeader title={itemCount > 1 ? `Equipment (${itemCount})` : "Equipment"} icon={Package} />
             <div style={{ padding: spacing[4], display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
-              {items.map((itm, idx) => (
+              {items.map((itm) => (
                 <div 
                   key={itm.id} 
                   style={{ 

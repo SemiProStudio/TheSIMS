@@ -5,7 +5,7 @@
 import { memo, useMemo, useCallback } from 'react';
 import { Search, Eye, X, Filter } from 'lucide-react';
 import { STATUS } from '../constants.js';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { getStatusColor } from '../utils';
 import { Badge, Card, Button, SearchInput, PageHeader } from '../components/ui.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';

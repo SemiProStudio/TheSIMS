@@ -579,7 +579,7 @@ const UserAssignmentModal = memo(function UserAssignmentModal({ role, users = []
 });
 
 // Main Roles Manager Component
-function RolesManager({ roles = [], users = [], onSaveRole, onDeleteRole, onAssignUsers, onBack }) {
+function RolesManager({ roles = [], users = [], onSaveRole, onDeleteRole, onAssignUsers, onBack: _onBack }) {
   const [editingRole, setEditingRole] = useState(null);
   const [assigningRole, setAssigningRole] = useState(null);
   const [showEditor, setShowEditor] = useState(false);

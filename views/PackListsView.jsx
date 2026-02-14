@@ -425,7 +425,7 @@ function PackListsView({
     
     if (selectedList?.id === id) setSelectedList(null);
     setConfirmDelete({ isOpen: false, id: null, name: '' });
-  }, [selectedList, addAuditLog, currentUser, packLists, dataContext]);
+  }, [selectedList, setSelectedList, addAuditLog, currentUser, packLists, dataContext]);
 
   // Get items for a pack list
   const getListItems = useCallback((list) => {
