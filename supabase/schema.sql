@@ -678,8 +678,8 @@ CREATE POLICY "read_audit_log" ON audit_log FOR SELECT TO authenticated USING (t
 -- Uses has_permission() to enforce the same role-based permissions as the UI
 -- =============================================================================
 
--- Users can update their own profile
-CREATE POLICY "update_own_profile" ON users FOR UPDATE TO authenticated USING (id = (select auth.uid()));
+-- Users can update their own profile, admins can update any user
+CREATE POLICY "update_users" ON users FOR UPDATE TO authenticated USING (id = (select auth.uid()) OR is_admin());
 
 -- Inventory: requires gear_list edit permission
 CREATE POLICY "write_inventory" ON inventory FOR INSERT TO authenticated WITH CHECK (has_permission('gear_list', 'edit'));
@@ -810,7 +810,7 @@ CREATE POLICY "admin_delete_locations" ON locations FOR DELETE TO authenticated 
 
 -- Admin user management
 CREATE POLICY "admin_insert_users" ON users FOR INSERT TO authenticated WITH CHECK (is_admin());
-CREATE POLICY "admin_update_users" ON users FOR UPDATE TO authenticated USING (is_admin());
+-- admin_update_users merged into update_users policy above
 CREATE POLICY "admin_delete_users" ON users FOR DELETE TO authenticated USING (is_admin());
 
 -- Notification preferences: users manage their own

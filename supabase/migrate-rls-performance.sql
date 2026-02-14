@@ -193,12 +193,16 @@ CREATE POLICY "edit_pack_list_packages" ON pack_list_packages FOR UPDATE TO auth
 CREATE POLICY "remove_pack_list_packages" ON pack_list_packages FOR DELETE TO authenticated USING (has_permission('pack_lists', 'edit'));
 
 -- =============================================================================
--- SECTION 5: Note on users UPDATE policies
--- admin_update_users and update_own_profile both grant UPDATE to authenticated
--- Keep both since they serve different purposes:
---   update_own_profile: users can update their own row
---   admin_update_users: admins can update any row
--- This is intentional — the linter flags it but these are functionally distinct
+-- SECTION 5: Consolidate users UPDATE policies
+-- admin_update_users and update_own_profile are both permissive UPDATE policies
+-- for the same role (authenticated), causing a multiple_permissive_policies warning.
+-- Merge into a single policy: allow if user owns the row OR is admin.
 -- =============================================================================
+
+DROP POLICY IF EXISTS "update_own_profile" ON users;
+DROP POLICY IF EXISTS "admin_update_users" ON users;
+CREATE POLICY "update_users" ON users
+  FOR UPDATE TO authenticated
+  USING (id = (select auth.uid()) OR is_admin());
 
 COMMIT;
