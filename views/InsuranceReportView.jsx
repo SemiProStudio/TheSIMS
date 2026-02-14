@@ -16,7 +16,7 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
   categories,
   currentUser,
   onViewItem,
-  onExport,
+  onExport: _onExport,
   onBack
 }) {
   const [selectedCategory, setSelectedCategory] = useState('all');

@@ -39,15 +39,6 @@ const getItemStyle = (panelColor) => ({
   marginBottom: spacing[2],
 });
 
-// Default item border style (fallback)
-const itemBorderStyle = {
-  background: colors.bgLight,
-  border: `1px solid ${colors.borderLight}`,
-  borderRadius: borderRadius.md,
-  padding: spacing[3],
-  marginBottom: spacing[2],
-};
-
 // Add to Kit/Package Section Component - add item to packages
 const AddToKitSection = memo(function AddToKitSection({ item, packages, onAddToPackage, panelColor }) {
   const [selectedPackageId, setSelectedPackageId] = useState('');

@@ -5,7 +5,7 @@
 // Supports saved filter views
 // ============================================================================
 
-import React, { memo, useMemo, useState, useCallback, useEffect } from 'react';
+import { memo, useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { Search, Plus, Grid, List, CheckSquare, Square, MinusSquare, X, Bookmark, BookmarkPlus, Trash2, ChevronDown } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity, zIndex } from '../theme.js';
 import { getStatusColor, filterBySearch, filterByCategory, filterByStatus, generateId } from '../utils';
@@ -58,7 +58,7 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
   const [isOpen, setIsOpen] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [newViewName, setNewViewName] = useState('');
-  const dropdownRef = React.useRef(null);
+  const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
