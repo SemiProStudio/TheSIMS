@@ -115,24 +115,36 @@ DROP POLICY IF EXISTS "Allow authenticated read" ON email_templates;
 
 -- roles: admin_roles (FOR ALL) → separate INSERT/UPDATE/DELETE
 DROP POLICY IF EXISTS "admin_roles" ON roles;
+DROP POLICY IF EXISTS "admin_insert_roles" ON roles;
+DROP POLICY IF EXISTS "admin_update_roles" ON roles;
+DROP POLICY IF EXISTS "admin_delete_roles" ON roles;
 CREATE POLICY "admin_insert_roles" ON roles FOR INSERT TO authenticated WITH CHECK (is_admin());
 CREATE POLICY "admin_update_roles" ON roles FOR UPDATE TO authenticated USING (is_admin());
 CREATE POLICY "admin_delete_roles" ON roles FOR DELETE TO authenticated USING (is_admin());
 
 -- categories: admin_categories (FOR ALL) → separate INSERT/UPDATE/DELETE
 DROP POLICY IF EXISTS "admin_categories" ON categories;
+DROP POLICY IF EXISTS "admin_insert_categories" ON categories;
+DROP POLICY IF EXISTS "admin_update_categories" ON categories;
+DROP POLICY IF EXISTS "admin_delete_categories" ON categories;
 CREATE POLICY "admin_insert_categories" ON categories FOR INSERT TO authenticated WITH CHECK (is_admin());
 CREATE POLICY "admin_update_categories" ON categories FOR UPDATE TO authenticated USING (is_admin());
 CREATE POLICY "admin_delete_categories" ON categories FOR DELETE TO authenticated USING (is_admin());
 
 -- specs: admin_specs (FOR ALL) → separate INSERT/UPDATE/DELETE
 DROP POLICY IF EXISTS "admin_specs" ON specs;
+DROP POLICY IF EXISTS "admin_insert_specs" ON specs;
+DROP POLICY IF EXISTS "admin_update_specs" ON specs;
+DROP POLICY IF EXISTS "admin_delete_specs" ON specs;
 CREATE POLICY "admin_insert_specs" ON specs FOR INSERT TO authenticated WITH CHECK (is_admin());
 CREATE POLICY "admin_update_specs" ON specs FOR UPDATE TO authenticated USING (is_admin());
 CREATE POLICY "admin_delete_specs" ON specs FOR DELETE TO authenticated USING (is_admin());
 
 -- email_templates: "Admin can modify email templates" (FOR ALL) → INSERT/UPDATE/DELETE
 DROP POLICY IF EXISTS "Admin can modify email templates" ON email_templates;
+DROP POLICY IF EXISTS "Admin can insert email templates" ON email_templates;
+DROP POLICY IF EXISTS "Admin can update email templates" ON email_templates;
+DROP POLICY IF EXISTS "Admin can delete email templates" ON email_templates;
 CREATE POLICY "Admin can insert email templates" ON email_templates
   FOR INSERT TO authenticated WITH CHECK (is_admin());
 CREATE POLICY "Admin can update email templates" ON email_templates
@@ -141,40 +153,47 @@ CREATE POLICY "Admin can delete email templates" ON email_templates
   FOR DELETE TO authenticated USING (is_admin());
 
 -- package_items: write_package_items (FOR ALL) → INSERT/UPDATE/DELETE
+-- Drop the FOR ALL policy plus any pre-existing per-action policies
 DROP POLICY IF EXISTS "write_package_items" ON package_items;
+DROP POLICY IF EXISTS "insert_package_items" ON package_items;
+DROP POLICY IF EXISTS "edit_package_items" ON package_items;
+DROP POLICY IF EXISTS "remove_package_items" ON package_items;
 CREATE POLICY "insert_package_items" ON package_items FOR INSERT TO authenticated WITH CHECK (has_permission('gear_list', 'edit'));
 CREATE POLICY "edit_package_items" ON package_items FOR UPDATE TO authenticated USING (has_permission('gear_list', 'edit'));
 CREATE POLICY "remove_package_items" ON package_items FOR DELETE TO authenticated USING (has_permission('gear_list', 'edit'));
 
 -- pack_lists: write_pack_lists (FOR ALL) → INSERT/UPDATE/DELETE
 DROP POLICY IF EXISTS "write_pack_lists" ON pack_lists;
+DROP POLICY IF EXISTS "delete_pack_lists" ON pack_lists;
+DROP POLICY IF EXISTS "insert_pack_lists" ON pack_lists;
+DROP POLICY IF EXISTS "edit_pack_lists" ON pack_lists;
+DROP POLICY IF EXISTS "remove_pack_lists" ON pack_lists;
 CREATE POLICY "insert_pack_lists" ON pack_lists FOR INSERT TO authenticated WITH CHECK (has_permission('pack_lists', 'edit'));
 CREATE POLICY "edit_pack_lists" ON pack_lists FOR UPDATE TO authenticated USING (has_permission('pack_lists', 'edit'));
 CREATE POLICY "remove_pack_lists" ON pack_lists FOR DELETE TO authenticated USING (has_permission('pack_lists', 'edit'));
 
 -- pack_list_items: write_pack_list_items (FOR ALL) → INSERT/UPDATE/DELETE
 DROP POLICY IF EXISTS "write_pack_list_items" ON pack_list_items;
+DROP POLICY IF EXISTS "delete_pack_list_items" ON pack_list_items;
+DROP POLICY IF EXISTS "insert_pack_list_items" ON pack_list_items;
+DROP POLICY IF EXISTS "edit_pack_list_items" ON pack_list_items;
+DROP POLICY IF EXISTS "remove_pack_list_items" ON pack_list_items;
 CREATE POLICY "insert_pack_list_items" ON pack_list_items FOR INSERT TO authenticated WITH CHECK (has_permission('pack_lists', 'edit'));
 CREATE POLICY "edit_pack_list_items" ON pack_list_items FOR UPDATE TO authenticated USING (has_permission('pack_lists', 'edit'));
 CREATE POLICY "remove_pack_list_items" ON pack_list_items FOR DELETE TO authenticated USING (has_permission('pack_lists', 'edit'));
 
 -- pack_list_packages: write_pack_list_packages (FOR ALL) → INSERT/UPDATE/DELETE
 DROP POLICY IF EXISTS "write_pack_list_packages" ON pack_list_packages;
+DROP POLICY IF EXISTS "delete_pack_list_packages" ON pack_list_packages;
+DROP POLICY IF EXISTS "insert_pack_list_packages" ON pack_list_packages;
+DROP POLICY IF EXISTS "edit_pack_list_packages" ON pack_list_packages;
+DROP POLICY IF EXISTS "remove_pack_list_packages" ON pack_list_packages;
 CREATE POLICY "insert_pack_list_packages" ON pack_list_packages FOR INSERT TO authenticated WITH CHECK (has_permission('pack_lists', 'edit'));
 CREATE POLICY "edit_pack_list_packages" ON pack_list_packages FOR UPDATE TO authenticated USING (has_permission('pack_lists', 'edit'));
 CREATE POLICY "remove_pack_list_packages" ON pack_list_packages FOR DELETE TO authenticated USING (has_permission('pack_lists', 'edit'));
 
 -- =============================================================================
--- SECTION 5: Drop redundant policies now covered by Section 4
--- =============================================================================
-
--- These old DELETE-specific policies are now replaced by the explicit per-action policies above
-DROP POLICY IF EXISTS "delete_pack_lists" ON pack_lists;
-DROP POLICY IF EXISTS "delete_pack_list_items" ON pack_list_items;
-DROP POLICY IF EXISTS "delete_pack_list_packages" ON pack_list_packages;
-
--- =============================================================================
--- SECTION 6: Drop duplicate users UPDATE policies
+-- SECTION 5: Note on users UPDATE policies
 -- admin_update_users and update_own_profile both grant UPDATE to authenticated
 -- Keep both since they serve different purposes:
 --   update_own_profile: users can update their own row
