@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
+  freshnessService,
   inventoryService,
   reservationsService,
   maintenanceService,
@@ -52,6 +53,10 @@ export function DataProvider({ children }) {
   const [specs, setSpecs] = useState({});
   const [auditLog, setAuditLog] = useState([]);
 
+  // Staleness tracking
+  const [lastLoadedAt, setLastLoadedAt] = useState(null);
+  const [tier2Loaded, setTier2Loaded] = useState(false);
+
   // =============================================================================
   // DATA LOADING FUNCTION (Tiered)
   //
@@ -65,6 +70,7 @@ export function DataProvider({ children }) {
     log('[DataContext] Starting tiered data load...');
     setLoading(true);
     setError(null);
+    setTier2Loaded(false);
 
     try {
       // --- Tier 1: Critical data (blocks rendering) ---
@@ -108,6 +114,7 @@ export function DataProvider({ children }) {
       setLocations(locationsData || []);
       setSpecs(specsData || {});
       setDataLoaded(true);
+      setLastLoadedAt(new Date().toISOString());
 
     } catch (err) {
       logError('[DataContext] Tier 1 load failed:', err);
@@ -157,10 +164,12 @@ export function DataProvider({ children }) {
       setPackLists(packListsData || []);
       setClients(clientsData || []);
       setAuditLog(auditLogData || []);
+      setTier2Loaded(true);
 
     } catch (err) {
       logError('[DataContext] Tier 2 load failed (non-critical):', err);
       // Don't set error state — Tier 1 data is already available
+      setTier2Loaded(true); // Mark loaded even on error to prevent permanent loading state
     }
   }, []);
 
@@ -171,6 +180,127 @@ export function DataProvider({ children }) {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // =============================================================================
+  // INCREMENTAL REFRESH — detect stale data and merge only changed rows
+  // =============================================================================
+
+  const refreshStaleData = useCallback(async () => {
+    if (!lastLoadedAt) return;
+
+    try {
+      const freshness = await freshnessService.check();
+      const staleTables = [];
+
+      if (freshness.inventory && freshness.inventory > lastLoadedAt) {
+        staleTables.push('inventory');
+      }
+      if (freshness.reservations && freshness.reservations > lastLoadedAt) {
+        staleTables.push('reservations');
+      }
+      if (freshness.clients && freshness.clients > lastLoadedAt) {
+        staleTables.push('clients');
+      }
+      if (freshness.packages && freshness.packages > lastLoadedAt) {
+        staleTables.push('packages');
+      }
+      if (freshness.pack_lists && freshness.pack_lists > lastLoadedAt) {
+        staleTables.push('pack_lists');
+      }
+
+      if (staleTables.length === 0) {
+        log('[DataContext] Data is fresh, no update needed');
+        return;
+      }
+
+      log('[DataContext] Stale tables detected:', staleTables);
+
+      // Fetch changed rows in parallel
+      const [updatedItems, updatedReservations, updatedClients, updatedPackages, updatedPackLists] = await Promise.all([
+        staleTables.includes('inventory') ? inventoryService.getSince(lastLoadedAt) : null,
+        staleTables.includes('reservations') ? reservationsService.getSince(lastLoadedAt) : null,
+        staleTables.includes('clients') ? clientsService.getAll() : null,
+        staleTables.includes('packages') ? packagesService.getAll() : null,
+        staleTables.includes('pack_lists') ? packListsService.getAll() : null,
+      ]);
+
+      // Merge updated inventory items and detect deletions
+      if (staleTables.includes('inventory')) {
+        const currentIds = await inventoryService.getIds();
+        setInventory(prev => {
+          // Remove deleted items
+          let next = prev.filter(item => currentIds.has(item.id));
+          // Merge updated items
+          if (updatedItems && updatedItems.length > 0) {
+            const updatedMap = new Map(updatedItems.map(i => [i.id, i]));
+            next = next.map(item =>
+              updatedMap.has(item.id) ? { ...item, ...updatedMap.get(item.id) } : item
+            );
+            // Add any new items not already in state
+            const existingIds = new Set(next.map(i => i.id));
+            const newItems = updatedItems.filter(i => !existingIds.has(i.id));
+            if (newItems.length > 0) next = [...next, ...newItems];
+          }
+          return next;
+        });
+      }
+
+      // Re-merge reservations into inventory if reservations changed
+      if (updatedReservations && updatedReservations.length > 0) {
+        const reservationsByItemId = {};
+        updatedReservations.forEach(res => {
+          if (!reservationsByItemId[res.itemId]) reservationsByItemId[res.itemId] = [];
+          reservationsByItemId[res.itemId].push(res);
+        });
+        setInventory(prev => prev.map(item =>
+          reservationsByItemId[item.id]
+            ? { ...item, reservations: reservationsByItemId[item.id] }
+            : item
+        ));
+      }
+
+      // Replace full arrays for other stale tables (these are small)
+      if (updatedClients) setClients(updatedClients);
+      if (updatedPackages) setPackages(updatedPackages);
+      if (updatedPackLists) setPackLists(updatedPackLists);
+
+      setLastLoadedAt(new Date().toISOString());
+      log('[DataContext] Incremental refresh complete');
+    } catch (err) {
+      logError('[DataContext] Freshness check failed:', err);
+      // Non-fatal — stale data is better than no data
+    }
+  }, [lastLoadedAt]);
+
+  // =============================================================================
+  // AUTOMATIC STALENESS POLLING
+  // Check for stale data every 5 minutes while the tab is visible,
+  // and immediately when the tab regains focus.
+  // =============================================================================
+
+  useEffect(() => {
+    if (!dataLoaded) return;
+
+    const STALE_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshStaleData();
+      }
+    }, STALE_CHECK_INTERVAL);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshStaleData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [dataLoaded, refreshStaleData]);
 
   // =============================================================================
   // AUDIT LOG HELPER
@@ -848,7 +978,9 @@ export function DataProvider({ children }) {
     loading,
     error,
     dataLoaded,
-    
+    tier2Loaded,
+    lastLoadedAt,
+
     // Data
     inventory,
     packages,
@@ -862,9 +994,10 @@ export function DataProvider({ children }) {
     specs,
     auditLog,
     
-    // Refresh function
+    // Refresh functions
     refreshData: loadData,
-    
+    refreshStaleData,
+
     // Local State Patch Operations (optimistic UI updates)
     patchInventoryItem,
     addInventoryItems,
@@ -944,6 +1077,8 @@ export function DataProvider({ children }) {
     loading,
     error,
     dataLoaded,
+    tier2Loaded,
+    lastLoadedAt,
     inventory,
     packages,
     packLists,
@@ -956,6 +1091,7 @@ export function DataProvider({ children }) {
     specs,
     auditLog,
     loadData,
+    refreshStaleData,
     updateItem,
     createItem,
     deleteItem,

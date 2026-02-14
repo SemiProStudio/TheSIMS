@@ -947,6 +947,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Data freshness check — returns MAX(updated_at) per major table
+-- Used by the client for incremental refresh (only re-fetch changed rows)
+CREATE OR REPLACE FUNCTION get_data_freshness()
+RETURNS JSON AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated';
+  END IF;
+
+  RETURN json_build_object(
+    'inventory',    (SELECT MAX(updated_at) FROM inventory),
+    'reservations', (SELECT MAX(updated_at) FROM reservations),
+    'clients',      (SELECT MAX(updated_at) FROM clients),
+    'packages',     (SELECT MAX(updated_at) FROM packages),
+    'pack_lists',   (SELECT MAX(updated_at) FROM pack_lists)
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public;
+
 -- =============================================================================
 -- VIEWS FOR COMMON QUERIES
 -- =============================================================================

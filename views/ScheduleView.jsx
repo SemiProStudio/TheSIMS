@@ -3,12 +3,13 @@
 // ============================================================================
 
 import { memo, useMemo, useCallback } from 'react';
-import { ArrowLeft, ArrowRight, Calendar, List, Clock, MapPin, Plus, Package } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calendar, List, Clock, MapPin, Plus, Package, Loader } from 'lucide-react';
 import { SCHEDULE_MODES, SCHEDULE_PERIODS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatDate } from '../utils';
 import { Badge, Card, Button, PageHeader } from '../components/ui.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
+import { useData } from '../contexts/DataContext.js';
 
 function ScheduleView({
   inventory,
@@ -22,6 +23,8 @@ function ScheduleView({
   onViewReservation,
   onAddReservation
 }) {
+  const { tier2Loaded } = useData();
+
   // Get all reservations with item info
   const allReservations = useMemo(() => {
     return (inventory || [])
@@ -198,7 +201,13 @@ function ScheduleView({
           </div>
           <div style={{ maxHeight: 'calc(100vh - 280px)', overflowY: 'auto' }}>
             {filteredReservations.length === 0 ? (
-              <div style={{ padding: spacing[10], textAlign: 'center', color: colors.textMuted }}>No reservations in this period</div>
+              <div style={{ padding: spacing[10], textAlign: 'center', color: colors.textMuted, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spacing[2] }}>
+                {!tier2Loaded ? (
+                  <><Loader size={16} style={{ animation: 'spin 1s linear infinite' }} /> Loading reservations...</>
+                ) : (
+                  'No reservations in this period'
+                )}
+              </div>
             ) : filteredReservations.map((r, idx) => (
               <div key={`${r.project}-${r.start}-${idx}`} onClick={() => onViewReservation(r, r.items[0])} style={{ display: 'flex', alignItems: 'center', gap: spacing[4], padding: `${spacing[4]}px ${spacing[4]}px`, borderBottom: `1px solid ${colors.borderLight}`, cursor: 'pointer' }}>
                 {/* Show stacked images for multi-item reservations */}

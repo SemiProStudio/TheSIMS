@@ -6,13 +6,14 @@
 import { memo, useState, useMemo, useEffect } from 'react';
 import {
   Package, CheckCircle, Clock, AlertTriangle, Calendar,
-  ChevronRight, Search, Bell, TrendingDown, Layout
+  ChevronRight, Search, Bell, TrendingDown, Layout, Loader
 } from 'lucide-react';
 import { STATUS, DASHBOARD_SECTIONS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatDate, getStatusColor, getTodayISO, isReminderDue } from '../utils';
 import { Badge, StatCard, SearchInput, Button, CollapsibleSection, PageHeader } from '../components/ui.jsx';
 import { usePermissions } from '../contexts/PermissionsContext.js';
+import { useData } from '../contexts/DataContext.js';
 
 // Panel color CSS variables for dashboard sections
 const PANEL_COLORS = {
@@ -39,7 +40,8 @@ function Dashboard({
   onToggleCollapse,
 }) {
   const [quickSearch, setQuickSearch] = useState('');
-  
+  const { tier2Loaded } = useData();
+
   // Permissions
   const { canEdit: _canEdit } = usePermissions();
   
@@ -511,8 +513,12 @@ function Dashboard({
           >
             <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
               {upcomingReservations.length === 0 ? (
-                <p style={{ color: colors.textMuted, textAlign: 'center', margin: 0 }}>
-                  No upcoming reservations
+                <p style={{ color: colors.textMuted, textAlign: 'center', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: spacing[2] }}>
+                  {!tier2Loaded ? (
+                    <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading reservations...</>
+                  ) : (
+                    'No upcoming reservations'
+                  )}
                 </p>
               ) : (
                 <div style={{
