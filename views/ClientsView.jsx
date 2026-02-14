@@ -13,7 +13,7 @@ import { formatMoney } from '../utils';
 import { Card, Button, SearchInput, Badge, ConfirmDialog, CollapsibleSection, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import NotesSection from '../components/NotesSection.jsx';
-import { useData } from '../contexts/DataContext.jsx';
+import { useData } from '../contexts/DataContext.js';
 
 import { error as logError } from '../lib/logger.js';
 

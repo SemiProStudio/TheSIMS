@@ -7,7 +7,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React, { useState } from 'react';
 import { ErrorBoundary } from '../components/ErrorBoundary.jsx';
-import { SectionErrorBoundary, withErrorBoundary } from '../components/ErrorBoundaryHelpers.jsx';
+import { SectionErrorBoundary } from '../components/ErrorBoundaryHelpers.jsx';
+
+// withErrorBoundary HOC - defined locally for testing (moved out of
+// ErrorBoundaryHelpers.jsx to keep that file component-only for Fast Refresh)
+function withErrorBoundary(Component, fallback = null) {
+  return function WrappedComponent(props) {
+    return (
+      <ErrorBoundary fallback={fallback}>
+        <Component {...props} />
+      </ErrorBoundary>
+    );
+  };
+}
 
 // =============================================================================
 // Test Utilities

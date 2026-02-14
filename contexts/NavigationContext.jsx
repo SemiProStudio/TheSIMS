@@ -4,12 +4,11 @@
 // components re-render on view changes — not the entire App tree.
 // =============================================================================
 
-import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { VIEWS } from '../constants.js';
-import { useData } from './DataContext.jsx';
-import { useAuth } from './AuthContext.jsx';
-
-const NavigationContext = createContext(null);
+import { useData } from './DataContext.js';
+import { useAuth } from './AuthContext.js';
+import NavigationContext from './NavigationContext.js';
 
 /**
  * NavigationProviderWithData - A wrapper that pulls inventory/packages from DataContext
@@ -214,10 +213,3 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
   );
 }
 
-export function useNavigationContext() {
-  const ctx = useContext(NavigationContext);
-  if (!ctx) throw new Error('useNavigationContext must be used within NavigationProvider');
-  return ctx;
-}
-
-export default NavigationContext;

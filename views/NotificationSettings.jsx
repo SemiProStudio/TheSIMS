@@ -8,7 +8,7 @@ import { Mail, Calendar, Clock, AlertTriangle, CheckCircle, Settings, ChevronDow
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { Card, Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
-import { usePermissions } from '../contexts/PermissionsContext.jsx';
+import { usePermissions } from '../contexts/PermissionsContext.js';
 
 import { error as logError } from '../lib/logger.js';
 

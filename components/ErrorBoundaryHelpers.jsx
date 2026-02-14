@@ -1,20 +1,9 @@
 // =============================================================================
 // Error Boundary Helper Components
-// HOC and section-level wrapper for ErrorBoundary
+// Section-level wrapper for ErrorBoundary
 // =============================================================================
 
 import { ErrorBoundary } from './ErrorBoundary.jsx';
-
-// Functional wrapper for easier use with hooks
-export function withErrorBoundary(Component, fallback = null) {
-  return function WrappedComponent(props) {
-    return (
-      <ErrorBoundary fallback={fallback}>
-        <Component {...props} />
-      </ErrorBoundary>
-    );
-  };
-}
 
 // Section-level error boundary with simpler UI
 export function SectionErrorBoundary({ children, name = 'This section' }) {

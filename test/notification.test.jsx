@@ -7,8 +7,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NotificationSettings from '../views/NotificationSettings.jsx';
 
-// Mock PermissionsContext (path matches actual import after file reorg)
-vi.mock('../contexts/PermissionsContext.jsx', () => ({
+// Mock PermissionsContext (path matches actual import in .js file)
+vi.mock('../contexts/PermissionsContext.js', () => ({
   usePermissions: () => ({
     canView: vi.fn(() => false),
     canCreate: vi.fn(() => true),

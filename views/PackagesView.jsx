@@ -10,7 +10,7 @@ import { formatMoney, getStatusColor } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
-import { useData } from '../contexts/DataContext.jsx';
+import { useData } from '../contexts/DataContext.js';
 
 import { error as logError } from '../lib/logger.js';
 

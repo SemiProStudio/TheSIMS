@@ -13,7 +13,8 @@ import { Badge, Card, Button, SearchInput, Pagination, PageHeader } from '../com
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import { Select } from '../components/Select.jsx';
 import { useDebounce, usePagination } from '../hooks/index.js';
-import { usePermissions, ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
+import { usePermissions } from '../contexts/PermissionsContext.js';
+import { ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
 
 // Items per page options
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 250, 500];

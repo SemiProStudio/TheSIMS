@@ -5,7 +5,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
-import { DataProvider, useData } from '../contexts/DataContext.jsx';
+import { DataProvider } from '../contexts/DataContext.jsx';
+import { useData } from '../contexts/DataContext.js';
 
 // Mock the Supabase client
 vi.mock('../lib/supabase.js', () => ({

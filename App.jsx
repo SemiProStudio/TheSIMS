@@ -9,8 +9,8 @@ import { colors } from './theme.js';
 import { findById, sanitizeCSVCell } from './utils';
 import { useTheme } from './contexts/ThemeContext.jsx';
 import { PermissionsProvider } from './contexts/PermissionsContext.jsx';
-import { useAuth } from './contexts/AuthContext.jsx';
-import { useData } from './contexts/DataContext.jsx';
+import { useAuth } from './contexts/AuthContext.js';
+import { useData } from './contexts/DataContext.js';
 import { FullPageLoading } from './components/Loading.jsx';
 import { SkipLink } from './components/ui.jsx';
 import { log, error as logError } from './lib/logger.js';
@@ -22,9 +22,9 @@ import { useInventoryActions } from './hooks/index.js';
 import { useCheckoutHandlers, useKitHandlers, useReservationHandlers, useNoteHandlers, useReminderHandlers, usePackageHandlers } from './hooks/handlers/index.js';
 
 // Contexts
-import { useNavigationContext } from './contexts/NavigationContext.jsx';
-import { useFilterContext } from './contexts/FilterContext.jsx';
-import { useModalContext } from './contexts/ModalContext.jsx';
+import { useNavigationContext } from './contexts/NavigationContext.js';
+import { useFilterContext } from './contexts/FilterContext.js';
+import { useModalContext } from './contexts/ModalContext.js';
 import { useSidebarContext } from './contexts/SidebarContext.jsx';
 
 // Core components (always needed)

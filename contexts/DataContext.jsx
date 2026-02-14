@@ -27,10 +27,7 @@ import { DEFAULT_ROLES } from '../constants.js';
 import { log, error as logError } from '../lib/logger.js';
 import { validateReservation, validateClient, validateMaintenanceRecord } from '../lib/validators.js';
 import { updateById, removeById } from '../utils';
-import DataContext, { useData } from './DataContext.js';
-
-// Re-export hook for backward compatibility
-export { useData };
+import DataContext from './DataContext.js';
 
 // =============================================================================
 // PROVIDER
@@ -1020,8 +1017,3 @@ export function DataProvider({ children }) {
   );
 }
 
-// =============================================================================
-// HOOK
-// =============================================================================
-
-export default DataContext;

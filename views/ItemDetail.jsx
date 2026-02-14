@@ -16,7 +16,7 @@ import RemindersSection from '../components/RemindersSection.jsx';
 import MaintenanceSection from '../components/MaintenanceSection.jsx';
 import ItemTimeline from '../components/ItemTimeline.jsx';
 import DepreciationCalculator from '../components/DepreciationCalculator.jsx';
-import { usePermissions } from '../contexts/PermissionsContext.jsx';
+import { usePermissions } from '../contexts/PermissionsContext.js';
 
 // Panel color mapping for item detail sections (CSS variables)
 const SECTION_COLORS = {

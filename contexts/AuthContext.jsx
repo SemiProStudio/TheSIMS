@@ -7,10 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getSupabase, auth } from '../lib/supabase.js';
 import { usersService } from '../lib/services.js';
 import { log, error as logError } from '../lib/logger.js';
-import AuthContext, { useAuth } from './AuthContext.js';
-
-// Re-export hook for backward compatibility
-export { useAuth };
+import AuthContext from './AuthContext.js';
 
 // =============================================================================
 // Auth Provider
@@ -229,4 +226,3 @@ export function AuthProvider({ children }) {
   );
 }
 
-export default AuthContext;

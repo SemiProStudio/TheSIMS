@@ -6,10 +6,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { MODALS, EMPTY_ITEM_FORM, EMPTY_RESERVATION_FORM } from '../constants.js';
-import ModalContext, { useModalContext } from './ModalContext.js';
-
-// Re-export hook for backward compatibility
-export { useModalContext };
+import ModalContext from './ModalContext.js';
 
 export function ModalProvider({ children }) {
   // Active modal
@@ -290,4 +287,3 @@ export function ModalProvider({ children }) {
   );
 }
 
-export default ModalContext;

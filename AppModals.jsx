@@ -7,10 +7,10 @@ import { lazy, Suspense, memo } from 'react';
 import { VIEWS, MODALS } from './constants.js';
 import { generateItemCode } from './utils';
 import { error as logError } from './lib/logger.js';
-import { useNavigationContext } from './contexts/NavigationContext.jsx';
-import { useModalContext } from './contexts/ModalContext.jsx';
-import { useData } from './contexts/DataContext.jsx';
-import { useAuth } from './contexts/AuthContext.jsx';
+import { useNavigationContext } from './contexts/NavigationContext.js';
+import { useModalContext } from './contexts/ModalContext.js';
+import { useData } from './contexts/DataContext.js';
+import { useAuth } from './contexts/AuthContext.js';
 import { ModalLoading } from './components/Loading.jsx';
 import { ConfirmDialog } from './components/ui.jsx';
 

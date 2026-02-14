@@ -2,7 +2,7 @@
 // UpdateBanner — shows a non-intrusive banner when a new version is available
 // =============================================================================
 
-import { usePWAContext } from '../contexts/PWAContext.jsx';
+import { usePWAContext } from '../contexts/PWAContext.js';
 
 export default function UpdateBanner() {
   const { updateAvailable, updateServiceWorker } = usePWAContext();

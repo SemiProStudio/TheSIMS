@@ -11,7 +11,7 @@ import {
 import { VIEWS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { useTheme } from '../contexts/ThemeContext.jsx';
-import { usePermissions } from '../contexts/PermissionsContext.jsx';
+import { usePermissions } from '../contexts/PermissionsContext.js';
 import { announcePageChange } from '../utils/accessibility.js';
 
 // Navigation button component

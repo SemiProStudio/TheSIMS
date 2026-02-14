@@ -6,10 +6,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { getTodayISO } from '../utils';
-import FilterContext, { useFilterContext } from './FilterContext.js';
-
-// Re-export hook for backward compatibility
-export { useFilterContext };
+import FilterContext from './FilterContext.js';
 
 export function FilterProvider({ children, defaultCategoryFilter = 'all', defaultStatusFilter = 'all', defaultGridView = true }) {
   // Search state
@@ -176,4 +173,3 @@ export function FilterProvider({ children, defaultCategoryFilter = 'all', defaul
   );
 }
 
-export default FilterContext;

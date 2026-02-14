@@ -3,43 +3,10 @@
 // Provides permission checking throughout the app
 // ============================================================================
 
-import { createContext, useContext, useMemo, useCallback } from 'react';
-import { PERMISSION_LEVELS, APP_FUNCTIONS, VIEWS } from '../constants.js';
+import { useMemo, useCallback } from 'react';
+import { PERMISSION_LEVELS, APP_FUNCTIONS } from '../constants.js';
 import { typography, borderRadius } from '../theme.js';
-
-const PermissionsContext = createContext(null);
-
-// Mapping of views to their required permission function IDs
-export const VIEW_PERMISSIONS = {
-  [VIEWS.DASHBOARD]: 'dashboard',
-  [VIEWS.GEAR_LIST]: 'gear_list',
-  [VIEWS.GEAR_DETAIL]: 'item_details',
-  [VIEWS.PACKAGES]: 'gear_list',
-  [VIEWS.PACKAGE_DETAIL]: 'item_details',
-  [VIEWS.PACK_LISTS]: 'pack_lists',
-  [VIEWS.SCHEDULE]: 'schedule',
-  [VIEWS.SEARCH]: 'search',
-  [VIEWS.LABELS]: 'labels',
-  [VIEWS.CLIENTS]: 'clients',
-  [VIEWS.CLIENT_DETAIL]: 'clients',
-  [VIEWS.REPORTS]: 'reports',
-  [VIEWS.ADMIN]: 'admin_users', // Requires at least one admin permission
-  [VIEWS.USERS]: 'admin_users',
-  [VIEWS.AUDIT_LOG]: 'admin_audit',
-  [VIEWS.CHANGE_LOG]: 'admin_audit',
-  [VIEWS.EDIT_SPECS]: 'admin_specs',
-  [VIEWS.EDIT_CATEGORIES]: 'admin_categories',
-  [VIEWS.ADD_ITEM]: 'gear_list', // Requires edit permission
-  [VIEWS.LOCATIONS_MANAGE]: 'admin_locations',
-  [VIEWS.ROLES_MANAGE]: 'admin_roles',
-  [VIEWS.MAINTENANCE_REPORT]: 'reports',
-  [VIEWS.INSURANCE_REPORT]: 'reports',
-  [VIEWS.CLIENT_REPORT]: 'reports',
-  [VIEWS.THEME_SELECTOR]: 'admin_themes',
-  [VIEWS.NOTIFICATIONS]: 'admin_notifications',
-  [VIEWS.CUSTOMIZE_DASHBOARD]: 'admin_layout',
-  [VIEWS.CUSTOMIZE_ITEM_DETAIL]: 'admin_layout',
-};
+import PermissionsContext, { usePermissions } from './PermissionsContext.js';
 
 export function PermissionsProvider({ children, currentUser, roles }) {
   // Get the user's role
@@ -86,7 +53,7 @@ export function PermissionsProvider({ children, currentUser, roles }) {
     const userLevelNum = levels[permission] || 0;
     
     return userLevelNum >= requiredLevelNum;
-  }, [userRole, currentUser]);
+  }, [userRole]);
 
   // Check if a function is visible (not hidden)
   const canView = useCallback((functionId) => {
@@ -132,27 +99,6 @@ export function PermissionsProvider({ children, currentUser, roles }) {
       {children}
     </PermissionsContext.Provider>
   );
-}
-
-export function usePermissions() {
-  const context = useContext(PermissionsContext);
-  if (!context) {
-    throw new Error('usePermissions must be used within a PermissionsProvider');
-  }
-  return context;
-}
-
-// Higher-order component to protect routes/components
-export function withPermission(WrappedComponent, functionId, requiredLevel = PERMISSION_LEVELS.VIEW) {
-  return function PermissionProtectedComponent(props) {
-    const { hasPermission, getPermissionLevel } = usePermissions();
-    
-    if (!hasPermission(functionId, requiredLevel)) {
-      return <AccessDenied functionId={functionId} currentLevel={getPermissionLevel(functionId)} requiredLevel={requiredLevel} />;
-    }
-    
-    return <WrappedComponent {...props} />;
-  };
 }
 
 // Access denied component
@@ -279,4 +225,3 @@ export function PermissionButton({ functionId, children, onClick, ...props }) {
   );
 }
 
-export default PermissionsContext;

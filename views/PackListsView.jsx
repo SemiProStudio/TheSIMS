@@ -10,7 +10,7 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity } from '
 import { formatDate, generateId, getStatusColor } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
-import { useData } from '../contexts/DataContext.jsx';
+import { useData } from '../contexts/DataContext.js';
 
 import { error as logError } from '../lib/logger.js';
 import { openPrintWindow } from '../lib/printUtil.js';
