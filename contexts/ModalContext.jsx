@@ -4,10 +4,12 @@
 // re-renders modal-dependent components — not the entire App tree.
 // =============================================================================
 
-import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { MODALS, EMPTY_ITEM_FORM, EMPTY_RESERVATION_FORM } from '../constants.js';
+import ModalContext, { useModalContext } from './ModalContext.js';
 
-const ModalContext = createContext(null);
+// Re-export hook for backward compatibility
+export { useModalContext };
 
 export function ModalProvider({ children }) {
   // Active modal
@@ -286,12 +288,6 @@ export function ModalProvider({ children }) {
       {children}
     </ModalContext.Provider>
   );
-}
-
-export function useModalContext() {
-  const ctx = useContext(ModalContext);
-  if (!ctx) throw new Error('useModalContext must be used within ModalProvider');
-  return ctx;
 }
 
 export default ModalContext;

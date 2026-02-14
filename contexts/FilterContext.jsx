@@ -4,10 +4,12 @@
 // components re-render on search/filter changes — not the entire App tree.
 // =============================================================================
 
-import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { getTodayISO } from '../utils';
+import FilterContext, { useFilterContext } from './FilterContext.js';
 
-const FilterContext = createContext(null);
+// Re-export hook for backward compatibility
+export { useFilterContext };
 
 export function FilterProvider({ children, defaultCategoryFilter = 'all', defaultStatusFilter = 'all', defaultGridView = true }) {
   // Search state
@@ -172,12 +174,6 @@ export function FilterProvider({ children, defaultCategoryFilter = 'all', defaul
       {children}
     </FilterContext.Provider>
   );
-}
-
-export function useFilterContext() {
-  const ctx = useContext(FilterContext);
-  if (!ctx) throw new Error('useFilterContext must be used within FilterProvider');
-  return ctx;
 }
 
 export default FilterContext;

@@ -31,7 +31,8 @@ export { LoadingSpinner } from './LoadingSpinner.jsx';
 export { LoadingOverlay } from './LoadingOverlay.jsx';
 
 // Drag and drop
-export { useDragReorder, DragHandle } from './DragReorder.jsx';
+export { useDragReorder } from './useDragReorder.js';
+export { DragHandle } from './DragReorder.jsx';
 
 // Layout components
 export { Grid, Flex, Divider } from './Layout.jsx';

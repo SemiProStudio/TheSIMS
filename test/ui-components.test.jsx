@@ -11,7 +11,8 @@ import { Avatar } from '../components/ui/Avatar.jsx';
 import { LoadingOverlay } from '../components/ui/LoadingOverlay.jsx';
 import { CollapsibleSection } from '../components/ui/CollapsibleSection.jsx';
 import { Pagination } from '../components/ui/Pagination.jsx';
-import { useDragReorder, DragHandle } from '../components/ui/DragReorder.jsx';
+import { useDragReorder } from '../components/ui/useDragReorder.js';
+import { DragHandle } from '../components/ui/DragReorder.jsx';
 
 // =============================================================================
 // CardHeader Tests

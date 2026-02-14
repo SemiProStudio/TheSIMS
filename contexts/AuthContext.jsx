@@ -3,13 +3,14 @@
 // Provides authentication state and methods using Supabase Auth
 // =============================================================================
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getSupabase, auth } from '../lib/supabase.js';
 import { usersService } from '../lib/services.js';
 import { log, error as logError } from '../lib/logger.js';
+import AuthContext, { useAuth } from './AuthContext.js';
 
-// Context
-const AuthContext = createContext(null);
+// Re-export hook for backward compatibility
+export { useAuth };
 
 // =============================================================================
 // Auth Provider
@@ -226,17 +227,6 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-// =============================================================================
-// Hook
-// =============================================================================
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }
 
 export default AuthContext;

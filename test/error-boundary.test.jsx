@@ -6,7 +6,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import React, { useState } from 'react';
-import { ErrorBoundary, SectionErrorBoundary, withErrorBoundary } from '../components/ErrorBoundary.jsx';
+import { ErrorBoundary } from '../components/ErrorBoundary.jsx';
+import { SectionErrorBoundary, withErrorBoundary } from '../components/ErrorBoundaryHelpers.jsx';
 
 // =============================================================================
 // Test Utilities

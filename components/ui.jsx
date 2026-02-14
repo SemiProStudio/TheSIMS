@@ -3,7 +3,7 @@
 // Reusable, composable UI components
 // ============================================================================
 
-import React, { memo, forwardRef, useState, useCallback, useRef, useEffect } from 'react';
+import { memo, forwardRef, useState, useCallback, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { ArrowLeft, GripVertical } from 'lucide-react';
 import { colors, styles, borderRadius, spacing, typography, withOpacity } from '../theme.js';
@@ -78,89 +78,8 @@ export const PageHeader = memo(function PageHeader({
 });
 
 // ============================================================================
-// DraggableList - Reusable drag-to-reorder list
+// DragHandle - Visual grip handle for draggable items
 // ============================================================================
-
-export function useDragReorder(items, onReorder) {
-  const [draggedIndex, setDraggedIndex] = useState(null);
-  const [dragOverIndex, setDragOverIndex] = useState(null);
-  const dragNodeRef = useRef(null);
-
-  const handleDragStart = useCallback((e, index) => {
-    setDraggedIndex(index);
-    dragNodeRef.current = e.target;
-    if (e.dataTransfer) {
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', index);
-    }
-    setTimeout(() => {
-      if (dragNodeRef.current) {
-        dragNodeRef.current.style.opacity = '0.5';
-      }
-    }, 0);
-  }, []);
-
-  const handleDragEnd = useCallback(() => {
-    if (dragNodeRef.current) {
-      dragNodeRef.current.style.opacity = '1';
-    }
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-    dragNodeRef.current = null;
-  }, []);
-
-  const handleDragOver = useCallback((e, index) => {
-    e.preventDefault();
-    if (draggedIndex !== null && index !== draggedIndex) {
-      setDragOverIndex(index);
-    }
-  }, [draggedIndex]);
-
-  const handleDragLeave = useCallback(() => {
-    setDragOverIndex(null);
-  }, []);
-
-  const handleDrop = useCallback((e, targetIndex) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === targetIndex) {
-      setDragOverIndex(null);
-      return;
-    }
-
-    const newItems = [...items];
-    const [draggedItem] = newItems.splice(draggedIndex, 1);
-    newItems.splice(targetIndex, 0, draggedItem);
-    onReorder(newItems);
-    setDragOverIndex(null);
-  }, [draggedIndex, items, onReorder]);
-
-  const getDragProps = useCallback((index, canDrag = true) => {
-    if (!canDrag) return {};
-    return {
-      draggable: true,
-      onDragStart: (e) => handleDragStart(e, index),
-      onDragEnd: handleDragEnd,
-      onDragOver: (e) => handleDragOver(e, index),
-      onDragLeave: handleDragLeave,
-      onDrop: (e) => handleDrop(e, index),
-    };
-  }, [handleDragStart, handleDragEnd, handleDragOver, handleDragLeave, handleDrop]);
-
-  const getDragStyle = useCallback((index, canDrag = true) => ({
-    background: dragOverIndex === index ? `${withOpacity(colors.primary, 20)}` : undefined,
-    borderTop: dragOverIndex === index ? `2px solid ${colors.primary}` : '2px solid transparent',
-    cursor: canDrag ? 'grab' : 'default',
-    userSelect: 'none',
-    transition: 'background 150ms ease',
-  }), [dragOverIndex]);
-
-  return {
-    draggedIndex,
-    dragOverIndex,
-    getDragProps,
-    getDragStyle,
-  };
-}
 
 export const DragHandle = memo(function DragHandle({ canDrag = true, size = 16 }) {
   return (
@@ -367,7 +286,6 @@ export function CollapsibleSection({
   title,
   icon: Icon,
   badge,
-  badgeColor,
   collapsed,
   onToggleCollapse,
   action,
@@ -1405,38 +1323,6 @@ export const SkipLink = memo(function SkipLink({ targetId = 'main-content', chil
     </a>
   );
 });
-
-// FocusTrap - Trap focus within a container (useful for modals)
-export function useFocusTrap(containerRef, isActive = true) {
-  useEffect(() => {
-    if (!isActive || !containerRef.current) return;
-    
-    const container = containerRef.current;
-    const focusableElements = container.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    
-    if (focusableElements.length === 0) return;
-    
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-    
-    const handleKeyDown = (e) => {
-      if (e.key !== 'Tab') return;
-      
-      if (e.shiftKey && document.activeElement === firstElement) {
-        e.preventDefault();
-        lastElement.focus();
-      } else if (!e.shiftKey && document.activeElement === lastElement) {
-        e.preventDefault();
-        firstElement.focus();
-      }
-    };
-    
-    container.addEventListener('keydown', handleKeyDown);
-    return () => container.removeEventListener('keydown', handleKeyDown);
-  }, [containerRef, isActive]);
-}
 
 // ============================================================================
 // PropTypes Definitions

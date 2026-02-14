@@ -3,7 +3,7 @@
 // Provides centralized state management with Supabase
 // =============================================================================
 
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   inventoryService,
   reservationsService,
@@ -27,12 +27,10 @@ import { DEFAULT_ROLES } from '../constants.js';
 import { log, error as logError } from '../lib/logger.js';
 import { validateReservation, validateClient, validateMaintenanceRecord } from '../lib/validators.js';
 import { updateById, removeById } from '../utils';
+import DataContext, { useData } from './DataContext.js';
 
-// =============================================================================
-// CONTEXT
-// =============================================================================
-
-const DataContext = createContext(null);
+// Re-export hook for backward compatibility
+export { useData };
 
 // =============================================================================
 // PROVIDER
@@ -1025,13 +1023,5 @@ export function DataProvider({ children }) {
 // =============================================================================
 // HOOK
 // =============================================================================
-
-export function useData() {
-  const context = useContext(DataContext);
-  if (!context) {
-    throw new Error('useData must be used within a DataProvider');
-  }
-  return context;
-}
 
 export default DataContext;
