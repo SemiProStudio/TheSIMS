@@ -30,6 +30,104 @@ import { getSupabase } from '../lib/supabase';
 import { error as logError } from '../lib/logger';
 
 // ============================================================================
+// Module-level style constants for repeated patterns
+// ============================================================================
+
+const badgeBase = {
+  display: 'inline-block',
+  fontSize: 10,
+  fontWeight: 600,
+  padding: '1px 6px',
+  borderRadius: 4,
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.04em',
+  lineHeight: '16px',
+  whiteSpace: 'nowrap' as const,
+  flexShrink: 0,
+};
+
+const inlineFlexBadge = {
+  ...badgeBase,
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 3,
+};
+
+const sectionLabelStyle = {
+  fontSize: typography.fontSize.xs,
+  fontWeight: 700,
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.06em',
+  color: colors.textMuted,
+};
+
+const hintRowStyle = {
+  fontSize: 11,
+  marginTop: 2,
+  ...styles.flexCenter,
+  gap: 4,
+};
+
+const toggleBtnBase = {
+  borderRadius: borderRadius.sm,
+  cursor: 'pointer',
+  transition: 'all 0.15s',
+};
+
+const resetBtnStyle = {
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  color: colors.textMuted,
+  padding: 2,
+  display: 'flex',
+};
+
+const sectionHeaderStyle = {
+  fontSize: typography.fontSize.xs,
+  fontWeight: 700,
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.06em',
+  color: colors.textMuted,
+  ...styles.flexCenter,
+  gap: spacing[1],
+} as const;
+
+const toggleBtnActiveBase = {
+  borderRadius: borderRadius.sm,
+  cursor: 'pointer',
+  transition: 'all 0.15s',
+  fontSize: typography.fontSize.xs,
+} as const;
+
+const tabBtnBase = {
+  background: 'none',
+  border: 'none',
+  marginBottom: -2,
+  cursor: 'pointer',
+  ...styles.flexCenter,
+  gap: spacing[1],
+  transition: 'color 0.15s, border-color 0.15s',
+} as const;
+
+const expandBtnStyle = {
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  color: colors.textMuted,
+  fontSize: typography.fontSize.xs,
+  ...styles.flexCenter,
+  gap: spacing[1],
+  fontWeight: 600,
+} as const;
+
+const actionRowStyle = {
+  ...styles.flexCenter,
+  gap: spacing[3],
+  justifyContent: 'flex-end',
+} as const;
+
+// ============================================================================
 // Confidence Badge
 // ============================================================================
 function ConfidenceBadge({ confidence }) {
@@ -47,18 +145,9 @@ function ConfidenceBadge({ confidence }) {
 
   return (
     <span style={{
-      display: 'inline-block',
-      fontSize: 10,
-      fontWeight: 600,
-      padding: '1px 6px',
-      borderRadius: 4,
+      ...badgeBase,
       background: `${withOpacity(color, 20)}`,
       color,
-      textTransform: 'uppercase',
-      letterSpacing: '0.04em',
-      lineHeight: '16px',
-      whiteSpace: 'nowrap',
-      flexShrink: 0,
     }}>
       {label}
     </span>
@@ -143,8 +232,7 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
         ) : (
           <div>
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
+              ...styles.flexCenter,
               gap: spacing[1],
               flexWrap: 'wrap',
             }}>
@@ -160,20 +248,9 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
               {/* Conflict badge (4.3) */}
               {fieldData.hasConflict && !selectedValue && (
                 <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 3,
-                  fontSize: 10,
-                  fontWeight: 600,
-                  padding: '1px 6px',
-                  borderRadius: 4,
+                  ...inlineFlexBadge,
                   background: withOpacity(colors.danger || '#f87171', 15),
                   color: colors.danger || '#f87171',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  lineHeight: '16px',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
                 }}>
                   ⚠ Conflict
                 </span>
@@ -181,18 +258,9 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
               {/* Merged badge (1.2) */}
               {fieldData.mergedCount && (
                 <span style={{
-                  display: 'inline-block',
-                  fontSize: 10,
-                  fontWeight: 600,
-                  padding: '1px 6px',
-                  borderRadius: 4,
+                  ...badgeBase,
                   background: withOpacity(colors.primary, 15),
                   color: colors.primary,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  lineHeight: '16px',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0,
                 }}>
                   Combined ×{fieldData.mergedCount}
                 </span>
@@ -208,14 +276,13 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
                 <button
                   onClick={() => setIsOpen(!isOpen)}
                   style={{
+                    ...styles.flexCenter,
                     background: withOpacity(colors.primary, 10),
                     border: `1px solid ${withOpacity(colors.primary, 30)}`,
                     borderRadius: borderRadius.sm,
                     cursor: 'pointer',
                     color: colors.primary,
                     padding: '1px 6px',
-                    display: 'flex',
-                    alignItems: 'center',
                     fontSize: typography.fontSize.xs,
                     gap: 3,
                     whiteSpace: 'nowrap',
@@ -233,12 +300,8 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
             {/* Validation warning (4.2) */}
             {fieldData.validationWarning && (
               <div style={{
-                fontSize: 11,
+                ...hintRowStyle,
                 color: colors.accent1 || '#facc15',
-                marginTop: 2,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
               }}>
                 ⚠
                 <span>{fieldData.validationWarning}</span>
@@ -257,12 +320,8 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
             {/* Unit normalization hint (4.1) */}
             {unitInfo && (
               <div style={{
-                fontSize: 11,
+                ...hintRowStyle,
                 color: colors.primary,
-                marginTop: 2,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
               }}>
                 →
                 <span>normalized: <strong>{unitInfo.normalized}</strong></span>
@@ -271,12 +330,8 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
             {/* Type coercion hint (4.4) */}
             {coercionInfo && !unitInfo && (
               <div style={{
-                fontSize: 11,
+                ...hintRowStyle,
                 color: withOpacity(colors.primary, 80),
-                marginTop: 2,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
               }}>
                 →
                 <span>suggestion: <strong>{coercionInfo.coerced}</strong></span>
@@ -299,6 +354,7 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
                       key={i}
                       onClick={() => { onSelect(specName, alt.value); setIsOpen(false); }}
                       style={{
+                        ...styles.flexCenter,
                         width: '100%',
                         textAlign: 'left',
                         padding: `${spacing[2]}px ${spacing[2]}px`,
@@ -310,8 +366,6 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
                         cursor: 'pointer',
                         fontSize: typography.fontSize.sm,
                         color: colors.textSecondary,
-                        display: 'flex',
-                        alignItems: 'center',
                         gap: spacing[2],
                       }}
                     >
@@ -320,13 +374,11 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
                       <span style={{ flex: 1, wordBreak: 'break-word' }}>{alt.value}</span>
                       <ConfidenceBadge confidence={alt.confidence} />
                       <span style={{
+                        ...styles.truncate,
                         color: withOpacity(colors.textMuted, 60),
                         fontSize: 11,
                         flexShrink: 0,
                         maxWidth: 120,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
                       }}>
                         {alt.sourceKey}
                       </span>
@@ -344,12 +396,7 @@ function FieldRow({ specName, fieldData, selectedValue, onSelect, onClear, isReq
         <button
           onClick={() => onClear(specName)}
           style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: colors.textMuted,
-            padding: 2,
-            display: 'flex',
+            ...resetBtnStyle,
             alignItems: 'center',
             marginTop: 2,
             opacity: 0.6,
@@ -830,12 +877,9 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
             border: `1px solid ${withOpacity(colors.primary, 15)}`,
           }}>
             <div style={{
-              fontSize: typography.fontSize.xs,
-              fontWeight: 700,
+              ...sectionLabelStyle,
               color: colors.primary,
               marginBottom: spacing[1],
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
             }}>
               Matching against {allSpecFields.length} spec fields across all categories
             </div>
@@ -863,7 +907,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
 
         {/* Input Method Tabs */}
         <div style={{
-          display: 'flex',
+          ...styles.flexCenter,
           gap: 0,
           marginBottom: 0,
           borderBottom: `2px solid ${colors.border}`,
@@ -879,21 +923,14 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
                 key={tab.key}
                 onClick={() => setInputMode(tab.key)}
                 style={{
-                  background: 'none',
-                  border: 'none',
+                  ...tabBtnBase,
                   borderBottom: isActive
                     ? `2px solid ${colors.primary}`
                     : '2px solid transparent',
-                  marginBottom: -2,
                   padding: `${spacing[2]}px ${spacing[3]}px`,
                   fontSize: typography.fontSize.sm,
                   fontWeight: isActive ? 700 : 500,
                   color: isActive ? colors.primary : colors.textMuted,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing[1],
-                  transition: 'color 0.15s, border-color 0.15s',
                 }}
               >
                 <span>{tab.icon}</span>
@@ -960,11 +997,9 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
                 border: `1px solid ${withOpacity(colors.border, 30)}`,
               }}>
                 <div style={{
-                  fontSize: typography.fontSize.xs,
+                  ...styles.textXsMuted,
                   fontWeight: 600,
-                  color: colors.textMuted,
-                  display: 'flex',
-                  alignItems: 'center',
+                  ...styles.flexCenter,
                   gap: spacing[1],
                   marginBottom: spacing[1],
                 }}>
@@ -1038,10 +1073,10 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
               }}
               onClick={() => fileInputRef.current?.click()}
               style={{
+                ...styles.textCenter,
                 border: `2px dashed ${dragOver ? colors.primary : colors.border}`,
                 borderRadius: borderRadius.lg,
                 padding: `${spacing[6]}px ${spacing[4]}px`,
-                textAlign: 'center',
                 cursor: 'pointer',
                 background: dragOver
                   ? withOpacity(colors.primary, 8)
@@ -1064,10 +1099,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
               }}>
                 Drop a file here or click to browse
               </div>
-              <div style={{
-                fontSize: typography.fontSize.sm,
-                color: colors.textMuted,
-              }}>
+              <div style={styles.textSmMuted}>
                 PDF, TXT, CSV, TSV, Markdown, RTF, or Images (OCR)
               </div>
             </div>
@@ -1083,12 +1115,9 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
             {inputText && (
               <div style={{ marginTop: spacing[2] }}>
                 <div style={{
-                  fontSize: typography.fontSize.xs,
+                  ...sectionLabelStyle,
                   fontWeight: 600,
-                  color: colors.textMuted,
                   marginBottom: spacing[1],
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
                 }}>
                   Imported Content Preview
                 </div>
@@ -1115,14 +1144,13 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
         {inputMode === 'url' && (
           <div style={{ marginTop: spacing[2] }}>
             <div style={{
-              fontSize: typography.fontSize.xs,
-              color: colors.textMuted,
+              ...styles.textXsMuted,
               marginBottom: spacing[2],
             }}>
               Enter a product page URL to fetch and parse specs automatically.
               Supported sites include B&H, Adorama, manufacturer pages, and Amazon.
             </div>
-            <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
+            <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
               <input
                 type="url"
                 value={urlInput}
@@ -1148,7 +1176,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
         )}
 
         {/* Parse button + summary */}
-        <div style={{ display: 'flex', gap: spacing[2], marginTop: spacing[3], marginBottom: spacing[3], alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ ...styles.flexWrap, gap: spacing[2], marginTop: spacing[3], marginBottom: spacing[3], alignItems: 'center' }}>
           <Button variant="secondary" onClick={handleParse} disabled={!inputText.trim()} icon={FileText}>
             Parse Text
           </Button>
@@ -1176,10 +1204,9 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
         {/* Confidence threshold control (3.1) */}
         {parseResult && (
           <div style={{
-            display: 'flex',
+            ...styles.flexCenter,
             gap: spacing[1],
             marginBottom: spacing[3],
-            alignItems: 'center',
           }}>
             <span style={{
               fontSize: typography.fontSize.xs,
@@ -1254,8 +1281,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
                 color: showSourceView ? colors.primary : colors.textMuted,
                 cursor: 'pointer',
                 transition: 'all 0.15s',
-                display: 'flex',
-                alignItems: 'center',
+                ...styles.flexCenter,
                 gap: 4,
                 whiteSpace: 'nowrap',
               }}
@@ -1279,24 +1305,15 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
             <div style={{
               padding: `${spacing[2]}px ${spacing[3]}px`,
               borderBottom: `1px solid ${colors.border}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              ...styles.flexBetween,
             }}>
               <div style={{
-                fontSize: typography.fontSize.xs,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                color: colors.textMuted,
-                display: 'flex',
-                alignItems: 'center',
-                gap: spacing[1],
+                ...sectionHeaderStyle,
               }}>
                 ⊞
                 Detected Products ({batchResults.length})
               </div>
-              <div style={{ display: 'flex', gap: spacing[1] }}>
+              <div style={{ ...styles.flexCenter, gap: spacing[1] }}>
                 <button
                   onClick={() => setBatchSelected(new Set(batchResults.map((_, i) => i)))}
                   style={{
@@ -1322,8 +1339,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
                   style={{
                     padding: `${spacing[2]}px ${spacing[3]}px`,
                     borderBottom: `1px solid ${withOpacity(colors.border, 30)}`,
-                    display: 'flex',
-                    alignItems: 'center',
+                    ...styles.flexCenter,
                     gap: spacing[2],
                     background: isSelected ? withOpacity(colors.primary, 5) : 'transparent',
                   }}
@@ -1343,9 +1359,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
                       fontSize: typography.fontSize.sm,
                       fontWeight: 600,
                       color: colors.textPrimary,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
+                      ...styles.truncate,
                     }}>
                       {result.name || segment.name}
                     </div>
@@ -1379,7 +1393,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
             })}
             <div style={{
               padding: `${spacing[2]}px ${spacing[3]}px`,
-              display: 'flex',
+              ...styles.flexCenter,
               justifyContent: 'flex-end',
             }}>
               <Button
@@ -1423,16 +1437,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
                   background: colors.bgMedium,
                   zIndex: 1,
                 }}>
-                  <div style={{
-                    fontSize: typography.fontSize.xs,
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    color: colors.textMuted,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing[1],
-                  }}>
+                  <div style={sectionHeaderStyle}>
                     <FileText size={11} />
                     Source Text ({parseResult.sourceLines.length} lines)
                   </div>
@@ -1497,11 +1502,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
               borderBottom: `1px solid ${colors.border}`,
             }}>
               <div style={{
-                fontSize: typography.fontSize.xs,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                color: colors.textMuted,
+                ...sectionLabelStyle,
                 marginBottom: spacing[2],
               }}>
                 Basic Information
@@ -1520,7 +1521,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
                 alignItems: 'center',
               }}>
                 <span style={{ fontWeight: 600, color: colors.textPrimary }}>Brand</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
+                <div style={{ ...styles.flexCenter, gap: spacing[1] }}>
                   <input
                     type="text"
                     value={brandOverride !== null ? brandOverride : (parseResult.brand || '')}
@@ -1559,7 +1560,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
                 alignItems: 'center',
               }}>
                 <span style={{ fontWeight: 600, color: colors.textPrimary }}>Category</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
+                <div style={{ ...styles.flexCenter, gap: spacing[1] }}>
                   <select
                     value={categoryOverride !== null ? categoryOverride : (parseResult.category || '')}
                     onChange={e => setCategoryOverride(e.target.value || null)}
@@ -1606,14 +1607,8 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
             {matchedFields.length > 0 && (
               <div style={{ padding: `${spacing[3]}px` }}>
                 <div style={{
-                  fontSize: typography.fontSize.xs,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  color: colors.textMuted,
+                  ...sectionHeaderStyle,
                   marginBottom: spacing[2],
-                  display: 'flex',
-                  alignItems: 'center',
                   gap: spacing[2],
                 }}>
                   <span>Matched Specifications ({matchedFields.length})</span>
@@ -1651,16 +1646,8 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
                 <button
                   onClick={() => setShowEmptyFields(!showEmptyFields)}
                   style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: colors.textMuted,
-                    fontSize: typography.fontSize.xs,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing[1],
+                    ...expandBtnStyle,
                     padding: `${spacing[1]}px 0`,
-                    fontWeight: 600,
                   }}
                 >
                   {showEmptyFields ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -1697,16 +1684,8 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
                 <button
                   onClick={() => setShowUnmatched(!showUnmatched)}
                   style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: colors.textMuted,
-                    fontSize: typography.fontSize.xs,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing[1],
+                    ...expandBtnStyle,
                     padding: `${spacing[1]}px 0`,
-                    fontWeight: 600,
                   }}
                 >
                   <AlertCircle size={12} />
@@ -1795,14 +1774,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
             <div style={{
               padding: `${spacing[2]}px ${spacing[3]}px`,
               borderBottom: `1px solid ${colors.border}`,
-              fontSize: typography.fontSize.xs,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              color: colors.textMuted,
-              display: 'flex',
-              alignItems: 'center',
-              gap: spacing[1],
+              ...sectionHeaderStyle,
             }}>
               ⇄
               Spec Changes ({diffResults.filter(d => d.status !== 'unchanged').length} differences)
@@ -1854,7 +1826,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
         )}
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end', alignItems: 'center' }}>
+        <div style={{ ...actionRowStyle, alignItems: 'center' }}>
           {/* Compare button (5.2) — only shown when editing existing item */}
           {existingItem && parseResult && !diffResults && (
             <button
@@ -1867,8 +1839,7 @@ export const SmartPasteModal = memo<SmartPasteModalProps>(function SmartPasteMod
                 color: colors.textMuted,
                 padding: `${spacing[1]}px ${spacing[2]}px`,
                 fontSize: typography.fontSize.xs,
-                display: 'flex',
-                alignItems: 'center',
+                ...styles.flexCenter,
                 gap: 4,
                 marginRight: 'auto',
               }}

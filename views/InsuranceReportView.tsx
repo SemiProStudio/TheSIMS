@@ -11,6 +11,15 @@ import { formatMoney } from '../utils';
 import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui';
 import { Select } from '../components/Select';
 
+// Reusable table header cell style
+const tableHeaderStyle = {
+  padding: spacing[3],
+  textAlign: 'left' as const,
+  fontSize: typography.fontSize.xs,
+  color: colors.textMuted,
+  fontWeight: typography.fontWeight.medium,
+};
+
 interface InsuranceReportPanelProps {
   inventory: {
     id: string;
@@ -156,11 +165,11 @@ export const InsuranceReportPanel = memo<InsuranceReportPanelProps>(function Ins
         const hasContent = Object.entries(sf).some(([k, v]) => v && p[k]);
         if (!hasContent) return null;
         return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4], padding: spacing[3], marginBottom: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[4], padding: spacing[3], marginBottom: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
             {sf.logo && p.logo && <img src={p.logo} alt="" style={{ height: 36, objectFit: 'contain' }} />}
             <div>
               {sf.businessName && p.businessName && <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.textPrimary }}>{p.businessName}</div>}
-              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
+              <div style={{ ...styles.textXsMuted, display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
                 {sf.displayName && p.displayName && <span>{p.displayName}</span>}
                 {sf.phone && p.phone && <span>{p.phone}</span>}
                 {sf.email && p.email && <span>{p.email}</span>}
@@ -181,7 +190,7 @@ export const InsuranceReportPanel = memo<InsuranceReportPanelProps>(function Ins
 
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Main inventory list */}
-        <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 280px)' }}>
+        <Card padding={false} style={{ ...styles.flexCol, maxHeight: 'calc(100vh - 280px)' }}>
           <CardHeader 
             title="Inventory Schedule" 
             action={
@@ -216,10 +225,10 @@ export const InsuranceReportPanel = memo<InsuranceReportPanelProps>(function Ins
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: colors.bgDark, position: 'sticky', top: 0 }}>
-                  <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Item</th>
-                  <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Category</th>
-                  <th style={{ padding: spacing[3], textAlign: 'right', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Purchase</th>
-                  <th style={{ padding: spacing[3], textAlign: 'right', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Current</th>
+                  <th style={tableHeaderStyle}>Item</th>
+                  <th style={tableHeaderStyle}>Category</th>
+                  <th style={{ ...tableHeaderStyle, textAlign: 'right' }}>Purchase</th>
+                  <th style={{ ...tableHeaderStyle, textAlign: 'right' }}>Current</th>
                 </tr>
               </thead>
               <tbody>
@@ -236,7 +245,7 @@ export const InsuranceReportPanel = memo<InsuranceReportPanelProps>(function Ins
                       <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, fontSize: typography.fontSize.sm }}>
                         {item.name}
                       </div>
-                      <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                      <div style={styles.textXsMuted}>
                         {item.id} • {item.brand}
                       </div>
                     </td>
@@ -270,7 +279,7 @@ export const InsuranceReportPanel = memo<InsuranceReportPanelProps>(function Ins
         </Card>
 
         {/* Sidebar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
+        <div style={{ ...styles.flexCol, gap: spacing[4] }}>
           {/* Value by Category */}
           <Card padding={false}>
             <CardHeader title="Value by Category" />
@@ -285,7 +294,7 @@ export const InsuranceReportPanel = memo<InsuranceReportPanelProps>(function Ins
                         {formatMoney(data.currentValue)}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                    <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
                       <div
                         style={{
                           flex: 1,
@@ -322,25 +331,21 @@ export const InsuranceReportPanel = memo<InsuranceReportPanelProps>(function Ins
                   key={item.id}
                   onClick={() => onViewItem(item.id)}
                   style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    ...styles.flexBetween,
                     padding: spacing[2],
                     cursor: 'pointer',
                     borderRadius: borderRadius.md,
                     marginBottom: spacing[1],
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                  <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
                     <span style={{
+                      ...styles.flexColCenter,
                       width: 20,
                       height: 20,
                       borderRadius: '50%',
                       background: idx < 3 ? colors.primary : colors.borderLight,
                       color: idx < 3 ? colors.textPrimary : colors.textMuted,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
                       fontSize: typography.fontSize.xs,
                       fontWeight: typography.fontWeight.medium,
                     }}>
@@ -348,7 +353,7 @@ export const InsuranceReportPanel = memo<InsuranceReportPanelProps>(function Ins
                     </span>
                     <div>
                       <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>{item.name}</div>
-                      <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>{item.id}</div>
+                      <div style={styles.textXsMuted}>{item.id}</div>
                     </div>
                   </div>
                   <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, color: colors.available }}>

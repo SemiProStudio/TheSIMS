@@ -1,4 +1,4 @@
-import { colors, borderRadius, spacing, typography } from '../../theme';
+import { colors, styles, borderRadius, spacing, typography } from '../../theme';
 
 // Helper to apply opacity to a color (supports hex, CSS variables, and rgb/rgba)
 const withAlpha = (color, alpha) => {
@@ -48,8 +48,7 @@ export function CollapsibleSection({
         style={{
           '--section-accent-color': accentColor,
           padding: `${spacing[3]}px ${spacing[4]}px`,
-          display: 'flex',
-          alignItems: 'center',
+          ...styles.flexCenter,
           gap: spacing[2],
           cursor: 'pointer',
           userSelect: 'none',

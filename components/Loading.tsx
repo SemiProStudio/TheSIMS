@@ -4,6 +4,7 @@
 // =============================================================================
 
 import React from 'react';
+import { styles as themeStyles } from '../theme';
 
 // =============================================================================
 // SPINNER
@@ -249,10 +250,7 @@ export function SuspenseModal({ children }) {
 // =============================================================================
 const styles = {
   fullPage: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...themeStyles.flexColCenter,
     height: '100vh',
     backgroundColor: '#1a1a2e',
     color: '#94a3b8',
@@ -264,10 +262,7 @@ const styles = {
     color: '#94a3b8',
   },
   content: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...themeStyles.flexColCenter,
     padding: '40px',
     color: '#94a3b8',
   },
@@ -300,13 +295,11 @@ const styles = {
     borderBottom: '1px solid #1e293b',
   },
   skeletonList: {
-    display: 'flex',
-    flexDirection: 'column',
+    ...themeStyles.flexCol,
     gap: '12px',
   },
   skeletonListItem: {
-    display: 'flex',
-    alignItems: 'center',
+    ...themeStyles.flexCenter,
     padding: '12px',
     backgroundColor: '#16213e',
     borderRadius: '8px',
@@ -342,8 +335,7 @@ const styles = {
     backgroundColor: '#16213e',
     borderRadius: '12px',
     padding: '32px 48px',
-    display: 'flex',
-    flexDirection: 'column',
+    ...themeStyles.flexCol,
     alignItems: 'center',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
   },
@@ -353,10 +345,7 @@ const styles = {
     color: '#94a3b8',
   },
   viewLoading: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
+    ...themeStyles.flexColCenter,
     padding: '60px 20px',
     minHeight: '300px',
   },

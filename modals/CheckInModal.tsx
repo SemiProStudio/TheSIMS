@@ -8,6 +8,40 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity } from '
 import { Badge, Button } from '../components/ui';
 import { Modal, ModalHeader } from './ModalBase';
 
+// ============================================================================
+// Module-level style constants
+// ============================================================================
+const itemSummaryStyle = {
+  ...styles.flexCenter,
+  gap: spacing[3],
+  padding: spacing[3],
+  background: `${withOpacity(colors.primary, 10)}`,
+  borderRadius: borderRadius.lg,
+  marginBottom: spacing[4],
+} as const;
+
+const noImgStyle = {
+  width: 60,
+  height: 60,
+  background: `${withOpacity(colors.primary, 20)}`,
+  borderRadius: borderRadius.md,
+  ...styles.flexColCenter,
+  color: colors.textMuted,
+  fontSize: typography.fontSize.xs,
+} as const;
+
+const sectionHeadingStyle = {
+  margin: `0 0 ${spacing[3]}px`,
+  color: colors.textPrimary,
+  fontSize: typography.fontSize.base,
+} as const;
+
+const actionRowStyle = {
+  ...styles.flexCenter,
+  gap: spacing[3],
+  justifyContent: 'flex-end',
+} as const;
+
 interface CheckInModalProps {
   item: {
     id: string;
@@ -112,29 +146,21 @@ export const CheckInModal = memo<CheckInModalProps>(function CheckInModal({
       <div style={{ padding: spacing[4], maxHeight: '75vh', overflowY: 'auto' }}>
         
         {/* Item Summary */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: spacing[3],
-          padding: spacing[3],
-          background: `${withOpacity(colors.primary, 10)}`,
-          borderRadius: borderRadius.lg,
-          marginBottom: spacing[4]
-        }}>
+        <div style={itemSummaryStyle}>
           {item.image ? (
             <img src={item.image} alt="" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: borderRadius.md }} />
           ) : (
-            <div style={{ width: 60, height: 60, background: `${withOpacity(colors.primary, 20)}`, borderRadius: borderRadius.md, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textMuted, fontSize: typography.fontSize.xs }}>
+            <div style={noImgStyle}>
               No img
             </div>
           )}
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', gap: spacing[1], marginBottom: spacing[1] }}>
+            <div style={{ ...styles.flexCenter, gap: spacing[1], marginBottom: spacing[1] }}>
               <Badge text={item.id} color={colors.primary} />
               {isOverdue && <Badge text="OVERDUE" color={colors.danger} />}
             </div>
-            <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{item.name}</div>
-            <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>{item.brand}</div>
+            <div style={styles.subheading}>{item.name}</div>
+            <div style={styles.textSmMuted}>{item.brand}</div>
           </div>
         </div>
         
@@ -145,7 +171,7 @@ export const CheckInModal = memo<CheckInModalProps>(function CheckInModal({
           borderRadius: borderRadius.md,
           marginBottom: spacing[4]
         }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], fontSize: typography.fontSize.sm }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], ...styles.textSmMuted }}>
             <div>
               <span style={{ color: colors.textMuted }}>Checked out to:</span>
               <div style={{ color: colors.textPrimary, fontWeight: typography.fontWeight.medium }}>{item.checkedOutTo}</div>
@@ -169,7 +195,7 @@ export const CheckInModal = memo<CheckInModalProps>(function CheckInModal({
         
         {/* Condition Verification */}
         <div style={{ marginBottom: spacing[4] }}>
-          <h4 style={{ margin: `0 0 ${spacing[3]}px`, color: colors.textPrimary, fontSize: typography.fontSize.base }}>
+          <h4 style={sectionHeadingStyle}>
             Verify Condition
           </h4>
           <p style={{ color: colors.textMuted, fontSize: typography.fontSize.sm, marginBottom: spacing[3] }}>
@@ -233,8 +259,7 @@ export const CheckInModal = memo<CheckInModalProps>(function CheckInModal({
         {/* Damage Report */}
         <div style={{ marginBottom: spacing[4] }}>
           <label style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+            ...styles.flexCenter,
             gap: spacing[2], 
             cursor: 'pointer',
             marginBottom: spacing[2]
@@ -245,7 +270,7 @@ export const CheckInModal = memo<CheckInModalProps>(function CheckInModal({
               onChange={e => handleChange('damageReported', e.target.checked)}
               style={{ accentColor: colors.danger }}
             />
-            <span style={{ color: colors.textPrimary, fontWeight: typography.fontWeight.medium }}>
+            <span style={styles.subheading}>
               Report damage or issue
             </span>
           </label>
@@ -293,7 +318,7 @@ export const CheckInModal = memo<CheckInModalProps>(function CheckInModal({
         </div>
         
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+        <div style={actionRowStyle}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSubmit}>
             Confirm Check In

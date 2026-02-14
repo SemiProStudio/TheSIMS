@@ -5,7 +5,7 @@
 
 import { memo, useState } from 'react';
 import { Palette, Check, Shuffle, Settings, Sliders } from 'lucide-react';
-import { colors, spacing, borderRadius, typography, withOpacity} from '../theme';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme';
 import { useTheme } from '../contexts/ThemeContext';
 import { BackButton, Card, Button } from '../components/ui';
 import CustomThemeEditor from '../components/CustomThemeEditor';
@@ -30,12 +30,11 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
   const hasCustomColors = isCustom && Object.keys(themeColors).length > 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
+    <div style={styles.flexCol}>
       <button
         onClick={onClick}
         style={{
-          display: 'flex',
-          flexDirection: 'column',
+          ...styles.flexCol,
           padding: 0,
           background: colors.bgMedium,
           border: isSelected ? `2px solid ${colors.primary}` : `1px solid ${colors.borderLight}`,
@@ -60,22 +59,18 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
           {theme.isRandom ? (
             // Random theme shows gradient with shuffle icon
             <div style={{
+              ...styles.flexColCenter,
               position: 'absolute',
               inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
             }}>
               <Shuffle size={32} color="white" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
             </div>
           ) : isCustom && !hasCustomColors ? (
             // Custom theme without colors shows settings icon
             <div style={{
+              ...styles.flexColCenter,
               position: 'absolute',
               inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
             }}>
               <Sliders size={32} color="white" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
             </div>
@@ -130,11 +125,10 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
             
             {/* Text preview lines */}
             <div style={{
+              ...styles.flexCol,
               position: 'absolute',
               bottom: 8,
               right: 8,
-              display: 'flex',
-              flexDirection: 'column',
               gap: 2,
               alignItems: 'flex-end',
             }}>
@@ -147,6 +141,7 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
         {/* Selected checkmark */}
         {isSelected && (
           <div style={{
+            ...styles.flexColCenter,
             position: 'absolute',
             top: 8,
             right: 8,
@@ -154,9 +149,6 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
             height: 24,
             borderRadius: '50%',
             background: colors.primary,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}>
             <Check size={14} color="white" />
           </div>
@@ -170,16 +162,14 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
         borderTop: `1px solid ${colors.borderLight}`,
       }}>
         <div style={{
+          ...styles.subheading,
           fontSize: typography.fontSize.sm,
-          fontWeight: typography.fontWeight.medium,
-          color: colors.textPrimary,
           marginBottom: 2,
         }}>
           {theme.name}
         </div>
         <div style={{
-          fontSize: typography.fontSize.xs,
-          color: colors.textMuted,
+          ...styles.textXsMuted,
           lineHeight: 1.3,
         }}>
           {theme.description}
@@ -192,6 +182,8 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
       <button
         onClick={(e) => { e.stopPropagation(); onCustomize?.(); }}
         style={{
+          ...styles.flexCenter,
+          justifyContent: 'center',
           marginTop: spacing[2],
           padding: `${spacing[2]}px ${spacing[3]}px`,
           background: colors.bgLight,
@@ -200,9 +192,6 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
           color: colors.textPrimary,
           fontSize: typography.fontSize.sm,
           cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           gap: spacing[2],
         }}
       >
@@ -248,13 +237,11 @@ function ThemeSelector({ onBack }) {
         marginBottom: spacing[6],
       }}>
         <div style={{
+          ...styles.flexColCenter,
           width: 48,
           height: 48,
           borderRadius: borderRadius.lg,
           background: `${withOpacity(colors.primary, 15)}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           flexShrink: 0,
         }}>
           <Palette size={24} color={colors.primary} />
@@ -288,27 +275,24 @@ function ThemeSelector({ onBack }) {
 
       {/* Current Theme Info */}
       <Card style={{ marginTop: spacing[6], maxWidth: 500 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
+        <div style={{ ...styles.flexCenter, gap: spacing[3] }}>
           <div style={{
+            ...styles.flexColCenter,
             width: 40,
             height: 40,
             borderRadius: borderRadius.md,
             background: colors.primary,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}>
             <Check size={20} color="white" />
           </div>
           <div>
-            <div style={{ 
-              fontSize: typography.fontSize.sm, 
-              fontWeight: typography.fontWeight.medium,
-              color: colors.textPrimary 
+            <div style={{
+              ...styles.subheading,
+              fontSize: typography.fontSize.sm,
             }}>
               Current Theme: {availableThemes.find(t => t.id === themeId)?.name || 'Unknown'}
             </div>
-            <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+            <div style={styles.textXsMuted}>
               {availableThemes.find(t => t.id === themeId)?.description || ''}
             </div>
           </div>

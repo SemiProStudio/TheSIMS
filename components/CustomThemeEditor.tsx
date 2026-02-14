@@ -4,7 +4,7 @@
 
 import { memo, useState, useCallback, useMemo } from 'react';
 import { Save, Palette, RotateCcw, ChevronDown, ChevronRight, AlertTriangle, CheckCircle } from 'lucide-react';
-import { colors, spacing, borderRadius, typography, withOpacity} from '../theme';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme';
 import { BackButton, Button, Card } from './ui';
 import { COLOR_CATEGORIES, DEFAULT_CUSTOM_THEME } from '../themes-data';
 import { 
@@ -17,7 +17,7 @@ import {
 // Simple color picker with hex input and native picker
 const ColorPicker = memo(function ColorPicker({ color, onChange }) {
   return (
-    <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
+    <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
       <div style={{
         width: 40, height: 40,
         borderRadius: borderRadius.md,
@@ -65,10 +65,9 @@ const CategorySection = memo(function CategorySection({
       <button
         onClick={() => onToggle(categoryKey)}
         style={{
+          ...styles.flexCenter,
           width: '100%',
           padding: spacing[3],
-          display: 'flex',
-          alignItems: 'center',
           gap: spacing[2],
           background: 'transparent',
           border: 'none',
@@ -78,7 +77,7 @@ const CategorySection = memo(function CategorySection({
       >
         {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         <span style={{ fontWeight: typography.fontWeight.medium }}>{category.label}</span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+        <div style={{ ...styles.flexCenter, marginLeft: 'auto', gap: 4 }}>
           {category.colors.slice(0, 5).map(c => (
             <div key={c.key} style={{
               width: 12, height: 12,
@@ -95,8 +94,7 @@ const CategorySection = memo(function CategorySection({
               key={colorDef.key}
               onClick={() => onSelectColor(colorDef.key)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
+                ...styles.flexCenter,
                 gap: spacing[3],
                 padding: spacing[2],
                 marginBottom: spacing[1],
@@ -117,9 +115,8 @@ const CategorySection = memo(function CategorySection({
                 {colorDef.label}
               </span>
               <span style={{
-                fontSize: typography.fontSize.xs,
+                ...styles.textXsMuted,
                 fontFamily: 'monospace',
-                color: colors.textMuted,
               }}>
                 {themeColors[colorDef.key] || '#888'}
               </span>
@@ -158,14 +155,14 @@ const LivePreview = memo(function LivePreview({ themeColors }) {
         
         {/* Focus ring preview */}
         <div style={{ marginBottom: spacing[3] }}>
-          <div style={{ 
-            fontSize: typography.fontSize.xs, 
-            color: themeColors['--text-muted'], 
-            marginBottom: spacing[1] 
+          <div style={{
+            fontSize: typography.fontSize.xs,
+            color: themeColors['--text-muted'],
+            marginBottom: spacing[1],
           }}>
             Focus Ring Preview:
           </div>
-          <div style={{ display: 'flex', gap: spacing[2] }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
             <div style={{
               padding: `${spacing[1]}px ${spacing[2]}px`,
               background: themeColors['--bg-medium'],
@@ -188,7 +185,7 @@ const LivePreview = memo(function LivePreview({ themeColors }) {
         </div>
         
         {/* Status badges */}
-        <div style={{ display: 'flex', gap: spacing[1], flexWrap: 'wrap', marginBottom: spacing[2] }}>
+        <div style={{ ...styles.flexWrap, gap: spacing[1], marginBottom: spacing[2] }}>
           {['--status-available', '--status-checked-out', '--status-reserved', '--status-needs-attention'].map(key => (
             <div key={key} style={{
               padding: `2px 6px`,
@@ -203,7 +200,7 @@ const LivePreview = memo(function LivePreview({ themeColors }) {
         </div>
         
         {/* Buttons */}
-        <div style={{ display: 'flex', gap: spacing[2] }}>
+        <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
           <div style={{
             padding: `${spacing[1]}px ${spacing[2]}px`,
             background: themeColors['--primary'],
@@ -245,9 +242,8 @@ const ContrastChecker = memo(function ContrastChecker({ themeColors }) {
       <button
         onClick={() => setExpanded(!expanded)}
         style={{
+          ...styles.flexCenter,
           width: '100%',
-          display: 'flex',
-          alignItems: 'center',
           gap: spacing[2],
           background: 'transparent',
           border: 'none',
@@ -277,8 +273,7 @@ const ContrastChecker = memo(function ContrastChecker({ themeColors }) {
       {expanded && (
         <div style={{ marginTop: spacing[3] }}>
           <div style={{
-            fontSize: typography.fontSize.xs,
-            color: colors.textMuted,
+            ...styles.textXsMuted,
             marginBottom: spacing[2],
           }}>
             WCAG AA contrast requirements: {summary.passing} passing, {summary.failing} failing
@@ -292,11 +287,10 @@ const ContrastChecker = memo(function ContrastChecker({ themeColors }) {
                 <div
                   key={idx}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
+                    ...styles.flexCenter,
+                    ...styles.sectionDivider,
                     gap: spacing[2],
                     padding: `${spacing[1]}px 0`,
-                    borderBottom: `1px solid ${colors.borderLight}`,
                   }}
                 >
                   <div style={{
@@ -403,18 +397,18 @@ function CustomThemeEditor({ onBack, onSave, existingTheme }) {
       <BackButton onClick={onBack}>Back to Theme Selector</BackButton>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3], marginBottom: spacing[4] }}>
+      <div style={{ ...styles.flexCenter, gap: spacing[3], marginBottom: spacing[4] }}>
         <div style={{
+          ...styles.flexColCenter,
           width: 48, height: 48,
           borderRadius: borderRadius.lg,
           background: `linear-gradient(135deg, ${themeColors['--primary']}, ${themeColors['--accent1']})`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <Palette size={24} color="#fff" />
         </div>
         <div>
-          <h2 style={{ margin: 0, color: colors.textPrimary }}>Custom Theme Editor</h2>
-          <p style={{ margin: 0, color: colors.textMuted, fontSize: typography.fontSize.sm }}>
+          <h2 style={{ ...styles.heading }}>Custom Theme Editor</h2>
+          <p style={{ ...styles.textSmMuted, margin: 0 }}>
             Customize colors and see changes in the preview panel
           </p>
         </div>
@@ -422,7 +416,7 @@ function CustomThemeEditor({ onBack, onSave, existingTheme }) {
 
       {/* Theme name */}
       <Card style={{ marginBottom: spacing[4] }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
+        <div style={{ ...styles.flexCenter, gap: spacing[3] }}>
           <label style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>Theme Name:</label>
           <input
             type="text"
@@ -479,7 +473,7 @@ function CustomThemeEditor({ onBack, onSave, existingTheme }) {
           <ContrastChecker themeColors={themeColors} />
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: spacing[2], marginTop: spacing[4], justifyContent: 'space-between' }}>
+          <div style={{ ...styles.flexBetween, gap: spacing[2], marginTop: spacing[4] }}>
             <Button variant="secondary" onClick={handleReset} icon={RotateCcw}>Reset</Button>
             <Button onClick={handleSave} icon={Save} disabled={!hasChanges}>Save Theme</Button>
           </div>

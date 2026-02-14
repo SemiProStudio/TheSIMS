@@ -29,8 +29,7 @@ const ItemPreview = memo(function ItemPreview({ item, onRemove, onView, showRemo
   return (
     <div
       style={{
-        display: 'flex',
-        alignItems: 'center',
+        ...styles.flexCenter,
         gap: spacing[2],
         padding: spacing[2],
         background: colors.bgLight,
@@ -41,13 +40,11 @@ const ItemPreview = memo(function ItemPreview({ item, onRemove, onView, showRemo
       {/* Image */}
       <div
         style={{
+          ...styles.flexColCenter,
           width: 40,
           height: 40,
           borderRadius: borderRadius.sm,
           background: `${withOpacity(colors.primary, 15)}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           overflow: 'hidden',
           flexShrink: 0,
         }}
@@ -61,22 +58,17 @@ const ItemPreview = memo(function ItemPreview({ item, onRemove, onView, showRemo
 
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ 
-          fontSize: typography.fontSize.sm, 
-          color: colors.textPrimary,
-          fontWeight: typography.fontWeight.medium,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
+        <div style={{
+          ...styles.truncate,
+          ...styles.subheading,
+          fontSize: typography.fontSize.sm,
         }}>
           {item.name}
         </div>
-        <div style={{ 
-          fontSize: typography.fontSize.xs, 
-          color: colors.textMuted,
-          display: 'flex',
+        <div style={{
+          ...styles.textXsMuted,
+          ...styles.flexCenter,
           gap: spacing[1],
-          alignItems: 'center',
         }}>
           <span>{item.id}</span>
           <span>•</span>
@@ -85,7 +77,7 @@ const ItemPreview = memo(function ItemPreview({ item, onRemove, onView, showRemo
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: spacing[1] }}>
+      <div style={{ ...styles.flexCenter, gap: spacing[1] }}>
         {onView && (
           <button
             onClick={() => onView(item.id)}
@@ -166,8 +158,8 @@ const AddItemsPanel = memo(function AddItemsPanel({
       border: `1px solid ${withOpacity(colors.primary, 20)}`,
       marginBottom: spacing[4],
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[3] }}>
-        <h4 style={{ margin: 0, color: colors.textPrimary }}>Add Items to Kit</h4>
+      <div style={{ ...styles.flexBetween, marginBottom: spacing[3] }}>
+        <h4 style={styles.heading}>Add Items to Kit</h4>
         <button
           onClick={onClose}
           style={{ background: 'none', border: 'none', color: colors.textMuted, cursor: 'pointer' }}
@@ -206,11 +198,10 @@ const AddItemsPanel = memo(function AddItemsPanel({
               key={item.id}
               onClick={() => toggleSelect(item.id)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
+                ...styles.flexCenter,
+                ...styles.sectionDivider,
                 gap: spacing[2],
                 padding: spacing[2],
-                borderBottom: `1px solid ${colors.borderLight}`,
                 cursor: 'pointer',
                 background: selectedIds.includes(item.id) ? `${withOpacity(colors.primary, 15)}` : 'transparent',
               }}
@@ -225,7 +216,7 @@ const AddItemsPanel = memo(function AddItemsPanel({
                 <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
                   {item.name}
                 </div>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                <div style={styles.textXsMuted}>
                   {item.id} • {item.category}
                 </div>
               </div>
@@ -235,7 +226,7 @@ const AddItemsPanel = memo(function AddItemsPanel({
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
+      <div style={{ ...styles.flexCenter, gap: spacing[2], justifyContent: 'flex-end' }}>
         <Button variant="secondary" onClick={onClose} size="sm">Cancel</Button>
         <Button 
           onClick={handleAdd} 
@@ -318,30 +309,26 @@ function KitSection({
             marginBottom: spacing[3],
             border: `1px solid ${withOpacity(colors.accent2, 30)}`,
           }}>
-            <div style={{ 
-              fontSize: typography.fontSize.xs, 
-              color: colors.textMuted, 
+            <div style={{
+              ...styles.textXsMuted,
+              ...styles.flexCenter,
               marginBottom: spacing[1],
-              display: 'flex',
-              alignItems: 'center',
               gap: spacing[1],
             }}>
               <Link2 size={12} />
               Part of Kit
             </div>
-            <div 
+            <div
               onClick={() => onViewItem(parentKit.id)}
-              style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+              style={{
+                ...styles.flexCenter,
                 gap: spacing[2],
                 cursor: 'pointer',
               }}
             >
-              <span style={{ 
-                fontSize: typography.fontSize.sm, 
-                color: colors.textPrimary,
-                fontWeight: typography.fontWeight.medium,
+              <span style={{
+                ...styles.subheading,
+                fontSize: typography.fontSize.sm,
               }}>
                 {parentKit.name}
               </span>
@@ -356,34 +343,34 @@ function KitSection({
           <>
             {/* Kit info banner */}
             <div style={{
-              display: 'flex',
+              ...styles.flexCenter,
               gap: spacing[3],
               marginBottom: spacing[3],
               padding: spacing[3],
               background: withOpacity(getKitTypeColor(item.kitType), 10),
               borderRadius: borderRadius.md,
             }}>
-              <div style={{ textAlign: 'center', flex: 1 }}>
+              <div style={{ ...styles.textCenter, flex: 1 }}>
                 <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.textPrimary }}>
                   {childItems.length}
                 </div>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Items</div>
+                <div style={styles.textXsMuted}>Items</div>
               </div>
-              <div style={{ textAlign: 'center', flex: 1 }}>
+              <div style={{ ...styles.textCenter, flex: 1 }}>
                 <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.available }}>
                   {formatMoney(kitValue)}
                 </div>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Total Value</div>
+                <div style={styles.textXsMuted}>Total Value</div>
               </div>
-              <div style={{ textAlign: 'center', flex: 1 }}>
-                <div style={{ 
-                  fontSize: typography.fontSize.lg, 
-                  fontWeight: typography.fontWeight.bold, 
-                  color: allChildrenAvailable ? colors.available : colors.checkedOut 
+              <div style={{ ...styles.textCenter, flex: 1 }}>
+                <div style={{
+                  fontSize: typography.fontSize.lg,
+                  fontWeight: typography.fontWeight.bold,
+                  color: allChildrenAvailable ? colors.available : colors.checkedOut,
                 }}>
                   {allChildrenAvailable ? '✓' : '!'}
                 </div>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                <div style={styles.textXsMuted}>
                   {allChildrenAvailable ? 'Ready' : 'Partial'}
                 </div>
               </div>
@@ -392,8 +379,7 @@ function KitSection({
             {/* Warning if not all available */}
             {!allChildrenAvailable && (
               <div style={{
-                display: 'flex',
-                alignItems: 'center',
+                ...styles.flexCenter,
                 gap: spacing[2],
                 padding: spacing[2],
                 background: `${withOpacity(colors.checkedOut, 15)}`,
@@ -421,9 +407,9 @@ function KitSection({
             {/* Child items list */}
             <div style={{ maxHeight: 300, overflowY: 'auto' }}>
               {childItems.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: spacing[4], color: colors.textMuted }}>
+                <div style={{ ...styles.textCenter, padding: spacing[4], color: colors.textMuted }}>
                   <Package size={24} style={{ marginBottom: spacing[2], opacity: 0.3 }} />
-                  <p style={{ margin: 0, fontSize: typography.fontSize.sm }}>
+                  <p style={{ ...styles.textSmMuted, margin: 0 }}>
                     No items in this kit yet
                   </p>
                   <Button 
@@ -467,11 +453,11 @@ function KitSection({
 
         {/* Convert to kit button (if not already a kit and not part of another kit) */}
         {!item.isKit && !parentKit && (
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ color: colors.textMuted, fontSize: typography.fontSize.sm, marginBottom: spacing[3] }}>
+          <div style={styles.textCenter}>
+            <p style={{ ...styles.textSmMuted, marginBottom: spacing[3] }}>
               Convert this item to a kit to add child items that belong together.
             </p>
-            <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'center' }}>
+            <div style={{ ...styles.flexCenter, gap: spacing[2], justifyContent: 'center' }}>
               <Button 
                 variant="secondary" 
                 size="sm"

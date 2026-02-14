@@ -93,8 +93,7 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
         onClick={() => setIsOpen(!isOpen)}
         className="btn-secondary"
         style={{
-          display: 'flex',
-          alignItems: 'center',
+          ...styles.flexCenter,
           gap: spacing[2],
           cursor: 'pointer',
           minWidth: 140,
@@ -163,8 +162,7 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
                 <button
                   onClick={() => setShowSaveDialog(true)}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
+                    ...styles.flexCenter,
                     gap: spacing[2],
                     width: '100%',
                     padding: `${spacing[2]}px`,
@@ -192,8 +190,7 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
                   key={view.id}
                   className="list-item-hover"
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
+                    ...styles.flexCenter,
                     gap: spacing[2],
                     padding: `${spacing[2]}px ${spacing[2]}px`,
                     borderRadius: borderRadius.md,
@@ -214,9 +211,8 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
                     }}>
                       {view.name}
                     </div>
-                    <div style={{ 
-                      fontSize: typography.fontSize.xs, 
-                      color: colors.textMuted,
+                    <div style={{
+                      ...styles.textXsMuted,
                       marginTop: 2,
                     }}>
                       {[
@@ -233,14 +229,13 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
                     }}
                     className="hover-danger"
                     style={{
+                      ...styles.flexCenter,
                       background: 'none',
                       border: 'none',
                       padding: spacing[1],
                       cursor: 'pointer',
                       color: colors.textMuted,
                       borderRadius: borderRadius.sm,
-                      display: 'flex',
-                      alignItems: 'center',
                     }}
                     title="Delete view"
                   >
@@ -250,9 +245,9 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
               ))}
             </div>
           ) : (
-            <div style={{ 
-              padding: spacing[4], 
-              textAlign: 'center',
+            <div style={{
+              ...styles.textCenter,
+              padding: spacing[4],
               color: colors.textMuted,
               fontSize: typography.fontSize.sm,
             }}>
@@ -312,13 +307,10 @@ const GridItem = memo(function GridItem({ item, onViewItem, selectionMode, isSel
           />
         ) : (
           <div style={{
+            ...styles.flexColCenter,
             width: '100%',
             height: '100%',
             background: `${withOpacity(colors.primary, 10)}`,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
             color: colors.textMuted
           }}>
             <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -333,10 +325,9 @@ const GridItem = memo(function GridItem({ item, onViewItem, selectionMode, isSel
 
       {/* Info area - 40% height */}
       <div style={{
+        ...styles.flexCol,
         flex: 1,
         padding: spacing[3],
-        display: 'flex',
-        flexDirection: 'column',
         justifyContent: 'space-between'
       }}>
         <div>
@@ -350,20 +341,15 @@ const GridItem = memo(function GridItem({ item, onViewItem, selectionMode, isSel
             <Badge text={item.status} color={getStatusColor(item.status)} size="xs" />
           </div>
           <h4 style={{
+            ...styles.truncate,
             margin: 0,
             fontSize: typography.fontSize.sm,
             color: colors.textPrimary,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
           }}>
             {item.name}
           </h4>
         </div>
-        <div style={{
-          fontSize: typography.fontSize.xs,
-          color: colors.textMuted
-        }}>
+        <div style={styles.textXsMuted}>
           {item.brand}
         </div>
       </div>
@@ -377,10 +363,9 @@ const ListItem = memo(function ListItem({ item, onViewItem, selectionMode, isSel
     <Card
       onClick={() => selectionMode ? onToggleSelect(item.id) : onViewItem(item.id)}
       style={{
+        ...styles.flexCenter,
         cursor: 'pointer',
         padding: spacing[3],
-        display: 'flex',
-        alignItems: 'center',
         gap: spacing[3],
         outline: isSelected ? `2px solid ${colors.primary}` : 'none',
         outlineOffset: '-2px',
@@ -403,13 +388,11 @@ const ListItem = memo(function ListItem({ item, onViewItem, selectionMode, isSel
         />
       ) : (
         <div style={{
+          ...styles.flexColCenter,
           width: 56,
           height: 56,
           borderRadius: borderRadius.md,
           background: `${withOpacity(colors.primary, 10)}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           color: colors.textMuted,
           fontSize: typography.fontSize.xs
         }}>
@@ -426,16 +409,10 @@ const ListItem = memo(function ListItem({ item, onViewItem, selectionMode, isSel
           <Badge text={item.status} color={getStatusColor(item.status)} />
           <Badge text={item.category} color={colors.accent2} />
         </div>
-        <div style={{
-          fontWeight: typography.fontWeight.medium,
-          color: colors.textPrimary
-        }}>
+        <div style={styles.subheading}>
           {item.name}
         </div>
-        <div style={{
-          fontSize: typography.fontSize.sm,
-          color: colors.textMuted
-        }}>
+        <div style={styles.textSmMuted}>
           {item.brand}
         </div>
       </div>
@@ -456,8 +433,7 @@ const SelectionToolbar = memo(function SelectionToolbar({
 }) {
   return (
     <div style={{
-      display: 'flex',
-      alignItems: 'center',
+      ...styles.flexCenter,
       gap: spacing[3],
       padding: spacing[3],
       background: `${withOpacity(colors.primary, 15)}`,
@@ -466,11 +442,11 @@ const SelectionToolbar = memo(function SelectionToolbar({
       flexWrap: 'wrap',
     }}>
       {/* Select all checkbox */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-        <Checkbox 
-          checked={allSelected} 
+      <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
+        <Checkbox
+          checked={allSelected}
           indeterminate={someSelected && !allSelected}
-          onChange={() => allSelected ? onDeselectAll() : onSelectAll()} 
+          onChange={() => allSelected ? onDeselectAll() : onSelectAll()}
         />
         <span style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
           {selectedCount} of {totalCount} selected
@@ -690,7 +666,7 @@ function GearList({
         title="Gear List"
         subtitle={`${filteredItems.length} ${filteredItems.length === 1 ? 'item' : 'items'}${hasActiveFilters ? ' (filtered)' : ''}`}
         action={
-          <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[2], flexWrap: 'wrap' }}>
             {canEditGearList && (
               <Button onClick={onAddItem} icon={Plus}>
                 Add Item
@@ -733,12 +709,10 @@ function GearList({
 
       {/* Filters */}
       <div style={{
-        display: 'flex',
+        ...styles.flexBetween,
         gap: spacing[3],
         marginBottom: spacing[5],
         flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
       }}>
         {/* Search - left side */}
         <div style={{ minWidth: 200, maxWidth: 400, flex: '1 1 200px' }}>
@@ -751,7 +725,7 @@ function GearList({
         </div>
 
         {/* Right side controls */}
-        <div style={{ display: 'flex', gap: spacing[3], alignItems: 'center', flexWrap: 'wrap', marginLeft: 'auto' }}>
+        <div style={{ ...styles.flexCenter, gap: spacing[3], flexWrap: 'wrap', marginLeft: 'auto' }}>
           {/* Clear Filters Button */}
           {hasActiveFilters && (
             <button
@@ -860,7 +834,7 @@ function GearList({
         </div>
       ) : (
         /* List View */
-        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
+        <div style={{ ...styles.flexCol, gap: spacing[2] }}>
           {paginatedItems.map(item => (
             <ListItem 
               key={item.id} 
@@ -877,7 +851,7 @@ function GearList({
       {/* Empty State */}
       {filteredItems.length === 0 && (
         <div style={{
-          textAlign: 'center',
+          ...styles.textCenter,
           padding: spacing[10],
           color: colors.textMuted
         }}>
@@ -887,17 +861,15 @@ function GearList({
 
       {/* Pagination */}
       {filteredItems.length > 0 && (
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
+        <div style={{
+          ...styles.flexBetween,
           flexWrap: 'wrap',
           gap: spacing[3],
           marginTop: spacing[5],
         }}>
           {/* Page size selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-            <span style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>Show:</span>
+          <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
+            <span style={styles.textSmMuted}>Show:</span>
             <Select
               value={pageSize}
               onChange={e => setPageSize(parseInt(e.target.value, 10))}
@@ -905,7 +877,7 @@ function GearList({
               style={{ width: 80 }}
               aria-label="Items per page"
             />
-            <span style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>items</span>
+            <span style={styles.textSmMuted}>items</span>
           </div>
 
           <Pagination

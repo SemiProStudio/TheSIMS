@@ -39,8 +39,8 @@ function DepreciationCalculator({ item, onUpdateValue }) {
     return (
       <Card padding={false}>
         <CardHeader title="Depreciation" icon={TrendingDown} />
-        <div style={{ padding: spacing[4], textAlign: 'center', color: colors.textMuted }}>
-          <p style={{ margin: 0, fontSize: typography.fontSize.sm }}>
+        <div style={{ ...styles.textCenter, padding: spacing[4], color: colors.textMuted }}>
+          <p style={{ ...styles.textSmMuted, margin: 0 }}>
             Purchase price and date required to calculate depreciation.
           </p>
         </div>
@@ -146,24 +146,24 @@ function DepreciationCalculator({ item, onUpdateValue }) {
                 borderRadius: borderRadius.lg,
               }}
             >
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginBottom: spacing[1] }}>
+              <div style={styles.textCenter}>
+                <div style={{ ...styles.textXsMuted, marginBottom: spacing[1] }}>
                   Purchase Price
                 </div>
                 <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.textPrimary }}>
                   {formatMoney(item.purchasePrice)}
                 </div>
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginBottom: spacing[1] }}>
+              <div style={styles.textCenter}>
+                <div style={{ ...styles.textXsMuted, marginBottom: spacing[1] }}>
                   Calculated Value
                 </div>
                 <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.primary }}>
                   {formatMoney(depreciation.currentValue)}
                 </div>
               </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginBottom: spacing[1] }}>
+              <div style={styles.textCenter}>
+                <div style={{ ...styles.textXsMuted, marginBottom: spacing[1] }}>
                   Current Value
                 </div>
                 <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.bold, color: colors.available }}>
@@ -174,26 +174,26 @@ function DepreciationCalculator({ item, onUpdateValue }) {
 
             {/* Stats row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: spacing[2], marginBottom: spacing[4] }}>
-              <div style={{ padding: spacing[2], background: `${withOpacity(colors.danger, 10)}`, borderRadius: borderRadius.md, textAlign: 'center' }}>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Total Depreciation</div>
+              <div style={{ ...styles.textCenter, padding: spacing[2], background: `${withOpacity(colors.danger, 10)}`, borderRadius: borderRadius.md }}>
+                <div style={styles.textXsMuted}>Total Depreciation</div>
                 <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, color: colors.danger }}>
                   {formatMoney(depreciation.totalDepreciation)}
                 </div>
               </div>
-              <div style={{ padding: spacing[2], background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.md, textAlign: 'center' }}>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Annual</div>
+              <div style={{ ...styles.textCenter, padding: spacing[2], background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.md }}>
+                <div style={styles.textXsMuted}>Annual</div>
                 <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, color: colors.primary }}>
                   {formatMoney(depreciation.annualDepreciation)}
                 </div>
               </div>
-              <div style={{ padding: spacing[2], background: `${withOpacity(colors.accent1, 10)}`, borderRadius: borderRadius.md, textAlign: 'center' }}>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Age</div>
+              <div style={{ ...styles.textCenter, padding: spacing[2], background: `${withOpacity(colors.accent1, 10)}`, borderRadius: borderRadius.md }}>
+                <div style={styles.textXsMuted}>Age</div>
                 <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, color: colors.accent1 }}>
                   {depreciation.ageInYears.toFixed(1)} yrs
                 </div>
               </div>
-              <div style={{ padding: spacing[2], background: `${withOpacity(colors.accent2, 10)}`, borderRadius: borderRadius.md, textAlign: 'center' }}>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>% Depreciated</div>
+              <div style={{ ...styles.textCenter, padding: spacing[2], background: `${withOpacity(colors.accent2, 10)}`, borderRadius: borderRadius.md }}>
+                <div style={styles.textXsMuted}>% Depreciated</div>
                 <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, color: colors.accent2 }}>
                   {depreciation.percentDepreciated.toFixed(1)}%
                 </div>
@@ -202,9 +202,9 @@ function DepreciationCalculator({ item, onUpdateValue }) {
 
             {/* Depreciation bar */}
             <div style={{ marginBottom: spacing[4] }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[1] }}>
-                <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Depreciation Progress</span>
-                <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+              <div style={{ ...styles.flexBetween, marginBottom: spacing[1] }}>
+                <span style={styles.textXsMuted}>Depreciation Progress</span>
+                <span style={styles.textXsMuted}>
                   Salvage: {formatMoney(salvageValue)}
                 </span>
               </div>
@@ -245,10 +245,8 @@ function DepreciationCalculator({ item, onUpdateValue }) {
             <button
               onClick={() => setShowSchedule(!showSchedule)}
               style={{
+                ...styles.flexBetween,
                 width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
                 padding: spacing[2],
                 background: 'none',
                 border: `1px solid ${colors.borderLight}`,

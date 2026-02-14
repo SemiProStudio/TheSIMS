@@ -9,6 +9,36 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity } from '
 import { Button } from '../components/ui';
 import { Modal, ModalHeader } from './ModalBase';
 
+// ============================================================================
+// Module-level style constants
+// ============================================================================
+const dropZoneStyle = {
+  border: `2px dashed ${colors.border}`,
+  borderRadius: borderRadius.lg,
+  padding: spacing[6],
+  ...styles.textCenter,
+  cursor: 'pointer',
+  marginBottom: spacing[4],
+  transition: 'border-color 0.2s',
+} as const;
+
+const errorBannerStyle = {
+  background: `${withOpacity(colors.danger, 20)}`,
+  border: `1px solid ${withOpacity(colors.danger, 50)}`,
+  borderRadius: borderRadius.md,
+  padding: spacing[3],
+  marginBottom: spacing[4],
+  color: colors.danger,
+  fontSize: typography.fontSize.sm,
+  whiteSpace: 'pre-line' as const,
+} as const;
+
+const actionRowStyle = {
+  ...styles.flexCenter,
+  gap: spacing[3],
+  justifyContent: 'flex-end',
+} as const;
+
 interface CSVImportModalProps {
   categories: string[];
   specs?: Record<string, { name: string; required?: boolean }[]>;
@@ -282,15 +312,7 @@ export const CSVImportModal = memo<CSVImportModalProps>(function CSVImportModal(
         {/* File upload */}
         <div 
           onClick={() => fileInputRef.current?.click()}
-          style={{
-            border: `2px dashed ${colors.border}`,
-            borderRadius: borderRadius.lg,
-            padding: spacing[6],
-            textAlign: 'center',
-            cursor: 'pointer',
-            marginBottom: spacing[4],
-            transition: 'border-color 0.2s',
-          }}
+          style={dropZoneStyle}
         >
           <Upload size={32} color={colors.textMuted} style={{ marginBottom: spacing[2] }} />
           <p style={{ color: colors.textPrimary, margin: `0 0 ${spacing[1]}px` }}>
@@ -310,16 +332,7 @@ export const CSVImportModal = memo<CSVImportModalProps>(function CSVImportModal(
         
         {/* Error display */}
         {error && (
-          <div style={{
-            background: `${withOpacity(colors.danger, 20)}`,
-            border: `1px solid ${withOpacity(colors.danger, 50)}`,
-            borderRadius: borderRadius.md,
-            padding: spacing[3],
-            marginBottom: spacing[4],
-            color: colors.danger,
-            fontSize: typography.fontSize.sm,
-            whiteSpace: 'pre-line'
-          }}>
+          <div style={errorBannerStyle}>
             {error}
           </div>
         )}
@@ -370,9 +383,8 @@ export const CSVImportModal = memo<CSVImportModalProps>(function CSVImportModal(
               </table>
               {preview.rows.length > 5 && (
                 <p style={{
-                  color: colors.textMuted,
-                  fontSize: typography.fontSize.xs,
-                  textAlign: 'center',
+                  ...styles.textXsMuted,
+                  ...styles.textCenter,
                   padding: spacing[2],
                   margin: 0
                 }}>
@@ -384,7 +396,7 @@ export const CSVImportModal = memo<CSVImportModalProps>(function CSVImportModal(
         )}
         
         {/* Action buttons */}
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+        <div style={actionRowStyle}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button 
             onClick={handleImport} 

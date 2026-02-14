@@ -10,6 +10,48 @@ import { APP_FUNCTIONS, PERMISSION_LEVELS } from '../constants';
 import { Button, Card, Badge } from '../components/ui';
 import { generateId } from '../utils';
 
+// Module-level style constants
+const shieldIconStyle = {
+  width: 40,
+  height: 40,
+  borderRadius: borderRadius.lg,
+  background: `${withOpacity(colors.primary, 15)}`,
+  ...styles.flexColCenter,
+  color: colors.primary,
+};
+
+const closeBtnStyle = {
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  color: colors.textMuted,
+  padding: spacing[1],
+};
+
+const actionRowStyle = {
+  display: 'flex',
+  gap: spacing[3],
+  justifyContent: 'flex-end',
+};
+
+const modalBackdropStyle = {
+  position: 'fixed' as const,
+  inset: 0,
+  background: 'rgba(0,0,0,0.5)',
+  ...styles.flexColCenter,
+  zIndex: zIndex.modal,
+};
+
+const modalBoxStyle = {
+  background: colors.bgLight,
+  borderRadius: borderRadius.xl,
+  width: '100%',
+  maxWidth: 500,
+  maxHeight: '80vh',
+  overflow: 'hidden',
+  ...styles.flexCol,
+};
+
 // Permission level badge colors
 const getPermissionColor = (level) => {
   switch (level) {
@@ -74,24 +116,18 @@ const FunctionPermissionRow = memo(function FunctionPermissionRow({
 }) {
   return (
     <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      ...styles.flexBetween,
       padding: `${spacing[2]}px ${spacing[3]}px`,
       borderBottom: `1px solid ${colors.border}`,
     }}>
       <div style={{ flex: 1 }}>
-        <div style={{ 
-          fontWeight: typography.fontWeight.medium, 
-          color: colors.textPrimary,
+        <div style={{
+          ...styles.subheading,
           fontSize: typography.fontSize.sm,
         }}>
           {func.name}
         </div>
-        <div style={{ 
-          fontSize: typography.fontSize.xs, 
-          color: colors.textMuted,
-        }}>
+        <div style={styles.textXsMuted}>
           {func.description}
         </div>
       </div>
@@ -122,26 +158,18 @@ const RoleCard = memo(function RoleCard({ role, onEdit, onDelete, onAssign, user
   return (
     <Card style={{ marginBottom: spacing[3] }}>
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        ...styles.flexBetween,
         padding: spacing[3],
       }}>
         {/* Left side: Expand button + Icon + Info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
+        <div style={{ ...styles.flexCenter, gap: spacing[3] }}>
           {/* Expand/Collapse button - far left */}
           <button
             onClick={() => setExpanded(!expanded)}
             className="role-btn"
             style={{
-              background: 'none',
-              border: 'none',
-              padding: spacing[1],
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: colors.textMuted,
+              ...closeBtnStyle,
+              ...styles.flexColCenter,
               borderRadius: borderRadius.md,
             }}
             title={expanded ? "Collapse permissions" : "Expand permissions"}
@@ -150,46 +178,26 @@ const RoleCard = memo(function RoleCard({ role, onEdit, onDelete, onAssign, user
           </button>
           
           {/* Shield icon */}
-          <div style={{
-            width: 40,
-            height: 40,
-            borderRadius: borderRadius.lg,
-            background: `${withOpacity(colors.primary, 15)}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: colors.primary,
-          }}>
+          <div style={shieldIconStyle}>
             <Shield size={20} />
           </div>
           
           {/* Role info */}
           <div>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: spacing[2],
-            }}>
-              <span style={{ 
-                fontWeight: typography.fontWeight.semibold, 
-                color: colors.textPrimary,
-              }}>
+            <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
+              <span style={styles.heading}>
                 {role.name}
               </span>
               {role.isSystem && (
                 <Badge text="System" color={colors.textMuted} size="xs" />
               )}
             </div>
-            <div style={{ 
-              fontSize: typography.fontSize.sm, 
-              color: colors.textMuted,
-              marginTop: 2,
-            }}>
+            <div style={{ ...styles.textSmMuted, marginTop: 2 }}>
               {role.description}
             </div>
-            <div style={{ 
-              display: 'flex', 
-              gap: spacing[2], 
+            <div style={{
+              display: 'flex',
+              gap: spacing[2],
               marginTop: spacing[1],
               fontSize: typography.fontSize.xs,
             }}>
@@ -210,7 +218,7 @@ const RoleCard = memo(function RoleCard({ role, onEdit, onDelete, onAssign, user
         </div>
         
         {/* Right side: Action buttons only */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+        <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
           <Button size="sm" variant="secondary" onClick={() => onAssign(role)} icon={Users}>
             Assign
           </Button>
@@ -242,9 +250,7 @@ const RoleCard = memo(function RoleCard({ role, onEdit, onDelete, onAssign, user
                 <div 
                   key={func.id}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
+                    ...styles.flexBetween,
                     padding: `${spacing[1]}px ${spacing[2]}px`,
                     background: colors.bgLight,
                     borderRadius: borderRadius.md,
@@ -257,8 +263,7 @@ const RoleCard = memo(function RoleCard({ role, onEdit, onDelete, onAssign, user
                     {func.name}
                   </span>
                   <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
+                    ...styles.flexCenter,
                     gap: spacing[1],
                     color: getPermissionColor(permission),
                     fontSize: typography.fontSize.xs,
@@ -324,24 +329,13 @@ const RoleEditor = memo(function RoleEditor({ role, onSave, onCancel }) {
   return (
     <div>
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        ...styles.flexBetween,
         marginBottom: spacing[4],
       }}>
-        <h3 style={{ margin: 0, color: colors.textPrimary }}>
+        <h3 style={{ ...styles.heading, margin: 0 }}>
           {isEdit ? 'Edit Role' : 'Create New Role'}
         </h3>
-        <button
-          onClick={onCancel}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: colors.textMuted,
-            padding: spacing[1],
-          }}
-        >
+        <button onClick={onCancel} style={closeBtnStyle}>
           <X size={20} />
         </button>
       </div>
@@ -365,9 +359,8 @@ const RoleEditor = memo(function RoleEditor({ role, onSave, onCancel }) {
             }}
           />
           {isSystem && (
-            <p style={{ 
-              fontSize: typography.fontSize.xs, 
-              color: colors.textMuted,
+            <p style={{
+              ...styles.textXsMuted,
               margin: `${spacing[1]}px 0 0`,
             }}>
               System role names cannot be changed
@@ -387,16 +380,15 @@ const RoleEditor = memo(function RoleEditor({ role, onSave, onCancel }) {
       </div>
 
       {/* Quick Set Buttons */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
+      <div style={{
+        ...styles.flexCenter,
         gap: spacing[2],
         marginBottom: spacing[3],
         padding: spacing[2],
         background: colors.bgDark,
         borderRadius: borderRadius.md,
       }}>
-        <span style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
+        <span style={styles.textSmMuted}>
           Quick set all:
         </span>
         <Button size="sm" variant="secondary" onClick={() => setAllPermissions(PERMISSION_LEVELS.EDIT)}>
@@ -451,7 +443,7 @@ const RoleEditor = memo(function RoleEditor({ role, onSave, onCancel }) {
       </div>
 
       {/* Action Buttons */}
-      <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+      <div style={actionRowStyle}>
         <Button variant="secondary" onClick={onCancel}>Cancel</Button>
         <Button onClick={handleSave} disabled={!name.trim()} icon={Save}>
           {isEdit ? 'Save Changes' : 'Create Role'}
@@ -485,31 +477,12 @@ const UserAssignmentModal = memo(function UserAssignmentModal({ role, users = []
   };
 
   return (
-    <div className="modal-backdrop" style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: zIndex.modal,
-    }}>
-      <div style={{
-        background: colors.bgLight,
-        borderRadius: borderRadius.xl,
-        width: '100%',
-        maxWidth: 500,
-        maxHeight: '80vh',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
+    <div className="modal-backdrop" style={modalBackdropStyle}>
+      <div style={modalBoxStyle}>
         <div style={{
+          ...styles.flexBetween,
           padding: spacing[4],
           borderBottom: `1px solid ${colors.border}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
         }}>
           <div>
             <h3 style={{ margin: 0, color: colors.textPrimary }}>Assign Users to Role</h3>
@@ -517,28 +490,18 @@ const UserAssignmentModal = memo(function UserAssignmentModal({ role, users = []
               {role.name}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: colors.textMuted,
-              padding: spacing[1],
-            }}
-          >
+          <button onClick={onClose} style={closeBtnStyle}>
             <X size={20} />
           </button>
         </div>
-        
+
         <div style={{ flex: 1, overflowY: 'auto', padding: spacing[3] }}>
           {(users || []).map(user => (
             <label
               key={user.id}
               className="list-item-hover"
               style={{
-                display: 'flex',
-                alignItems: 'center',
+                ...styles.flexCenter,
                 gap: spacing[3],
                 padding: spacing[2],
                 borderRadius: borderRadius.md,
@@ -552,12 +515,8 @@ const UserAssignmentModal = memo(function UserAssignmentModal({ role, users = []
                 style={{ width: 18, height: 18 }}
               />
               <div>
-                <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
-                  {user.name}
-                </div>
-                <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
-                  {user.email}
-                </div>
+                <div style={styles.subheading}>{user.name}</div>
+                <div style={styles.textSmMuted}>{user.email}</div>
               </div>
             </label>
           ))}
@@ -566,9 +525,7 @@ const UserAssignmentModal = memo(function UserAssignmentModal({ role, users = []
         <div style={{
           padding: spacing[4],
           borderTop: `1px solid ${colors.border}`,
-          display: 'flex',
-          gap: spacing[3],
-          justifyContent: 'flex-end',
+          ...actionRowStyle,
         }}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} icon={Save}>Save Assignments</Button>
@@ -627,8 +584,7 @@ function RolesManager({ roles = [], users = [], onSaveRole, onDeleteRole, onAssi
     <>
       {/* Header */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
+        ...styles.flexBetween,
         alignItems: 'flex-start',
         marginBottom: spacing[6],
       }}>
@@ -645,28 +601,26 @@ function RolesManager({ roles = [], users = [], onSaveRole, onDeleteRole, onAssi
 
       {/* Permission Legend */}
       <Card style={{ marginBottom: spacing[4], padding: spacing[3] }}>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          ...styles.flexCenter,
           gap: spacing[4],
           flexWrap: 'wrap',
         }}>
-          <span style={{ 
-            fontWeight: typography.fontWeight.medium, 
-            color: colors.textPrimary,
+          <span style={{
+            ...styles.subheading,
             fontSize: typography.fontSize.sm,
           }}>
             Permission Levels:
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1], color: colors.success }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[1], color: colors.success }}>
             <Pencil size={14} />
             <span style={{ fontSize: typography.fontSize.sm }}>Edit - Full access to view and modify</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1], color: colors.primary }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[1], color: colors.primary }}>
             <Eye size={14} />
             <span style={{ fontSize: typography.fontSize.sm }}>View - Read-only access</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1], color: colors.textMuted }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[1], color: colors.textMuted }}>
             <EyeOff size={14} />
             <span style={{ fontSize: typography.fontSize.sm }}>Hide - No access, hidden from navigation</span>
           </div>

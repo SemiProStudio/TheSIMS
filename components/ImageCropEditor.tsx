@@ -5,12 +5,21 @@
 
 import { memo, useState, useRef, useCallback, useEffect } from 'react';
 import { ZoomIn, ZoomOut, RotateCcw, Check, X } from 'lucide-react';
-import { colors, spacing, typography } from '../theme';
+import { colors, styles, spacing, typography } from '../theme';
 import { Button } from './ui';
 
 // ============================================================================
 // Constants
 // ============================================================================
+const zoomBtnStyle = {
+  background: 'none',
+  border: 'none',
+  color: colors.textMuted,
+  cursor: 'pointer',
+  padding: spacing[1],
+  display: 'flex',
+};
+
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 5;
 const ZOOM_STEP = 0.1;
@@ -250,10 +259,9 @@ const ImageCropEditor = memo<ImageCropEditorProps>(function ImageCropEditor({
   return (
     <div style={{ padding: spacing[4] }}>
       {/* Title */}
-      <div style={{ 
-        marginBottom: spacing[3], 
-        fontWeight: typography.fontWeight.medium, 
-        color: colors.textPrimary,
+      <div style={{
+        ...styles.subheading,
+        marginBottom: spacing[3],
         fontSize: typography.fontSize.base,
       }}>
         {title}
@@ -308,8 +316,7 @@ const ImageCropEditor = memo<ImageCropEditorProps>(function ImageCropEditor({
 
       {/* Zoom slider & controls */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
+        ...styles.flexCenter,
         gap: spacing[2],
         marginTop: spacing[3],
         maxWidth: 300,
@@ -317,14 +324,7 @@ const ImageCropEditor = memo<ImageCropEditorProps>(function ImageCropEditor({
       }}>
         <button
           onClick={zoomOut}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: colors.textMuted,
-            cursor: 'pointer',
-            padding: spacing[1],
-            display: 'flex',
-          }}
+          style={zoomBtnStyle}
           title="Zoom out"
         >
           <ZoomOut size={18} />
@@ -345,14 +345,7 @@ const ImageCropEditor = memo<ImageCropEditorProps>(function ImageCropEditor({
 
         <button
           onClick={zoomIn}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: colors.textMuted,
-            cursor: 'pointer',
-            padding: spacing[1],
-            display: 'flex',
-          }}
+          style={zoomBtnStyle}
           title="Zoom in"
         >
           <ZoomIn size={18} />
@@ -360,14 +353,7 @@ const ImageCropEditor = memo<ImageCropEditorProps>(function ImageCropEditor({
 
         <button
           onClick={resetView}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: colors.textMuted,
-            cursor: 'pointer',
-            padding: spacing[1],
-            display: 'flex',
-          }}
+          style={zoomBtnStyle}
           title="Reset view"
         >
           <RotateCcw size={16} />
@@ -376,9 +362,8 @@ const ImageCropEditor = memo<ImageCropEditorProps>(function ImageCropEditor({
 
       {/* Hint text */}
       <div style={{
-        textAlign: 'center',
-        fontSize: typography.fontSize.xs,
-        color: colors.textMuted,
+        ...styles.textCenter,
+        ...styles.textXsMuted,
         marginTop: spacing[2],
       }}>
         Drag to reposition · Scroll to zoom
@@ -386,7 +371,7 @@ const ImageCropEditor = memo<ImageCropEditorProps>(function ImageCropEditor({
 
       {/* Action buttons */}
       <div style={{
-        display: 'flex',
+        ...styles.flexCenter,
         gap: spacing[3],
         justifyContent: 'center',
         marginTop: spacing[4],

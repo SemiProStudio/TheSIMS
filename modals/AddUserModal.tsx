@@ -10,6 +10,15 @@ import { Button } from '../components/ui';
 import { Select } from '../components/Select';
 import { Modal, ModalHeader } from './ModalBase';
 
+// ============================================================================
+// Module-level style constants
+// ============================================================================
+const actionRowStyle = {
+  ...styles.flexCenter,
+  gap: spacing[3],
+  justifyContent: 'flex-end',
+} as const;
+
 interface AddUserModalProps {
   onSave: (user: Record<string, any>) => void;
   onClose: () => void;
@@ -109,7 +118,7 @@ export const AddUserModal = memo<AddUserModalProps>(function AddUserModal({ onSa
           />
         </div>
         
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+        <div style={actionRowStyle}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} icon={Plus}>Add User</Button>
         </div>

@@ -84,25 +84,20 @@ export const Pagination = memo<PaginationProps>(function Pagination({
 
   return (
     <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      ...styles.flexBetween,
       marginTop: spacing[5],
       paddingTop: spacing[4],
       borderTop: `1px solid ${colors.borderLight}`,
     }}>
       {/* Item count */}
       {showItemCount && (
-        <div style={{ 
-          fontSize: typography.fontSize.sm, 
-          color: colors.textMuted 
-        }}>
+        <div style={styles.textSmMuted}>
           Showing {startItem}-{endItem} of {totalItems} items
         </div>
       )}
 
       {/* Page navigation */}
-      <div style={{ display: 'flex', gap: spacing[1], alignItems: 'center' }}>
+      <div style={{ ...styles.flexCenter, gap: spacing[1] }}>
         {/* Previous button */}
         <button
           onClick={() => onPageChange(page - 1)}

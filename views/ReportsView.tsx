@@ -3,6 +3,7 @@
 // Overview of inventory, clients, and activity with navigation to detailed reports
 // ============================================================================
 
+import type { CSSProperties } from 'react';
 import { memo, useMemo } from 'react';
 
 import { Download, Package, BarChart3, AlertTriangle, Wrench, DollarSign, Building2, Eye } from 'lucide-react';
@@ -28,6 +29,8 @@ interface ReportsPanelProps {
   onBack: () => void;
   setCurrentView: (view: string) => void;
 }
+
+const buttonRowStyle: CSSProperties = { display: 'flex', gap: spacing[2] };
 
 export const ReportsPanel = memo<ReportsPanelProps>(function ReportsPanel({
   inventory,
@@ -69,8 +72,6 @@ export const ReportsPanel = memo<ReportsPanelProps>(function ReportsPanel({
     pending: inventory.reduce((sum, i) => sum + (i.maintenanceHistory?.filter(m => m.status === 'scheduled' || m.status === 'in-progress').length || 0), 0),
   }), [inventory]);
 
-  const buttonRowStyle = { display: 'flex', gap: spacing[2] };
-  
   return (
     <>
       <PageHeader 

@@ -5,7 +5,7 @@
 
 import { memo, useRef, useEffect } from 'react';
 import { Download } from 'lucide-react';
-import { colors, spacing, borderRadius } from '../theme';
+import { colors, styles, spacing, borderRadius } from '../theme';
 import { Badge, Button } from '../components/ui';
 import { Modal, ModalHeader } from './ModalBase';
 
@@ -133,7 +133,7 @@ export const QRModal = memo<QRModalProps>(function QRModal({ item, onClose }) {
   return (
     <Modal onClose={onClose} maxWidth={350}>
       <ModalHeader title="QR Code" onClose={onClose} />
-      <div style={{ padding: spacing[6], textAlign: 'center' }}>
+      <div style={{ padding: spacing[6], ...styles.textCenter }}>
         <div style={{ 
           marginBottom: spacing[4], 
           display: 'inline-block',

@@ -114,7 +114,7 @@ function ScheduleView({
         onBack={isDay && scheduleMode === SCHEDULE_MODES.CALENDAR ? goToMonthView : undefined}
         backLabel="Month"
         action={
-          <div style={{ display: 'flex', gap: spacing[3], alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[3], flexWrap: 'wrap' }}>
             {/* New Reservation Button */}
             {onAddReservation && (
               <Button onClick={onAddReservation} icon={Plus} style={{ marginRight: spacing[2] }}>New</Button>
@@ -173,7 +173,7 @@ function ScheduleView({
             </div>
 
             {/* Navigation */}
-            <div style={{ display: 'flex', gap: spacing[1], alignItems: 'center' }}>
+            <div style={{ ...styles.flexCenter, gap: spacing[1] }}>
               <Button variant="secondary" onClick={() => navigate(-1)} icon={ArrowLeft} style={{ padding: '12px 14px' }} />
               <DatePicker 
                 value={scheduleDate} 
@@ -192,15 +192,15 @@ function ScheduleView({
       {/* List View */}
       {scheduleMode === SCHEDULE_MODES.LIST && (
         <Card padding={false}>
-          <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ ...styles.flexBetween, padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
             <strong style={{ color: colors.textPrimary }}>Reservations</strong>
-            <span style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>{filteredReservations.length} in this period</span>
+            <span style={styles.textSmMuted}>{filteredReservations.length} in this period</span>
           </div>
           <div style={{ maxHeight: 'calc(100vh - 280px)', overflowY: 'auto' }}>
             {filteredReservations.length === 0 ? (
-              <div style={{ padding: spacing[10], textAlign: 'center', color: colors.textMuted }}>No reservations in this period</div>
+              <div style={{ ...styles.textCenter, padding: spacing[10], color: colors.textMuted }}>No reservations in this period</div>
             ) : filteredReservations.map((r, idx) => (
-              <div key={`${r.project}-${r.start}-${idx}`} onClick={() => onViewReservation(r, r.items[0])} style={{ display: 'flex', alignItems: 'center', gap: spacing[4], padding: `${spacing[4]}px ${spacing[4]}px`, borderBottom: `1px solid ${colors.borderLight}`, cursor: 'pointer' }}>
+              <div key={`${r.project}-${r.start}-${idx}`} onClick={() => onViewReservation(r, r.items[0])} style={{ ...styles.flexCenter, gap: spacing[4], padding: `${spacing[4]}px ${spacing[4]}px`, borderBottom: `1px solid ${colors.borderLight}`, cursor: 'pointer' }}>
                 {/* Show stacked images for multi-item reservations */}
                 <div style={{ position: 'relative', width: 50, height: 50, flexShrink: 0 }}>
                   {r.items.slice(0, Math.min(3, r.itemCount)).map((itm, i) => (
@@ -213,7 +213,7 @@ function ScheduleView({
                       {itm.image ? (
                         <img src={itm.image} alt="" style={{ width: 46 - i * 4, height: 46 - i * 4, borderRadius: borderRadius.md, objectFit: 'cover', border: `2px solid ${colors.bgMedium}` }} />
                       ) : (
-                        <div style={{ width: 46 - i * 4, height: 46 - i * 4, borderRadius: borderRadius.md, background: withOpacity(colors.primary, 15), display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textMuted, border: `2px solid ${colors.bgMedium}` }}>
+                        <div style={{ ...styles.flexColCenter, width: 46 - i * 4, height: 46 - i * 4, borderRadius: borderRadius.md, background: withOpacity(colors.primary, 15), color: colors.textMuted, border: `2px solid ${colors.bgMedium}` }}>
                           <Package size={14} />
                         </div>
                       )}
@@ -221,7 +221,7 @@ function ScheduleView({
                   ))}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[1], flexWrap: 'wrap' }}>
+                  <div style={{ ...styles.flexWrap, gap: spacing[2], marginBottom: spacing[1] }}>
                     {r.itemCount > 1 ? (
                       <Badge text={`${r.itemCount} items`} color={colors.primary} />
                     ) : (
@@ -229,8 +229,8 @@ function ScheduleView({
                     )}
                     <Badge text={r.projectType || 'Project'} color={colors.accent2} />
                   </div>
-                  <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, marginBottom: spacing[1] }}>{r.project}</div>
-                  <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
+                  <div style={{ ...styles.subheading, marginBottom: spacing[1] }}>{r.project}</div>
+                  <div style={styles.textSmMuted}>
                     {r.itemCount > 1 
                       ? `${r.items[0]?.name || 'Unknown'}${r.itemCount > 1 ? ` + ${r.itemCount - 1} more` : ''}`
                       : `${r.items[0]?.name || 'Unknown'} • ${r.user}`
@@ -238,8 +238,8 @@ function ScheduleView({
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1], fontSize: typography.fontSize.sm, color: colors.primary, marginBottom: spacing[1] }}><Clock size={12} />{formatDate(r.start)} - {formatDate(r.end)}</div>
-                  {r.location && <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1], fontSize: typography.fontSize.xs, color: colors.textMuted }}><MapPin size={10} />{r.location.substring(0, 25)}{r.location.length > 25 ? '...' : ''}</div>}
+                  <div style={{ ...styles.flexCenter, gap: spacing[1], fontSize: typography.fontSize.sm, color: colors.primary, marginBottom: spacing[1] }}><Clock size={12} />{formatDate(r.start)} - {formatDate(r.end)}</div>
+                  {r.location && <div style={{ ...styles.flexCenter, gap: spacing[1], fontSize: typography.fontSize.xs, color: colors.textMuted }}><MapPin size={10} />{r.location.substring(0, 25)}{r.location.length > 25 ? '...' : ''}</div>}
                 </div>
               </div>
             ))}
@@ -287,12 +287,10 @@ function ScheduleView({
               }}>
                 <div 
                   onClick={handleDateClick}
-                  style={{ 
-                    padding: isMonth ? `${spacing[1]}px ${spacing[2]}px` : `${spacing[2]}px ${spacing[3]}px`, 
-                    borderBottom: `1px solid ${colors.borderLight}`, 
-                    display: 'flex', 
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                  style={{
+                    ...styles.flexBetween,
+                    padding: isMonth ? `${spacing[1]}px ${spacing[2]}px` : `${spacing[2]}px ${spacing[3]}px`,
+                    borderBottom: `1px solid ${colors.borderLight}`,
                     background: isToday ? `${withOpacity(colors.primary, 15)}` : undefined,
                     cursor: isMonth ? 'pointer' : 'default',
                     transition: 'background 150ms ease',
@@ -300,7 +298,7 @@ function ScheduleView({
                   onMouseEnter={isMonth ? (e) => { if (!isToday) e.currentTarget.style.background = `${withOpacity(colors.primary, 10)}`; } : undefined}
                   onMouseLeave={isMonth ? (e) => { if (!isToday) e.currentTarget.style.background = 'transparent'; } : undefined}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                  <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
                     <span style={{ fontSize: isMonth ? typography.fontSize.xs : typography.fontSize.base, fontWeight: typography.fontWeight.semibold, color: isToday ? colors.primary : colors.textPrimary }}>{dt.toLocaleDateString('en-US', { weekday: isMonth ? 'short' : 'long' })}</span>
                     <span style={{ fontSize: isMonth ? typography.fontSize.sm : typography.fontSize.base, color: isToday ? colors.primary : colors.textMuted }}>{dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                   </div>
@@ -334,23 +332,19 @@ function ScheduleView({
                         overflow: 'hidden',
                       }}
                     >
-                      <div style={{ 
-                        fontSize: isMonth ? typography.fontSize.xs : typography.fontSize.sm, 
-                        fontWeight: typography.fontWeight.medium, 
-                        color: colors.textPrimary, 
-                        overflow: 'hidden', 
-                        textOverflow: 'ellipsis', 
-                        whiteSpace: 'nowrap',
+                      <div style={{
+                        ...styles.truncate,
+                        fontSize: isMonth ? typography.fontSize.xs : typography.fontSize.sm,
+                        fontWeight: typography.fontWeight.medium,
+                        color: colors.textPrimary,
                       }}>
                         {e.itemCount > 1 ? `${e.itemCount} items` : e.items[0]?.name}
                       </div>
                       {!isMonth && (
-                        <div style={{ 
-                          fontSize: typography.fontSize.xs, 
+                        <div style={{
+                          ...styles.truncate,
+                          fontSize: typography.fontSize.xs,
                           color: colors.primary,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
                         }}>
                           {e.project}
                         </div>

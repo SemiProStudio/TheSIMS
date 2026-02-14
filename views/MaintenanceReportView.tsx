@@ -6,7 +6,7 @@
 import { memo, useMemo } from 'react';
 
 import { Wrench, Clock, AlertTriangle, DollarSign, Building2 } from 'lucide-react';
-import { colors, spacing, borderRadius, typography } from '../theme';
+import { colors, styles, spacing, borderRadius, typography } from '../theme';
 import { formatDate, formatMoney } from '../utils';
 import { Badge, Card, CardHeader, StatCard, PageHeader } from '../components/ui';
 
@@ -143,11 +143,11 @@ export const MaintenanceReportPanel = memo<MaintenanceReportPanelProps>(function
         const hasContent = Object.entries(sf).some(([k, v]) => v && p[k]);
         if (!hasContent) return null;
         return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4], padding: spacing[3], marginBottom: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[4], padding: spacing[3], marginBottom: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
             {sf.logo && p.logo && <img src={p.logo} alt="" style={{ height: 36, objectFit: 'contain' }} />}
             <div>
               {sf.businessName && p.businessName && <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.textPrimary }}>{p.businessName}</div>}
-              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
+              <div style={{ ...styles.textXsMuted, display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
                 {sf.displayName && p.displayName && <span>{p.displayName}</span>}
                 {sf.phone && p.phone && <span>{p.phone}</span>}
                 {sf.email && p.email && <span>{p.email}</span>}
@@ -168,11 +168,11 @@ export const MaintenanceReportPanel = memo<MaintenanceReportPanelProps>(function
 
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Main Records List */}
-        <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 320px)' }}>
+        <Card padding={false} style={{ ...styles.flexCol, maxHeight: 'calc(100vh - 320px)' }}>
           <CardHeader title="All Maintenance Records" icon={Wrench} />
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 200 }}>
             {sortedRecords.length === 0 ? (
-              <div style={{ padding: spacing[6], textAlign: 'center', color: colors.textMuted }}>
+              <div style={{ ...styles.textCenter, padding: spacing[6], color: colors.textMuted }}>
                 <Wrench size={32} style={{ marginBottom: spacing[2], opacity: 0.3 }} />
                 <p style={{ margin: 0 }}>No maintenance records found</p>
               </div>
@@ -187,26 +187,26 @@ export const MaintenanceReportPanel = memo<MaintenanceReportPanelProps>(function
                   }}
                   onClick={() => onViewItem(record.itemId)}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing[2] }}>
-                    <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
+                  <div style={{ ...styles.flexBetween, alignItems: 'flex-start', marginBottom: spacing[2] }}>
+                    <div style={{ ...styles.flexWrap, gap: spacing[2] }}>
                       <Badge text={record.type} color={getStatusColor(record.status)} size="xs" />
                       <Badge text={formatStatus(record.status)} color={getStatusColor(record.status)} size="xs" />
                       {record.warrantyWork && <Badge text="Warranty" color={colors.available} size="xs" />}
                     </div>
                     {record.cost > 0 && (
-                      <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
+                      <span style={{ ...styles.subheading, fontSize: typography.fontSize.sm }}>
                         {formatMoney(record.cost)}
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary, fontWeight: typography.fontWeight.medium }}>
+                  <div style={{ ...styles.subheading, fontSize: typography.fontSize.sm }}>
                     {record.description}
                   </div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: spacing[1] }}>
+                  <div style={{ ...styles.textXsMuted, marginTop: spacing[1] }}>
                     {record.itemName} ({record.itemId})
                     {record.vendor && ` • ${record.vendor}`}
                   </div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                  <div style={styles.textXsMuted}>
                     {record.status === 'completed' && record.completedDate
                       ? `Completed ${formatDate(record.completedDate)}`
                       : record.scheduledDate
@@ -220,20 +220,20 @@ export const MaintenanceReportPanel = memo<MaintenanceReportPanelProps>(function
         </Card>
 
         {/* Sidebar Stats */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
+        <div style={{ ...styles.flexCol, gap: spacing[4] }}>
           {/* By Type */}
           <Card padding={false}>
             <CardHeader title="By Type" />
             <div style={{ padding: spacing[4] }}>
               {Object.entries(stats.byType).length === 0 ? (
-                <p style={{ color: colors.textMuted, textAlign: 'center', margin: 0, fontSize: typography.fontSize.sm }}>No data</p>
+                <p style={{ ...styles.textCenter, color: colors.textMuted, margin: 0, fontSize: typography.fontSize.sm }}>No data</p>
               ) : (
                 Object.entries(stats.byType)
                   .sort((a, b) => b[1] - a[1])
                   .map(([type, count]) => (
-                    <div key={type} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
+                    <div key={type} style={{ ...styles.flexBetween, marginBottom: spacing[2] }}>
                       <span style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>{type}</span>
-                      <span style={{ color: colors.textPrimary, fontWeight: typography.fontWeight.medium, fontSize: typography.fontSize.sm }}>{count}</span>
+                      <span style={{ ...styles.subheading, fontSize: typography.fontSize.sm }}>{count}</span>
                     </div>
                   ))
               )}
@@ -245,12 +245,12 @@ export const MaintenanceReportPanel = memo<MaintenanceReportPanelProps>(function
             <CardHeader title="Top Vendors by Cost" icon={Building2} />
             <div style={{ padding: spacing[4] }}>
               {stats.topVendors.length === 0 ? (
-                <p style={{ color: colors.textMuted, textAlign: 'center', margin: 0, fontSize: typography.fontSize.sm }}>No vendor data</p>
+                <p style={{ ...styles.textCenter, color: colors.textMuted, margin: 0, fontSize: typography.fontSize.sm }}>No vendor data</p>
               ) : (
                 stats.topVendors.map(([vendor, cost]) => (
-                  <div key={vendor} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
-                    <span style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{vendor}</span>
-                    <span style={{ color: colors.textPrimary, fontWeight: typography.fontWeight.medium, fontSize: typography.fontSize.sm }}>{formatMoney(cost)}</span>
+                  <div key={vendor} style={{ ...styles.flexBetween, marginBottom: spacing[2] }}>
+                    <span style={{ ...styles.truncate, color: colors.textSecondary, fontSize: typography.fontSize.sm, maxWidth: 150 }}>{vendor}</span>
+                    <span style={{ ...styles.subheading, fontSize: typography.fontSize.sm }}>{formatMoney(cost)}</span>
                   </div>
                 ))
               )}

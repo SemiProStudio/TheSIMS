@@ -60,8 +60,7 @@ export const ConfirmDialog = memo<ConfirmDialogProps>(function ConfirmDialog({
         position: 'fixed',
         inset: 0,
         background: 'rgba(0,0,0,0.7)',
-        display: 'flex',
-        alignItems: 'center',
+        ...styles.flexCenter,
         justifyContent: 'center',
         zIndex: 1000
       }} 
@@ -109,8 +108,8 @@ export const ConfirmDialog = memo<ConfirmDialogProps>(function ConfirmDialog({
             {message}
           </p>
         </div>
-        <div style={{ 
-          padding: spacing[4], 
+        <div style={{
+          padding: spacing[4],
           borderTop: `1px solid ${colors.borderLight}`,
           display: 'flex',
           gap: spacing[3],

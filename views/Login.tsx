@@ -11,11 +11,9 @@ function Login({ loginForm, setLoginForm, onLogin, isLoading, error }) {
   
   return (
     <div style={{
+      ...styles.flexColCenter,
       minHeight: '100vh',
       background: colors.bgDark,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
       fontFamily: typography.fontFamily
     }}>
       <div style={{
@@ -26,8 +24,7 @@ function Login({ loginForm, setLoginForm, onLogin, isLoading, error }) {
       }}>
         {/* Logo */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
+          ...styles.flexCenter,
           justifyContent: 'center',
           gap: spacing[3],
           marginBottom: spacing[8]
@@ -64,17 +61,15 @@ function Login({ loginForm, setLoginForm, onLogin, isLoading, error }) {
           </div>
           <div>
             <h1 style={{
-              margin: 0,
+              ...styles.heading,
               fontSize: typography.fontSize['2xl'],
               fontWeight: typography.fontWeight.bold,
-              color: colors.textPrimary
             }}>
               SIMS
             </h1>
             <p style={{
+              ...styles.textXsMuted,
               margin: 0,
-              fontSize: typography.fontSize.xs,
-              color: colors.textMuted
             }}>
               Studio Inventory Management System
             </p>
@@ -182,9 +177,8 @@ function Login({ loginForm, setLoginForm, onLogin, isLoading, error }) {
 
         {/* Help text */}
         <p style={{
+          ...styles.textXsMuted,
           textAlign: 'center',
-          color: colors.textMuted,
-          fontSize: typography.fontSize.xs,
           marginTop: spacing[6]
         }}>
           Contact admin for access

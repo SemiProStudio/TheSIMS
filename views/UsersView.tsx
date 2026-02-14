@@ -6,7 +6,7 @@
 import { memo } from 'react';
 
 import { Plus, Trash2 } from 'lucide-react';
-import { colors, spacing, borderRadius, typography } from '../theme';
+import { colors, styles, spacing, borderRadius, typography } from '../theme';
 import { Badge, Card, Button, PageHeader } from '../components/ui';
 
 interface UsersPanelProps {
@@ -22,6 +22,17 @@ interface UsersPanelProps {
   onDeleteUser: (userId: string) => void;
   onBack: () => void;
 }
+
+const userAvatarStyle = {
+  ...styles.flexColCenter,
+  width: 44,
+  height: 44,
+  borderRadius: borderRadius.lg,
+  background: `linear-gradient(135deg, ${colors.primary}, ${colors.accent1})`,
+  fontWeight: typography.fontWeight.semibold,
+  color: '#fff',
+  fontSize: typography.fontSize.lg,
+};
 
 export const UsersPanel = memo<UsersPanelProps>(function UsersPanel({
   users,
@@ -39,26 +50,15 @@ export const UsersPanel = memo<UsersPanelProps>(function UsersPanel({
         backLabel="Back to Admin"
         action={<Button onClick={onAddUser} icon={Plus}>Add User</Button>}
       />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
+      <div style={{ ...styles.flexCol, gap: spacing[3] }}>
         {users.map(u => (
-          <Card key={u.id} style={{ padding: spacing[4], display: 'flex', alignItems: 'center', gap: spacing[3] }}>
-            <div style={{ 
-              width: 44, 
-              height: 44, 
-              borderRadius: borderRadius.lg, 
-              background: `linear-gradient(135deg, ${colors.primary}, ${colors.accent1})`, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              fontWeight: typography.fontWeight.semibold, 
-              color: '#fff', 
-              fontSize: typography.fontSize.lg 
-            }}>
+          <Card key={u.id} style={{ ...styles.flexCenter, padding: spacing[4], gap: spacing[3] }}>
+            <div style={userAvatarStyle}>
               {u.avatar || u.name?.charAt(0)?.toUpperCase() || '?'}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{u.name}</div>
-              <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>{u.email}</div>
+              <div style={styles.subheading}>{u.name}</div>
+              <div style={styles.textSmMuted}>{u.email}</div>
             </div>
             <Badge 
               text={u.role?.name || u.roleId || 'User'} 

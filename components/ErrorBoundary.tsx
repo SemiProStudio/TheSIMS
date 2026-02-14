@@ -4,6 +4,7 @@
 // =============================================================================
 
 import React from 'react';
+import { styles as themeStyles } from '../theme';
 
 // Error Boundary must be a class component
 export class ErrorBoundary extends React.Component {
@@ -98,8 +99,7 @@ export class ErrorBoundary extends React.Component {
 // Styles
 const styles = {
   container: {
-    display: 'flex',
-    alignItems: 'center',
+    ...themeStyles.flexCenter,
     justifyContent: 'center',
     minHeight: '100vh',
     padding: '20px',
@@ -112,7 +112,7 @@ const styles = {
     padding: '40px',
     maxWidth: '500px',
     width: '100%',
-    textAlign: 'center',
+    ...themeStyles.textCenter,
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
   },
   iconContainer: {
@@ -199,7 +199,7 @@ export function SectionErrorBoundary({ children, name = 'This section' }) {
       fallback={
         <div style={{
           padding: '40px',
-          textAlign: 'center',
+          ...themeStyles.textCenter,
           color: '#94a3b8',
           backgroundColor: '#16213e',
           borderRadius: '8px',

@@ -67,13 +67,11 @@ const SettingRow = memo(function SettingRow({
     }}>
       {Icon && (
         <div style={{
+          ...styles.flexColCenter,
           width: 36,
           height: 36,
           borderRadius: borderRadius.md,
           background: `${withOpacity(colors.primary, 15)}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           flexShrink: 0,
         }}>
           <Icon size={18} color={colors.primary} />
@@ -81,9 +79,7 @@ const SettingRow = memo(function SettingRow({
       )}
       <div style={{ flex: 1 }}>
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          ...styles.flexBetween,
           marginBottom: description || children ? spacing[1] : 0,
         }}>
           <span style={{
@@ -96,9 +92,8 @@ const SettingRow = memo(function SettingRow({
         </div>
         {description && (
           <p style={{
+            ...styles.textSmMuted,
             margin: 0,
-            fontSize: typography.fontSize.sm,
-            color: colors.textMuted,
             lineHeight: 1.4,
           }}>
             {description}
@@ -123,8 +118,7 @@ const Section = memo(function Section({ title, icon: Icon, children, defaultOpen
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{
-          display: 'flex',
-          alignItems: 'center',
+          ...styles.flexCenter,
           gap: spacing[2],
           width: '100%',
           padding: `${spacing[3]}px 0`,
@@ -173,7 +167,7 @@ const DaySelector = memo(function DaySelector({ selectedDays, onChange }) {
   };
   
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
+    <div style={{ ...styles.flexWrap, gap: spacing[2] }}>
       {options.map(opt => (
         <button
           key={opt.value}
@@ -261,14 +255,12 @@ function NotificationSettings({
     <div>
       {/* Header */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        ...styles.flexBetween,
         marginBottom: spacing[6],
       }}>
         <div>
-          <h2 style={{ margin: 0, color: colors.textPrimary }}>Notification Settings</h2>
-          <p style={{ margin: `${spacing[1]}px 0 0`, color: colors.textMuted, fontSize: typography.fontSize.sm }}>
+          <h2 style={styles.heading}>Notification Settings</h2>
+          <p style={{ ...styles.textSmMuted, margin: `${spacing[1]}px 0 0` }}>
             Manage how and when you receive notifications
           </p>
         </div>
@@ -282,18 +274,15 @@ function NotificationSettings({
       {/* Master email toggle */}
       <Card style={{ marginBottom: spacing[5] }}>
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
+          ...styles.flexCenter,
           gap: spacing[4],
         }}>
           <div style={{
+            ...styles.flexColCenter,
             width: 48,
             height: 48,
             borderRadius: borderRadius.lg,
             background: settings.email_enabled ? `${withOpacity(colors.primary, 20)}` : colors.bgLight,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}>
             <Mail size={24} color={settings.email_enabled ? colors.primary : colors.textMuted} />
           </div>
@@ -306,9 +295,8 @@ function NotificationSettings({
               Email Notifications
             </div>
             <p style={{
+              ...styles.textSmMuted,
               margin: 0,
-              fontSize: typography.fontSize.sm,
-              color: colors.textMuted,
             }}>
               {settings.email_enabled 
                 ? 'You will receive email notifications based on your preferences below'
@@ -347,9 +335,8 @@ function NotificationSettings({
                   onChange={(days) => updateSetting('due_date_reminder_days', days)}
                 />
                 <p style={{
+                  ...styles.textXsMuted,
                   margin: `${spacing[2]}px 0 0`,
-                  fontSize: typography.fontSize.xs,
-                  color: colors.textMuted,
                 }}>
                   before the due date
                 </p>
@@ -382,7 +369,7 @@ function NotificationSettings({
               onChange={(val) => updateSetting('reservation_reminders', val)}
               disabled={emailDisabled}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+              <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
                 <label style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>
                   Remind me
                 </label>
@@ -453,7 +440,7 @@ function NotificationSettings({
                 onChange={(val) => updateSetting('admin_overdue_summary', val)}
                 disabled={emailDisabled}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
                   <label style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>
                     Frequency:
                   </label>
@@ -483,18 +470,16 @@ function NotificationSettings({
         
         {/* Save button */}
         <div style={{
+          ...styles.flexCenter,
           padding: spacing[4],
           borderTop: `1px solid ${colors.borderLight}`,
-          display: 'flex',
           justifyContent: 'flex-end',
           gap: spacing[3],
         }}>
           {hasChanges && (
             <span style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: colors.textMuted,
-              fontSize: typography.fontSize.sm,
+              ...styles.flexCenter,
+              ...styles.textSmMuted,
             }}>
               You have unsaved changes
             </span>

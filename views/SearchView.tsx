@@ -136,12 +136,11 @@ function SearchView({
 
         {/* Active filter summary */}
         {hasFilters && (
-          <div style={{ 
-            marginTop: spacing[3], 
-            paddingTop: spacing[3], 
+          <div style={{
+            ...styles.flexCenter,
+            marginTop: spacing[3],
+            paddingTop: spacing[3],
             borderTop: `1px solid ${colors.borderLight}`,
-            display: 'flex',
-            alignItems: 'center',
             gap: spacing[2],
             flexWrap: 'wrap',
           }}>
@@ -160,14 +159,14 @@ function SearchView({
       </Card>
 
       {/* Results */}
-      <div style={{ marginBottom: spacing[3], color: colors.textMuted, fontSize: typography.fontSize.sm }}>
+      <div style={{ ...styles.textSmMuted, marginBottom: spacing[3] }}>
         {filteredItems.length} results
       </div>
       
-      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
+      <div style={{ ...styles.flexCol, gap: spacing[2] }}>
         {filteredItems.map(item => (
-          <Card key={item.id} style={{ padding: spacing[3], display: 'flex', alignItems: 'center', gap: spacing[3] }}>
-            <div onClick={() => onViewItem(item.id)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: spacing[3], cursor: 'pointer' }}>
+          <Card key={item.id} style={{ ...styles.flexCenter, padding: spacing[3], gap: spacing[3] }}>
+            <div onClick={() => onViewItem(item.id)} style={{ ...styles.flexCenter, flex: 1, gap: spacing[3], cursor: 'pointer' }}>
               {item.image ? (
                 <OptimizedImage 
                   src={item.image} 
@@ -179,16 +178,16 @@ function SearchView({
                   objectFit="cover"
                 />
               ) : (
-                <div style={{ width: 48, height: 48, borderRadius: borderRadius.md, background: `${withOpacity(colors.primary, 10)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textMuted, fontSize: typography.fontSize.xs }}>No img</div>
+                <div style={{ ...styles.flexColCenter, width: 48, height: 48, borderRadius: borderRadius.md, background: `${withOpacity(colors.primary, 10)}`, color: colors.textMuted, fontSize: typography.fontSize.xs }}>No img</div>
               )}
               <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', gap: spacing[1], marginBottom: spacing[1], flexWrap: 'wrap' }}>
+                <div style={{ ...styles.flexWrap, gap: spacing[1], marginBottom: spacing[1] }}>
                   <Badge text={item.id} color={colors.primary} />
                   <Badge text={item.status} color={getStatusColor(item.status)} />
                   <Badge text={item.category} color={colors.accent2} />
                 </div>
-                <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{item.name}</div>
-                <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>{item.brand}</div>
+                <div style={styles.subheading}>{item.name}</div>
+                <div style={styles.textSmMuted}>{item.brand}</div>
               </div>
             </div>
             <button onClick={() => onViewItem(item.id)} className="btn-secondary" style={{ padding: spacing[2] }}>
@@ -199,7 +198,7 @@ function SearchView({
       </div>
       
       {filteredItems.length === 0 && (
-        <Card style={{ textAlign: 'center', padding: spacing[10] }}>
+        <Card style={{ ...styles.textCenter, padding: spacing[10] }}>
           <Search size={48} color={colors.textMuted} style={{ marginBottom: spacing[3], opacity: 0.5 }} />
           <div style={{ color: colors.textMuted }}>No items found matching your filters</div>
           {hasFilters && (

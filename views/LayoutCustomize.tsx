@@ -186,20 +186,17 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
       
       {/* Header */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
+        ...styles.flexBetween,
         alignItems: 'flex-start',
         marginBottom: spacing[6],
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing[3] }}>
           <div style={{
+            ...styles.flexColCenter,
             width: 48,
             height: 48,
             borderRadius: borderRadius.lg,
             background: `${withOpacity(colors.primary, 15)}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             flexShrink: 0,
           }}>
             <Layout size={24} color={colors.primary} />
@@ -232,8 +229,7 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, section.id)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
+                ...styles.flexCenter,
                 gap: spacing[2],
                 padding: `${spacing[3]}px ${spacing[3]}px`,
                 borderBottom: index < sortedSections.length - 1 ? `1px solid ${colors.borderLight}` : 'none',
@@ -249,9 +245,8 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
               }}
             >
               {/* Grip handle */}
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center',
+              <div style={{
+                ...styles.flexCenter,
                 color: colors.textMuted,
                 cursor: 'grab',
               }}>
@@ -274,9 +269,7 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
                 onMouseDown={(e) => e.stopPropagation()}
                 draggable={false}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  ...styles.flexColCenter,
                   width: 32,
                   height: 32,
                   background: section.visible ? `${withOpacity(colors.primary, 15)}` : colors.bgLight,
@@ -294,10 +287,9 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
           ))}
         </div>
         
-        <p style={{ 
-          margin: `${spacing[4]}px 0 0`, 
-          color: colors.textMuted, 
-          fontSize: typography.fontSize.xs,
+        <p style={{
+          ...styles.textXsMuted,
+          margin: `${spacing[4]}px 0 0`,
         }}>
           Tip: You can also click any section header to collapse/expand it inline.
         </p>
@@ -305,9 +297,7 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
 
       {/* Actions */}
       <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        ...styles.flexBetween,
         marginTop: spacing[6],
       }}>
         <Button

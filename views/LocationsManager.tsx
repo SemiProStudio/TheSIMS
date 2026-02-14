@@ -53,8 +53,7 @@ const LocationTreeItem = memo(function LocationTreeItem({
     <div>
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
+          ...styles.flexCenter,
           gap: spacing[2],
           padding: `${spacing[2]}px ${spacing[3]}px`,
           paddingLeft: spacing[3] + (level * 24),
@@ -83,13 +82,11 @@ const LocationTreeItem = memo(function LocationTreeItem({
         {/* Icon */}
         <div
           style={{
+            ...styles.flexColCenter,
             width: 28,
             height: 28,
             borderRadius: borderRadius.md,
             background: `${withOpacity(colors.primary, 15)}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             color: colors.primary,
           }}
         >
@@ -105,11 +102,9 @@ const LocationTreeItem = memo(function LocationTreeItem({
           }}>
             {location.name}
           </div>
-          <div style={{ 
-            fontSize: typography.fontSize.xs, 
-            color: colors.textMuted,
-            display: 'flex',
-            alignItems: 'center',
+          <div style={{
+            ...styles.textXsMuted,
+            ...styles.flexCenter,
             gap: spacing[2],
           }}>
             <span style={{ textTransform: 'capitalize' }}>{location.type}</span>
@@ -506,12 +501,11 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[4] }}>
         {/* Main tree */}
         <Card padding={false}>
-          <div style={{ 
-            padding: spacing[3], 
+          <div style={{
+            ...styles.flexCenter,
+            padding: spacing[3],
             borderBottom: `1px solid ${colors.borderLight}`,
-            display: 'flex',
             gap: spacing[3],
-            alignItems: 'center',
           }}>
             <SearchInput
               value={searchQuery}
@@ -526,7 +520,7 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
 
           <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
             {filteredLocations.length === 0 ? (
-              <div style={{ padding: spacing[6], textAlign: 'center', color: colors.textMuted }}>
+              <div style={{ ...styles.textCenter, padding: spacing[6], color: colors.textMuted }}>
                 <FolderTree size={32} style={{ marginBottom: spacing[2], opacity: 0.3 }} />
                 <p style={{ margin: 0 }}>
                   {searchQuery ? 'No locations match your search' : 'No locations defined yet'}
@@ -555,7 +549,7 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
         </Card>
 
         {/* Sidebar with stats */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
+        <div style={{ ...styles.flexCol, gap: spacing[4] }}>
           <Card padding={false}>
             <CardHeader title="Location Summary" icon={FolderTree} />
             <div style={{ padding: spacing[4] }}>
@@ -587,9 +581,8 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
                 const count = flattenedLocations.filter(l => l.type === type.value).length;
                 const Icon = getLocationIcon(type.value);
                 return (
-                  <div key={type.value} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  <div key={type.value} style={{
+                    ...styles.flexCenter,
                     gap: spacing[2],
                     marginBottom: spacing[2],
                   }}>

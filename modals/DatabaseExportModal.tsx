@@ -9,6 +9,23 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity } from '
 import { Button } from '../components/ui';
 import { Modal, ModalHeader } from './ModalBase';
 
+// ============================================================================
+// Module-level style constants
+// ============================================================================
+const actionRowStyle = {
+  ...styles.flexCenter,
+  gap: spacing[3],
+  justifyContent: 'flex-end',
+} as const;
+
+const checkboxLabelStyle = {
+  ...styles.flexCenter,
+  gap: spacing[2],
+  cursor: 'pointer',
+  padding: spacing[2],
+  borderRadius: borderRadius.md,
+} as const;
+
 interface DatabaseExportModalProps {
   inventory: any[];
   packages?: any[];
@@ -134,7 +151,7 @@ export const DatabaseExportModal = memo<DatabaseExportModalProps>(function Datab
         {/* Format selection */}
         <div style={{ marginBottom: spacing[4] }}>
           <label style={styles.label}>Export Format</label>
-          <div style={{ display: 'flex', gap: spacing[2] }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
             <button
               onClick={() => setExportFormat('json')}
               style={{
@@ -166,17 +183,12 @@ export const DatabaseExportModal = memo<DatabaseExportModalProps>(function Datab
         {exportFormat === 'json' && (
           <div style={{ marginBottom: spacing[4] }}>
             <label style={styles.label}>Include in Export</label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
+            <div style={{ ...styles.flexCol, gap: spacing[2] }}>
               {exportOptions.map(opt => (
                 <label 
                   key={opt.key}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing[2],
-                    cursor: 'pointer',
-                    padding: spacing[2],
-                    borderRadius: borderRadius.md,
+                    ...checkboxLabelStyle,
                     background: includeOptions[opt.key] ? `${withOpacity(colors.primary, 10)}` : 'transparent'
                   }}
                 >
@@ -211,7 +223,7 @@ export const DatabaseExportModal = memo<DatabaseExportModalProps>(function Datab
         </p>
         
         {/* Action buttons */}
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+        <div style={actionRowStyle}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={handleExport} icon={Download}>
             Export {exportFormat.toUpperCase()}

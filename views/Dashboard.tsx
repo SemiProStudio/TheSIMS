@@ -242,8 +242,7 @@ function Dashboard({
                     key={item.id}
                     onClick={() => onViewItem(item.id)}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
+                      ...styles.flexCenter,
                       gap: spacing[3],
                       padding: spacing[3],
                       borderRadius: borderRadius.md,
@@ -254,13 +253,11 @@ function Dashboard({
                     }}
                   >
                     <div style={{
+                      ...styles.flexColCenter,
                       width: 36,
                       height: 36,
                       borderRadius: borderRadius.sm,
                       background: withOpacity(PANEL_COLORS.search, 25),
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
                       color: colors.textMuted,
                       fontSize: typography.fontSize.xs
                     }}>
@@ -281,10 +278,7 @@ function Dashboard({
                       }}>
                         {item.name}
                       </div>
-                      <div style={{
-                        fontSize: typography.fontSize.xs,
-                        color: colors.textMuted
-                      }}>
+                      <div style={styles.textXsMuted}>
                         {item.id} • {item.category}
                       </div>
                     </div>
@@ -296,9 +290,8 @@ function Dashboard({
 
             {quickSearch && searchResults.length === 0 && (
               <p style={{
-                color: colors.textMuted,
-                textAlign: 'center',
-                fontSize: typography.fontSize.sm,
+                ...styles.textSmMuted,
+                ...styles.textCenter,
                 padding: spacing[4],
                 margin: 0
               }}>
@@ -308,9 +301,8 @@ function Dashboard({
 
             {!quickSearch && (
               <p style={{
-                color: colors.textMuted,
-                textAlign: 'center',
-                fontSize: typography.fontSize.sm,
+                ...styles.textSmMuted,
+                ...styles.textCenter,
                 padding: spacing[4],
                 margin: 0
               }}>
@@ -342,7 +334,7 @@ function Dashboard({
             padding={false}
           >
             {stats.alerts.length === 0 ? (
-              <div style={{ padding: spacing[4], color: colors.textMuted, fontSize: typography.fontSize.sm, textAlign: 'center' }}>
+              <div style={{ ...styles.textSmMuted, ...styles.textCenter, padding: spacing[4] }}>
                 No alerts
               </div>
             ) : (
@@ -352,8 +344,7 @@ function Dashboard({
                     key={item.id}
                     onClick={() => onViewItem(item.id)}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
+                      ...styles.flexCenter,
                       gap: spacing[3],
                       padding: spacing[3],
                       borderRadius: borderRadius.md,
@@ -394,7 +385,7 @@ function Dashboard({
             padding={false}
           >
             {stats.dueReminders.length === 0 ? (
-              <div style={{ padding: spacing[4], color: colors.textMuted, fontSize: typography.fontSize.sm, textAlign: 'center' }}>
+              <div style={{ ...styles.textSmMuted, ...styles.textCenter, padding: spacing[4] }}>
                 No due reminders
               </div>
             ) : (
@@ -404,8 +395,7 @@ function Dashboard({
                     key={reminder.id}
                     onClick={() => onViewItem(reminder.item.id)}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
+                      ...styles.flexCenter,
                       gap: spacing[3],
                       padding: spacing[3],
                       borderRadius: borderRadius.md,
@@ -454,7 +444,7 @@ function Dashboard({
             padding={false}
           >
             {stats.lowStockItems.length === 0 ? (
-              <div style={{ padding: spacing[4], color: colors.textMuted, fontSize: typography.fontSize.sm, textAlign: 'center' }}>
+              <div style={{ ...styles.textSmMuted, ...styles.textCenter, padding: spacing[4] }}>
                 No low stock items
               </div>
             ) : (
@@ -464,8 +454,7 @@ function Dashboard({
                     key={item.id}
                     onClick={() => onViewItem(item.id)}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
+                      ...styles.flexCenter,
                       gap: spacing[3],
                       padding: spacing[3],
                       borderRadius: borderRadius.md,
@@ -516,7 +505,7 @@ function Dashboard({
           >
             <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
               {upcomingReservations.length === 0 ? (
-                <p style={{ color: colors.textMuted, textAlign: 'center', margin: 0 }}>
+                <p style={{ ...styles.textCenter, color: colors.textMuted, margin: 0 }}>
                   No upcoming reservations
                 </p>
               ) : (
@@ -530,8 +519,7 @@ function Dashboard({
                       key={r.id}
                       onClick={() => onViewReservation ? onViewReservation(r, r.item) : onViewItem(r.item.id)}
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
+                        ...styles.flexCenter,
                         gap: spacing[3],
                         padding: spacing[3],
                         borderRadius: borderRadius.md,
@@ -541,13 +529,11 @@ function Dashboard({
                       }}
                     >
                       <div style={{
+                        ...styles.flexColCenter,
                         width: 40,
                         height: 40,
                         borderRadius: borderRadius.sm,
                         background: withOpacity(PANEL_COLORS.reservations, 25),
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
                         color: colors.textMuted,
                         fontSize: typography.fontSize.xs,
                         flexShrink: 0
@@ -563,11 +549,9 @@ function Dashboard({
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
+                          ...styles.truncate,
                           fontSize: typography.fontSize.sm,
                           color: colors.textPrimary,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
                         }}>
                           {r.item.name}
                         </div>
@@ -604,7 +588,7 @@ function Dashboard({
       />
 
       {/* Render sections in order */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
+      <div style={{ ...styles.flexCol, gap: spacing[4] }}>
         {sectionOrder.map(sectionId => renderSection(sectionId))}
       </div>
     </>

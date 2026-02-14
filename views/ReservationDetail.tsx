@@ -9,13 +9,33 @@ import { formatDate, getStatusColor, getTodayISO } from '../utils';
 import { Badge, Card, CardHeader, Button } from '../components/ui';
 import NotesSection from '../components/NotesSection';
 
+// Extracted static styles
+const mapLinkStyle = {
+  ...styles.btnSec,
+  flex: 1,
+  textDecoration: 'none',
+  textAlign: 'center' as const,
+  justifyContent: 'center',
+  fontSize: typography.fontSize.sm,
+};
+
+const contactLinkStyle = {
+  ...styles.flexCenter,
+  gap: spacing[3],
+  padding: spacing[3],
+  background: `${withOpacity(colors.primary, 8)}`,
+  borderRadius: borderRadius.lg,
+  color: colors.textPrimary,
+  textDecoration: 'none',
+};
+
 // Map widget with embedded OpenStreetMap
 const MapWidget = memo(function MapWidget({ location }) {
   if (!location) {
     return (
-      <div style={{ width: '100%', height: 200, background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.xl, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `1px solid ${colors.border}` }}>
+      <div style={{ ...styles.flexColCenter, width: '100%', height: 200, background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.xl, border: `1px solid ${colors.border}` }}>
         <MapPin size={32} color={colors.textMuted} />
-        <p style={{ color: colors.textMuted, fontSize: typography.fontSize.sm, marginTop: spacing[2] }}>No location specified</p>
+        <p style={{ ...styles.textSmMuted, marginTop: spacing[2] }}>No location specified</p>
       </div>
     );
   }
@@ -43,19 +63,12 @@ const MapWidget = memo(function MapWidget({ location }) {
         />
       </div>
       {/* Action buttons */}
-      <div style={{ padding: spacing[3], background: colors.bgMedium, display: 'flex', gap: spacing[2] }}>
+      <div style={{ ...styles.flexCenter, padding: spacing[3], background: colors.bgMedium, gap: spacing[2] }}>
         <a 
           href={googleMapsUrl} 
           target="_blank" 
           rel="noopener noreferrer"
-          style={{
-            ...styles.btnSec,
-            flex: 1,
-            textDecoration: 'none',
-            textAlign: 'center',
-            justifyContent: 'center',
-            fontSize: typography.fontSize.sm
-          }}
+          style={mapLinkStyle}
         >
           Open in Google Maps
         </a>
@@ -63,14 +76,7 @@ const MapWidget = memo(function MapWidget({ location }) {
           href={appleMapsUrl} 
           target="_blank" 
           rel="noopener noreferrer"
-          style={{
-            ...styles.btnSec,
-            flex: 1,
-            textDecoration: 'none',
-            textAlign: 'center',
-            justifyContent: 'center',
-            fontSize: typography.fontSize.sm
-          }}
+          style={mapLinkStyle}
         >
           Open in Apple Maps
         </a>
@@ -99,7 +105,7 @@ function ReservationDetail({ reservation, item, onBack, onEdit, onDelete, onAddN
         <div>
           {/* Header */}
           <Card style={{ marginBottom: spacing[5] }}>
-            <div style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[3], flexWrap: 'wrap' }}>
+            <div style={{ ...styles.flexWrap, gap: spacing[2], marginBottom: spacing[3] }}>
               {itemCount > 1 ? (
                 <Badge text={`${itemCount} items`} color={colors.primary} />
               ) : (
@@ -108,14 +114,14 @@ function ReservationDetail({ reservation, item, onBack, onEdit, onDelete, onAddN
               <Badge text={reservation.projectType || 'Project'} color={colors.accent2} />
               {isOverdue && <Badge text="OVERDUE" color={colors.danger} />}
             </div>
-            <h1 style={{ margin: `0 0 ${spacing[2]}px`, fontSize: typography.fontSize['3xl'], color: colors.textPrimary }}>{reservation.project}</h1>
+            <h1 style={{ ...styles.heading, margin: `0 0 ${spacing[2]}px`, fontSize: typography.fontSize['3xl'] }}>{reservation.project}</h1>
             <p style={{ color: colors.textSecondary, margin: `0 0 ${spacing[4]}px` }}>
               {itemCount > 1 
                 ? `${itemCount} items reserved`
                 : `${item.name} - ${item.brand}`
               }
             </p>
-            <div style={{ display: 'flex', gap: spacing[3] }}>
+            <div style={{ ...styles.flexCenter, gap: spacing[3] }}>
               <Button variant="secondary" onClick={onEdit} icon={Edit}>Edit Reservation</Button>
               <Button variant="secondary" danger onClick={onDelete} icon={Trash2}>Cancel</Button>
             </div>
@@ -123,15 +129,15 @@ function ReservationDetail({ reservation, item, onBack, onEdit, onDelete, onAddN
 
           {/* Schedule & Location */}
           <Card style={{ marginBottom: spacing[5] }}>
-            <h3 style={{ margin: `0 0 ${spacing[4]}px`, fontSize: typography.fontSize.md, color: colors.textPrimary, display: 'flex', alignItems: 'center', gap: spacing[2] }}><Calendar size={16} /> Schedule & Location</h3>
+            <h3 style={{ ...styles.heading, ...styles.flexCenter, margin: `0 0 ${spacing[4]}px`, fontSize: typography.fontSize.md, gap: spacing[2] }}><Calendar size={16} /> Schedule & Location</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[4], marginBottom: spacing[5] }}>
               <div style={{ background: `${withOpacity(colors.primary, 10)}`, padding: spacing[4], borderRadius: borderRadius.lg }}>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, textTransform: 'uppercase', marginBottom: spacing[1] }}>Start Date</div>
-                <div style={{ fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{formatDate(reservation.start)}</div>
+                <div style={{ ...styles.textXsMuted, textTransform: 'uppercase', marginBottom: spacing[1] }}>Start Date</div>
+                <div style={{ ...styles.subheading, fontSize: typography.fontSize.md }}>{formatDate(reservation.start)}</div>
               </div>
               <div style={{ background: `${withOpacity(colors.primary, 10)}`, padding: spacing[4], borderRadius: borderRadius.lg }}>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, textTransform: 'uppercase', marginBottom: spacing[1] }}>End Date / Due Back</div>
-                <div style={{ fontSize: typography.fontSize.md, fontWeight: typography.fontWeight.medium, color: isOverdue ? colors.danger : colors.textPrimary }}>{formatDate(reservation.end || reservation.dueBack)}{isOverdue && ' (OVERDUE)'}</div>
+                <div style={{ ...styles.textXsMuted, textTransform: 'uppercase', marginBottom: spacing[1] }}>End Date / Due Back</div>
+                <div style={{ ...styles.subheading, fontSize: typography.fontSize.md, color: isOverdue ? colors.danger : colors.textPrimary }}>{formatDate(reservation.end || reservation.dueBack)}{isOverdue && ' (OVERDUE)'}</div>
               </div>
             </div>
             <MapWidget location={reservation.location} />
@@ -139,41 +145,40 @@ function ReservationDetail({ reservation, item, onBack, onEdit, onDelete, onAddN
 
           {/* Contact */}
           <Card>
-            <h3 style={{ margin: `0 0 ${spacing[4]}px`, fontSize: typography.fontSize.md, color: colors.textPrimary, display: 'flex', alignItems: 'center', gap: spacing[2] }}><User size={16} /> Contact Information</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
-                <div style={{ width: 40, height: 40, borderRadius: borderRadius.md, background: `linear-gradient(135deg, ${colors.primary}, ${colors.accent1})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: typography.fontWeight.semibold, color: colors.textPrimary }}>{reservation.user?.charAt(0) || '?'}</div>
-                <div><div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{reservation.user}</div><div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>Reserved By</div></div>
+            <h3 style={{ ...styles.heading, ...styles.flexCenter, margin: `0 0 ${spacing[4]}px`, fontSize: typography.fontSize.md, gap: spacing[2] }}><User size={16} /> Contact Information</h3>
+            <div style={{ ...styles.flexCol, gap: spacing[3] }}>
+              <div style={{ ...styles.flexCenter, gap: spacing[3] }}>
+                <div style={{ ...styles.flexColCenter, width: 40, height: 40, borderRadius: borderRadius.md, background: `linear-gradient(135deg, ${colors.primary}, ${colors.accent1})`, fontWeight: typography.fontWeight.semibold, color: colors.textPrimary }}>{reservation.user?.charAt(0) || '?'}</div>
+                <div><div style={styles.subheading}>{reservation.user}</div><div style={styles.textSmMuted}>Reserved By</div></div>
               </div>
               {reservation.contactPhone && (
-                <a href={`tel:${reservation.contactPhone}`} style={{ display: 'flex', alignItems: 'center', gap: spacing[3], padding: spacing[3], background: `${withOpacity(colors.primary, 8)}`, borderRadius: borderRadius.lg, color: colors.textPrimary, textDecoration: 'none' }}>
+                <a href={`tel:${reservation.contactPhone}`} style={contactLinkStyle}>
                   <Phone size={18} color={colors.primary} /><span>{reservation.contactPhone}</span>
                 </a>
               )}
               {reservation.contactEmail && (
-                <a href={`mailto:${reservation.contactEmail}`} style={{ display: 'flex', alignItems: 'center', gap: spacing[3], padding: spacing[3], background: `${withOpacity(colors.primary, 8)}`, borderRadius: borderRadius.lg, color: colors.textPrimary, textDecoration: 'none' }}>
+                <a href={`mailto:${reservation.contactEmail}`} style={contactLinkStyle}>
                   <Mail size={18} color={colors.primary} /><span>{reservation.contactEmail}</span>
                 </a>
               )}
               {!reservation.contactPhone && !reservation.contactEmail && (
-                <p style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>No contact information provided</p>
+                <p style={styles.textSmMuted}>No contact information provided</p>
               )}
             </div>
           </Card>
         </div>
 
         {/* Sidebar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
+        <div style={{ ...styles.flexCol, gap: spacing[4] }}>
           {/* Equipment */}
           <Card padding={false}>
             <CardHeader title={itemCount > 1 ? `Equipment (${itemCount})` : "Equipment"} icon={Package} />
-            <div style={{ padding: spacing[4], display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
+            <div style={{ ...styles.flexCol, padding: spacing[4], gap: spacing[3] }}>
               {items.map((itm, idx) => (
                 <div 
-                  key={itm.id} 
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  key={itm.id}
+                  style={{
+                    ...styles.flexCenter,
                     gap: spacing[3],
                     padding: spacing[3],
                     background: withOpacity(colors.primary, 8),
@@ -185,14 +190,14 @@ function ReservationDetail({ reservation, item, onBack, onEdit, onDelete, onAddN
                   {itm.image ? (
                     <img src={itm.image} alt="" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: borderRadius.md }} />
                   ) : (
-                    <div style={{ width: 60, height: 60, background: withOpacity(colors.primary, 15), borderRadius: borderRadius.md, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textMuted }}>
+                    <div style={{ ...styles.flexColCenter, width: 60, height: 60, background: withOpacity(colors.primary, 15), borderRadius: borderRadius.md, color: colors.textMuted }}>
                       <Package size={24} />
                     </div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, marginBottom: spacing[1] }}>{itm.name}</div>
-                    <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted, marginBottom: spacing[1] }}>{itm.brand} • {itm.category}</div>
-                    <div style={{ display: 'flex', gap: spacing[1] }}>
+                    <div style={{ ...styles.subheading, marginBottom: spacing[1] }}>{itm.name}</div>
+                    <div style={{ ...styles.textSmMuted, marginBottom: spacing[1] }}>{itm.brand} • {itm.category}</div>
+                    <div style={{ ...styles.flexCenter, gap: spacing[1] }}>
                       <Badge text={itm.id} color={colors.primary} size="sm" />
                       <Badge text={itm.status} color={getStatusColor(itm.status)} size="sm" />
                     </div>
@@ -207,11 +212,11 @@ function ReservationDetail({ reservation, item, onBack, onEdit, onDelete, onAddN
             <CardHeader title="Project Details" icon={FileText} />
             <div style={{ padding: spacing[4] }}>
               <div style={{ marginBottom: spacing[3] }}>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, textTransform: 'uppercase', marginBottom: spacing[1] }}>Project Type</div>
+                <div style={{ ...styles.textXsMuted, textTransform: 'uppercase', marginBottom: spacing[1] }}>Project Type</div>
                 <div style={{ fontSize: typography.fontSize.base, color: colors.textPrimary }}>{reservation.projectType || 'Not specified'}</div>
               </div>
               <div>
-                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, textTransform: 'uppercase', marginBottom: spacing[1] }}>Project Name</div>
+                <div style={{ ...styles.textXsMuted, textTransform: 'uppercase', marginBottom: spacing[1] }}>Project Name</div>
                 <div style={{ fontSize: typography.fontSize.base, color: colors.textPrimary }}>{reservation.project}</div>
               </div>
             </div>
@@ -219,7 +224,7 @@ function ReservationDetail({ reservation, item, onBack, onEdit, onDelete, onAddN
 
           {/* Notes */}
           <Card>
-            <h3 style={{ margin: `0 0 ${spacing[4]}px`, fontSize: typography.fontSize.md, color: colors.textPrimary, display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+            <h3 style={{ ...styles.heading, ...styles.flexCenter, margin: `0 0 ${spacing[4]}px`, fontSize: typography.fontSize.md, gap: spacing[2] }}>
               <MessageSquare size={16} /> Notes
               {(reservation.notes || []).filter(n => !n.deleted).length > 0 && (
                 <Badge text={`${(reservation.notes || []).filter(n => !n.deleted).length}`} color={colors.primary} size="xs" />

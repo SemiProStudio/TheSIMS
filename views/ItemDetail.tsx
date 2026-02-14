@@ -48,6 +48,49 @@ const itemBorderStyle = {
   marginBottom: spacing[2],
 };
 
+// Extracted static style constants
+const textSmSecondaryMb2 = {
+  fontSize: typography.fontSize.sm,
+  color: colors.textSecondary,
+  marginBottom: spacing[2],
+};
+
+const textSmMediumPrimary = {
+  ...styles.subheading,
+  fontSize: typography.fontSize.sm,
+};
+
+const iconBtnStyle = {
+  background: 'none',
+  border: 'none',
+  color: colors.textMuted,
+  cursor: 'pointer',
+  padding: spacing[1],
+};
+
+const valueLabel = {
+  color: colors.textSecondary,
+  fontSize: typography.fontSize.sm,
+};
+
+const valueAmount = {
+  ...styles.subheading,
+  fontSize: typography.fontSize.base,
+};
+
+const specLabel = {
+  fontSize: typography.fontSize.xs,
+  color: colors.textSecondary,
+  textTransform: 'uppercase',
+  letterSpacing: '0.03em',
+  marginBottom: spacing[1],
+};
+
+const scrollContainer = {
+  maxHeight: 280,
+  overflowY: 'auto',
+};
+
 // Add to Kit/Package Section Component - add item to packages
 const AddToKitSection = memo(function AddToKitSection({ item, packages, onAddToPackage, panelColor }) {
   const [selectedPackageId, setSelectedPackageId] = useState('');
@@ -76,26 +119,18 @@ const AddToKitSection = memo(function AddToKitSection({ item, packages, onAddToP
       {/* Show packages this item is already in */}
       {containingPackages.length > 0 && (
         <div style={{ marginBottom: spacing[3] }}>
-          <div style={{ 
-            fontSize: typography.fontSize.sm, 
-            color: colors.textSecondary,
-            marginBottom: spacing[2]
-          }}>
+          <div style={textSmSecondaryMb2}>
             This item is included in:
           </div>
           {containingPackages.map(pkg => (
             <div key={pkg.id} style={itemStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+              <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
                 <Package size={18} color={effectivePanelColor} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ 
-                    fontSize: typography.fontSize.sm, 
-                    fontWeight: typography.fontWeight.medium,
-                    color: colors.textPrimary 
-                  }}>
+                  <div style={textSmMediumPrimary}>
                     {pkg.name}
                   </div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                  <div style={styles.textXsMuted}>
                     {pkg.id} • {pkg.items?.length || 0} items
                   </div>
                 </div>
@@ -108,25 +143,16 @@ const AddToKitSection = memo(function AddToKitSection({ item, packages, onAddToP
       {/* Add to package dropdown */}
       {availablePackages.length === 0 ? (
         containingPackages.length === 0 && (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: spacing[4],
-            color: colors.textMuted,
-            fontSize: typography.fontSize.sm 
-          }}>
+          <div style={{ ...styles.textCenter, ...styles.textSmMuted, padding: spacing[4] }}>
             No kits or packages available.
           </div>
         )
       ) : (
         <div>
-          <div style={{ 
-            fontSize: typography.fontSize.sm, 
-            color: colors.textSecondary,
-            marginBottom: spacing[2]
-          }}>
+          <div style={textSmSecondaryMb2}>
             Add to a kit or package:
           </div>
-          <div style={{ display: 'flex', gap: spacing[2], alignItems: 'flex-start' }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[2], alignItems: 'flex-start' }}>
             <Select
               value={selectedPackageId}
               onChange={(e) => setSelectedPackageId(e.target.value)}
@@ -212,19 +238,15 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
         <div style={{ marginBottom: spacing[3] }}>
           {requiredAccessories.map(acc => (
             <div key={acc.id} style={itemStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-                <div 
+              <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
+                <div
                   style={{ flex: 1, cursor: 'pointer' }}
                   onClick={() => onViewItem?.(acc.id)}
                 >
-                  <div style={{ 
-                    fontSize: typography.fontSize.sm, 
-                    fontWeight: typography.fontWeight.medium,
-                    color: colors.textPrimary 
-                  }}>
+                  <div style={textSmMediumPrimary}>
                     {acc.name}
                   </div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                  <div style={styles.textXsMuted}>
                     {acc.id} • {acc.category}
                   </div>
                 </div>
@@ -232,13 +254,7 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
                 {onRemoveAccessory && (
                   <button
                     onClick={() => onRemoveAccessory(item.id, acc.id)}
-                    style={{ 
-                      background: 'none', 
-                      border: 'none', 
-                      color: colors.textMuted, 
-                      cursor: 'pointer',
-                      padding: spacing[1],
-                    }}
+                    style={iconBtnStyle}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -248,13 +264,7 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
           ))}
         </div>
       ) : (
-        <p style={{ 
-          color: colors.textMuted, 
-          textAlign: 'center', 
-          fontSize: typography.fontSize.sm,
-          margin: `0 0 ${spacing[3]}px`,
-          padding: spacing[3],
-        }}>
+        <p style={{ ...styles.textSmMuted, ...styles.textCenter, margin: `0 0 ${spacing[3]}px`, padding: spacing[3] }}>
           No required accessories defined
         </p>
       )}
@@ -278,11 +288,10 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
           </div>
           <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: spacing[2] }}>
             {availableItems.slice(0, 50).map(i => (
-              <label 
+              <label
                 key={i.id}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                style={{
+                  ...styles.flexCenter,
                   gap: spacing[2],
                   padding: spacing[2],
                   cursor: 'pointer',
@@ -297,17 +306,17 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
                 />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>{i.name}</div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>{i.id}</div>
+                  <div style={styles.textXsMuted}>{i.id}</div>
                 </div>
               </label>
             ))}
             {availableItems.length === 0 && (
-              <p style={{ color: colors.textMuted, textAlign: 'center', padding: spacing[2] }}>
+              <p style={{ ...styles.textSmMuted, ...styles.textCenter, padding: spacing[2] }}>
                 No items found
               </p>
             )}
           </div>
-          <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[2], justifyContent: 'flex-end' }}>
             <Button variant="secondary" onClick={() => { setShowAddPanel(false); setSelectedIds([]); setSearchQuery(''); }}>
               Cancel
             </Button>
@@ -444,10 +453,10 @@ function ItemDetail({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: spacing[3] }}>
               {(specsExpanded ? allSpecs : allSpecs.slice(0, 10)).map((spec) => (
                 <div key={spec.name} style={getItemStyle(SECTION_COLORS.specs)}>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: spacing[1] }}>
+                  <div style={specLabel}>
                     {spec.name}
                   </div>
-                  <div style={{ color: colors.textPrimary, fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.medium }}>
+                  <div style={valueAmount}>
                     {spec.value}
                   </div>
                 </div>
@@ -458,10 +467,9 @@ function ItemDetail({
                 onClick={() => setSpecsExpanded(!specsExpanded)}
                 style={{
                   ...styles.btnSec,
+                  ...styles.flexCenter,
                   width: '100%',
                   marginTop: spacing[3],
-                  display: 'flex',
-                  alignItems: 'center',
                   justifyContent: 'center',
                   gap: spacing[2],
                 }}
@@ -487,9 +495,9 @@ function ItemDetail({
             onToggleCollapse={() => toggleCollapse('reservations')}
             action={canEditItems && <button onClick={onAddReservation} style={{ ...styles.btn, padding: `${spacing[1]}px ${spacing[2]}px`, fontSize: typography.fontSize.xs }}><Plus size={12} /></button>}
           >
-            <div style={{ maxHeight: 280, overflowY: 'auto' }}>
+            <div style={scrollContainer}>
               {!item.reservations || item.reservations.length === 0 ? (
-                <p style={{ color: colors.textMuted, textAlign: 'center', fontSize: typography.fontSize.sm, margin: 0, padding: spacing[4] }}>No reservations</p>
+                <p style={{ ...styles.textSmMuted, ...styles.textCenter, margin: 0, padding: spacing[4] }}>No reservations</p>
               ) : item.reservations.map(r => (
                 <div key={r.id} onClick={() => onViewReservation?.(r)} style={{ ...getItemStyle(reservationsColor), cursor: 'pointer' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -36,14 +36,12 @@ export const Modal = memo<ModalProps>(function Modal({
         {title && (
           <div
             style={{
+              ...styles.flexBetween,
               padding: spacing[4],
               borderBottom: `1px solid ${colors.borderLight}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
             }}
           >
-            <h3 id="modal-title" style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary }}>
+            <h3 id="modal-title" style={{ ...styles.heading, fontSize: typography.fontSize.lg }}>
               {title}
             </h3>
             <button
@@ -52,15 +50,14 @@ export const Modal = memo<ModalProps>(function Modal({
               aria-label="Close modal"
               type="button"
               style={{
+                ...styles.flexCenter,
+                justifyContent: 'center',
                 background: 'none',
                 border: 'none',
                 color: colors.textMuted,
                 cursor: 'pointer',
                 padding: spacing[2],
                 borderRadius: borderRadius.full,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
               }}
             >
               <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">

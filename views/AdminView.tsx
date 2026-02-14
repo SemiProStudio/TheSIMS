@@ -7,7 +7,7 @@ import { memo } from 'react';
 
 import { Users, Shield, MapPin, Sliders, FolderTree, Clock, FileText } from 'lucide-react';
 import { VIEWS } from '../constants';
-import { colors, spacing, borderRadius, typography, withOpacity } from '../theme';
+import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme';
 import { Card } from '../components/ui';
 
 interface AdminPanelProps {
@@ -42,22 +42,20 @@ export const AdminPanel = memo<AdminPanelProps>(function AdminPanel({ setCurrent
                 cursor: 'pointer',
               }}
             >
-              <div style={{ 
-                width: 48, 
-                height: 48, 
-                marginBottom: spacing[3], 
-                background: withOpacity(card.color, 15), 
-                borderRadius: borderRadius.lg, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
+              <div style={{
+                ...styles.flexColCenter,
+                width: 48,
+                height: 48,
+                marginBottom: spacing[3],
+                background: withOpacity(card.color, 15),
+                borderRadius: borderRadius.lg,
               }}>
                 <Icon size={24} color={card.color} />
               </div>
-              <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.textPrimary, marginBottom: spacing[1] }}>
+              <div style={{ ...styles.heading, marginBottom: spacing[1] }}>
                 {card.label}
               </div>
-              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+              <div style={styles.textXsMuted}>
                 {card.description}
               </div>
             </Card>

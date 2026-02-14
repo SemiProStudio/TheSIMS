@@ -21,12 +21,14 @@ const Modal = memo(function Modal({ onClose, maxWidth = 500, children }) {
 
 const ModalHeader = memo(function ModalHeader({ title, icon: Icon, onClose }) {
   return (
-    <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <h3 style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary, display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+    <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}`, ...styles.flexBetween }}>
+      <h3 style={{ ...styles.heading, fontSize: typography.fontSize.lg, ...styles.flexCenter, gap: spacing[2] }}>
         {Icon && <Icon size={20} />}
         {title}
       </h3>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.textMuted, cursor: 'pointer', padding: spacing[1] }}><X size={20} /></button>
+      <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.textMuted, cursor: 'pointer', padding: spacing[1] }}>
+        <X size={20} />
+      </button>
     </div>
   );
 });
@@ -171,8 +173,7 @@ function ProfileModal({ user, onSave, onClose }) {
           ) : (
             /* Normal upload/preview mode */
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
+              ...styles.flexCenter,
               gap: spacing[4]
             }}>
               <div
@@ -182,9 +183,7 @@ function ProfileModal({ user, onSave, onClose }) {
                   height: 80,
                   borderRadius: borderRadius.lg,
                   border: `2px dashed ${colors.border}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  ...styles.flexColCenter,
                   cursor: 'pointer',
                   overflow: 'hidden'
                 }}
@@ -207,10 +206,7 @@ function ProfileModal({ user, onSave, onClose }) {
                 {profile.logo && (
                   <>
                     <button
-                      onClick={() => {
-                        // Re-crop existing image
-                        setCropSrc(profile.logo);
-                      }}
+                      onClick={() => setCropSrc(profile.logo)}
                       style={{
                         display: 'block',
                         background: 'none',
@@ -232,7 +228,7 @@ function ProfileModal({ user, onSave, onClose }) {
                         color: colors.danger,
                         cursor: 'pointer',
                         fontSize: typography.fontSize.sm,
-                        marginTop: spacing[1]
+                        marginTop: spacing[1],
                       }}
                     >
                       Remove
@@ -267,19 +263,15 @@ function ProfileModal({ user, onSave, onClose }) {
           ].map(([field, label, type, placeholder]) => (
             <div key={field}>
               <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                ...styles.flexBetween,
                 marginBottom: spacing[2]
               }}>
                 <label style={{ ...styles.label, marginBottom: 0 }}>{label}</label>
                 <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
+                  ...styles.flexCenter,
                   gap: spacing[2],
                   cursor: 'pointer',
-                  fontSize: typography.fontSize.xs,
-                  color: colors.textMuted
+                  ...styles.textXsMuted,
                 }}>
                   <input
                     type="checkbox"
@@ -334,7 +326,7 @@ function ProfileModal({ user, onSave, onClose }) {
       <div style={{
         padding: spacing[4],
         borderTop: `1px solid ${colors.borderLight}`,
-        display: 'flex',
+        ...styles.flexCenter,
         gap: spacing[3],
         justifyContent: 'flex-end'
       }}>

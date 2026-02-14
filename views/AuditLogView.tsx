@@ -6,7 +6,7 @@
 import { memo } from 'react';
 
 import { Clock } from 'lucide-react';
-import { colors, spacing, typography } from '../theme';
+import { colors, styles, spacing, typography } from '../theme';
 import { formatDateTime } from '../utils';
 import { Badge, Card, EmptyState, PageHeader } from '../components/ui';
 
@@ -47,12 +47,12 @@ export const AuditLogPanel = memo<AuditLogPanelProps>(function AuditLogPanel({ a
                 borderBottom: i < auditLog.length - 1 ? `1px solid ${colors.borderLight}` : 'none' 
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
+              <div style={{ ...styles.flexBetween, marginBottom: spacing[2] }}>
                 <Badge 
                   text={entry.type} 
                   color={entry.type === 'note_deleted' ? colors.danger : colors.primary} 
                 />
-                <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                <span style={styles.textXsMuted}>
                   {formatDateTime(entry.timestamp)}
                 </span>
               </div>
@@ -69,7 +69,7 @@ export const AuditLogPanel = memo<AuditLogPanelProps>(function AuditLogPanel({ a
                   "{entry.content}"
                 </div>
               )}
-              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: spacing[1] }}>
+              <div style={{ ...styles.textXsMuted, marginTop: spacing[1] }}>
                 By: {entry.user} | Item: {entry.itemId}
               </div>
             </div>

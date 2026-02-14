@@ -6,7 +6,7 @@
 import { memo, useState } from 'react';
 import { Wrench, Plus, Check, Clock, AlertTriangle, DollarSign, Building2, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { MAINTENANCE_STATUS } from '../constants';
-import { colors, spacing, borderRadius, typography, withOpacity} from '../theme';
+import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme';
 import { formatDate, formatMoney } from '../utils';
 import { Badge, Button } from './ui';
 
@@ -70,22 +70,19 @@ const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _on
       <div
         onClick={() => setExpanded(!expanded)}
         style={{
+          ...styles.flexCenter,
           padding: spacing[3],
           cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
           gap: spacing[3],
         }}
       >
         <div
           style={{
+            ...styles.flexColCenter,
             width: 36,
             height: 36,
             borderRadius: borderRadius.md,
             background: withOpacity(statusColor, 20),
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             color: statusColor,
           }}
         >
@@ -93,7 +90,7 @@ const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _on
         </div>
         
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], marginBottom: spacing[1] }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[2], marginBottom: spacing[1] }}>
             <Badge text={entry.type} color={statusColor} size="xs" />
             <Badge text={formatStatus(entry.status)} color={statusColor} size="xs" />
             {entry.warrantyWork && (
@@ -102,17 +99,14 @@ const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _on
           </div>
           <div
             style={{
+              ...styles.truncate,
+              ...styles.subheading,
               fontSize: typography.fontSize.sm,
-              color: colors.textPrimary,
-              fontWeight: typography.fontWeight.medium,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
             }}
           >
             {entry.description || entry.type}
           </div>
-          <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+          <div style={styles.textXsMuted}>
             {isCompleted && entry.completedDate
               ? `Completed ${formatDate(entry.completedDate)}`
               : entry.scheduledDate
@@ -141,7 +135,7 @@ const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _on
           <div style={{ paddingTop: spacing[3] }}>
             {/* Vendor info */}
             {entry.vendor && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], marginBottom: spacing[2] }}>
+              <div style={{ ...styles.flexCenter, gap: spacing[2], marginBottom: spacing[2] }}>
                 <Building2 size={14} color={colors.textMuted} />
                 <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
                   {entry.vendor}
@@ -152,7 +146,7 @@ const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _on
 
             {/* Cost */}
             {entry.cost > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], marginBottom: spacing[2] }}>
+              <div style={{ ...styles.flexCenter, gap: spacing[2], marginBottom: spacing[2] }}>
                 <DollarSign size={14} color={colors.textMuted} />
                 <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
                   {formatMoney(entry.cost)}
@@ -190,7 +184,7 @@ const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _on
 
             {/* Actions */}
             {(isScheduled || isInProgress) && (
-              <div style={{ display: 'flex', gap: spacing[2], marginTop: spacing[3] }}>
+              <div style={{ ...styles.flexCenter, gap: spacing[2], marginTop: spacing[3] }}>
                 {isScheduled && (
                   <Button
                     size="sm"
@@ -265,7 +259,7 @@ function MaintenanceSection({
         {maintenanceHistory.length > 0 && (
           <div
             style={{
-              display: 'flex',
+              ...styles.flexCenter,
               gap: spacing[4],
               marginBottom: spacing[4],
               padding: spacing[3],
@@ -273,7 +267,7 @@ function MaintenanceSection({
               borderRadius: borderRadius.md,
             }}
           >
-            <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ ...styles.textCenter, flex: 1 }}>
               <div
                 style={{
                   fontSize: typography.fontSize.lg,
@@ -283,11 +277,11 @@ function MaintenanceSection({
               >
                 {maintenanceHistory.length}
               </div>
-              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+              <div style={styles.textXsMuted}>
                 Total Records
               </div>
             </div>
-            <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ ...styles.textCenter, flex: 1 }}>
               <div
                 style={{
                   fontSize: typography.fontSize.lg,
@@ -297,11 +291,11 @@ function MaintenanceSection({
               >
                 {pendingCount}
               </div>
-              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+              <div style={styles.textXsMuted}>
                 Pending
               </div>
             </div>
-            <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ ...styles.textCenter, flex: 1 }}>
               <div
                 style={{
                   fontSize: typography.fontSize.lg,
@@ -311,7 +305,7 @@ function MaintenanceSection({
               >
                 {formatMoney(totalCost)}
               </div>
-              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+              <div style={styles.textXsMuted}>
                 Total Cost
               </div>
             </div>
@@ -331,8 +325,8 @@ function MaintenanceSection({
         {/* Maintenance entries */}
         <div style={{ maxHeight: 400, overflowY: 'auto' }}>
           {sortedHistory.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: spacing[4], color: colors.textMuted }}>
-              <p style={{ margin: 0, fontSize: typography.fontSize.sm }}>
+            <div style={{ ...styles.textCenter, padding: spacing[4], color: colors.textMuted }}>
+              <p style={{ ...styles.textSmMuted, margin: 0 }}>
                 No maintenance records yet
               </p>
             </div>

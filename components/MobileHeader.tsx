@@ -4,8 +4,69 @@
 // ============================================================================
 
 import { useState, memo } from 'react';
-import { colors, spacing, typography, borderRadius } from '../theme';
+import { colors, styles, spacing, typography, borderRadius } from '../theme';
 import { VIEWS, MODALS } from '../constants';
+
+const hamburgerBtnStyle = {
+  background: 'transparent',
+  border: 'none',
+  borderRadius: borderRadius.md,
+  padding: '8px',
+  cursor: 'pointer',
+  ...styles.flexCenter,
+  justifyContent: 'center',
+  color: colors.textPrimary,
+};
+
+const avatarBtnStyle = {
+  width: 36,
+  height: 36,
+  borderRadius: '50%',
+  background: colors.primary,
+  border: 'none',
+  ...styles.flexCenter,
+  justifyContent: 'center',
+  color: colors.bgDark,
+  fontWeight: typography.fontWeight.semibold,
+  fontSize: typography.fontSize.base,
+  cursor: 'pointer',
+};
+
+const dropdownPanelStyle = {
+  position: 'absolute' as const,
+  top: '100%',
+  right: 0,
+  marginTop: 8,
+  background: colors.bgMedium,
+  border: `1px solid ${colors.border}`,
+  borderRadius: borderRadius.xl,
+  padding: spacing[2],
+  minWidth: 180,
+  zIndex: 1000,
+  boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+};
+
+const menuItemBtnStyle = {
+  width: '100%',
+  padding: `${spacing[2]}px ${spacing[3]}px`,
+  background: 'transparent',
+  border: 'none',
+  borderRadius: borderRadius.md,
+  color: colors.textPrimary,
+  textAlign: 'left' as const,
+  cursor: 'pointer',
+  ...styles.flexCenter,
+  gap: spacing[2],
+};
+
+const dropdownOverlayStyle = {
+  position: 'fixed' as const,
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 999,
+};
 
 export default memo(function MobileHeader({
   currentUser,
@@ -20,17 +81,7 @@ export default memo(function MobileHeader({
     <div className="mobile-header">
       <button
         onClick={onOpenSidebar}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          borderRadius: borderRadius.md,
-          padding: '8px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: colors.textPrimary,
-        }}
+        style={hamburgerBtnStyle}
         aria-label="Open menu"
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -39,9 +90,8 @@ export default memo(function MobileHeader({
           <line x1="3" y1="18" x2="21" y2="18"></line>
         </svg>
       </button>
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
+      <div style={{
+        ...styles.flexCenter,
         gap: 8,
         flex: 1,
       }}>
@@ -51,82 +101,38 @@ export default memo(function MobileHeader({
           style={{ width: 28, height: 28, borderRadius: borderRadius.md }}
           onError={(e) => e.target.style.display = 'none'}
         />
-        <span style={{ fontWeight: typography.fontWeight.semibold, fontSize: typography.fontSize.lg, color: colors.textPrimary }}>SIMS</span>
+        <span style={{ ...styles.heading, fontSize: typography.fontSize.lg }}>SIMS</span>
       </div>
       {currentUser && (
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: colors.primary,
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: colors.bgDark,
-              fontWeight: typography.fontWeight.semibold,
-              fontSize: typography.fontSize.base,
-              cursor: 'pointer',
-            }}
+            style={avatarBtnStyle}
             aria-label="User menu"
           >
             {currentUser.name?.charAt(0).toUpperCase() || 'U'}
           </button>
           {menuOpen && (
             <>
-              <div 
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  zIndex: 999,
-                }}
+              <div
+                style={dropdownOverlayStyle}
                 onClick={() => setMenuOpen(false)}
               />
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: 8,
-                background: colors.bgMedium,
-                border: `1px solid ${colors.border}`,
-                borderRadius: borderRadius.xl,
-                padding: spacing[2],
-                minWidth: 180,
-                zIndex: 1000,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-              }}>
+              <div style={dropdownPanelStyle}>
                 <div style={{
                   padding: `${spacing[2]}px ${spacing[3]}px`,
                   borderBottom: `1px solid ${colors.borderLight}`,
                   marginBottom: spacing[2],
                 }}>
-                  <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.textPrimary }}>{currentUser.name}</div>
-                  <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>{currentUser.email}</div>
+                  <div style={styles.heading}>{currentUser.name}</div>
+                  <div style={styles.textSmMuted}>{currentUser.email}</div>
                 </div>
                 <button
                   onClick={() => {
                     setMenuOpen(false);
                     onOpenModal(MODALS.PROFILE);
                   }}
-                  style={{
-                    width: '100%',
-                    padding: `${spacing[2]}px ${spacing[3]}px`,
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: borderRadius.md,
-                    color: colors.textPrimary,
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing[2],
-                  }}
+                  style={menuItemBtnStyle}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -139,19 +145,7 @@ export default memo(function MobileHeader({
                     setMenuOpen(false);
                     onSetView(VIEWS.THEME_SELECTOR);
                   }}
-                  style={{
-                    width: '100%',
-                    padding: `${spacing[2]}px ${spacing[3]}px`,
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: borderRadius.md,
-                    color: colors.textPrimary,
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing[2],
-                  }}
+                  style={menuItemBtnStyle}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="3"/>
@@ -169,19 +163,7 @@ export default memo(function MobileHeader({
                       setMenuOpen(false);
                       onLogout();
                     }}
-                    style={{
-                      width: '100%',
-                      padding: `${spacing[2]}px ${spacing[3]}px`,
-                      background: 'transparent',
-                      border: 'none',
-                      borderRadius: borderRadius.md,
-                      color: colors.danger,
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing[2],
-                    }}
+                    style={{ ...menuItemBtnStyle, color: colors.danger }}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>

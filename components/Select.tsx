@@ -6,7 +6,7 @@
 
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
-import {colors, typography, borderRadius} from '../theme';
+import {colors, styles, typography, borderRadius} from '../theme';
 import { ChevronDown } from 'lucide-react';
 
 export function Select({ 
@@ -251,8 +251,7 @@ export function Select({
           cursor: disabled ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.6 : 1,
           position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
+          ...styles.flexCenter,
           boxSizing: 'border-box',
           transition: 'border-color 150ms ease, box-shadow 150ms ease',
           outline: 'none',

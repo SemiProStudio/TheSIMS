@@ -12,6 +12,41 @@ import { Select } from '../components/Select';
 import { DatePicker } from '../components/DatePicker';
 import { Modal, ModalHeader } from './ModalBase';
 
+// ============================================================================
+// Module-level style constants
+// ============================================================================
+const itemBannerStyle = {
+  background: `${withOpacity(colors.primary, 10)}`,
+  borderRadius: borderRadius.lg,
+  padding: spacing[3],
+  marginBottom: spacing[4],
+  ...styles.flexCenter,
+  gap: spacing[3],
+} as const;
+
+const noImgStyle = {
+  width: 48,
+  height: 48,
+  background: `${withOpacity(colors.primary, 20)}`,
+  borderRadius: borderRadius.md,
+  ...styles.flexColCenter,
+  color: colors.textMuted,
+  fontSize: typography.fontSize.xs,
+} as const;
+
+const twoColGrid = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: spacing[3],
+  marginBottom: spacing[4],
+} as const;
+
+const actionRowStyle = {
+  ...styles.flexCenter,
+  gap: spacing[3],
+  justifyContent: 'flex-end',
+} as const;
+
 interface MaintenanceRecord {
   id?: string;
   type?: string;
@@ -132,15 +167,7 @@ export const MaintenanceModal = memo<MaintenanceModalProps>(function Maintenance
       />
       <div style={{ padding: spacing[4] }}>
         {/* Item info banner */}
-        <div style={{
-          background: `${withOpacity(colors.primary, 10)}`,
-          borderRadius: borderRadius.lg,
-          padding: spacing[3],
-          marginBottom: spacing[4],
-          display: 'flex',
-          alignItems: 'center',
-          gap: spacing[3]
-        }}>
+        <div style={itemBannerStyle}>
           {item?.image ? (
             <img 
               src={item.image} 
@@ -153,32 +180,22 @@ export const MaintenanceModal = memo<MaintenanceModalProps>(function Maintenance
               }} 
             />
           ) : (
-            <div style={{ 
-              width: 48, 
-              height: 48, 
-              background: `${withOpacity(colors.primary, 20)}`, 
-              borderRadius: borderRadius.md,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: colors.textMuted,
-              fontSize: typography.fontSize.xs
-            }}>
+            <div style={noImgStyle}>
               No img
             </div>
           )}
           <div>
-            <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
+            <div style={styles.subheading}>
               {item?.name}
             </div>
-            <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
+            <div style={styles.textSmMuted}>
               {item?.brand} • {item?.id}
             </div>
           </div>
         </div>
 
         {/* Type and Status row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[4] }}>
+        <div style={twoColGrid}>
           <div>
             <label style={{ ...styles.label, color: !formData.type || errors.type ? colors.danger : undefined }}>
               Maintenance Type <span style={{ color: colors.danger }}>*</span>
@@ -236,7 +253,7 @@ export const MaintenanceModal = memo<MaintenanceModalProps>(function Maintenance
         </div>
 
         {/* Vendor row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[4] }}>
+        <div style={twoColGrid}>
           <div>
             <label style={styles.label}>Vendor / Service Provider</label>
             <input
@@ -283,8 +300,7 @@ export const MaintenanceModal = memo<MaintenanceModalProps>(function Maintenance
           
           <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: spacing[2] }}>
             <label style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+              ...styles.flexCenter,
               gap: spacing[2], 
               cursor: 'pointer',
               fontSize: typography.fontSize.sm,
@@ -302,7 +318,7 @@ export const MaintenanceModal = memo<MaintenanceModalProps>(function Maintenance
         </div>
 
         {/* Dates row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[4] }}>
+        <div style={twoColGrid}>
           <div>
             <label style={styles.label}>Scheduled Date</label>
             <DatePicker
@@ -338,7 +354,7 @@ export const MaintenanceModal = memo<MaintenanceModalProps>(function Maintenance
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+        <div style={actionRowStyle}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSubmit} icon={Save}>
             {isEdit ? 'Update Record' : 'Add Record'}

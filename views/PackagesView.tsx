@@ -5,7 +5,7 @@
 
 import { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import { Plus, Package, Trash2, ArrowLeft, ChevronRight, Edit2, AlertTriangle, Lightbulb } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme';
+import { colors, styles, spacing, borderRadius, typography } from '../theme';
 import { formatMoney, getStatusColor } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog, PageHeader } from '../components/ui';
 import { Select } from '../components/Select';
@@ -332,7 +332,7 @@ function PackagesView({
         <div className="modal-backdrop" style={styles.modal}>
           <div style={{ ...styles.modalBox, maxWidth: 450 }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
-              <h3 style={{ margin: 0, color: colors.textPrimary }}>New Package</h3>
+              <h3 style={styles.heading}>New Package</h3>
             </div>
             <div style={{ padding: spacing[4] }}>
               <div className="form-section">
@@ -374,7 +374,7 @@ function PackagesView({
                 />
               </div>
             </div>
-            <div style={{ padding: spacing[4], paddingTop: 0, display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
+            <div style={{ ...styles.flexCenter, padding: spacing[4], paddingTop: 0, gap: spacing[2], justifyContent: 'flex-end' }}>
               <Button variant="secondary" onClick={() => { setShowDetailsPrompt(false); resetForm(); }}>Cancel</Button>
               <Button onClick={handleDetailsSubmit} disabled={isNameEmpty}>Continue to Select Items</Button>
             </div>
@@ -389,18 +389,17 @@ function PackagesView({
   // ============================================================================
   if (showCreate) {
     return (
-      <div className="view-container" style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
+      <div className="view-container" style={{
+        ...styles.flexCol,
         height: '100%',
-        maxHeight: 'calc(100vh - 60px)', 
-        overflow: 'hidden' 
+        maxHeight: 'calc(100vh - 60px)',
+        overflow: 'hidden'
       }}>
         <PageHeader
           title={editingPackage ? `Edit: ${formName}` : `Create: ${formName}`}
           subtitle={`${formItems.length} items selected${formDescription ? ` • ${formDescription}` : ''}`}
           action={
-            <div style={{ display: 'flex', gap: spacing[2] }}>
+            <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
               <Button variant="secondary" onClick={handleCancel}>Cancel</Button>
               <Button 
                 onClick={handleSave} 
@@ -413,13 +412,12 @@ function PackagesView({
           }
         />
 
-        <Card padding={false} style={{ 
-          flex: '1 1 auto', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          minHeight: 0, 
+        <Card padding={false} style={{
+          ...styles.flexCol,
+          flex: '1 1 auto',
+          minHeight: 0,
           maxHeight: 'calc(100vh - 180px)',
-          overflow: 'hidden' 
+          overflow: 'hidden'
         }}>
           <div className="panel-header" style={{ flexShrink: 0, flexWrap: 'wrap', gap: spacing[2] }}>
             <div className="panel-header-title">
@@ -427,7 +425,7 @@ function PackagesView({
               <strong>Select Items</strong>
               <span className="panel-header-count">{formItems.length} selected</span>
             </div>
-            <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ ...styles.flexCenter, gap: spacing[2], flexWrap: 'wrap' }}>
               <Select
                 value={itemCategoryFilter}
                 onChange={e => setItemCategoryFilter(e.target.value)}
@@ -447,7 +445,7 @@ function PackagesView({
           </div>
           <div className="selection-list" style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
             {filteredItemsForSelect.length === 0 ? (
-              <div style={{ padding: spacing[4], textAlign: 'center', color: colors.textMuted }}>
+              <div style={{ ...styles.textCenter, padding: spacing[4], color: colors.textMuted }}>
                 No items found{itemCategoryFilter !== 'all' ? ` in ${itemCategoryFilter}` : ''}
                 {itemSearch && ` matching "${itemSearch}"`}
               </div>
@@ -525,7 +523,7 @@ function PackagesView({
         
         <div style={{ display: 'flex', gap: spacing[4], flex: 1, minHeight: 0 }}>
           {/* Package Contents */}
-          <Card padding={false} style={{ flex: 2, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+          <Card padding={false} style={{ ...styles.flexCol, flex: 2, minHeight: 0, overflow: 'hidden' }}>
             <CardHeader title={`Package Contents (${packageItems.length})`} icon={Package} />
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {packageItems.map(item => (
@@ -561,14 +559,14 @@ function PackagesView({
 
           {/* Suggested Accessories */}
           {suggestedAccessories.length > 0 && (
-            <Card padding={false} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+            <Card padding={false} style={{ ...styles.flexCol, flex: 1, minHeight: 0, overflow: 'hidden' }}>
               <CardHeader title={`Suggested Accessories (${suggestedAccessories.length})`} icon={Lightbulb} />
               <div style={{ flex: 1, overflowY: 'auto' }}>
                 {suggestedAccessories.map(({ item, reason }) => (
-                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: spacing[2], padding: `${spacing[3]}px ${spacing[4]}px`, borderBottom: `1px solid ${colors.borderLight}` }}>
+                  <div key={item.id} style={{ ...styles.flexCenter, gap: spacing[2], padding: `${spacing[3]}px ${spacing[4]}px`, borderBottom: `1px solid ${colors.borderLight}` }}>
                     <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => handleViewItem(item.id)}>
-                      <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, fontSize: typography.fontSize.sm }}>{item.name}</div>
-                      <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>{reason}</div>
+                      <div style={{ ...styles.subheading, fontSize: typography.fontSize.sm }}>{item.name}</div>
+                      <div style={styles.textXsMuted}>{reason}</div>
                     </div>
                     <Button size="sm" variant="secondary" onClick={() => handleAddSuggested(item.id)} icon={Plus}>
                       Add
@@ -623,20 +621,20 @@ function PackagesView({
             const allAvailable = allItemsAvailable(packageItems);
             return (
               <Card key={pkg.id} onClick={() => setSelectedPackage(pkg)} className="card-clickable">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[3] }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                <div style={{ ...styles.flexBetween, marginBottom: spacing[3] }}>
+                  <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
                     <Package size={18} color={colors.accent2} />
-                    <h3 style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary }}>{pkg.name}</h3>
+                    <h3 style={{ ...styles.heading, fontSize: typography.fontSize.lg }}>{pkg.name}</h3>
                   </div>
                   {!allAvailable && <AlertTriangle size={16} color={colors.checkedOut} />}
                 </div>
-                <div style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[2], flexWrap: 'wrap' }}>
+                <div style={{ ...styles.flexWrap, gap: spacing[2], marginBottom: spacing[2] }}>
                   <Badge text={pkg.id} color={colors.accent2} />
                   <Badge text={`${packageItems.length} items`} color={colors.accent1} />
                   <Badge text={formatMoney(packageValue)} color={colors.available} />
                 </div>
                 {pkg.description && (
-                  <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pkg.description}</div>
+                  <div style={{ ...styles.truncate, ...styles.textSmMuted }}>{pkg.description}</div>
                 )}
               </Card>
             );

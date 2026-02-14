@@ -5,8 +5,39 @@
 
 import { memo } from 'react';
 import { Pencil, Trash2, X } from 'lucide-react';
-import { colors, spacing, borderRadius, typography } from '../theme';
+import { colors, styles, spacing, borderRadius, typography } from '../theme';
 import { Button } from '../components/ui';
+
+// ============================================================================
+// Module-level style constants
+// ============================================================================
+const overlayStyle = {
+  position: 'fixed',
+  inset: 0,
+  zIndex: 9999,
+  background: 'rgba(0, 0, 0, 0.85)',
+  ...styles.flexColCenter,
+  padding: spacing[4],
+} as const;
+
+const closeBtnStyle = {
+  position: 'absolute',
+  top: spacing[4],
+  right: spacing[4],
+  background: 'rgba(255,255,255,0.1)',
+  border: 'none',
+  borderRadius: borderRadius.md,
+  color: '#fff',
+  cursor: 'pointer',
+  padding: spacing[2],
+  ...styles.flexColCenter,
+} as const;
+
+const imageContainerStyle = {
+  maxWidth: '90vw',
+  maxHeight: '75vh',
+  ...styles.flexColCenter,
+} as const;
 
 interface ImagePreviewModalProps {
   imageSrc: string;
@@ -26,35 +57,12 @@ const ImagePreviewModal = memo<ImagePreviewModalProps>(function ImagePreviewModa
   return (
     <div 
       onClick={onClose}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 9999,
-        background: 'rgba(0, 0, 0, 0.85)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: spacing[4],
-      }}
+      style={overlayStyle}
     >
       {/* Close button */}
       <button
         onClick={onClose}
-        style={{
-          position: 'absolute',
-          top: spacing[4],
-          right: spacing[4],
-          background: 'rgba(255,255,255,0.1)',
-          border: 'none',
-          borderRadius: borderRadius.md,
-          color: '#fff',
-          cursor: 'pointer',
-          padding: spacing[2],
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        style={closeBtnStyle}
         title="Close"
       >
         <X size={24} />
@@ -63,13 +71,7 @@ const ImagePreviewModal = memo<ImagePreviewModalProps>(function ImagePreviewModa
       {/* Full size image */}
       <div 
         onClick={e => e.stopPropagation()}
-        style={{
-          maxWidth: '90vw',
-          maxHeight: '75vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        style={imageContainerStyle}
       >
         <img
           src={imageSrc}
@@ -87,7 +89,7 @@ const ImagePreviewModal = memo<ImagePreviewModalProps>(function ImagePreviewModa
       <div 
         onClick={e => e.stopPropagation()}
         style={{
-          display: 'flex',
+          ...styles.flexCenter,
           gap: spacing[3],
           marginTop: spacing[4],
         }}

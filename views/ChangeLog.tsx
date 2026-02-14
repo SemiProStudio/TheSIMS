@@ -9,6 +9,15 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity} from '.
 import { formatDate, formatDateTime } from '../utils';
 import { Card, Button, SearchInput, Badge, BackButton, PageHeader } from '../components/ui';
 
+// Icon container style for change entries
+const changeIconStyle = {
+  ...styles.flexColCenter,
+  width: 36,
+  height: 36,
+  borderRadius: borderRadius.md,
+  flexShrink: 0,
+};
+
 // Change type icons and colors
 const CHANGE_TYPE_CONFIG = {
   created: { icon: Plus, color: colors.success, label: 'Created' },
@@ -51,21 +60,15 @@ const ChangeEntry = memo(function ChangeEntry({ change, onViewItem, isExpanded }
       }}>
         {/* Icon */}
         <div style={{
-          width: 36,
-          height: 36,
-          borderRadius: borderRadius.md,
+          ...changeIconStyle,
           background: withOpacity(config.color, 15),
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
         }}>
           <Icon size={18} style={{ color: config.color }} />
         </div>
         
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], flexWrap: 'wrap' }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[2], flexWrap: 'wrap' }}>
             <Badge text={config.label} color={config.color} size="sm" />
             {change.itemId && (
               <button
@@ -78,8 +81,7 @@ const ChangeEntry = memo(function ChangeEntry({ change, onViewItem, isExpanded }
                   color: colors.primary,
                   fontWeight: typography.fontWeight.medium,
                   fontSize: typography.fontSize.sm,
-                  display: 'flex',
-                  alignItems: 'center',
+                  ...styles.flexCenter,
                   gap: spacing[1],
                 }}
               >
@@ -130,18 +132,17 @@ const ChangeEntry = memo(function ChangeEntry({ change, onViewItem, isExpanded }
           
           {/* Meta info */}
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
+            ...styles.flexCenter,
             gap: spacing[3],
             marginTop: spacing[2],
             fontSize: typography.fontSize.xs,
             color: colors.textMuted,
           }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
+            <span style={{ ...styles.flexCenter, gap: spacing[1] }}>
               <Clock size={12} />
               {formatDateTime(change.timestamp)}
             </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
+            <span style={{ ...styles.flexCenter, gap: spacing[1] }}>
               <User size={12} />
               {change.user || 'System'}
             </span>
@@ -164,20 +165,17 @@ const ItemHistoryView = memo(function ItemHistoryView({ item, changes, onBack, o
       
       <Card style={{ marginTop: spacing[4] }}>
         <div style={{
+          ...styles.flexCenter,
           padding: spacing[4],
           borderBottom: `1px solid ${colors.border}`,
-          display: 'flex',
-          alignItems: 'center',
           gap: spacing[3],
         }}>
           <div style={{
+            ...styles.flexColCenter,
             width: 48,
             height: 48,
             borderRadius: borderRadius.lg,
             background: `${withOpacity(colors.primary, 15)}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}>
             <History size={24} style={{ color: colors.primary }} />
           </div>
@@ -192,17 +190,17 @@ const ItemHistoryView = memo(function ItemHistoryView({ item, changes, onBack, o
         {itemChanges.length > 0 ? (
           <div>
             {itemChanges.map((change, idx) => (
-              <ChangeEntry 
-                key={change.id || idx} 
-                change={change} 
+              <ChangeEntry
+                key={change.id || idx}
+                change={change}
                 onViewItem={onViewItem}
               />
             ))}
           </div>
         ) : (
           <div style={{
+            ...styles.textCenter,
             padding: spacing[6],
-            textAlign: 'center',
             color: colors.textMuted,
           }}>
             No changes recorded for this item.
@@ -222,8 +220,7 @@ const SearchResultItem = memo(function SearchResultItem({ item, onClick, changeC
       onClick={onClick}
       className="list-item-hover"
       style={{
-        display: 'flex',
-        alignItems: 'center',
+        ...styles.flexCenter,
         gap: spacing[3],
         width: '100%',
         padding: spacing[3],
@@ -235,26 +232,24 @@ const SearchResultItem = memo(function SearchResultItem({ item, onClick, changeC
       }}
     >
       <div style={{
+        ...styles.flexColCenter,
         width: 40,
         height: 40,
         borderRadius: borderRadius.md,
         background: isPackage ? `${withOpacity(colors.accent1, 15)}` : `${withOpacity(colors.primary, 15)}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
       }}>
         {isPackage ? <Package size={18} style={{ color: colors.accent1 }} /> : <History size={18} style={{ color: colors.primary }} />}
       </div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
+        <div style={styles.subheading}>
           {item.name}
         </div>
-        <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
+        <div style={styles.textSmMuted}>
           {item.id} • {item.category || item.type}
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-        <span style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
+      <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
+        <span style={styles.textSmMuted}>
           {changeCount} change{changeCount !== 1 ? 's' : ''}
         </span>
         <ChevronRight size={16} style={{ color: colors.textMuted }} />
@@ -351,10 +346,9 @@ function ChangeLog({
       <Card style={{ marginBottom: spacing[4] }}>
         <div style={{ padding: spacing[4] }}>
           <label style={{
+            ...styles.subheading,
             display: 'block',
             marginBottom: spacing[2],
-            fontWeight: typography.fontWeight.medium,
-            color: colors.textPrimary,
             fontSize: typography.fontSize.sm,
           }}>
             Search Items, Kits & Packages
@@ -385,8 +379,8 @@ function ChangeLog({
         
         {searchQuery && searchResults.length === 0 && (
           <div style={{
+            ...styles.textCenter,
             padding: spacing[4],
-            textAlign: 'center',
             color: colors.textMuted,
             borderTop: `1px solid ${colors.border}`,
           }}>
@@ -398,19 +392,17 @@ function ChangeLog({
       {/* Recent Changes */}
       <Card>
         <div style={{
+          ...styles.flexBetween,
           padding: spacing[4],
           borderBottom: `1px solid ${colors.border}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
             <Clock size={18} style={{ color: colors.primary }} />
             <h3 style={{ margin: 0, color: colors.textPrimary, fontSize: typography.fontSize.lg }}>
               Recent Changes
             </h3>
           </div>
-          <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>
+          <span style={styles.textSmMuted}>
             Last 10 changes
           </span>
         </div>
@@ -427,8 +419,8 @@ function ChangeLog({
           </div>
         ) : (
           <div style={{
+            ...styles.textCenter,
             padding: spacing[6],
-            textAlign: 'center',
             color: colors.textMuted,
           }}>
             <History size={48} style={{ opacity: 0.3, marginBottom: spacing[3] }} />

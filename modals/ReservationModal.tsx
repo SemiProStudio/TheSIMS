@@ -14,6 +14,71 @@ import { DatePicker } from '../components/DatePicker';
 import { Modal, ModalHeader } from './ModalBase';
 
 // ============================================================================
+// Module-level style constants
+// ============================================================================
+const searchResultDropdownStyle = {
+  position: 'absolute',
+  top: '100%',
+  left: 0,
+  right: 0,
+  marginTop: 4,
+  background: colors.bgMedium,
+  border: `1px solid ${colors.border}`,
+  borderRadius: borderRadius.lg,
+  boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+  zIndex: 100,
+  maxHeight: 300,
+  overflowY: 'auto',
+} as const;
+
+const noImgThumbnailSmall = {
+  width: 40,
+  height: 40,
+  borderRadius: borderRadius.md,
+  ...styles.flexColCenter,
+  color: colors.textMuted,
+  fontSize: typography.fontSize.xs,
+} as const;
+
+const noImgThumbnailMedium = {
+  width: 48,
+  height: 48,
+  borderRadius: borderRadius.md,
+  background: colors.bgDark,
+  ...styles.flexColCenter,
+  color: colors.textMuted,
+} as const;
+
+const removeItemBtnStyle = {
+  background: 'transparent',
+  border: 'none',
+  padding: spacing[1],
+  cursor: 'pointer',
+  color: colors.textMuted,
+  borderRadius: borderRadius.md,
+  ...styles.flexColCenter,
+} as const;
+
+const actionRowStyle = {
+  ...styles.flexCenter,
+  gap: spacing[3],
+  justifyContent: 'flex-end',
+} as const;
+
+const twoColGrid = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: spacing[3],
+  marginBottom: spacing[3],
+} as const;
+
+const errorTextStyle = {
+  color: colors.danger,
+  fontSize: typography.fontSize.xs,
+  margin: `${spacing[1]}px 0 0`,
+} as const;
+
+// ============================================================================
 // Interfaces
 // ============================================================================
 interface ReservationItem {
@@ -161,25 +226,12 @@ const ItemSearch = memo<ItemSearchProps>(function ItemSearch({
       {isOpen && searchQuery.trim() && (
         <div
           ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            marginTop: 4,
-            background: colors.bgMedium,
-            border: `1px solid ${colors.border}`,
-            borderRadius: borderRadius.lg,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-            zIndex: 100,
-            maxHeight: 300,
-            overflowY: 'auto',
-          }}
+          style={searchResultDropdownStyle}
         >
           {searchResults.length === 0 ? (
             <div style={{ 
               padding: spacing[4], 
-              textAlign: 'center', 
+              ...styles.textCenter,
               color: colors.textMuted,
               fontSize: typography.fontSize.sm 
             }}>
@@ -192,8 +244,7 @@ const ItemSearch = memo<ItemSearchProps>(function ItemSearch({
                 onClick={() => handleSelect(item)}
                 style={{
                   padding: spacing[3],
-                  display: 'flex',
-                  alignItems: 'center',
+                  ...styles.flexCenter,
                   gap: spacing[3],
                   cursor: 'pointer',
                   borderBottom: `1px solid ${colors.borderLight}`,
@@ -214,36 +265,24 @@ const ItemSearch = memo<ItemSearchProps>(function ItemSearch({
                     }} 
                   />
                 ) : (
-                  <div style={{ 
-                    width: 40, 
-                    height: 40, 
-                    borderRadius: borderRadius.md, 
+                  <div style={{
+                    ...noImgThumbnailSmall,
                     background: withOpacity(colors.primary, 15),
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: colors.textMuted,
-                    fontSize: typography.fontSize.xs
                   }}>
                     <Package size={16} />
                   </div>
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ 
-                    fontWeight: typography.fontWeight.medium, 
-                    color: colors.textPrimary,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    ...styles.subheading,
+                    ...styles.truncate,
                   }}>
                     {item.name}
                   </div>
                   <div style={{ 
-                    fontSize: typography.fontSize.sm, 
-                    color: colors.textMuted,
-                    display: 'flex',
+                    ...styles.textSmMuted,
+                    ...styles.flexCenter,
                     gap: spacing[2],
-                    alignItems: 'center'
                   }}>
                     <Badge text={item.id} color={colors.primary} />
                     <span>{item.brand}</span>
@@ -270,8 +309,7 @@ const SelectedItemCard = memo<SelectedItemCardProps>(function SelectedItemCard({
   
   return (
     <div style={{
-      display: 'flex',
-      alignItems: 'center',
+      ...styles.flexCenter,
       gap: spacing[3],
       padding: spacing[3],
       background: hasConflict 
@@ -287,33 +325,21 @@ const SelectedItemCard = memo<SelectedItemCardProps>(function SelectedItemCard({
           style={{ width: 48, height: 48, borderRadius: borderRadius.md, objectFit: 'cover' }} 
         />
       ) : (
-        <div style={{ 
-          width: 48, 
-          height: 48, 
-          borderRadius: borderRadius.md, 
-          background: colors.bgDark,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: colors.textMuted
-        }}>
+        <div style={noImgThumbnailMedium}>
           <Package size={20} />
         </div>
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ 
-          fontWeight: typography.fontWeight.medium, 
-          color: colors.textPrimary,
+          ...styles.subheading,
           marginBottom: 2
         }}>
           {item.name}
         </div>
         <div style={{ 
-          fontSize: typography.fontSize.sm, 
-          color: colors.textMuted,
-          display: 'flex',
+          ...styles.textSmMuted,
+          ...styles.flexCenter,
           gap: spacing[2],
-          alignItems: 'center',
           flexWrap: 'wrap'
         }}>
           <Badge text={item.id} color={colors.primary} />
@@ -324,8 +350,7 @@ const SelectedItemCard = memo<SelectedItemCardProps>(function SelectedItemCard({
             marginTop: spacing[1],
             fontSize: typography.fontSize.xs,
             color: colors.warning,
-            display: 'flex',
-            alignItems: 'center',
+            ...styles.flexCenter,
             gap: spacing[1]
           }}>
             <AlertTriangle size={12} />
@@ -338,17 +363,7 @@ const SelectedItemCard = memo<SelectedItemCardProps>(function SelectedItemCard({
       {onRemove && (
         <button
           onClick={() => onRemove(item.id)}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            padding: spacing[1],
-            cursor: 'pointer',
-            color: colors.textMuted,
-            borderRadius: borderRadius.md,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          style={removeItemBtnStyle}
           title="Remove item"
         >
           <X size={18} />
@@ -520,8 +535,7 @@ export const ReservationModal = memo<ReservationModalProps>(function Reservation
           <label style={{ 
             ...styles.label, 
             marginBottom: spacing[2],
-            display: 'flex',
-            alignItems: 'center',
+            ...styles.flexCenter,
             gap: spacing[2]
           }}>
             <Package size={16} />
@@ -542,15 +556,13 @@ export const ReservationModal = memo<ReservationModalProps>(function Reservation
           {selectedItems.length > 0 && (
             <div style={{ 
               marginTop: spacing[3],
-              display: 'flex',
-              flexDirection: 'column',
+              ...styles.flexCol,
               gap: spacing[2]
             }}>
               {/* Only show count when multiple items */}
               {!item && selectedItems.length > 1 && (
                 <div style={{ 
-                  fontSize: typography.fontSize.sm, 
-                  color: colors.textMuted,
+                  ...styles.textSmMuted,
                   marginBottom: spacing[1]
                 }}>
                   {selectedItems.length} items selected:
@@ -591,8 +603,7 @@ export const ReservationModal = memo<ReservationModalProps>(function Reservation
             marginBottom: spacing[4],
           }}>
             <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+              ...styles.flexCenter,
               gap: spacing[2], 
               marginBottom: spacing[2],
               color: colors.warning,
@@ -610,8 +621,7 @@ export const ReservationModal = memo<ReservationModalProps>(function Reservation
               You can still proceed if needed.
             </p>
             <label style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+              ...styles.flexCenter,
               gap: spacing[2], 
               cursor: 'pointer',
               fontSize: typography.fontSize.sm,
@@ -647,7 +657,7 @@ export const ReservationModal = memo<ReservationModalProps>(function Reservation
           </div>
         )}
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+        <div style={twoColGrid}>
           <div>
             <label style={{ ...styles.label, color: showProjectError ? colors.danger : undefined }}>
               Project Name <span style={{ color: colors.danger }}>*</span>
@@ -659,7 +669,7 @@ export const ReservationModal = memo<ReservationModalProps>(function Reservation
               placeholder="e.g., Wedding - Smith/Jones"
               style={getInputStyle(showProjectError, !reservationForm.project)} 
             />
-            {showProjectError && <p style={{ color: colors.danger, fontSize: typography.fontSize.xs, margin: `${spacing[1]}px 0 0` }}>Required</p>}
+            {showProjectError && <p style={errorTextStyle}>Required</p>}
           </div>
           <div>
             <label style={styles.label}>Project Type</label>
@@ -672,7 +682,7 @@ export const ReservationModal = memo<ReservationModalProps>(function Reservation
           </div>
         </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+        <div style={twoColGrid}>
           <div>
             <label style={{ ...styles.label, color: showStartError ? colors.danger : undefined }}>
               Start Date <span style={{ color: colors.danger }}>*</span>
@@ -684,7 +694,7 @@ export const ReservationModal = memo<ReservationModalProps>(function Reservation
               placeholder="Select start date"
               aria-label="Start date"
             />
-            {showStartError && <p style={{ color: colors.danger, fontSize: typography.fontSize.xs, margin: `${spacing[1]}px 0 0` }}>Required</p>}
+            {showStartError && <p style={errorTextStyle}>Required</p>}
           </div>
           <div>
             <label style={{ ...styles.label, color: showEndError ? colors.danger : undefined }}>
@@ -699,7 +709,7 @@ export const ReservationModal = memo<ReservationModalProps>(function Reservation
               aria-label="End date"
             />
             {dateError && (
-              <p style={{ color: colors.danger, fontSize: typography.fontSize.xs, margin: `${spacing[1]}px 0 0` }}>
+              <p style={errorTextStyle}>
                 End date must be on or after start date
               </p>
             )}
@@ -717,10 +727,10 @@ export const ReservationModal = memo<ReservationModalProps>(function Reservation
             placeholder="e.g., John Smith"
             style={getInputStyle(showUserError, !reservationForm.user)} 
           />
-          {showUserError && <p style={{ color: colors.danger, fontSize: typography.fontSize.xs, margin: `${spacing[1]}px 0 0` }}>Required</p>}
+          {showUserError && <p style={errorTextStyle}>Required</p>}
         </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+        <div style={twoColGrid}>
           <div>
             <label style={styles.label}>Contact Phone</label>
             <input 
@@ -754,7 +764,7 @@ export const ReservationModal = memo<ReservationModalProps>(function Reservation
         </div>
         
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+        <div style={actionRowStyle}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button 
             onClick={handleSave} 

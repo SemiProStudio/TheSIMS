@@ -17,6 +17,48 @@ import { SmartPasteModal } from './SmartPasteModal';
 
 // Re-export SmartPasteModal for consumers who import from ItemModal
 export { SmartPasteModal };
+// ============================================================================
+// Module-level style constants
+// ============================================================================
+const twoColGrid = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: spacing[3],
+  marginBottom: spacing[3],
+} as const;
+
+const fieldErrorStyle = {
+  color: colors.danger,
+  fontSize: typography.fontSize.xs,
+  marginTop: spacing[1],
+  display: 'block',
+} as const;
+
+const linkButtonStyle = {
+  background: 'none',
+  border: 'none',
+  fontSize: typography.fontSize.sm,
+  cursor: 'pointer',
+  padding: 0,
+  marginTop: spacing[1],
+} as const;
+
+const footerStyle = {
+  padding: spacing[4],
+  borderTop: `1px solid ${colors.borderLight}`,
+  ...styles.flexBetween,
+  gap: spacing[3],
+  background: colors.bgMedium,
+} as const;
+
+const noImgPlaceholderStyle = {
+  width: 80,
+  height: 80,
+  ...styles.flexColCenter,
+  background: withOpacity(colors.primary, 10),
+  borderRadius: borderRadius.md,
+  color: colors.textMuted,
+} as const;
 
 // ============================================================================
 // Interfaces
@@ -143,12 +185,7 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
     const error = getFieldError(field);
     if (!error) return null;
     return (
-      <span style={{ 
-        color: colors.danger, 
-        fontSize: typography.fontSize.xs, 
-        marginTop: spacing[1],
-        display: 'block'
-      }}>
+      <span style={fieldErrorStyle}>
         {error}
       </span>
     );
@@ -170,8 +207,7 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
             </Button>
             {isEdit && (
               <p style={{ 
-                color: colors.textMuted, 
-                fontSize: typography.fontSize.xs, 
+                ...styles.textXsMuted,
                 margin: `${spacing[1]}px 0 0`, 
                 textAlign: 'center' 
               }}>
@@ -182,9 +218,9 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
           
           {/* Preview Code Badge */}
           {!isEdit && previewCode && (
-            <div style={{ marginBottom: spacing[4], padding: spacing[3], background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.md, display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+            <div style={{ marginBottom: spacing[4], padding: spacing[3], background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.md, ...styles.flexCenter, gap: spacing[2] }}>
               <Badge text={previewCode} color={colors.primary} />
-              <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>Auto-generated ID</span>
+              <span style={styles.textSmMuted}>Auto-generated ID</span>
             </div>
           )}
           
@@ -203,9 +239,8 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
                 title="Crop item image"
               />
             ) : (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div style={{
+              ...styles.flexCenter,
               gap: spacing[3],
               padding: spacing[3],
               border: `1px dashed ${colors.border}`,
@@ -232,13 +267,8 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
                     <button
                       onClick={() => setCropSrc(itemForm.image)}
                       style={{
-                        background: 'none',
-                        border: 'none',
+                        ...linkButtonStyle,
                         color: colors.primary,
-                        fontSize: typography.fontSize.sm,
-                        cursor: 'pointer',
-                        padding: 0,
-                        marginTop: spacing[1],
                       }}
                     >
                       Resize / Crop
@@ -246,15 +276,9 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
                     <button
                       onClick={() => handleChange('image', null)}
                       style={{
-                        background: 'none',
-                        border: 'none',
+                        ...linkButtonStyle,
                         color: colors.danger,
-                        fontSize: typography.fontSize.sm,
-                        cursor: 'pointer',
-                        padding: 0,
-                        marginTop: spacing[1],
-                        display: 'flex',
-                        alignItems: 'center',
+                        ...styles.flexCenter,
                         gap: spacing[1],
                       }}
                     >
@@ -264,16 +288,7 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
                 </>
               ) : (
                 <>
-                  <div style={{
-                    width: 80,
-                    height: 80,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: withOpacity(colors.primary, 10),
-                    borderRadius: borderRadius.md,
-                    color: colors.textMuted,
-                  }}>
+                  <div style={noImgPlaceholderStyle}>
                     <Upload size={24} />
                   </div>
                   <div style={{ flex: 1 }}>
@@ -308,10 +323,9 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
                       <Upload size={14} style={{ marginRight: spacing[1] }} />
                       Choose Image
                     </label>
-                    <p style={{ 
-                      margin: `${spacing[1]}px 0 0`, 
-                      fontSize: typography.fontSize.xs, 
-                      color: colors.textMuted 
+                    <p style={{
+                      ...styles.textXsMuted,
+                      margin: `${spacing[1]}px 0 0`,
                     }}>
                       JPG, PNG, or WebP (max 5MB)
                     </p>
@@ -323,7 +337,7 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
           </div>
           
           {/* Name and Brand */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+          <div style={twoColGrid}>
             <div>
               <label style={{ ...styles.label, color: getFieldError('name') ? colors.danger : undefined }}>
                 Name <span style={{ color: colors.danger }}>*</span>
@@ -359,7 +373,7 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
           </div>
           
           {/* Category and Condition */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+          <div style={twoColGrid}>
             <div>
               <label style={styles.label}>Category</label>
               <Select 
@@ -404,7 +418,7 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
             <div style={{ marginBottom: spacing[3] }}>
               <label style={styles.label}>
                 Reorder Point
-                <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.normal, marginLeft: spacing[2] }}>
+                <span style={{ ...styles.textXsMuted, fontWeight: typography.fontWeight.normal, marginLeft: spacing[2] }}>
                   (alert when quantity falls below this)
                 </span>
               </label>
@@ -422,7 +436,7 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
           )}
           
           {/* Purchase Price and Current Value */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+          <div style={twoColGrid}>
             <div>
               <label style={styles.label}>Purchase Price</label>
               <input type="number" value={itemForm.purchasePrice} onChange={e => handleChange('purchasePrice', e.target.value)} placeholder="0.00" style={styles.input} />
@@ -434,7 +448,7 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
           </div>
           
           {/* Location and Serial Number */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+          <div style={twoColGrid}>
             <div>
               <label style={styles.label}>Location</label>
               {flattenedLocations.length > 0 ? (
@@ -471,7 +485,7 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
                 }} 
               />
               {duplicateSerialNumber && (
-                <span style={{ color: colors.danger, fontSize: typography.fontSize.xs, display: 'block', marginTop: spacing[1] }}>
+                <span style={fieldErrorStyle}>
                   Serial number already exists on "{duplicateSerialNumber.name}" ({duplicateSerialNumber.id})
                 </span>
               )}
@@ -492,11 +506,11 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
           {/* Specifications */}
           {categorySpecs.length > 0 && (
             <div style={{ borderTop: `1px solid ${colors.borderLight}`, paddingTop: spacing[4], marginTop: spacing[4] }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[3] }}>
+              <div style={{ ...styles.flexBetween, marginBottom: spacing[3] }}>
                 <h4 style={{ margin: 0, fontSize: typography.fontSize.sm, color: colors.textMuted }}>
                   Specifications ({categorySpecs.length} fields)
                 </h4>
-                <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                <span style={styles.textXsMuted}>
                   {categorySpecs.filter(s => s.required).length} required
                 </span>
               </div>
@@ -507,7 +521,7 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
                   <div style={{ fontSize: typography.fontSize.xs, color: colors.primary, marginBottom: spacing[2], fontWeight: typography.fontWeight.medium }}>
                     Required Fields
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3] }}>
+                  <div style={twoColGrid}>
                     {categorySpecs.filter(s => s.required).map(spec => {
                       const isEmpty = !itemForm.specs[spec.name];
                       return (
@@ -533,7 +547,7 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
                   <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginBottom: spacing[2] }}>
                     Optional Fields
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3] }}>
+                  <div style={twoColGrid}>
                     {categorySpecs.filter(s => !s.required).map(spec => (
                       <div key={spec.name}>
                         <label style={styles.label}>{spec.name}</label>
@@ -552,20 +566,13 @@ export const ItemModal = memo<ItemModalProps>(function ItemModal({ isEdit, itemI
         </div>
         
         {/* Action Buttons in fixed footer */}
-        <div style={{ 
-          padding: spacing[4], 
-          borderTop: `1px solid ${colors.borderLight}`,
-          display: 'flex', 
-          gap: spacing[3], 
-          justifyContent: 'space-between',
-          background: colors.bgMedium,
-        }}>
+        <div style={footerStyle}>
           {isEdit && onDelete && itemId ? (
             <Button variant="secondary" danger onClick={() => { onClose(); onDelete(itemId); }} icon={Trash2}>Delete Item</Button>
           ) : (
             <div />
           )}
-          <div style={{ display: 'flex', gap: spacing[3] }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[3] }}>
             <Button variant="secondary" onClick={onClose}>Cancel</Button>
             <Button onClick={handleSave} disabled={!isValid} icon={isEdit ? Save : Plus}>{isEdit ? 'Save Changes' : 'Add Item'}</Button>
           </div>

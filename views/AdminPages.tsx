@@ -90,13 +90,13 @@ export const ItemFormPage = memo(function ItemFormPage({
             
             {/* Preview Code Badge */}
             {!isEdit && previewCode && (
-              <div style={{ marginBottom: spacing[5], padding: spacing[3], background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.md, display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+              <div style={{ ...styles.flexCenter, marginBottom: spacing[5], padding: spacing[3], background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.md, gap: spacing[2] }}>
                 <Badge text={previewCode} color={colors.primary} />
-                <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>Auto-generated ID</span>
+                <span style={styles.textSmMuted}>Auto-generated ID</span>
               </div>
             )}
 
-            <h3 style={{ margin: `0 0 ${spacing[4]}px`, color: colors.textPrimary, fontSize: typography.fontSize.lg }}>
+            <h3 style={{ ...styles.heading, margin: `0 0 ${spacing[4]}px`, fontSize: typography.fontSize.lg }}>
               Basic Information
             </h3>
             
@@ -161,7 +161,7 @@ export const ItemFormPage = memo(function ItemFormPage({
                   <div>
                     <label style={styles.label}>
                       Quantity
-                      <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.normal, marginLeft: spacing[1] }}>
+                      <span style={{ ...styles.textXsMuted, fontWeight: typography.fontWeight.normal, marginLeft: spacing[1] }}>
                         (this category tracks quantities)
                       </span>
                     </label>
@@ -176,7 +176,7 @@ export const ItemFormPage = memo(function ItemFormPage({
                   <div>
                     <label style={styles.label}>
                       Reorder Point
-                      <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.normal, marginLeft: spacing[1] }}>
+                      <span style={{ ...styles.textXsMuted, fontWeight: typography.fontWeight.normal, marginLeft: spacing[1] }}>
                         (alert when below)
                       </span>
                     </label>
@@ -192,7 +192,7 @@ export const ItemFormPage = memo(function ItemFormPage({
               </div>
             )}
 
-            <h3 style={{ margin: `${spacing[5]}px 0 ${spacing[4]}px`, color: colors.textPrimary, fontSize: typography.fontSize.lg }}>
+            <h3 style={{ ...styles.heading, margin: `${spacing[5]}px 0 ${spacing[4]}px`, fontSize: typography.fontSize.lg }}>
               Value & Location
             </h3>
             
@@ -244,7 +244,7 @@ export const ItemFormPage = memo(function ItemFormPage({
                   }} 
                 />
                 {duplicateSerialNumber && (
-                  <span style={{ color: colors.danger, fontSize: typography.fontSize.xs, display: 'block', marginTop: spacing[1] }}>
+                  <span style={{ fontSize: typography.fontSize.xs, color: colors.danger, display: 'block', marginTop: spacing[1] }}>
                     Serial number already exists on "{duplicateSerialNumber.name}" ({duplicateSerialNumber.id})
                   </span>
                 )}
@@ -277,11 +277,11 @@ export const ItemFormPage = memo(function ItemFormPage({
           {categorySpecs.length > 0 && (
             <Card>
               <div style={{ padding: spacing[5] }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[4] }}>
-                  <h3 style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary }}>
+                <div style={{ ...styles.flexBetween, marginBottom: spacing[4] }}>
+                  <h3 style={{ ...styles.heading, fontSize: typography.fontSize.lg }}>
                     Specifications
                   </h3>
-                  <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                  <span style={styles.textXsMuted}>
                     {categorySpecs.filter(s => s.required).length} required / {categorySpecs.length} total
                   </span>
                 </div>
@@ -289,7 +289,7 @@ export const ItemFormPage = memo(function ItemFormPage({
                 {/* Required fields first */}
                 {categorySpecs.filter(s => s.required).length > 0 && (
                   <div style={{ marginBottom: spacing[4] }}>
-                    <div style={{ fontSize: typography.fontSize.xs, color: colors.primary, marginBottom: spacing[2], fontWeight: typography.fontWeight.medium }}>
+                    <div style={{ fontSize: typography.fontSize.xs, color: colors.primary, fontWeight: typography.fontWeight.medium, marginBottom: spacing[2] }}>
                       Required Fields
                     </div>
                     {categorySpecs.filter(s => s.required).map(spec => {
@@ -313,7 +313,7 @@ export const ItemFormPage = memo(function ItemFormPage({
                 {/* Optional fields */}
                 {categorySpecs.filter(s => !s.required).length > 0 && (
                   <div>
-                    <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginBottom: spacing[2] }}>
+                    <div style={{ ...styles.textXsMuted, marginBottom: spacing[2] }}>
                       Optional Fields
                     </div>
                     {categorySpecs.filter(s => !s.required).map(spec => (
@@ -548,7 +548,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
                   aria-label="Category"
                 />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+              <div style={{ ...styles.flexCol, justifyContent: 'flex-end' }}>
                 <div style={{ padding: `${spacing[2]}px ${spacing[3]}px`, background: colors.bgLight, borderRadius: borderRadius.md, fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
                   {requiredCount} required / {currentSpecs.length} total
                 </div>
@@ -564,7 +564,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
               ) : (
                 <div style={{ padding: spacing[3], background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.md, border: `1px solid ${withOpacity(colors.primary, 30)}` }}>
                   <label style={styles.label}>New Field Name</label>
-                  <div style={{ display: 'flex', gap: spacing[2] }}>
+                  <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
                     <input
                       ref={addInputRef}
                       type="text"
@@ -581,16 +581,14 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
                     <Button variant="secondary" onClick={handleCancelAdd}>Cancel</Button>
                   </div>
                   {duplicateError && (
-                    <div style={{ fontSize: typography.fontSize.xs, color: colors.danger, marginTop: spacing[1] }}>
-                      {duplicateError}
-                    </div>
+                    <div style={{ fontSize: typography.fontSize.xs, color: colors.danger, marginTop: spacing[1] }}>{duplicateError}</div>
                   )}
                 </div>
               )}
             </div>
 
             {/* Search & Filters */}
-            <div style={{ display: 'flex', gap: spacing[3], marginBottom: spacing[4], alignItems: 'center' }}>
+            <div style={{ ...styles.flexCenter, gap: spacing[3], marginBottom: spacing[4] }}>
               <div style={{ flex: 1, position: 'relative' }}>
                 <Search size={16} style={{ position: 'absolute', left: spacing[3], top: '50%', transform: 'translateY(-50%)', color: colors.textMuted }} />
                 <input
@@ -600,7 +598,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
                   style={{ ...styles.input, paddingLeft: spacing[8] }}
                 />
               </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: spacing[2], cursor: 'pointer', fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
+              <label style={{ ...styles.flexCenter, gap: spacing[2], cursor: 'pointer', fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
                 <input type="checkbox" checked={showOnlyRequired} onChange={e => setShowOnlyRequired(e.target.checked)} />
                 Required only
               </label>
@@ -609,7 +607,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
             {/* Fields List */}
             <div ref={listRef} style={{ maxHeight: '50vh', overflowY: 'auto' }}>
               {filteredSpecs.length === 0 ? (
-                <div style={{ textAlign: 'center', color: colors.textMuted, padding: spacing[6] }}>
+                <div style={{ ...styles.textCenter, color: colors.textMuted, padding: spacing[6] }}>
                   {searchFilter || showOnlyRequired ? 'No fields match your filter' : 'No specification fields defined'}
                 </div>
               ) : (
@@ -628,8 +626,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
                       onDragLeave={handleDragLeave}
                       onDrop={e => canDrag && handleDrop(e, field.originalIndex)}
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
+                        ...styles.flexCenter,
                         gap: spacing[3],
                         padding: spacing[3],
                         background: isNew ? `${withOpacity(colors.success, 15)}` : isDragOver ? `${withOpacity(colors.primary, 15)}` : colors.bgLight,
@@ -654,14 +651,12 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
                               style={{ ...styles.input, width: '100%', borderColor: isDup ? colors.danger : undefined }}
                             />
                             {isDup && (
-                              <div style={{ fontSize: typography.fontSize.xs, color: colors.danger, marginTop: 2 }}>
-                                Duplicate field name
-                              </div>
+                              <div style={{ fontSize: typography.fontSize.xs, color: colors.danger, marginTop: 2 }}>Duplicate field name</div>
                             )}
                           </div>
                         );
                       })()}
-                      <label style={{ display: 'flex', alignItems: 'center', gap: spacing[1], cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <label style={{ ...styles.flexCenter, gap: spacing[1], cursor: 'pointer', whiteSpace: 'nowrap' }}>
                         <input
                           type="checkbox"
                           checked={field.required}

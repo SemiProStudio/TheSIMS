@@ -9,7 +9,7 @@ import {
   ScanLine, Upload, Download, Bell, Palette, ChevronLeft, ChevronRight, Search
 } from 'lucide-react';
 import { VIEWS } from '../constants';
-import { colors, spacing, borderRadius, typography, withOpacity } from '../theme';
+import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme';
 import { useTheme } from '../contexts/ThemeContext';
 import { usePermissions } from '../contexts/PermissionsContext';
 import { announcePageChange } from '../utils/accessibility';
@@ -106,6 +106,38 @@ const VIEW_LABELS = {
   [VIEWS.NOTIFICATIONS]: 'Notifications',
 };
 
+const sidebarActionBtnBase = {
+  ...styles.flexCenter,
+  width: '100%',
+  background: 'transparent',
+  border: 'none',
+  borderRadius: borderRadius.lg,
+  color: colors.textSecondary,
+  cursor: 'pointer',
+  textAlign: 'left' as const,
+  fontSize: typography.fontSize.sm,
+  transition: 'all 150ms ease',
+} as const;
+
+const sidebarNavLabelStyle = {
+  overflow: 'hidden' as const,
+  whiteSpace: 'nowrap' as const,
+  transition: 'opacity 0.2s ease, width 0.2s ease',
+} as const;
+
+const userMenuItemBase = {
+  ...styles.flexCenter,
+  gap: spacing[2],
+  width: '100%',
+  padding: `${spacing[3]}px ${spacing[4]}px`,
+  background: 'none',
+  border: 'none',
+  color: colors.textPrimary,
+  cursor: 'pointer',
+  fontSize: typography.fontSize.sm,
+  textAlign: 'left' as const,
+} as const;
+
 function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, onOpenScanner, onOpenImport, onOpenExport, isOpen, onClose, collapsed, onToggleCollapse }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { themeId, availableThemes } = useTheme();
@@ -155,14 +187,13 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
       role="navigation"
       aria-label="Main navigation"
       style={{
+        ...styles.flexCol,
         height: '100vh',
         position: 'fixed',
         left: 0,
         top: 0,
         background: colors.bgMedium,
         borderRight: `1px solid ${colors.border}`,
-        display: 'flex',
-        flexDirection: 'column',
       }}
     >
       {/* Collapse toggle button */}
@@ -186,14 +217,12 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
         transition: 'padding 0.3s ease',
       }}>
         <div className="sidebar-logo" style={{
-          display: 'flex',
-          alignItems: 'center',
+          ...styles.flexCenter,
           justifyContent: collapsed ? 'center' : 'space-between',
           transition: 'justify-content 0.3s ease',
         }}>
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
+            ...styles.flexCenter,
             gap: collapsed ? 0 : spacing[3],
             transition: 'gap 0.3s ease',
           }}>
@@ -290,29 +319,17 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
             className="sidebar-nav-btn"
             title={collapsed ? 'Scan QR Code' : undefined}
             style={{
-              display: 'flex',
-              alignItems: 'center',
+              ...sidebarActionBtnBase,
               gap: collapsed ? 0 : spacing[3],
-              width: '100%',
               padding: `${spacing[3]}px ${collapsed ? spacing[3] : spacing[4]}px`,
-              background: 'transparent',
-              border: 'none',
-              borderRadius: borderRadius.lg,
-              color: colors.textSecondary,
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontSize: typography.fontSize.sm,
-              transition: 'all 150ms ease',
               justifyContent: collapsed ? 'center' : 'flex-start',
             }}
           >
             <ScanLine size={18} style={{ flexShrink: 0 }} />
             <span className="sidebar-nav-label" style={{
+              ...sidebarNavLabelStyle,
               opacity: collapsed ? 0 : 1,
               width: collapsed ? 0 : 'auto',
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              transition: 'opacity 0.2s ease, width 0.2s ease',
             }}>
               Scan QR Code
             </span>
@@ -359,29 +376,17 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
               className="sidebar-nav-btn"
               title={collapsed ? 'Import CSV' : undefined}
               style={{
-                display: 'flex',
-                alignItems: 'center',
+                ...sidebarActionBtnBase,
                 gap: collapsed ? 0 : spacing[3],
-                width: '100%',
                 padding: `${spacing[3]}px ${collapsed ? spacing[3] : spacing[4]}px`,
-                background: 'transparent',
-                border: 'none',
-                borderRadius: borderRadius.lg,
-                color: colors.textSecondary,
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontSize: typography.fontSize.sm,
-                transition: 'all 150ms ease',
                 justifyContent: collapsed ? 'center' : 'flex-start',
               }}
             >
               <Upload size={18} style={{ flexShrink: 0 }} />
               <span className="sidebar-nav-label" style={{
+                ...sidebarNavLabelStyle,
                 opacity: collapsed ? 0 : 1,
                 width: collapsed ? 0 : 'auto',
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                transition: 'opacity 0.2s ease, width 0.2s ease',
               }}>
                 Import CSV
               </span>
@@ -395,29 +400,17 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
               className="sidebar-nav-btn"
               title={collapsed ? 'Export Data' : undefined}
               style={{
-                display: 'flex',
-                alignItems: 'center',
+                ...sidebarActionBtnBase,
                 gap: collapsed ? 0 : spacing[3],
-                width: '100%',
                 padding: `${spacing[3]}px ${collapsed ? spacing[3] : spacing[4]}px`,
-                background: 'transparent',
-                border: 'none',
-                borderRadius: borderRadius.lg,
-                color: colors.textSecondary,
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontSize: typography.fontSize.sm,
-                transition: 'all 150ms ease',
                 justifyContent: collapsed ? 'center' : 'flex-start',
               }}
             >
               <Download size={18} style={{ flexShrink: 0 }} />
               <span className="sidebar-nav-label" style={{
+                ...sidebarNavLabelStyle,
                 opacity: collapsed ? 0 : 1,
                 width: collapsed ? 0 : 'auto',
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                transition: 'opacity 0.2s ease, width 0.2s ease',
               }}>
                 Export Data
               </span>
@@ -466,13 +459,11 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
               />
             ) : (
             <div style={{
+              ...styles.flexColCenter,
               width: 36,
               height: 36,
               borderRadius: borderRadius.md,
               background: `linear-gradient(135deg, ${colors.primary}, ${colors.accent1})`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               fontWeight: typography.fontWeight.semibold,
               color: colors.textPrimary,
               fontSize: typography.fontSize.sm,
@@ -490,19 +481,15 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
               transition: 'opacity 0.2s ease, width 0.2s ease',
             }}>
               <div style={{
-                fontWeight: typography.fontWeight.medium,
-                color: colors.textPrimary,
+                ...styles.truncate,
+                ...styles.subheading,
                 fontSize: typography.fontSize.sm,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
               }}>
                 {user?.name}
               </div>
               <div style={{
-                fontSize: typography.fontSize.xs,
-                color: colors.textMuted,
-                textTransform: 'capitalize'
+                ...styles.textXsMuted,
+                textTransform: 'capitalize',
               }}>
                 {user?.role?.name || user?.roleId || 'User'}
               </div>
@@ -538,19 +525,7 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
               <button
                 onClick={() => { onOpenProfile(); setShowUserMenu(false); }}
                 className="user-menu-item"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing[2],
-                  width: '100%',
-                  padding: `${spacing[3]}px ${spacing[4]}px`,
-                  background: 'none',
-                  border: 'none',
-                  color: colors.textPrimary,
-                  cursor: 'pointer',
-                  fontSize: typography.fontSize.sm,
-                  textAlign: 'left'
-                }}
+                style={userMenuItemBase}
               >
                 <User size={16} />
                 Profile Settings
@@ -561,29 +536,18 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
                 onClick={() => { setCurrentView(VIEWS.THEME_SELECTOR); setShowUserMenu(false); }}
                 className="user-menu-item"
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
+                  ...userMenuItemBase,
                   justifyContent: 'space-between',
-                  gap: spacing[2],
-                  width: '100%',
-                  padding: `${spacing[3]}px ${spacing[4]}px`,
-                  background: 'none',
-                  border: 'none',
                   borderTop: `1px solid ${colors.borderLight}`,
-                  color: colors.textPrimary,
-                  cursor: 'pointer',
-                  fontSize: typography.fontSize.sm,
-                  textAlign: 'left'
                 }}
               >
-                <span style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                <span style={{ ...styles.flexCenter, gap: spacing[2] }}>
                   <Palette size={16} />
                   Theme
                 </span>
-                <span style={{ 
-                  fontSize: typography.fontSize.xs, 
-                  color: colors.textMuted,
-                  textTransform: 'capitalize'
+                <span style={{
+                  ...styles.textXsMuted,
+                  textTransform: 'capitalize',
                 }}>
                   {availableThemes.find(t => t.id === themeId)?.name || 'Dark'}
                 </span>
@@ -593,18 +557,8 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
                 onClick={() => { setCurrentView(VIEWS.NOTIFICATIONS); setShowUserMenu(false); }}
                 className="user-menu-item"
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing[2],
-                  width: '100%',
-                  padding: `${spacing[3]}px ${spacing[4]}px`,
-                  background: 'none',
-                  border: 'none',
+                  ...userMenuItemBase,
                   borderTop: `1px solid ${colors.borderLight}`,
-                  color: colors.textPrimary,
-                  cursor: 'pointer',
-                  fontSize: typography.fontSize.sm,
-                  textAlign: 'left'
                 }}
               >
                 <Bell size={16} />
@@ -614,18 +568,9 @@ function Sidebar({ currentView, setCurrentView, user, onLogout, onOpenProfile, o
                 onClick={onLogout}
                 className="user-menu-item"
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing[2],
-                  width: '100%',
-                  padding: `${spacing[3]}px ${spacing[4]}px`,
-                  background: 'none',
-                  border: 'none',
+                  ...userMenuItemBase,
                   borderTop: `1px solid ${colors.borderLight}`,
                   color: colors.danger,
-                  cursor: 'pointer',
-                  fontSize: typography.fontSize.sm,
-                  textAlign: 'left'
                 }}
               >
                 <LogOut size={16} />

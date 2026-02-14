@@ -45,7 +45,7 @@ export const ExportModal = memo<ExportModalProps>(function ExportModal({ onExpor
       <div style={{ padding: spacing[4] }}>
         <div style={{ marginBottom: spacing[4] }}>
           <label style={styles.label}>Format</label>
-          <div style={{ display: 'flex', gap: spacing[2] }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
             {[['csv', 'CSV'], ['pdf', 'PDF']].map(([v, l]) => (
               <button 
                 key={v} 
@@ -66,7 +66,7 @@ export const ExportModal = memo<ExportModalProps>(function ExportModal({ onExpor
         
         <div style={{ marginBottom: spacing[4] }}>
           <label style={styles.label}>Columns</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
+          <div style={{ ...styles.flexWrap, gap: spacing[2] }}>
             {allColumns.map(col => (
               <button 
                 key={col.id} 
@@ -84,7 +84,7 @@ export const ExportModal = memo<ExportModalProps>(function ExportModal({ onExpor
           </div>
         </div>
         
-        <label style={{ display: 'flex', alignItems: 'center', gap: spacing[2], marginBottom: spacing[4], cursor: 'pointer' }}>
+        <label style={{ ...styles.flexCenter, gap: spacing[2], marginBottom: spacing[4], cursor: 'pointer' }}>
           <input 
             type="checkbox" 
             checked={includeBranding} 

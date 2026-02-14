@@ -6,7 +6,7 @@
 import { memo, useMemo } from 'react';
 
 import { Download, Building2, Users, FileText, DollarSign } from 'lucide-react';
-import { colors, spacing, borderRadius, typography, withOpacity } from '../theme';
+import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme';
 import { formatMoney } from '../utils';
 import { Badge, Card, CardHeader, StatCard, EmptyState, Button, PageHeader } from '../components/ui';
 
@@ -30,6 +30,9 @@ interface ClientReportPanelProps {
   onViewClient?: (client: Record<string, any>) => void;
   onBack: () => void;
 }
+
+const thStyle = { padding: spacing[3], textAlign: 'left' as const, fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium };
+const thStyleRight = { ...thStyle, textAlign: 'right' as const };
 
 export const ClientReportPanel = memo<ClientReportPanelProps>(function ClientReportPanel({
   clients = [],
@@ -128,12 +131,12 @@ export const ClientReportPanel = memo<ClientReportPanelProps>(function ClientRep
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: `1px solid ${colors.border}` }}>
-                  <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Rank</th>
-                  <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Client</th>
-                  <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Type</th>
-                  <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Contact</th>
-                  <th style={{ padding: spacing[3], textAlign: 'right', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Reservations</th>
-                  <th style={{ padding: spacing[3], textAlign: 'right', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Total Value</th>
+                  <th style={thStyle}>Rank</th>
+                  <th style={thStyle}>Client</th>
+                  <th style={thStyle}>Type</th>
+                  <th style={thStyle}>Contact</th>
+                  <th style={thStyleRight}>Reservations</th>
+                  <th style={thStyleRight}>Total Value</th>
                 </tr>
               </thead>
               <tbody>
@@ -164,7 +167,7 @@ export const ClientReportPanel = memo<ClientReportPanelProps>(function ClientRep
                       </span>
                     </td>
                     <td style={{ padding: spacing[3] }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                      <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
                         <span style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
                           {client.name}
                         </span>
@@ -173,7 +176,7 @@ export const ClientReportPanel = memo<ClientReportPanelProps>(function ClientRep
                         )}
                       </div>
                       {client.company && client.type === 'Individual' && (
-                        <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>{client.company}</div>
+                        <div style={styles.textXsMuted}>{client.company}</div>
                       )}
                     </td>
                     <td style={{ padding: spacing[3] }}>

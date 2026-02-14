@@ -12,6 +12,61 @@ import { Modal, ModalHeader } from './ModalBase';
 
 import { error as logError } from '../lib/logger';
 
+// ============================================================================
+// Module-level style constants
+// ============================================================================
+const foundItemBannerStyle = {
+  background: `${withOpacity(colors.primary, 10)}`,
+  border: `1px solid ${withOpacity(colors.primary, 30)}`,
+  borderRadius: borderRadius.lg,
+  padding: spacing[4],
+  marginBottom: spacing[4],
+} as const;
+
+const noImgStyle = {
+  width: 64,
+  height: 64,
+  background: `${withOpacity(colors.primary, 20)}`,
+  borderRadius: borderRadius.md,
+  ...styles.flexColCenter,
+  color: colors.textMuted,
+  fontSize: typography.fontSize.xs,
+} as const;
+
+const cameraContainerStyle = {
+  position: 'relative',
+  width: '100%',
+  aspectRatio: '4/3',
+  background: colors.bgDark,
+  borderRadius: borderRadius.lg,
+  overflow: 'hidden',
+  marginBottom: spacing[4],
+} as const;
+
+const scanOverlayStyle = {
+  position: 'absolute',
+  inset: 0,
+  ...styles.flexColCenter,
+  pointerEvents: 'none',
+} as const;
+
+const cameraPlaceholderStyle = {
+  width: '100%',
+  height: '100%',
+  ...styles.flexColCenter,
+  color: colors.textMuted,
+} as const;
+
+const errorBannerStyle = {
+  background: `${withOpacity(colors.danger, 20)}`,
+  border: `1px solid ${withOpacity(colors.danger, 50)}`,
+  borderRadius: borderRadius.md,
+  padding: spacing[3],
+  marginBottom: spacing[4],
+  color: colors.danger,
+  fontSize: typography.fontSize.sm,
+} as const;
+
 interface QRScannerModalProps {
   inventory: {
     id: string;
@@ -168,14 +223,8 @@ export const QRScannerModal = memo<QRScannerModalProps>(function QRScannerModal(
         {foundItem ? (
           <div>
             {/* Item Summary Card */}
-            <div style={{
-              background: `${withOpacity(colors.primary, 10)}`,
-              border: `1px solid ${withOpacity(colors.primary, 30)}`,
-              borderRadius: borderRadius.lg,
-              padding: spacing[4],
-              marginBottom: spacing[4]
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3], marginBottom: spacing[3] }}>
+            <div style={foundItemBannerStyle}>
+              <div style={{ ...styles.flexCenter, gap: spacing[3], marginBottom: spacing[3] }}>
                 {foundItem.image ? (
                   <img 
                     src={foundItem.image} 
@@ -188,22 +237,12 @@ export const QRScannerModal = memo<QRScannerModalProps>(function QRScannerModal(
                     }} 
                   />
                 ) : (
-                  <div style={{ 
-                    width: 64, 
-                    height: 64, 
-                    background: `${withOpacity(colors.primary, 20)}`, 
-                    borderRadius: borderRadius.md, 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    color: colors.textMuted, 
-                    fontSize: typography.fontSize.xs 
-                  }}>
+                  <div style={noImgStyle}>
                     No img
                   </div>
                 )}
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', gap: spacing[1], marginBottom: spacing[1], flexWrap: 'wrap' }}>
+                  <div style={{ ...styles.flexWrap, gap: spacing[1], marginBottom: spacing[1] }}>
                     <Badge text={foundItem.id} color={colors.primary} />
                     <Badge 
                       text={foundItem.status} 
@@ -211,16 +250,12 @@ export const QRScannerModal = memo<QRScannerModalProps>(function QRScannerModal(
                     />
                   </div>
                   <div style={{ 
-                    fontWeight: typography.fontWeight.medium, 
-                    color: colors.textPrimary,
+                    ...styles.subheading,
                     fontSize: typography.fontSize.base
                   }}>
                     {foundItem.name}
                   </div>
-                  <div style={{ 
-                    fontSize: typography.fontSize.sm, 
-                    color: colors.textMuted 
-                  }}>
+                  <div style={styles.textSmMuted}>
                     {foundItem.brand} • {foundItem.category}
                   </div>
                 </div>
@@ -245,8 +280,7 @@ export const QRScannerModal = memo<QRScannerModalProps>(function QRScannerModal(
             
             {/* Quick Action Buttons */}
             <div style={{ 
-              display: 'flex', 
-              flexDirection: 'column', 
+              ...styles.flexCol,
               gap: spacing[2],
               marginBottom: spacing[4]
             }}>
@@ -302,15 +336,7 @@ export const QRScannerModal = memo<QRScannerModalProps>(function QRScannerModal(
         ) : (
           <>
             {/* Camera view */}
-            <div style={{
-              position: 'relative',
-              width: '100%',
-              aspectRatio: '4/3',
-              background: colors.bgDark,
-              borderRadius: borderRadius.lg,
-              overflow: 'hidden',
-              marginBottom: spacing[4]
-            }}>
+            <div style={cameraContainerStyle}>
               {/* Video element always rendered (hidden when not scanning) */}
               <video
                 ref={videoRef}
@@ -327,14 +353,7 @@ export const QRScannerModal = memo<QRScannerModalProps>(function QRScannerModal(
               {/* Scanning overlay - only show when scanning */}
               {scanning && (
                 <>
-                  <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    pointerEvents: 'none'
-                  }}>
+                  <div style={scanOverlayStyle}>
                     <div style={{
                       width: '60%',
                       height: '60%',
@@ -362,15 +381,7 @@ export const QRScannerModal = memo<QRScannerModalProps>(function QRScannerModal(
               
               {/* Camera not active placeholder - only show when not scanning */}
               {!scanning && (
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: colors.textMuted
-                }}>
+                <div style={cameraPlaceholderStyle}>
                   <svg width={48} height={48} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M23 19a2 2 0 0 1-2 2h-4m4-6v-1m-2-2h1m-6 0h-1m-2 2v1m-4 6H3a2 2 0 0 1-2-2v-4m6 0H6m-2-2V9m2 2v1"/>
                     <rect x="5" y="5" width="5" height="5" rx="1"/>
@@ -388,15 +399,7 @@ export const QRScannerModal = memo<QRScannerModalProps>(function QRScannerModal(
             
             {/* Error message */}
             {error && (
-              <div style={{
-                background: `${withOpacity(colors.danger, 20)}`,
-                border: `1px solid ${withOpacity(colors.danger, 50)}`,
-                borderRadius: borderRadius.md,
-                padding: spacing[3],
-                marginBottom: spacing[4],
-                color: colors.danger,
-                fontSize: typography.fontSize.sm
-              }}>
+              <div style={errorBannerStyle}>
                 {error}
               </div>
             )}
@@ -418,7 +421,7 @@ export const QRScannerModal = memo<QRScannerModalProps>(function QRScannerModal(
               paddingTop: spacing[4]
             }}>
               <label style={styles.label}>Or enter code manually</label>
-              <div style={{ display: 'flex', gap: spacing[2] }}>
+              <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
                 <input
                   type="text"
                   value={manualCode}

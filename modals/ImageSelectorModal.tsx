@@ -12,6 +12,26 @@ import ImageCropEditor from '../components/ImageCropEditor';
 
 import { error as logError } from '../lib/logger';
 
+// ============================================================================
+// Module-level style constants
+// ============================================================================
+const dropZoneBaseStyle = {
+  border: `2px dashed ${colors.border}`,
+  borderRadius: borderRadius.lg,
+  padding: spacing[6],
+  ...styles.textCenter,
+  marginBottom: spacing[4],
+} as const;
+
+const errorBannerStyle = {
+  background: 'rgba(239, 68, 68, 0.1)',
+  border: '1px solid rgba(239, 68, 68, 0.3)',
+  borderRadius: borderRadius.md,
+  padding: spacing[3],
+  fontSize: '14px',
+  color: colors.danger,
+} as const;
+
 interface ImageSelectorModalProps {
   images?: string[];
   currentImage?: string;
@@ -104,14 +124,9 @@ export const ImageSelectorModal = memo<ImageSelectorModalProps>(function ImageSe
       <div style={{ padding: cropSrc ? 0 : spacing[4] }}>
         {error && (
           <div style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: borderRadius.md,
-            padding: spacing[3],
+            ...errorBannerStyle,
             margin: cropSrc ? spacing[4] : 0,
             marginBottom: spacing[4],
-            fontSize: '14px',
-            color: colors.danger,
           }}>
             {error}
           </div>
@@ -132,12 +147,8 @@ export const ImageSelectorModal = memo<ImageSelectorModalProps>(function ImageSe
             <div 
               onClick={() => !uploading && fileInputRef.current?.click()} 
               style={{ 
-                border: `2px dashed ${colors.border}`, 
-                borderRadius: borderRadius.lg, 
-                padding: spacing[6], 
-                textAlign: 'center', 
+                ...dropZoneBaseStyle,
                 cursor: uploading ? 'not-allowed' : 'pointer', 
-                marginBottom: spacing[4],
                 opacity: uploading ? 0.6 : 1,
               }}
             >
@@ -161,7 +172,7 @@ export const ImageSelectorModal = memo<ImageSelectorModalProps>(function ImageSe
             {uploadedImage && (
               <div style={{ marginBottom: spacing[4] }}>
                 <p style={{ ...styles.label, marginBottom: spacing[2] }}>Preview</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
+                <div style={{ ...styles.flexCenter, gap: spacing[3] }}>
                   <img 
                     src={uploadedImage} 
                     alt="Preview" 
@@ -172,7 +183,7 @@ export const ImageSelectorModal = memo<ImageSelectorModalProps>(function ImageSe
                       borderRadius: borderRadius.md 
                     }} 
                   />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
+                  <div style={{ ...styles.flexCol, gap: spacing[2] }}>
                     <Button 
                       onClick={handleUseImage} 
                       icon={uploading ? null : Image}

@@ -303,6 +303,93 @@ export const styles = {
     overflow: 'hidden',
     boxShadow: shadows.lg,
   },
+
+  // ---- Layout utilities ----
+
+  // Flex row with centered items (110 occurrences)
+  flexCenter: {
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+  },
+
+  // Flex row with space-between and centered items
+  flexBetween: {
+    display: 'flex' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+  },
+
+  // Flex column
+  flexCol: {
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+  },
+
+  // Flex wrap
+  flexWrap: {
+    display: 'flex' as const,
+    flexWrap: 'wrap' as const,
+  },
+
+  // Flex column centered (e.g. empty states, loading)
+  flexColCenter: {
+    display: 'flex' as const,
+    flexDirection: 'column' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+
+  // Centered text
+  textCenter: {
+    textAlign: 'center' as const,
+  },
+
+  // ---- Text patterns ----
+
+  // Small muted text (24 occurrences)
+  textSmMuted: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textMuted,
+  },
+
+  // Extra-small muted text (81 occurrences)
+  textXsMuted: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textMuted,
+  },
+
+  // Heading: no margin, semibold, primary color
+  heading: {
+    margin: 0,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textPrimary,
+  },
+
+  // Subheading: medium weight, primary color
+  subheading: {
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
+  },
+
+  // ---- Section patterns ----
+
+  // Section divider (bottom border)
+  sectionDivider: {
+    borderBottom: `1px solid ${colors.borderLight}`,
+  },
+
+  // Full-width container
+  fullWidth: {
+    width: '100%',
+    boxSizing: 'border-box' as const,
+  },
+
+  // Truncated single-line text
+  truncate: {
+    overflow: 'hidden' as const,
+    textOverflow: 'ellipsis' as const,
+    whiteSpace: 'nowrap' as const,
+  },
 };
 
 // ============================================================================

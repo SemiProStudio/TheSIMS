@@ -6,7 +6,7 @@
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
-import { colors, spacing, borderRadius, typography } from '../theme';
+import { colors, styles as themeStyles, spacing, borderRadius, typography } from '../theme';
 
 // =============================================================================
 // Helper Functions
@@ -75,8 +75,7 @@ const styles = {
   },
   inputWrapper: {
     position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
+    ...themeStyles.flexCenter,
   },
   input: {
     width: '100%',
@@ -110,8 +109,7 @@ const styles = {
     right: '12px',
     pointerEvents: 'none',
     color: colors.textMuted,
-    display: 'flex',
-    alignItems: 'center',
+    ...themeStyles.flexCenter,
     justifyContent: 'center',
     transition: 'color 150ms ease',
   },
@@ -144,21 +142,17 @@ const styles = {
     right: 0,
   },
   header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    ...themeStyles.flexBetween,
     marginBottom: spacing[3],
     paddingBottom: spacing[2],
     borderBottom: `1px solid ${colors.border}`,
   },
   headerTitle: {
+    ...themeStyles.heading,
     fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
-    color: colors.textPrimary,
   },
   navButton: {
-    display: 'flex',
-    alignItems: 'center',
+    ...themeStyles.flexCenter,
     justifyContent: 'center',
     width: '32px',
     height: '32px',
@@ -192,8 +186,7 @@ const styles = {
     gap: '2px',
   },
   day: {
-    display: 'flex',
-    alignItems: 'center',
+    ...themeStyles.flexCenter,
     justifyContent: 'center',
     width: '36px',
     height: '36px',
@@ -227,9 +220,7 @@ const styles = {
     cursor: 'not-allowed',
   },
   footer: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    ...themeStyles.flexBetween,
     marginTop: spacing[3],
     paddingTop: spacing[2],
     borderTop: `1px solid ${colors.border}`,

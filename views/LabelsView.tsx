@@ -6,11 +6,34 @@ import { memo, useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Search, Printer, Download, Check, Package, Layers } from 'lucide-react';
 import QRCode from 'qrcode';
 import { LABEL_FORMATS } from '../constants';
-import { colors, spacing, borderRadius, typography, withOpacity} from '../theme';
+import { colors, spacing, borderRadius, typography, withOpacity, styles } from '../theme';
 import { Card, CardHeader, Button, SearchInput, Badge, PageHeader } from '../components/ui';
 
 import { error as logError } from '../lib/logger';
 import { openPrintWindow } from '../lib/printUtil';
+
+// ── Module-level style constants ──────────────────────────────────────────────
+
+const LABEL_SHADOW = '0 2px 8px rgba(0,0,0,0.1)';
+
+const labelBase = {
+  background: '#fff',
+  borderRadius: borderRadius.md,
+  boxShadow: LABEL_SHADOW,
+};
+
+const flexOverflowCol = { flex: 1, overflow: 'hidden', ...styles.flexCol };
+const flexOverflow = { flex: 1, overflow: 'hidden' };
+const specLabelColor = { color: '#999' };
+const specValueColor = { color: '#333' };
+const labelIdStyle = { fontWeight: 'bold' as const, color: '#000' };
+const labelNameMedium = { ...styles.truncate, color: '#333', marginBottom: 2 };
+const labelBrandStyle = { fontSize: typography.fontSize.sm, color: '#666' };
+const sectionBorder = { borderTop: '1px solid #eee' };
+const labelUpperXs = { fontSize: typography.fontSize.xs, color: '#999', textTransform: 'uppercase' as const };
+const linkButton = { background: 'none', border: 'none', cursor: 'pointer', fontSize: typography.fontSize.sm };
+
+// ── Components ────────────────────────────────────────────────────────────────
 
 // Real QR Code Generator Component using qrcode library
 const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
@@ -43,11 +66,7 @@ const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
       ref={canvasRef} 
       width={size} 
       height={size} 
-      style={{ 
-        borderRadius: borderRadius.sm,
-        display: 'block',
-        backgroundColor: '#FFFFFF'
-      }} 
+      style={{ borderRadius: borderRadius.sm, display: 'block', backgroundColor: '#FFFFFF' }} 
     />
   );
 });
@@ -126,17 +145,7 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   // Small format - QR only (square)
   if (isSmall) {
     return (
-      <div style={{ 
-        width: labelWidth, 
-        height: labelHeight, 
-        background: '#fff', 
-        borderRadius: borderRadius.md, 
-        padding: spacing[2], 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
-      }}>
+      <div style={{ ...labelBase, ...styles.flexCenter, justifyContent: 'center', width: labelWidth, height: labelHeight, padding: spacing[2] }}>
         <QRCodeCanvas data={item.id} size={qrSize} />
       </div>
     );
@@ -145,22 +154,12 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   // Medium format - QR + Info with better text sizing
   if (isMedium) {
     return (
-      <div style={{ 
-        width: labelWidth, 
-        height: labelHeight, 
-        background: '#fff', 
-        borderRadius: borderRadius.md, 
-        padding: spacing[3], 
-        display: 'flex', 
-        gap: spacing[3],
-        alignItems: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
-      }}>
+      <div style={{ ...labelBase, ...styles.flexCenter, gap: spacing[3], width: labelWidth, height: labelHeight, padding: spacing[3] }}>
         <QRCodeCanvas data={item.id} size={qrSize} />
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ fontSize: typography.fontSize.base, fontWeight: 'bold', color: '#000', marginBottom: 4 }}>{item.id}</div>
-          <div style={{ fontSize: typography.fontSize.base, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>{item.name}</div>
-          <div style={{ fontSize: typography.fontSize.sm, color: '#666' }}>{item.brand}</div>
+        <div style={{ ...flexOverflowCol, justifyContent: 'center' }}>
+          <div style={{ ...labelIdStyle, fontSize: typography.fontSize.base, marginBottom: 4 }}>{item.id}</div>
+          <div style={{ ...labelNameMedium, fontSize: typography.fontSize.base }}>{item.name}</div>
+          <div style={labelBrandStyle}>{item.brand}</div>
         </div>
       </div>
     );
@@ -169,41 +168,24 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   // Large format - Full Details
   if (isLarge) {
     return (
-      <div style={{ 
-        width: labelWidth, 
-        height: labelHeight, 
-        background: '#fff', 
-        borderRadius: borderRadius.md, 
-        padding: spacing[3], 
-        display: 'flex', 
-        flexDirection: 'column',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
-      }}>
+      <div style={{ ...labelBase, ...styles.flexCol, width: labelWidth, height: labelHeight, padding: spacing[3] }}>
         {/* Top section: QR + Basic Info */}
-        <div style={{ display: 'flex', gap: spacing[3], marginBottom: spacing[2] }}>
+        <div style={{ ...styles.flexCenter, gap: spacing[3], marginBottom: spacing[2] }}>
           <QRCodeCanvas data={item.id} size={qrSize} />
-          <div style={{ flex: 1, overflow: 'hidden' }}>
-            <div style={{ fontSize: typography.fontSize.lg, fontWeight: 'bold', color: '#000', marginBottom: 2 }}>{item.id}</div>
-            <div style={{ fontSize: typography.fontSize.base, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>{item.name}</div>
-            <div style={{ fontSize: typography.fontSize.sm, color: '#666' }}>{item.brand}</div>
+          <div style={flexOverflow}>
+            <div style={{ ...labelIdStyle, fontSize: typography.fontSize.lg, marginBottom: 2 }}>{item.id}</div>
+            <div style={{ ...labelNameMedium, fontSize: typography.fontSize.base }}>{item.name}</div>
+            <div style={labelBrandStyle}>{item.brand}</div>
           </div>
         </div>
-        
+
         {/* Specs Grid */}
         {itemSpecs.length > 0 && (
-          <div style={{ 
-            flex: 1, 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(2, 1fr)', 
-            gap: '4px 12px',
-            fontSize: typography.fontSize.xs,
-            borderTop: '1px solid #eee',
-            paddingTop: spacing[2],
-          }}>
+          <div style={{ ...sectionBorder, flex: 1, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px 12px', fontSize: typography.fontSize.xs, paddingTop: spacing[2] }}>
             {itemSpecs.map((spec, idx) => (
               <div key={idx} style={{ overflow: 'hidden' }}>
-                <span style={{ color: '#999' }}>{spec.label}: </span>
-                <span style={{ color: '#333' }}>{spec.value}</span>
+                <span style={specLabelColor}>{spec.label}: </span>
+                <span style={specValueColor}>{spec.value}</span>
               </div>
             ))}
           </div>
@@ -216,44 +198,30 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   if (isKitOrPackageLabel) {
     const itemsList = containedItems || [];
     return (
-      <div style={{ 
-        width: labelWidth, 
-        height: labelHeight, 
-        background: '#fff', 
-        borderRadius: borderRadius.md, 
-        padding: spacing[3], 
-        display: 'flex', 
-        flexDirection: 'column',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
-      }}>
+      <div style={{ ...labelBase, ...styles.flexCol, width: labelWidth, height: labelHeight, padding: spacing[3] }}>
         {/* Header: QR + Kit/Package Info */}
-        <div style={{ display: 'flex', gap: spacing[3], marginBottom: spacing[2] }}>
+        <div style={{ ...styles.flexCenter, gap: spacing[3], marginBottom: spacing[2] }}>
           <QRCodeCanvas data={item.id} size={qrSize} />
-          <div style={{ flex: 1, overflow: 'hidden' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+          <div style={flexOverflow}>
+            <div style={{ ...styles.flexCenter, gap: 4, marginBottom: 2 }}>
               {isKit ? <Layers size={12} color="#666" /> : <Package size={12} color="#666" />}
               <span style={{ fontSize: typography.fontSize.xs, color: '#666', textTransform: 'uppercase' }}>
                 {isKit ? 'Kit' : 'Package'}
               </span>
             </div>
-            <div style={{ fontSize: typography.fontSize.base, fontWeight: 'bold', color: '#000', marginBottom: 2 }}>{item.id}</div>
-            <div style={{ fontSize: typography.fontSize.sm, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+            <div style={{ ...labelIdStyle, fontSize: typography.fontSize.base, marginBottom: 2 }}>{item.id}</div>
+            <div style={{ ...styles.truncate, fontSize: typography.fontSize.sm, color: '#333' }}>{item.name}</div>
           </div>
         </div>
-        
+
         {/* Items List */}
-        <div style={{ 
-          flex: 1, 
-          borderTop: '1px solid #eee',
-          paddingTop: spacing[2],
-          overflow: 'hidden',
-        }}>
-          <div style={{ fontSize: typography.fontSize.xs, color: '#999', marginBottom: 4, textTransform: 'uppercase' }}>
+        <div style={{ ...sectionBorder, flex: 1, paddingTop: spacing[2], overflow: 'hidden' }}>
+          <div style={{ ...labelUpperXs, marginBottom: 4 }}>
             Contains ({itemsList.length} items):
           </div>
           <div style={{ fontSize: typography.fontSize.xs, color: '#333', lineHeight: 1.4 }}>
             {itemsList.slice(0, 8).map((i, idx) => (
-              <div key={idx} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div key={idx} style={styles.truncate}>
                 • {i.id} - {i.name}
               </div>
             ))}

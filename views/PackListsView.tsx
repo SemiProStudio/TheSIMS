@@ -583,9 +583,8 @@ function PackListsView({
   if (showCreate) {
     const isEditing = editingList !== null;
     return (
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
+      <div style={{
+        ...styles.flexCol,
         height: 'calc(100vh - 60px)',
         overflow: 'hidden',
         padding: spacing[4]
@@ -613,9 +612,8 @@ function PackListsView({
           gap: spacing[4]
         }}>
           {/* Packages Selection */}
-          <div className="selection-panel" style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
+          <div className="selection-panel" style={{
+            ...styles.flexCol,
             overflow: 'hidden',
             minHeight: 0
           }}>
@@ -681,9 +679,8 @@ function PackListsView({
           </div>
 
           {/* Items Selection with Quantities */}
-          <div className="selection-panel" style={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
+          <div className="selection-panel" style={{
+            ...styles.flexCol,
             overflow: 'hidden',
             minHeight: 0
           }}>
@@ -693,7 +690,7 @@ function PackListsView({
                 <strong>Individual Items</strong>
                 <span className="panel-header-count">{selectedItemIds.length} selected</span>
               </div>
-              <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ ...styles.flexCenter, gap: spacing[2], flexWrap: 'wrap' }}>
                 <Select
                   value={itemCategoryFilter}
                   onChange={e => setItemCategoryFilter(e.target.value)}
@@ -708,7 +705,7 @@ function PackListsView({
             </div>
             <div className="selection-list" style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
               {filteredItems.length === 0 ? (
-                <div style={{ padding: spacing[4], textAlign: 'center', color: colors.textMuted }}>
+                <div style={{ ...styles.textCenter, padding: spacing[4], color: colors.textMuted }}>
                   No items found{itemCategoryFilter !== 'all' ? ` in ${itemCategoryFilter}` : ''}
                   {itemSearch && ` matching "${itemSearch}"`}
                 </div>
@@ -801,7 +798,7 @@ function PackListsView({
         {listPackages.length > 0 && (
           <div style={{ marginBottom: spacing[4] }}>
             <h4 style={{ margin: `0 0 ${spacing[2]}px`, color: colors.textSecondary, fontSize: typography.fontSize.sm }}>Packages Included:</h4>
-            <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
+            <div style={{ ...styles.flexWrap, gap: spacing[2] }}>
               {listPackages.map(pkg => (
                 <Badge key={pkg.id} text={pkg.name} color={colors.accent2} />
               ))}
@@ -809,7 +806,7 @@ function PackListsView({
           </div>
         )}
         
-        <Card padding={false} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+        <Card padding={false} style={{ ...styles.flexCol, flex: 1, minHeight: 0, overflow: 'hidden' }}>
           <CardHeader title={`Items (${listItems.length})`} />
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {sortedItems.map(item => (
@@ -819,10 +816,10 @@ function PackListsView({
                 backLabel: 'Back to Pack List'
               })}>
                 {item.quantity > 1 && (
-                  <div style={{ 
+                  <div style={{
+                    ...styles.flexColCenter,
                     minWidth: 32, height: 32, borderRadius: borderRadius.md,
                     background: withOpacity(colors.primary, 20),
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontWeight: typography.fontWeight.semibold, color: colors.primary, fontSize: typography.fontSize.base,
                   }}>
                     {item.quantity}x
@@ -925,8 +922,8 @@ function PackListsView({
             
             return (
               <Card key={list.id} onClick={() => setSelectedList(list)} className="card-clickable">
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[3] }}>
-                  <h3 style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary }}>{list.name}</h3>
+                <div style={{ ...styles.flexBetween, marginBottom: spacing[3] }}>
+                  <h3 style={{ ...styles.heading, fontSize: typography.fontSize.lg }}>{list.name}</h3>
                   <button 
                     className="btn-icon danger"
                     onClick={e => { e.stopPropagation(); setConfirmDelete({ isOpen: true, id: list.id, name: list.name }); }}
@@ -934,11 +931,11 @@ function PackListsView({
                     <Trash2 size={16} />
                   </button>
                 </div>
-                <div style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[2], flexWrap: 'wrap' }}>
+                <div style={{ ...styles.flexWrap, gap: spacing[2], marginBottom: spacing[2] }}>
                   <Badge text={`${listItems.length} items`} color={colors.primary} />
                   {listPackages.length > 0 && <Badge text={`${listPackages.length} packages`} color={colors.accent2} />}
                 </div>
-                <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
+                <div style={styles.textSmMuted}>
                   Created {formatDate(list.createdAt)}
                 </div>
               </Card>

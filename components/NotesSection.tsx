@@ -8,6 +8,26 @@ import { Plus, Reply, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme';
 import { formatDate } from '../utils';
 
+const expandBtnStyle = {
+  background: 'none',
+  border: 'none',
+  color: colors.textMuted,
+  cursor: 'pointer',
+  padding: 0,
+  display: 'flex',
+};
+
+const noteActionBtnStyle = {
+  ...styles.flexCenter,
+  gap: spacing[1],
+  background: 'none',
+  border: 'none',
+  color: colors.textMuted,
+  cursor: 'pointer',
+  fontSize: typography.fontSize.xs,
+  padding: spacing[1],
+};
+
 // Single note component with replies
 const Note = memo(function Note({
   note,
@@ -65,37 +85,25 @@ const Note = memo(function Note({
       }}>
         {/* Note Header */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
+          ...styles.flexCenter,
           gap: spacing[2],
           marginBottom: spacing[2]
         }}>
           {hasReplies && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: colors.textMuted,
-                cursor: 'pointer',
-                padding: 0,
-                display: 'flex'
-              }}
+              style={expandBtnStyle}
             >
               {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </button>
           )}
           <span style={{
-            fontWeight: typography.fontWeight.medium,
-            color: colors.textPrimary,
+            ...styles.subheading,
             fontSize: typography.fontSize.sm
           }}>
             {note.user}
           </span>
-          <span style={{
-            fontSize: typography.fontSize.xs,
-            color: colors.textMuted
-          }}>
+          <span style={styles.textXsMuted}>
             {formatDate(note.date)}
           </span>
         </div>
@@ -118,34 +126,14 @@ const Note = memo(function Note({
         }}>
           <button
             onClick={() => setShowReplyInput(!showReplyInput)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: spacing[1],
-              background: 'none',
-              border: 'none',
-              color: colors.textMuted,
-              cursor: 'pointer',
-              fontSize: typography.fontSize.xs,
-              padding: spacing[1]
-            }}
+            style={noteActionBtnStyle}
           >
             <Reply size={12} />
             Reply
           </button>
           <button
             onClick={() => onDelete(note.id)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: spacing[1],
-              background: 'none',
-              border: 'none',
-              color: colors.textMuted,
-              cursor: 'pointer',
-              fontSize: typography.fontSize.xs,
-              padding: spacing[1]
-            }}
+            style={noteActionBtnStyle}
           >
             <Trash2 size={12} />
             Delete
@@ -270,9 +258,8 @@ function NotesSection({
         <div style={{ maxHeight: 300, overflowY: 'auto' }}>
           {notes.length === 0 ? (
             <p style={{
-              color: colors.textMuted,
-              textAlign: 'center',
-              fontSize: typography.fontSize.sm,
+              ...styles.textSmMuted,
+              ...styles.textCenter,
               padding: spacing[4]
             }}>
               No notes yet

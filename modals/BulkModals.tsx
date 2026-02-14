@@ -13,6 +13,32 @@ import { Select } from '../components/Select';
 import { Modal, ModalHeader } from './ModalBase';
 
 // ============================================================================
+// Module-level style constants
+// ============================================================================
+const warningBannerStyle = {
+  background: `${withOpacity(colors.warning, 15)}`,
+  border: `1px solid ${colors.warning}`,
+  borderRadius: borderRadius.md,
+  padding: spacing[3],
+  marginBottom: spacing[4],
+  fontSize: typography.fontSize.sm,
+} as const;
+
+const dangerBannerStyle = {
+  background: `${withOpacity(colors.danger, 15)}`,
+  border: `1px solid ${colors.danger}`,
+  borderRadius: borderRadius.md,
+  padding: spacing[4],
+  marginBottom: spacing[4],
+} as const;
+
+const actionRowStyle = {
+  ...styles.flexCenter,
+  gap: spacing[3],
+  justifyContent: 'flex-end',
+} as const;
+
+// ============================================================================
 // Interfaces
 // ============================================================================
 interface InventoryItem {
@@ -78,14 +104,7 @@ export const BulkStatusModal = memo<BulkStatusModalProps>(function BulkStatusMod
         </p>
         
         {checkedOutCount > 0 && (
-          <div style={{
-            background: `${withOpacity(colors.warning, 15)}`,
-            border: `1px solid ${colors.warning}`,
-            borderRadius: borderRadius.md,
-            padding: spacing[3],
-            marginBottom: spacing[4],
-            fontSize: typography.fontSize.sm,
-          }}>
+          <div style={warningBannerStyle}>
             <strong style={{ color: colors.warning }}>Note:</strong> {checkedOutCount} item(s) are currently checked out. 
             Use Check-In to properly return those items.
           </div>
@@ -101,7 +120,7 @@ export const BulkStatusModal = memo<BulkStatusModalProps>(function BulkStatusMod
           />
         </div>
         
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+        <div style={actionRowStyle}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={() => onApply(newStatus)}>Apply to {idList.length} Items</Button>
         </div>
@@ -142,7 +161,7 @@ export const BulkLocationModal = memo<BulkLocationModalProps>(function BulkLocat
           <p style={{ color: colors.textSecondary, marginBottom: spacing[4] }}>
             No locations configured. Please add locations in Admin Panel → Manage Locations first.
           </p>
-          <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+          <div style={actionRowStyle}>
             <Button variant="secondary" onClick={onClose}>Close</Button>
           </div>
         </div>
@@ -168,7 +187,7 @@ export const BulkLocationModal = memo<BulkLocationModalProps>(function BulkLocat
           />
         </div>
         
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+        <div style={actionRowStyle}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={() => onApply(newLocation)}>Apply to {idList.length} Items</Button>
         </div>
@@ -201,7 +220,7 @@ export const BulkCategoryModal = memo<BulkCategoryModalProps>(function BulkCateg
           <p style={{ color: colors.textSecondary, marginBottom: spacing[4] }}>
             No categories configured.
           </p>
-          <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+          <div style={actionRowStyle}>
             <Button variant="secondary" onClick={onClose}>Close</Button>
           </div>
         </div>
@@ -217,14 +236,7 @@ export const BulkCategoryModal = memo<BulkCategoryModalProps>(function BulkCateg
           Change category for <strong style={{ color: colors.textPrimary }}>{idList.length}</strong> selected items
         </p>
         
-        <div style={{
-          background: `${withOpacity(colors.warning, 15)}`,
-          border: `1px solid ${colors.warning}`,
-          borderRadius: borderRadius.md,
-          padding: spacing[3],
-          marginBottom: spacing[4],
-          fontSize: typography.fontSize.sm,
-        }}>
+        <div style={warningBannerStyle}>
           <strong style={{ color: colors.warning }}>Note:</strong> Changing category will reset category-specific specs for affected items.
         </div>
         
@@ -238,7 +250,7 @@ export const BulkCategoryModal = memo<BulkCategoryModalProps>(function BulkCateg
           />
         </div>
         
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+        <div style={actionRowStyle}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={() => onApply(newCategory)}>Apply to {idList.length} Items</Button>
         </div>
@@ -265,13 +277,7 @@ export const BulkDeleteModal = memo<BulkDeleteModalProps>(function BulkDeleteMod
     <Modal onClose={onClose} maxWidth={500}>
       <ModalHeader title="Delete Items" onClose={onClose} />
       <div style={{ padding: spacing[4] }}>
-        <div style={{
-          background: `${withOpacity(colors.danger, 15)}`,
-          border: `1px solid ${colors.danger}`,
-          borderRadius: borderRadius.md,
-          padding: spacing[4],
-          marginBottom: spacing[4],
-        }}>
+        <div style={dangerBannerStyle}>
           <p style={{ color: colors.danger, fontWeight: typography.fontWeight.semibold, margin: 0, marginBottom: spacing[2] }}>
             ⚠️ Warning: This action cannot be undone!
           </p>
@@ -282,14 +288,7 @@ export const BulkDeleteModal = memo<BulkDeleteModalProps>(function BulkDeleteMod
         </div>
         
         {(checkedOutCount > 0 || reservedCount > 0) && (
-          <div style={{
-            background: `${withOpacity(colors.warning, 15)}`,
-            border: `1px solid ${colors.warning}`,
-            borderRadius: borderRadius.md,
-            padding: spacing[3],
-            marginBottom: spacing[4],
-            fontSize: typography.fontSize.sm,
-          }}>
+          <div style={warningBannerStyle}>
             {checkedOutCount > 0 && (
               <p style={{ margin: 0, marginBottom: reservedCount > 0 ? spacing[2] : 0 }}>
                 <strong>{checkedOutCount}</strong> item(s) are currently checked out
@@ -317,7 +316,7 @@ export const BulkDeleteModal = memo<BulkDeleteModalProps>(function BulkDeleteMod
           />
         </div>
         
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+        <div style={actionRowStyle}>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button 
             danger 

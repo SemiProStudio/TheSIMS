@@ -95,18 +95,16 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
   const Icon = config.icon;
 
   return (
-    <div style={{ display: 'flex', gap: spacing[3] }}>
+    <div style={{ ...styles.flexCenter, gap: spacing[3], alignItems: 'flex-start' }}>
       {/* Timeline line and dot */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 24 }}>
+      <div style={{ ...styles.flexCol, alignItems: 'center', width: 24 }}>
         <div
           style={{
+            ...styles.flexColCenter,
             width: 32,
             height: 32,
             borderRadius: '50%',
             background: withOpacity(config.color, 20),
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             color: config.color,
             flexShrink: 0,
           }}
@@ -144,15 +142,15 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
           }}
         >
           {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing[1] }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+          <div style={{ ...styles.flexBetween, alignItems: 'flex-start', marginBottom: spacing[1] }}>
+            <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
               <Badge text={config.label} color={config.color} size="xs" />
               {event.important && (
                 <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>●</span>
               )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-              <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+            <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
+              <span style={styles.textXsMuted}>
                 {formatDateTime(event.date)}
               </span>
               {event.details && (
@@ -170,7 +168,7 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
 
           {/* User */}
           {event.user && (
-            <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: spacing[1] }}>
+            <div style={{ ...styles.textXsMuted, marginTop: spacing[1] }}>
               By: {event.user}
             </div>
           )}
@@ -185,8 +183,8 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
               }}
             >
               {Object.entries(event.details).map(([key, value]) => (
-                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[1] }}>
-                  <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, textTransform: 'capitalize' }}>
+                <div key={key} style={{ ...styles.flexBetween, marginBottom: spacing[1] }}>
+                  <span style={{ ...styles.textXsMuted, textTransform: 'capitalize' }}>
                     {key.replace(/([A-Z])/g, ' $1').trim()}
                   </span>
                   <span style={{ fontSize: typography.fontSize.xs, color: colors.textSecondary }}>
@@ -363,7 +361,7 @@ function ItemTimeline({ item }) {
   return (
     <>
       <div style={{ padding: spacing[4] }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: spacing[3] }}>
+        <div style={{ ...styles.flexCenter, justifyContent: 'flex-end', marginBottom: spacing[3] }}>
           <Select
             value={filter}
             onChange={e => setFilter(e.target.value)}
@@ -373,9 +371,9 @@ function ItemTimeline({ item }) {
           />
         </div>
         {displayedEvents.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: spacing[6], color: colors.textMuted }}>
+          <div style={{ ...styles.textCenter, padding: spacing[6], color: colors.textMuted }}>
             <Clock size={32} style={{ marginBottom: spacing[2], opacity: 0.3 }} />
-            <p style={{ margin: 0, fontSize: typography.fontSize.sm }}>
+            <p style={{ ...styles.textSmMuted, margin: 0 }}>
               No events recorded yet
             </p>
           </div>
@@ -394,10 +392,9 @@ function ItemTimeline({ item }) {
                 onClick={() => setShowAll(true)}
                 style={{
                   ...styles.btnSec,
+                  ...styles.flexCenter,
                   width: '100%',
                   marginTop: spacing[3],
-                  display: 'flex',
-                  alignItems: 'center',
                   justifyContent: 'center',
                   gap: spacing[2],
                 }}
@@ -406,16 +403,15 @@ function ItemTimeline({ item }) {
                 Show Full Timeline ({filteredEvents.length} events)
               </button>
             )}
-            
+
             {showAll && filteredEvents.length > 5 && (
               <button
                 onClick={() => setShowAll(false)}
                 style={{
                   ...styles.btnSec,
+                  ...styles.flexCenter,
                   width: '100%',
                   marginTop: spacing[3],
-                  display: 'flex',
-                  alignItems: 'center',
                   justifyContent: 'center',
                   gap: spacing[2],
                 }}

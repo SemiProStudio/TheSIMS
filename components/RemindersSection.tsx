@@ -66,14 +66,12 @@ const ReminderItem = memo(function ReminderItem({
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing[3] }}>
         {/* Status icon */}
         <div style={{
+          ...styles.flexColCenter,
           width: 32,
           height: 32,
           borderRadius: borderRadius.md,
           background: iconBgColor,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0
+          flexShrink: 0,
         }}>
           {isCompleted ? (
             <CheckCircle size={16} color={colors.available} />
@@ -107,10 +105,9 @@ const ReminderItem = memo(function ReminderItem({
           )}
           
           <div style={{
-            display: 'flex',
+            ...styles.flexWrap,
             alignItems: 'center',
             gap: spacing[2],
-            flexWrap: 'wrap'
           }}>
             {isCompleted ? (
               <span style={{
@@ -134,11 +131,10 @@ const ReminderItem = memo(function ReminderItem({
             
             {reminder.recurrence !== 'none' && (
               <span style={{
+                ...styles.flexCenter,
                 fontSize: typography.fontSize.xs,
                 color: colors.primary,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2
+                gap: 2,
               }}>
                 <RefreshCw size={10} />
                 {RECURRENCE_OPTIONS.find(o => o.value === reminder.recurrence)?.label}
@@ -148,7 +144,7 @@ const ReminderItem = memo(function ReminderItem({
         </div>
         
         {/* Actions */}
-        <div style={{ display: 'flex', gap: spacing[1], flexShrink: 0 }}>
+        <div style={{ ...styles.flexCenter, gap: spacing[1], flexShrink: 0 }}>
           {isCompleted ? (
             <button
               onClick={() => onUncomplete(reminder.id)}
@@ -260,7 +256,7 @@ const AddReminderForm = memo(function AddReminderForm({ onAdd, onCancel }) {
         />
       </div>
       
-      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3], marginBottom: spacing[3] }}>
+      <div style={{ ...styles.flexCol, gap: spacing[3], marginBottom: spacing[3] }}>
         <div>
           <label style={{ ...styles.label, color: showDateError ? colors.danger : undefined }}>
             Due Date *
@@ -286,7 +282,7 @@ const AddReminderForm = memo(function AddReminderForm({ onAdd, onCancel }) {
         </div>
       </div>
       
-      <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
+      <div style={{ ...styles.flexCenter, gap: spacing[2], justifyContent: 'flex-end' }}>
         <Button variant="secondary" onClick={onCancel}>Cancel</Button>
         <Button onClick={handleSubmit} disabled={!isValid} icon={Plus}>
           Add Reminder
@@ -368,10 +364,9 @@ function RemindersSection({
           </div>
         ) : !showAddForm && (
           <p style={{
-            color: colors.textMuted,
-            textAlign: 'center',
-            fontSize: typography.fontSize.sm,
-            margin: `${spacing[4]}px 0 0`
+            ...styles.textSmMuted,
+            ...styles.textCenter,
+            margin: `${spacing[4]}px 0 0`,
           }}>
             No reminders set
           </p>

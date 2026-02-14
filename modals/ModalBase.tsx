@@ -113,8 +113,8 @@ export const Modal = memo<ModalProps>(function Modal({ onClose, maxWidth = 500, 
 // ============================================================================
 export const ModalHeader = memo<ModalHeaderProps>(function ModalHeader({ title, onClose }) {
   return (
-    <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <h3 id="modal-title" style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary }}>{title}</h3>
+    <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}`, ...styles.flexBetween }}>
+      <h3 id="modal-title" style={{ ...styles.heading, fontSize: typography.fontSize.lg }}>{title}</h3>
       <button 
         onClick={onClose} 
         style={{ background: 'none', border: 'none', color: colors.textMuted, cursor: 'pointer', padding: spacing[1] }}
@@ -135,7 +135,7 @@ export const ModalFooter = memo<ModalFooterProps>(function ModalFooter({ childre
     <div style={{ 
       padding: spacing[4], 
       borderTop: `1px solid ${colors.borderLight}`, 
-      display: 'flex', 
+      ...styles.flexCenter,
       gap: spacing[3], 
       justifyContent: 'flex-end' 
     }}>

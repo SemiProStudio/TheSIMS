@@ -22,15 +22,14 @@ export const BackButton = memo<BackButtonProps>(function BackButton({ onClick, c
       onClick={onClick} 
       type="button"
       aria-label={`Go back: ${children}`}
-      style={{ 
-        ...styles.btnSec, 
-        marginBottom: spacing[4], 
-        border: 'none', 
-        background: 'none', 
-        padding: 0, 
-        color: colors.textSecondary, 
-        display: 'flex', 
-        alignItems: 'center', 
+      style={{
+        ...styles.btnSec,
+        ...styles.flexCenter,
+        marginBottom: spacing[4],
+        border: 'none',
+        background: 'none',
+        padding: 0,
+        color: colors.textSecondary,
         gap: spacing[2],
         cursor: 'pointer',
       }}
@@ -66,19 +65,16 @@ export const PageHeader = memo<PageHeaderProps>(function PageHeader({
       {(backButton || onBack) && (
         <BackButton onClick={onBack}>{backLabel}</BackButton>
       )}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: spacing[5] 
+      <div style={{
+        ...styles.flexBetween,
+        marginBottom: spacing[5],
       }}>
         <div>
           <h2 style={{ margin: 0, color: colors.textPrimary }}>{title}</h2>
           {subtitle && (
-            <p style={{ 
-              margin: `${spacing[1]}px 0 0`, 
-              color: colors.textMuted, 
-              fontSize: typography.fontSize.sm 
+            <p style={{
+              ...styles.textSmMuted,
+              margin: `${spacing[1]}px 0 0`,
             }}>
               {subtitle}
             </p>
@@ -182,9 +178,8 @@ interface DragHandleProps {
 
 export const DragHandle = memo<DragHandleProps>(function DragHandle({ canDrag = true, size = 16 }) {
   return (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center',
+    <div style={{
+      ...styles.flexCenter,
       color: canDrag ? colors.textMuted : colors.borderLight,
       cursor: canDrag ? 'grab' : 'default',
     }}>
@@ -381,10 +376,9 @@ export const CardHeader = memo<CardHeaderProps>(function CardHeader({
   return (
     <div
       style={{
+        ...styles.flexCenter,
+        ...styles.sectionDivider,
         padding: `${spacing[4]}px`,
-        borderBottom: `1px solid ${colors.borderLight}`,
-        display: 'flex',
-        alignItems: 'center',
         gap: spacing[2],
       }}
     >
@@ -464,10 +458,9 @@ export function CollapsibleSection({
         className="collapsible-header"
         onClick={onToggleCollapse}
         style={{
+          ...styles.flexCenter,
           '--section-accent-color': accentColor,
           padding: `${spacing[3]}px ${spacing[4]}px`,
-          display: 'flex',
-          alignItems: 'center',
           gap: spacing[2],
           cursor: 'pointer',
           userSelect: 'none',
@@ -666,15 +659,13 @@ export const StatCard = memo<StatCardProps>(function StatCard({
     >
       <div
         style={{
+          ...styles.flexColCenter,
           width: 48,
           height: 48,
           margin: '0 auto 12px',
           background: colors.bgMedium,
           border: `1px solid ${colors.border}`,
           borderRadius: borderRadius.xl,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
         }}
       >
         <Icon size={24} color={color} />
@@ -691,8 +682,7 @@ export const StatCard = memo<StatCardProps>(function StatCard({
       </div>
       <div
         style={{
-          fontSize: typography.fontSize.xs,
-          color: colors.textMuted,
+          ...styles.textXsMuted,
           textTransform: 'uppercase',
           letterSpacing: '0.5px',
         }}
@@ -744,14 +734,11 @@ export const ItemImage = memo<ItemImageProps>(function ItemImage({
   return (
     <div
       style={{
+        ...styles.flexColCenter,
         width: size,
         height: size,
         borderRadius: radius,
         background: `${withOpacity(colors.primary, 15)}`,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
         color: colors.textMuted,
       }}
     >
@@ -800,11 +787,9 @@ export const Modal = memo<ModalProps>(function Modal({
         {title && (
           <div
             style={{
+              ...styles.flexBetween,
+              ...styles.sectionDivider,
               padding: spacing[4],
-              borderBottom: `1px solid ${colors.borderLight}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
             }}
           >
             <h3 id="modal-title" style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary }}>
@@ -816,15 +801,13 @@ export const Modal = memo<ModalProps>(function Modal({
               aria-label="Close modal"
               type="button"
               style={{
+                ...styles.flexColCenter,
                 background: 'none',
                 border: 'none',
                 color: colors.textMuted,
                 cursor: 'pointer',
                 padding: spacing[2],
                 borderRadius: borderRadius.full,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
               }}
             >
               <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -864,14 +847,12 @@ export const EmptyState = memo<EmptyStateProps>(function EmptyState({
       {Icon && (
         <div
           style={{
+            ...styles.flexColCenter,
             width: 64,
             height: 64,
             margin: '0 auto 16px',
             background: `${withOpacity(colors.primary, 20)}`,
             borderRadius: borderRadius['2xl'],
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}
         >
           <Icon size={32} color={colors.primary} />
@@ -952,13 +933,11 @@ export const ConfirmDialog = memo<ConfirmDialogProps>(function ConfirmDialog({
     <div 
       className="modal-backdrop" 
       style={{
+        ...styles.flexColCenter,
         position: 'fixed',
         inset: 0,
         background: 'rgba(0,0,0,0.7)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000
+        zIndex: 1000,
       }} 
       onClick={onCancel}
       role="presentation"
@@ -1004,12 +983,12 @@ export const ConfirmDialog = memo<ConfirmDialogProps>(function ConfirmDialog({
             {message}
           </p>
         </div>
-        <div style={{ 
-          padding: spacing[4], 
+        <div style={{
+          ...styles.flexCenter,
+          padding: spacing[4],
           borderTop: `1px solid ${colors.borderLight}`,
-          display: 'flex',
           gap: spacing[3],
-          justifyContent: 'flex-end'
+          justifyContent: 'flex-end',
         }}>
           <button
             ref={cancelButtonRef}
@@ -1043,6 +1022,21 @@ export const ConfirmDialog = memo<ConfirmDialogProps>(function ConfirmDialog({
 // SearchInput - Search input with icon
 // ============================================================================
 
+const searchInnerInputStyle = {
+  background: 'none',
+  border: 'none',
+  color: colors.textPrimary,
+  flex: 1,
+  outline: 'none',
+  fontSize: typography.fontSize.base,
+  padding: 0,
+  margin: 0,
+  WebkitAppearance: 'none',
+  MozAppearance: 'none',
+  appearance: 'none',
+  boxShadow: 'none',
+} as const;
+
 interface SearchInputProps {
   value: string;
   onChange: (...args: any[]) => any;
@@ -1074,10 +1068,9 @@ export const SearchInput = memo<SearchInputProps>(function SearchInput({
     <div
       role="search"
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: spacing[2],
+        ...styles.flexCenter,
         ...styles.input,
+        gap: spacing[2],
         padding: '12px 16px',
         ...(isFocused && {
           borderColor: colors.primary,
@@ -1107,21 +1100,7 @@ export const SearchInput = memo<SearchInputProps>(function SearchInput({
         aria-label={ariaLabel}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        style={{
-          background: 'none',
-          border: 'none',
-          color: colors.textPrimary,
-          flex: 1,
-          outline: 'none',
-          fontSize: typography.fontSize.base,
-          padding: 0,
-          margin: 0,
-          // Hide any native styling
-          WebkitAppearance: 'none',
-          MozAppearance: 'none',
-          appearance: 'none',
-          boxShadow: 'none',
-        }}
+        style={searchInnerInputStyle}
         {...props}
       />
       {value && onClear && (
@@ -1194,13 +1173,11 @@ export const Avatar = memo<AvatarProps>(function Avatar({
   return (
     <div
       style={{
+        ...styles.flexColCenter,
         width: size,
         height: size,
         borderRadius: borderRadius.md,
         background: `linear-gradient(135deg, ${colors.primary}, ${colors.accent1})`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
         fontWeight: typography.fontWeight.semibold,
         color: colors.textPrimary,
         fontSize: size * 0.4,
@@ -1391,25 +1368,20 @@ export const Pagination = memo<PaginationProps>(function Pagination({
 
   return (
     <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      ...styles.flexBetween,
       marginTop: spacing[5],
       paddingTop: spacing[4],
       borderTop: `1px solid ${colors.borderLight}`,
     }}>
       {/* Item count */}
       {showItemCount && (
-        <div style={{ 
-          fontSize: typography.fontSize.sm, 
-          color: colors.textMuted 
-        }}>
+        <div style={styles.textSmMuted}>
           Showing {startItem}-{endItem} of {totalItems} items
         </div>
       )}
 
       {/* Page navigation */}
-      <div style={{ display: 'flex', gap: spacing[1], alignItems: 'center' }}>
+      <div style={{ ...styles.flexCenter, gap: spacing[1] }}>
         {/* Previous button */}
         <button
           onClick={() => onPageChange(page - 1)}
@@ -1523,14 +1495,11 @@ export const LoadingOverlay = memo<LoadingOverlayProps>(function LoadingOverlay(
   return (
     <div style={{
       ...containerStyle,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
+      ...styles.flexColCenter,
       gap: spacing[3],
     }}>
       <LoadingSpinner size={32} />
-      <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>
+      <span style={styles.textSmMuted}>
         {message}
       </span>
     </div>
@@ -1541,6 +1510,18 @@ export const LoadingOverlay = memo<LoadingOverlayProps>(function LoadingOverlay(
 // Accessibility Helpers
 // ============================================================================
 
+const visuallyHiddenStyle = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+} as const;
+
 // VisuallyHidden - Hide content visually but keep it accessible to screen readers
 interface VisuallyHiddenProps {
   children: React.ReactNode;
@@ -1550,17 +1531,7 @@ interface VisuallyHiddenProps {
 export const VisuallyHidden = memo<VisuallyHiddenProps>(function VisuallyHidden({ children, as: Component = 'span' }) {
   return (
     <Component
-      style={{
-        position: 'absolute',
-        width: 1,
-        height: 1,
-        padding: 0,
-        margin: -1,
-        overflow: 'hidden',
-        clip: 'rect(0, 0, 0, 0)',
-        whiteSpace: 'nowrap',
-        border: 0,
-      }}
+      style={visuallyHiddenStyle}
     >
       {children}
     </Component>
@@ -1586,17 +1557,7 @@ export const LiveRegion = memo<LiveRegionProps>(function LiveRegion({
       role="status"
       aria-live={politeness}
       aria-atomic={atomic}
-      style={{
-        position: 'absolute',
-        width: 1,
-        height: 1,
-        padding: 0,
-        margin: -1,
-        overflow: 'hidden',
-        clip: 'rect(0, 0, 0, 0)',
-        whiteSpace: 'nowrap',
-        border: 0,
-      }}
+      style={visuallyHiddenStyle}
     >
       {children}
     </div>

@@ -32,12 +32,10 @@ const ClientCard = memo(function ClientCard({ client, stats, onSelect }) {
       <div style={{ display: 'flex', gap: spacing[3] }}>
         {/* Avatar */}
         <div style={{
+          ...styles.flexColCenter,
           width: 48, height: 48,
           borderRadius: borderRadius.lg,
           background: `${withOpacity(colors.primary, 20)}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           flexShrink: 0,
         }}>
           {client.type === 'Company' || client.type === 'Agency' ? (
@@ -46,21 +44,18 @@ const ClientCard = memo(function ClientCard({ client, stats, onSelect }) {
             <Users size={24} color={colors.primary} />
           )}
         </div>
-        
+
         {/* Info */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+          <div style={{
+            ...styles.flexCenter,
             gap: spacing[2],
             marginBottom: spacing[1],
           }}>
-            <span style={{ 
-              fontWeight: typography.fontWeight.semibold, 
+            <span style={{
+              ...styles.truncate,
+              fontWeight: typography.fontWeight.semibold,
               color: colors.textPrimary,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
             }}>
               {client.name}
             </span>
@@ -68,33 +63,30 @@ const ClientCard = memo(function ClientCard({ client, stats, onSelect }) {
           </div>
           
           {client.company && client.type === 'Individual' && (
-            <div style={{ 
-              fontSize: typography.fontSize.xs, 
-              color: colors.textMuted,
+            <div style={{
+              ...styles.textXsMuted,
               marginBottom: spacing[1],
             }}>
               {client.company}
             </div>
           )}
           
-          <div style={{ display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
+          <div style={{ ...styles.flexWrap, gap: spacing[3] }}>
             {client.email && (
-              <span style={{ 
-                fontSize: typography.fontSize.xs, 
+              <span style={{
+                ...styles.flexCenter,
+                fontSize: typography.fontSize.xs,
                 color: colors.textSecondary,
-                display: 'flex',
-                alignItems: 'center',
                 gap: 4,
               }}>
                 <Mail size={12} /> {client.email}
               </span>
             )}
             {client.phone && (
-              <span style={{ 
-                fontSize: typography.fontSize.xs, 
+              <span style={{
+                ...styles.flexCenter,
+                fontSize: typography.fontSize.xs,
                 color: colors.textSecondary,
-                display: 'flex',
-                alignItems: 'center',
                 gap: 4,
               }}>
                 <Phone size={12} /> {client.phone}
@@ -104,9 +96,8 @@ const ClientCard = memo(function ClientCard({ client, stats, onSelect }) {
         </div>
         
         {/* Stats */}
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
+        <div style={{
+          ...styles.flexCol,
           alignItems: 'flex-end',
           gap: spacing[1],
         }}>
@@ -160,11 +151,9 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
       <div style={styles.modalBox} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div style={{
+          ...styles.flexBetween,
           padding: spacing[4],
           borderBottom: `1px solid ${colors.borderLight}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
         }}>
           <h3 style={{ margin: 0, color: colors.textPrimary }}>
             {client ? 'Edit Client' : 'Add New Client'}
@@ -274,9 +263,8 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
           </div>
           
           {/* Favorite */}
-          <label style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
+          <label style={{
+            ...styles.flexCenter,
             gap: spacing[2],
             color: colors.textSecondary,
             fontSize: typography.fontSize.sm,
@@ -338,8 +326,7 @@ const ClientDetailView = memo(function ClientDetailView({
       <button
         onClick={onBack}
         style={{
-          display: 'flex',
-          alignItems: 'center',
+          ...styles.flexCenter,
           gap: spacing[2],
           background: 'transparent',
           border: 'none',
@@ -356,12 +343,10 @@ const ClientDetailView = memo(function ClientDetailView({
         <div style={{ display: 'flex', gap: spacing[4], alignItems: 'flex-start' }}>
           {/* Avatar */}
           <div style={{
+            ...styles.flexColCenter,
             width: 64, height: 64,
             borderRadius: borderRadius.xl,
             background: `${withOpacity(colors.primary, 20)}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             flexShrink: 0,
           }}>
             {client.type === 'Company' || client.type === 'Agency' ? (
@@ -373,25 +358,25 @@ const ClientDetailView = memo(function ClientDetailView({
           
           {/* Info */}
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], marginBottom: spacing[2] }}>
+            <div style={{ ...styles.flexCenter, gap: spacing[2], marginBottom: spacing[2] }}>
               <h2 style={{ margin: 0, color: colors.textPrimary }}>{client.name}</h2>
               {client.favorite && <Star size={18} color="#f59e0b" fill="#f59e0b" />}
               <Badge>{client.type}</Badge>
             </div>
             
-            <div style={{ display: 'flex', gap: spacing[4], flexWrap: 'wrap', color: colors.textSecondary, fontSize: typography.fontSize.sm }}>
+            <div style={{ ...styles.flexWrap, gap: spacing[4], color: colors.textSecondary, fontSize: typography.fontSize.sm }}>
               {client.email && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ ...styles.flexCenter, gap: 4 }}>
                   <Mail size={14} /> {client.email}
                 </span>
               )}
               {client.phone && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ ...styles.flexCenter, gap: 4 }}>
                   <Phone size={14} /> {client.phone}
                 </span>
               )}
               {client.address && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ ...styles.flexCenter, gap: 4 }}>
                   <MapPin size={14} /> {client.address}
                 </span>
               )}
@@ -408,7 +393,7 @@ const ClientDetailView = memo(function ClientDetailView({
             )}
           </div>
           
-          <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
+          <div style={{ ...styles.flexCenter, gap: spacing[2] }}>
             <Button variant="secondary" onClick={() => onEdit(client)} icon={Edit2}>
               Edit
             </Button>
@@ -426,23 +411,23 @@ const ClientDetailView = memo(function ClientDetailView({
         gap: spacing[3],
         marginBottom: spacing[4],
       }}>
-        <Card style={{ textAlign: 'center', padding: spacing[4] }}>
+        <Card style={{ ...styles.textCenter, padding: spacing[4] }}>
           <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: 'bold', color: colors.primary }}>
             {stats.totalProjects}
           </div>
-          <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Total Projects</div>
+          <div style={styles.textXsMuted}>Total Projects</div>
         </Card>
-        <Card style={{ textAlign: 'center', padding: spacing[4] }}>
+        <Card style={{ ...styles.textCenter, padding: spacing[4] }}>
           <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: 'bold', color: colors.success }}>
             {stats.activeProjects}
           </div>
-          <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Active</div>
+          <div style={styles.textXsMuted}>Active</div>
         </Card>
-        <Card style={{ textAlign: 'center', padding: spacing[4] }}>
+        <Card style={{ ...styles.textCenter, padding: spacing[4] }}>
           <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: 'bold', color: colors.accent1 }}>
             {formatMoney(stats.totalValue)}
           </div>
-          <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Total Value</div>
+          <div style={styles.textXsMuted}>Total Value</div>
         </Card>
       </div>
       
@@ -473,22 +458,21 @@ const ClientDetailView = memo(function ClientDetailView({
         </h3>
         
         {projects.length === 0 ? (
-          <div style={{ 
-            textAlign: 'center', 
+          <div style={{
+            ...styles.textCenter,
             padding: spacing[6],
             color: colors.textMuted,
           }}>
             No projects yet
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
+          <div style={{ ...styles.flexCol, gap: spacing[2] }}>
             {projects.map(project => (
               <div
                 key={project.id}
                 onClick={() => onViewReservation?.(project)}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
+                  ...styles.flexCenter,
                   gap: spacing[3],
                   padding: spacing[3],
                   background: colors.bgLight,
@@ -501,7 +485,7 @@ const ClientDetailView = memo(function ClientDetailView({
                   <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
                     {project.project}
                   </div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                  <div style={styles.textXsMuted}>
                     {project.start} - {project.end} • {project.itemCount || 1} items
                   </div>
                 </div>
@@ -724,7 +708,7 @@ function ClientsView({
       
       {/* Filters */}
       <Card style={{ marginBottom: spacing[4] }}>
-        <div style={{ display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
+        <div style={{ ...styles.flexWrap, gap: spacing[3] }}>
           <div style={{ flex: 1, minWidth: 200 }}>
             <SearchInput
               value={searchQuery}
@@ -748,7 +732,7 @@ function ClientsView({
       
       {/* Client List */}
       {filteredClients.length === 0 ? (
-        <Card style={{ textAlign: 'center', padding: spacing[8] }}>
+        <Card style={{ ...styles.textCenter, padding: spacing[8] }}>
           <Users size={48} color={colors.textMuted} style={{ marginBottom: spacing[3] }} />
           <h3 style={{ margin: 0, color: colors.textPrimary }}>
             {clients.length === 0 ? 'No clients yet' : 'No clients match your search'}
@@ -766,7 +750,7 @@ function ClientsView({
           )}
         </Card>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
+        <div style={{ ...styles.flexCol, gap: spacing[3] }}>
           {filteredClients.map(client => (
             <ClientCard
               key={client.id}
