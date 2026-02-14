@@ -3,10 +3,10 @@
 // ============================================================================
 
 import { memo, useState, useCallback, useMemo, useEffect } from 'react';
-import { 
-  Users, Plus, Search, Building2, Mail, Phone, Calendar, 
+import {
+  Users, Plus, Search, Building2, Mail, Phone, Calendar,
   Package, ChevronRight, Edit2, Trash2, MapPin, FileText,
-  Clock, DollarSign, Star, MessageSquare, X
+  Star, MessageSquare
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatMoney } from '../utils';

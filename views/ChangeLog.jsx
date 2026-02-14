@@ -5,9 +5,9 @@
 
 import { memo, useState, useMemo, useCallback } from 'react';
 import { History, Package, ChevronRight, Clock, User, Edit2, Plus, Trash2, RefreshCw, ArrowRight } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatDateTime } from '../utils';
-import { Card, Button, SearchInput, Badge, BackButton, PageHeader } from '../components/ui.jsx';
+import { Card, SearchInput, Badge, BackButton, PageHeader } from '../components/ui.jsx';
 
 // Change type icons and colors
 const CHANGE_TYPE_CONFIG = {
@@ -264,11 +264,11 @@ const SearchResultItem = memo(function SearchResultItem({ item, onClick, changeC
 });
 
 // Main Change Log Component
-function ChangeLog({ 
-  changeLog = [], 
-  inventory = [], 
-  packages = [], 
-  onViewItem,
+function ChangeLog({
+  changeLog = [],
+  inventory = [],
+  packages = [],
+  onViewItem: _onViewItem,
   onBack,
 }) {
   const [searchQuery, setSearchQuery] = useState('');

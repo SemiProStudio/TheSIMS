@@ -613,7 +613,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
                   {searchFilter || showOnlyRequired ? 'No fields match your filter' : 'No specification fields defined'}
                 </div>
               ) : (
-                filteredSpecs.map((field, displayIndex) => {
+                filteredSpecs.map((field) => {
                   const isNew = field.originalIndex === newlyAddedIndex;
                   const isDragOver = dragOverIndex === field.originalIndex;
                   
