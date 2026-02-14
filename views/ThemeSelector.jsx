@@ -6,7 +6,7 @@
 import { memo, useState } from 'react';
 import { Palette, Check, Shuffle, Settings, Sliders } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { useTheme } from '../contexts/ThemeContext.jsx';
+import { useTheme } from '../contexts/ThemeContext.js';
 import { BackButton, Card, Button } from '../components/ui.jsx';
 import CustomThemeEditor from '../components/CustomThemeEditor.jsx';
 

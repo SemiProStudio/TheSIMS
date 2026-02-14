@@ -6,7 +6,7 @@
 import { useCallback, useState } from 'react';
 import { generateItemCode } from '../utils';
 import { VIEWS, STATUS, MODALS } from '../constants.js';
-import { useToast } from '../contexts/ToastContext.jsx';
+import { useToast } from '../contexts/ToastContext.js';
 import { error as logError } from '../lib/logger.js';
 
 /**

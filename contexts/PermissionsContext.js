@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { createContext, useContext } from 'react';
-import { PERMISSION_LEVELS, APP_FUNCTIONS, VIEWS } from '../constants.js';
+import { VIEWS } from '../constants.js';
 
 const PermissionsContext = createContext(null);
 

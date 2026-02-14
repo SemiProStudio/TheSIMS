@@ -4,9 +4,8 @@
 // sidebar-dependent components — not the entire App tree.
 // =============================================================================
 
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-
-const SidebarContext = createContext(null);
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import SidebarContext from './SidebarContext.js';
 
 // Safe localStorage wrapper
 const safeLocalStorage = {
@@ -89,10 +88,3 @@ export function SidebarProvider({ children, storageKey = 'sims-sidebar-collapsed
   );
 }
 
-export function useSidebarContext() {
-  const ctx = useContext(SidebarContext);
-  if (!ctx) throw new Error('useSidebarContext must be used within SidebarProvider');
-  return ctx;
-}
-
-export default SidebarContext;

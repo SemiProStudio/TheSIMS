@@ -5,7 +5,7 @@
 import { useState, useCallback } from 'react';
 import { STATUS, MODALS } from '../../constants.js';
 import { error as logError } from '../../lib/logger.js';
-import { useToast } from '../../contexts/ToastContext.jsx';
+import { useToast } from '../../contexts/ToastContext.js';
 
 export function useCheckoutHandlers({
   inventory,
@@ -44,7 +44,7 @@ export function useCheckoutHandlers({
   }, [inventory, openModal]);
 
   const processCheckout = useCallback(async (checkoutData) => {
-    const { itemId, borrowerName, borrowerEmail, borrowerPhone, project, projectType, dueDate, notes, conditionAtCheckout, checkedOutDate, checkedOutTime } = checkoutData;
+    const { itemId, borrowerName, borrowerEmail, project, projectType, dueDate, checkedOutDate } = checkoutData;
     
     try {
       await dataContext.checkOutItem(itemId, {

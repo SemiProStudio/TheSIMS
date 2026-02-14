@@ -14,4 +14,5 @@ export { FilterProvider } from './FilterContext.jsx';
 export { useFilterContext } from './FilterContext.js';
 export { ModalProvider } from './ModalContext.jsx';
 export { useModalContext } from './ModalContext.js';
-export { SidebarProvider, useSidebarContext } from './SidebarContext.jsx';
+export { SidebarProvider } from './SidebarContext.jsx';
+export { useSidebarContext } from './SidebarContext.js';

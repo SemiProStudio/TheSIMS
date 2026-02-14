@@ -7,7 +7,7 @@
 import { lazy, Suspense, memo } from 'react';
 import { VIEWS, MODALS } from './constants.js';
 import { error as logError } from './lib/logger.js';
-import { useToast } from './contexts/ToastContext.jsx';
+import { useToast } from './contexts/ToastContext.js';
 import { rolesService, locationsService, usersService } from './lib/services.js';
 import { useNavigationContext } from './contexts/NavigationContext.js';
 import { useFilterContext } from './contexts/FilterContext.js';

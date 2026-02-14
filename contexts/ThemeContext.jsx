@@ -2,9 +2,10 @@
 // Theme Context - Manages theme switching with CSS variables
 // ============================================================================
 
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { themes, generateRandomTheme, DEFAULT_CUSTOM_THEME } from '../themes-data.js';
 import { announce } from '../utils/accessibility.js';
+import ThemeContext from './ThemeContext.js';
 
 import { warn } from '../lib/logger.js';
 
@@ -39,7 +40,7 @@ const loadCustomTheme = () => {
 };
 
 // Get array of available themes for UI
-export const getAvailableThemes = () => {
+const getAvailableThemes = () => {
   const themeList = Object.values(themes);
   const customTheme = loadCustomTheme();
   if (customTheme) {
@@ -48,8 +49,6 @@ export const getAvailableThemes = () => {
   }
   return themeList;
 };
-
-const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
   const [themeId, setThemeId] = useState(() => {
@@ -184,13 +183,3 @@ export function ThemeProvider({ children }) {
   );
 }
 
-export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-}
-
-export { themes };
-export default ThemeContext;

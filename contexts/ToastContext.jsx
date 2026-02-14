@@ -8,9 +8,8 @@
 //   addToast('Save failed — changes may not persist', 'error');
 // =============================================================================
 
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
-
-const ToastContext = createContext(null);
+import { useState, useCallback, useRef } from 'react';
+import ToastContext from './ToastContext.js';
 
 const TOAST_DURATION = {
   success: 3000,
@@ -43,21 +42,6 @@ export function ToastProvider({ children }) {
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
     </ToastContext.Provider>
   );
-}
-
-export function useToast() {
-  const ctx = useContext(ToastContext);
-  if (!ctx) {
-    // Fallback if used outside provider — log to console instead of crashing
-    return {
-      addToast: (msg, type) => {
-        if (type === 'error') console.error('[Toast]', msg);
-        else console.log('[Toast]', msg);
-      },
-      removeToast: () => {},
-    };
-  }
-  return ctx;
 }
 
 // =============================================================================

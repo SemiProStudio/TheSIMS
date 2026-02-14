@@ -7,14 +7,14 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { VIEWS, MODALS, STATUS, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
 import { colors } from './theme.js';
 import { findById, sanitizeCSVCell } from './utils';
-import { useTheme } from './contexts/ThemeContext.jsx';
+import { useTheme } from './contexts/ThemeContext.js';
 import { PermissionsProvider } from './contexts/PermissionsContext.jsx';
 import { useAuth } from './contexts/AuthContext.js';
 import { useData } from './contexts/DataContext.js';
 import { FullPageLoading } from './components/Loading.jsx';
 import { SkipLink } from './components/ui.jsx';
 import { log, error as logError } from './lib/logger.js';
-import { useToast } from './contexts/ToastContext.jsx';
+import { useToast } from './contexts/ToastContext.js';
 import { usersService } from './lib/services.js';
 
 // Custom hooks for state management
@@ -25,7 +25,7 @@ import { useCheckoutHandlers, useKitHandlers, useReservationHandlers, useNoteHan
 import { useNavigationContext } from './contexts/NavigationContext.js';
 import { useFilterContext } from './contexts/FilterContext.js';
 import { useModalContext } from './contexts/ModalContext.js';
-import { useSidebarContext } from './contexts/SidebarContext.jsx';
+import { useSidebarContext } from './contexts/SidebarContext.js';
 
 // Core components (always needed)
 import Login from './views/Login.jsx';
