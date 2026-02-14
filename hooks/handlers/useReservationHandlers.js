@@ -167,7 +167,7 @@ export function useReservationHandlers({
     
     closeModal();
     resetReservationForm();
-  }, [reservationForm, editingReservationId, selectedItem, setSelectedItem, selectedReservationItem, closeModal, resetReservationForm, navigateToReservation, addChangeLog, addAuditLog, currentUser, setSelectedReservation, dataContext, inventory]);
+  }, [reservationForm, editingReservationId, selectedItem, setSelectedItem, selectedReservationItem, closeModal, resetReservationForm, navigateToReservation, addChangeLog, addAuditLog, currentUser, setSelectedReservation, setEditingReservationId, dataContext, inventory]);
 
   const openEditReservation = useCallback((reservation) => {
     setEditingReservationId(reservation.id);

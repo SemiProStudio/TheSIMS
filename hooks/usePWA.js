@@ -23,7 +23,6 @@ export const InstallStatus = {
 export function usePWA() {
   // Installation state
   const [installStatus, setInstallStatus] = useState(InstallStatus.IDLE);
-  const [installPrompt, setInstallPrompt] = useState(null);
   
   // Online/offline state
   const [isOnline, setIsOnline] = useState(
@@ -73,7 +72,7 @@ export function usePWA() {
       
       // Store the event for later use
       deferredPrompt.current = e;
-      setInstallPrompt(e);
+
       setInstallStatus(InstallStatus.AVAILABLE);
       
       log('[PWA] Install prompt available');
@@ -81,7 +80,7 @@ export function usePWA() {
     
     const handleAppInstalled = () => {
       deferredPrompt.current = null;
-      setInstallPrompt(null);
+
       setInstallStatus(InstallStatus.INSTALLED);
       
       log('[PWA] App installed');
@@ -126,7 +125,7 @@ export function usePWA() {
     
     // Clear the prompt
     deferredPrompt.current = null;
-    setInstallPrompt(null);
+
     
     return { outcome };
   }, []);

@@ -264,7 +264,7 @@ export function useInventoryActions({
     } finally {
       setIsLoading(false);
     }
-  }, [itemForm, editingItemId, selectedItem, specs, closeModal, inventory, setSelectedItem, setEditingItemId, addChangeLog, dataContext]);
+  }, [itemForm, editingItemId, selectedItem, specs, closeModal, inventory, setSelectedItem, setEditingItemId, addChangeLog, addAuditLog, addToast, dataContext]);
 
   // ============================================================================
   // Delete Item - NOW PERSISTS TO SUPABASE (with confirmation)
@@ -318,7 +318,7 @@ export function useInventoryActions({
         }
       }
     });
-  }, [selectedItem, inventory, setSelectedItem, setCurrentView, setConfirmDialog, addChangeLog, dataContext]);
+  }, [selectedItem, inventory, setSelectedItem, setCurrentView, setConfirmDialog, addChangeLog, addAuditLog, addToast, dataContext]);
 
   // ============================================================================
   // Bulk Action Handler
@@ -389,7 +389,7 @@ export function useInventoryActions({
     } finally {
       setIsLoading(false);
     }
-  }, [bulkActionIds, inventory, addChangeLog, closeModal, dataContext]);
+  }, [bulkActionIds, inventory, addChangeLog, addAuditLog, addToast, closeModal, dataContext]);
 
   const applyBulkLocation = useCallback(async (newLocation) => {
     setIsLoading(true);
@@ -431,7 +431,7 @@ export function useInventoryActions({
     } finally {
       setIsLoading(false);
     }
-  }, [bulkActionIds, inventory, addChangeLog, addAuditLog, closeModal, dataContext]);
+  }, [bulkActionIds, inventory, addChangeLog, addAuditLog, addToast, closeModal, dataContext]);
 
   const applyBulkCategory = useCallback(async (newCategory) => {
     setIsLoading(true);
@@ -473,7 +473,7 @@ export function useInventoryActions({
     } finally {
       setIsLoading(false);
     }
-  }, [bulkActionIds, inventory, addChangeLog, addAuditLog, closeModal, dataContext]);
+  }, [bulkActionIds, inventory, addChangeLog, addAuditLog, addToast, closeModal, dataContext]);
 
   const applyBulkDelete = useCallback(async () => {
     setIsLoading(true);
@@ -518,7 +518,7 @@ export function useInventoryActions({
     } finally {
       setIsLoading(false);
     }
-  }, [bulkActionIds, inventory, selectedItem, setSelectedItem, setCurrentView, addChangeLog, closeModal, dataContext]);
+  }, [bulkActionIds, inventory, selectedItem, setSelectedItem, setCurrentView, addChangeLog, addAuditLog, addToast, closeModal, dataContext]);
 
   // ============================================================================
   // Edit Item Helper

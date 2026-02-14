@@ -36,7 +36,7 @@ export function usePagination(items, pageSize = 20) {
     if (page > totalPages && totalPages > 0) {
       setPage(1);
     }
-  }, [items.length, totalPages, page]);
+  }, [totalPages, page]);
 
   return {
     page,
