@@ -6,7 +6,7 @@
 import { memo, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Upload, Download } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
+import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 import { sanitizeCSVCell } from '../utils';
@@ -16,7 +16,6 @@ export const CSVImportModal = memo(function CSVImportModal({ categories, specs, 
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState(null);
   const [importing, setImporting] = useState(false);
-  const [mapping, setMapping] = useState({});
   const fileInputRef = useRef(null);
   
   // CSV column definitions
@@ -163,7 +162,6 @@ export const CSVImportModal = memo(function CSVImportModal({ categories, specs, 
           autoMapping[header] = header;
         }
       });
-      setMapping(autoMapping);
     } catch (err) {
       setError(err.message);
     }

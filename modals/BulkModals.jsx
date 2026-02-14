@@ -142,7 +142,7 @@ export const BulkLocationModal = memo(function BulkLocationModal({ selectedIds =
 // Bulk Category Modal
 // ============================================================================
 export const BulkCategoryModal = memo(function BulkCategoryModal({ selectedIds = [], categories = [], onApply, onClose }) {
-  const categoryList = Array.isArray(categories) ? categories : [];
+  const categoryList = useMemo(() => Array.isArray(categories) ? categories : [], [categories]);
   const idList = Array.isArray(selectedIds) ? selectedIds : [];
   const [newCategory, setNewCategory] = useState('');
 
