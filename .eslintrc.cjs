@@ -7,16 +7,18 @@ module.exports = {
   },
   extends: [
     'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
     'plugin:react/jsx-runtime',
     'plugin:react-hooks/recommended',
   ],
+  parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
     ecmaFeatures: { jsx: true },
   },
-  plugins: ['react', 'react-hooks', 'react-refresh'],
+  plugins: ['@typescript-eslint', 'react', 'react-hooks', 'react-refresh'],
   settings: {
     react: { version: '18.2' },
   },
@@ -34,11 +36,14 @@ module.exports = {
     'react-hooks/exhaustive-deps': 'warn',
 
     // Core JS — catch real bugs, not style preferences
-    'no-unused-vars': ['warn', {
+    'no-unused-vars': 'off',
+    '@typescript-eslint/no-unused-vars': ['warn', {
       argsIgnorePattern: '^_',
       varsIgnorePattern: '^_',
       destructuredArrayIgnorePattern: '^_',
     }],
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-require-imports': 'off',
     'no-undef': 'error',
     'no-constant-condition': 'warn',
     'no-debugger': 'error',

@@ -1,0 +1,211 @@
+// ============================================================================
+// Client Report Panel View
+// Clients ranked by reservation activity
+// ============================================================================
+
+import { memo, useMemo } from 'react';
+
+import { Download, Building2, Users, FileText, DollarSign } from 'lucide-react';
+import { colors, spacing, borderRadius, typography, withOpacity } from '../theme';
+import { formatMoney } from '../utils';
+import { Badge, Card, CardHeader, StatCard, EmptyState, Button, PageHeader } from '../components/ui';
+
+interface ClientReportPanelProps {
+  clients?: {
+    id: string;
+    name: string;
+    type?: string;
+    company?: string;
+    email?: string;
+    phone?: string;
+    favorite?: boolean;
+  }[];
+  inventory?: {
+    id: string;
+    reservations?: {
+      clientId?: string;
+      value?: number;
+    }[];
+  }[];
+  onViewClient?: (client: Record<string, any>) => void;
+  onBack: () => void;
+}
+
+export const ClientReportPanel = memo<ClientReportPanelProps>(function ClientReportPanel({
+  clients = [],
+  inventory = [],
+  onViewClient,
+  onBack
+}) {
+  // Calculate reservation counts for each client
+  const clientsWithStats = useMemo(() => {
+    const reservationCounts = {};
+    const totalValues = {};
+    
+    inventory.forEach(item => {
+      (item.reservations || []).forEach(res => {
+        if (res.clientId) {
+          reservationCounts[res.clientId] = (reservationCounts[res.clientId] || 0) + 1;
+          totalValues[res.clientId] = (totalValues[res.clientId] || 0) + (res.value || 0);
+        }
+      });
+    });
+    
+    return clients
+      .map(client => ({
+        ...client,
+        reservationCount: reservationCounts[client.id] || 0,
+        totalValue: totalValues[client.id] || 0,
+      }))
+      .sort((a, b) => b.reservationCount - a.reservationCount);
+  }, [clients, inventory]);
+
+  // Summary stats
+  const stats = useMemo(() => {
+    const totalReservations = clientsWithStats.reduce((sum, c) => sum + c.reservationCount, 0);
+    const totalValue = clientsWithStats.reduce((sum, c) => sum + c.totalValue, 0);
+    const activeClients = clientsWithStats.filter(c => c.reservationCount > 0).length;
+    const avgReservations = clients.length > 0 ? totalReservations / clients.length : 0;
+    
+    return { totalReservations, totalValue, activeClients, avgReservations };
+  }, [clientsWithStats, clients.length]);
+
+  // Export CSV
+  const handleExport = () => {
+    const headers = ['Client Name', 'Type', 'Company', 'Email', 'Phone', 'Reservations', 'Total Value', 'Favorite'];
+    const rows = clientsWithStats.map(c => [
+      c.name,
+      c.type,
+      c.company || '',
+      c.email || '',
+      c.phone || '',
+      c.reservationCount,
+      c.totalValue,
+      c.favorite ? 'Yes' : 'No'
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `client-report-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  return (
+    <>
+      <PageHeader 
+        title="Client Report" 
+        subtitle="Clients ranked by reservation activity"
+        onBack={onBack}
+        backLabel="Back to Reports"
+        action={<Button onClick={handleExport} icon={Download}>Export CSV</Button>}
+      />
+      
+      {/* Summary Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: spacing[4], marginBottom: spacing[6] }}>
+        <StatCard icon={Building2} label="Total Clients" value={clients.length} color={colors.primary} />
+        <StatCard icon={Users} label="Active Clients" value={stats.activeClients} color={colors.available} />
+        <StatCard icon={FileText} label="Total Reservations" value={stats.totalReservations} color={colors.checkedOut} />
+        <StatCard icon={DollarSign} label="Total Value" value={formatMoney(stats.totalValue)} color={colors.accent1} />
+      </div>
+      
+      {/* Client List */}
+      <Card padding={false}>
+        <CardHeader title="Clients by Reservation Count" />
+        {clientsWithStats.length === 0 ? (
+          <EmptyState 
+            icon={Building2} 
+            title="No Clients" 
+            description="Add clients to see them in this report." 
+          />
+        ) : (
+          <div style={{ overflow: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${colors.border}` }}>
+                  <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Rank</th>
+                  <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Client</th>
+                  <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Type</th>
+                  <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Contact</th>
+                  <th style={{ padding: spacing[3], textAlign: 'right', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Reservations</th>
+                  <th style={{ padding: spacing[3], textAlign: 'right', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Total Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clientsWithStats.map((client, idx) => (
+                  <tr 
+                    key={client.id}
+                    onClick={() => onViewClient?.(client)}
+                    style={{ 
+                      borderBottom: `1px solid ${colors.borderLight}`,
+                      cursor: onViewClient ? 'pointer' : 'default',
+                      background: idx % 2 === 0 ? 'transparent' : `${withOpacity(colors.bgLight, 50)}`,
+                    }}
+                  >
+                    <td style={{ padding: spacing[3] }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 24,
+                        height: 24,
+                        borderRadius: borderRadius.full,
+                        background: idx < 3 ? `${withOpacity(colors.primary, 20)}` : colors.bgLight,
+                        color: idx < 3 ? colors.primary : colors.textMuted,
+                        fontSize: typography.fontSize.xs,
+                        fontWeight: typography.fontWeight.semibold,
+                      }}>
+                        {idx + 1}
+                      </span>
+                    </td>
+                    <td style={{ padding: spacing[3] }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                        <span style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
+                          {client.name}
+                        </span>
+                        {client.favorite && (
+                          <span style={{ color: '#f59e0b' }}>★</span>
+                        )}
+                      </div>
+                      {client.company && client.type === 'Individual' && (
+                        <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>{client.company}</div>
+                      )}
+                    </td>
+                    <td style={{ padding: spacing[3] }}>
+                      <Badge text={client.type} color={client.type === 'Company' ? colors.primary : colors.accent1} />
+                    </td>
+                    <td style={{ padding: spacing[3], fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
+                      {client.email || client.phone || '—'}
+                    </td>
+                    <td style={{ padding: spacing[3], textAlign: 'right' }}>
+                      <span style={{
+                        fontWeight: typography.fontWeight.semibold,
+                        color: client.reservationCount > 0 ? colors.checkedOut : colors.textMuted,
+                      }}>
+                        {client.reservationCount}
+                      </span>
+                    </td>
+                    <td style={{ padding: spacing[3], textAlign: 'right' }}>
+                      <span style={{
+                        fontWeight: typography.fontWeight.medium,
+                        color: client.totalValue > 0 ? colors.available : colors.textMuted,
+                      }}>
+                        {client.totalValue > 0 ? formatMoney(client.totalValue) : '—'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </>
+  );
+});
+

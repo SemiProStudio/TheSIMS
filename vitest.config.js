@@ -6,8 +6,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./test/setup.js'],
-    include: ['**/*.{test,spec}.{js,jsx}'],
+    setupFiles: ['./test/setup.ts'],
+    include: ['**/*.{test,spec}.{js,jsx,ts,tsx}'],
     exclude: ['node_modules/', 'dist/', 'e2e/'],
     coverage: {
       provider: 'v8',
@@ -19,7 +19,7 @@ export default defineConfig({
         '**/*.d.ts',
         '**/*.config.*',
         'data.js', // Demo data
-        'themes-data.js', // Theme definitions
+        'themes-data.ts', // Theme definitions
         'public/', // Static assets
       ],
       thresholds: {

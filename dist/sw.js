@@ -1,397 +1,205 @@
 // =============================================================================
 // Service Worker for SIMS PWA
-// Enables offline support, caching, and background sync
+// =============================================================================
+//
+// Caching strategy rationale:
+//
+//   /assets/*.js, /assets/*.css  → CACHE FIRST (immutable, content-hashed by Vite)
+//   /assets/*.woff2, images      → CACHE FIRST (static, rarely change)
+//   /index.html, navigations     → NETWORK FIRST (must pick up new bundle refs on deploy)
+//   /sw.js                       → Controlled by browser + Vercel headers (max-age=0)
+//   Supabase / external API      → NETWORK ONLY (real-time data, never cache)
+//
+// On new deploys, Vite produces new hashed filenames. The browser fetches a
+// fresh sw.js (max-age=0 in vercel.json), sees the new BUILD_ID, installs the
+// new SW which creates new caches and purges old ones on activate.
 // =============================================================================
 
-// Cache version — replaced at build time by vite.config.js, falls back to 'dev' for local dev
-const BUILD_ID = 'mlhn4x5b' !== '__SIMS_' + 'BUILD_ID__' ? 'mlhn4x5b' : 'dev';
-const CACHE_NAME = `sims-cache-${BUILD_ID}`;
-const STATIC_CACHE = `sims-static-${BUILD_ID}`;
-const DYNAMIC_CACHE = `sims-dynamic-${BUILD_ID}`;
+// Build-time cache version — injected by vite.config.js, falls back to 'dev'
+const BUILD_ID = 'mlmspgo5' !== '__SIMS_' + 'BUILD_ID__' ? 'mlmspgo5' : 'dev';
+const CACHE_NAME = `sims-v${BUILD_ID}`;
 
-// Assets to cache immediately on install
-const STATIC_ASSETS = [
+// Assets to pre-cache on install
+const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/favicon.svg',
 ];
 
-// API routes to cache with network-first strategy
-const API_ROUTES = [
-  '/api/inventory',
-  '/api/packages',
-  '/api/clients',
-];
-
 // =============================================================================
-// Install Event - Cache static assets
+// Install — Pre-cache shell assets, activate immediately
 // =============================================================================
 
 self.addEventListener('install', (event) => {
-  console.log('[ServiceWorker] Installing...');
-  
   event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then((cache) => {
-        console.log('[ServiceWorker] Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
-      })
-      .then(() => {
-        console.log('[ServiceWorker] Install complete');
-        return self.skipWaiting();
-      })
-      .catch((error) => {
-        console.error('[ServiceWorker] Install failed:', error);
-      })
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
 // =============================================================================
-// Activate Event - Clean up old caches
+// Activate — Purge all caches from previous builds, claim clients
 // =============================================================================
 
 self.addEventListener('activate', (event) => {
-  console.log('[ServiceWorker] Activating...');
-  
   event.waitUntil(
     caches.keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames
-            .filter((name) => {
-              // Delete old caches
-              return name !== STATIC_CACHE && 
-                     name !== DYNAMIC_CACHE &&
-                     name.startsWith('sims-');
-            })
-            .map((name) => {
-              console.log('[ServiceWorker] Deleting old cache:', name);
-              return caches.delete(name);
-            })
-        );
-      })
-      .then(() => {
-        console.log('[ServiceWorker] Activate complete');
-        return self.clients.claim();
-      })
+      .then((names) => Promise.all(
+        names
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
 // =============================================================================
-// Fetch Event - Handle requests with appropriate caching strategy
+// Fetch — Route requests to the correct caching strategy
 // =============================================================================
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
+  // Only handle GET requests over HTTP(S)
+  if (request.method !== 'GET' || !url.protocol.startsWith('http')) {
     return;
   }
 
-  // Skip chrome-extension and other non-http(s) requests
-  if (!url.protocol.startsWith('http')) {
+  // Never cache Supabase API calls or external requests — always go to network
+  if (url.hostname !== self.location.hostname) {
     return;
   }
 
-  // API requests: Network first, fallback to cache
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(request));
-    return;
-  }
-
-  // Hashed build assets (/assets/*.js, /assets/*.css): stale-while-revalidate
-  // These change hash on every deploy, so SWR ensures fresh code reaches users
-  if (url.pathname.startsWith('/assets/') && isCodeAsset(url.pathname)) {
-    event.respondWith(staleWhileRevalidate(request));
-    return;
-  }
-
-  // Truly static assets (fonts, images, favicon): cache first
-  if (isStaticAsset(url.pathname)) {
+  // Hashed build assets: cache first (immutable — filename changes on every build)
+  if (url.pathname.startsWith('/assets/')) {
     event.respondWith(cacheFirst(request));
     return;
   }
 
-  // Navigation requests: Network first with offline fallback
-  if (request.mode === 'navigate') {
-    event.respondWith(networkFirstWithOfflineFallback(request));
+  // Navigation and index.html: network first (must pick up new <script> tags on deploy)
+  if (request.mode === 'navigate' || url.pathname === '/index.html') {
+    event.respondWith(networkFirstNavigation(request));
     return;
   }
 
-  // Default: Stale while revalidate
-  event.respondWith(staleWhileRevalidate(request));
+  // Static files in public/ (favicon, manifest, etc.): network first with cache fallback
+  // These aren't hashed, so we need to check for fresh versions
+  event.respondWith(networkFirst(request));
 });
 
 // =============================================================================
-// Caching Strategies
+// Strategies
 // =============================================================================
 
 /**
- * Cache First - Best for static assets that don't change often
+ * Cache First — for immutable, content-hashed assets.
+ * If in cache, return immediately. Otherwise fetch, cache, and return.
  */
 async function cacheFirst(request) {
-  const cachedResponse = await caches.match(request);
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  
+  const cached = await caches.match(request);
+  if (cached) return cached;
+
   try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      const cache = await caches.open(STATIC_CACHE);
-      cache.put(request, networkResponse.clone());
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
     }
-    return networkResponse;
-  } catch (error) {
-    console.error('[ServiceWorker] Cache first failed:', error);
+    return response;
+  } catch {
     return new Response('Offline', { status: 503 });
   }
 }
 
 /**
- * Network First - Best for API data that needs to be fresh
+ * Network First (Navigation) — for HTML pages.
+ * Always try network. On success, update cache. On failure, serve cached
+ * index.html (SPA fallback).
+ */
+async function networkFirstNavigation(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    // Offline: serve cached index.html for SPA routing
+    const cached = await caches.match('/index.html');
+    return cached || new Response('Offline', { status: 503 });
+  }
+}
+
+/**
+ * Network First — for non-hashed static assets (manifest, favicon).
+ * Try network, fall back to cache.
  */
 async function networkFirst(request) {
   try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, networkResponse.clone());
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, response.clone());
     }
-    return networkResponse;
-  } catch (error) {
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    return new Response(
-      JSON.stringify({ error: 'Offline', cached: false }), 
-      { 
-        status: 503, 
-        headers: { 'Content-Type': 'application/json' } 
-      }
-    );
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    return cached || new Response('Offline', { status: 503 });
   }
 }
 
-/**
- * Network First with Offline Fallback - Best for HTML pages
- */
-async function networkFirstWithOfflineFallback(request) {
-  try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, networkResponse.clone());
-    }
-    return networkResponse;
-  } catch (error) {
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    
-    // Return offline page
-    const offlinePage = await caches.match('/offline.html');
-    if (offlinePage) {
-      return offlinePage;
-    }
-    
-    // Fallback to index.html for SPA routing
-    const indexPage = await caches.match('/index.html');
-    if (indexPage) {
-      return indexPage;
-    }
-    
-    return new Response('Offline', { status: 503 });
-  }
-}
-
-/**
- * Stale While Revalidate - Good balance of speed and freshness
- */
-async function staleWhileRevalidate(request) {
-  const cachedResponse = await caches.match(request);
-  
-  const fetchPromise = fetch(request)
-    .then((networkResponse) => {
-      if (networkResponse.ok) {
-        const cache = caches.open(DYNAMIC_CACHE);
-        cache.then((c) => c.put(request, networkResponse.clone()));
-      }
-      return networkResponse;
-    })
-    .catch(() => cachedResponse);
-  
-  return cachedResponse || fetchPromise;
-}
-
 // =============================================================================
-// Helper Functions
+// Messages from the app
 // =============================================================================
 
-function isCodeAsset(pathname) {
-  return pathname.endsWith('.js') || pathname.endsWith('.css');
-}
-
-function isStaticAsset(pathname) {
-  const staticExtensions = [
-    '.woff', '.woff2', '.ttf', 
-    '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico',
-  ];
-  return staticExtensions.some((ext) => pathname.endsWith(ext));
-}
-
-// =============================================================================
-// Background Sync - Queue failed requests to retry when online
-// =============================================================================
-
-self.addEventListener('sync', (event) => {
-  console.log('[ServiceWorker] Sync event:', event.tag);
-  
-  if (event.tag === 'sync-inventory') {
-    event.waitUntil(syncInventory());
-  }
-  
-  if (event.tag === 'sync-checkout') {
-    event.waitUntil(syncCheckouts());
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
   }
 });
-
-async function syncInventory() {
-  const queue = await getQueuedRequests('inventory');
-  
-  for (const request of queue) {
-    try {
-      await fetch(request.url, {
-        method: request.method,
-        headers: request.headers,
-        body: request.body,
-      });
-      await removeFromQueue('inventory', request.id);
-    } catch (error) {
-      console.error('[ServiceWorker] Sync failed:', error);
-    }
-  }
-}
-
-async function syncCheckouts() {
-  const queue = await getQueuedRequests('checkout');
-  
-  for (const request of queue) {
-    try {
-      await fetch(request.url, {
-        method: request.method,
-        headers: request.headers,
-        body: request.body,
-      });
-      await removeFromQueue('checkout', request.id);
-    } catch (error) {
-      console.error('[ServiceWorker] Sync failed:', error);
-    }
-  }
-}
-
-// IndexedDB helpers for offline queue
-async function getQueuedRequests(type) {
-  // Implementation would use IndexedDB
-  return [];
-}
-
-async function removeFromQueue(type, id) {
-  // Implementation would use IndexedDB
-}
 
 // =============================================================================
 // Push Notifications
 // =============================================================================
 
 self.addEventListener('push', (event) => {
-  console.log('[ServiceWorker] Push received');
-  
   let data = { title: 'SIMS', body: 'New notification' };
-  
+
   if (event.data) {
     try {
       data = event.data.json();
-    } catch (e) {
+    } catch {
       data.body = event.data.text();
     }
   }
-  
-  const options = {
-    body: data.body,
-    icon: '/favicon.svg',
-    badge: '/favicon.svg',
-    vibrate: [100, 50, 100],
-    data: {
-      url: data.url || '/',
-      timestamp: Date.now(),
-    },
-    actions: data.actions || [
-      { action: 'view', title: 'View' },
-      { action: 'dismiss', title: 'Dismiss' },
-    ],
-    tag: data.tag || 'default',
-    renotify: data.renotify || false,
-  };
-  
+
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/favicon.svg',
+      badge: '/favicon.svg',
+      data: { url: data.url || '/' },
+      tag: data.tag || 'default',
+    })
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
-  console.log('[ServiceWorker] Notification clicked:', event.action);
-  
   event.notification.close();
-  
-  if (event.action === 'dismiss') {
-    return;
-  }
-  
+  if (event.action === 'dismiss') return;
+
   const url = event.notification.data?.url || '/';
-  
+
   event.waitUntil(
-    clients.matchAll({ type: 'window' })
-      .then((clientList) => {
-        // Focus existing window if available
-        for (const client of clientList) {
-          if (client.url === url && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        // Otherwise open new window
-        if (clients.openWindow) {
-          return clients.openWindow(url);
-        }
-      })
+    self.clients.matchAll({ type: 'window' }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url === url && 'focus' in client) return client.focus();
+      }
+      return self.clients.openWindow?.(url);
+    })
   );
 });
-
-// =============================================================================
-// Message Handling
-// =============================================================================
-
-self.addEventListener('message', (event) => {
-  console.log('[ServiceWorker] Message received:', event.data);
-  
-  if (event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-  
-  if (event.data.type === 'CACHE_URLS') {
-    caches.open(DYNAMIC_CACHE)
-      .then((cache) => cache.addAll(event.data.urls));
-  }
-  
-  if (event.data.type === 'CLEAR_CACHE') {
-    caches.keys()
-      .then((names) => Promise.all(names.map((name) => caches.delete(name))));
-  }
-});
-
-console.log('[ServiceWorker] Loaded');
