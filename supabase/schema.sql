@@ -200,6 +200,7 @@ CREATE TABLE IF NOT EXISTS client_notes (
 
 CREATE INDEX IF NOT EXISTS idx_client_notes_client ON client_notes(client_id);
 CREATE INDEX IF NOT EXISTS idx_client_notes_parent ON client_notes(parent_id);
+CREATE INDEX IF NOT EXISTS idx_client_notes_user ON client_notes(user_id);
 
 -- =============================================================================
 -- INVENTORY TABLE (Core item data only)
@@ -255,6 +256,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_location ON inventory(location_id);
 CREATE INDEX IF NOT EXISTS idx_inventory_checked_out ON inventory(checked_out_to_user_id) WHERE checked_out_to_user_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_inventory_due_back ON inventory(due_back) WHERE due_back IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_inventory_is_kit ON inventory(is_kit) WHERE is_kit = true;
+CREATE INDEX IF NOT EXISTS idx_inventory_checkout_client ON inventory(checkout_client_id);
 
 -- Full-text search index
 CREATE INDEX IF NOT EXISTS idx_inventory_search ON inventory 
@@ -276,6 +278,7 @@ CREATE TABLE IF NOT EXISTS item_notes (
 
 CREATE INDEX IF NOT EXISTS idx_item_notes_item ON item_notes(item_id);
 CREATE INDEX IF NOT EXISTS idx_item_notes_parent ON item_notes(parent_id);
+CREATE INDEX IF NOT EXISTS idx_item_notes_user ON item_notes(user_id);
 
 -- =============================================================================
 -- ITEM REMINDERS TABLE
@@ -298,6 +301,7 @@ CREATE TABLE IF NOT EXISTS item_reminders (
 CREATE INDEX IF NOT EXISTS idx_item_reminders_item ON item_reminders(item_id);
 CREATE INDEX IF NOT EXISTS idx_item_reminders_due ON item_reminders(due_date) WHERE NOT completed;
 CREATE INDEX IF NOT EXISTS idx_item_reminders_completed ON item_reminders(completed);
+CREATE INDEX IF NOT EXISTS idx_item_reminders_created_by ON item_reminders(created_by_id);
 
 -- =============================================================================
 -- RESERVATIONS TABLE
@@ -337,6 +341,7 @@ CREATE INDEX IF NOT EXISTS idx_reservations_client ON reservations(client_id);
 CREATE INDEX IF NOT EXISTS idx_reservations_dates ON reservations(start_date, end_date);
 CREATE INDEX IF NOT EXISTS idx_reservations_status ON reservations(status);
 CREATE INDEX IF NOT EXISTS idx_reservations_project_type ON reservations(project_type);
+CREATE INDEX IF NOT EXISTS idx_reservations_created_by ON reservations(created_by_id);
 
 -- =============================================================================
 -- MAINTENANCE RECORDS TABLE
@@ -372,6 +377,7 @@ CREATE INDEX IF NOT EXISTS idx_maintenance_item ON maintenance_records(item_id);
 CREATE INDEX IF NOT EXISTS idx_maintenance_status ON maintenance_records(status);
 CREATE INDEX IF NOT EXISTS idx_maintenance_scheduled ON maintenance_records(scheduled_date);
 CREATE INDEX IF NOT EXISTS idx_maintenance_type ON maintenance_records(type);
+CREATE INDEX IF NOT EXISTS idx_maintenance_created_by ON maintenance_records(created_by_id);
 
 -- =============================================================================
 -- CHECKOUT HISTORY TABLE
@@ -445,6 +451,8 @@ CREATE TABLE IF NOT EXISTS package_notes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_package_notes_package ON package_notes(package_id);
+CREATE INDEX IF NOT EXISTS idx_package_notes_parent ON package_notes(parent_id);
+CREATE INDEX IF NOT EXISTS idx_package_notes_user ON package_notes(user_id);
 
 -- =============================================================================
 -- PACK LISTS TABLE
