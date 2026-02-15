@@ -10,7 +10,7 @@ import { Card, Badge, Button, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 import { useItemForm } from '../components/ItemForm.jsx';
-import { SmartPasteModal } from '../modals/SmartPasteModal.jsx';
+import { SmartPasteModal } from '../modals/smartPaste/SmartPasteModal.jsx';
 
 // ============================================================================
 // Add/Edit Item Page

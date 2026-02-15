@@ -14,7 +14,7 @@ import { DatePicker } from '../components/DatePicker.jsx';
 import { useItemForm } from '../components/ItemForm.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 import ImageCropEditor from '../components/ImageCropEditor.jsx';
-import { SmartPasteModal } from './SmartPasteModal.jsx';
+import { SmartPasteModal } from './smartPaste/SmartPasteModal.jsx';
 
 // ============================================================================
 // Item Modal (Add/Edit)
