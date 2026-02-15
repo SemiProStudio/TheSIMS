@@ -168,13 +168,16 @@ export function ThemeProvider({ children }) {
     return theme;
   }, [themeId, randomColors, customThemeColors]);
 
+  // Memoize available themes — only recompute when custom theme changes
+  const availableThemes = useMemo(() => getAvailableThemes(), [customThemeColors]);
+
   const value = useMemo(() => ({
     themeId,
     currentTheme,
     setTheme,
     updateCustomTheme,
-    availableThemes: getAvailableThemes(),
-  }), [themeId, currentTheme, setTheme, updateCustomTheme]);
+    availableThemes,
+  }), [themeId, currentTheme, setTheme, updateCustomTheme, availableThemes]);
 
   return (
     <ThemeContext.Provider value={value}>

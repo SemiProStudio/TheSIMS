@@ -84,16 +84,11 @@ export const colors = {
  * background: withOpacity('#6366f1', 20)
  */
 export const withOpacity = (color, percent) => {
-  // Safety check for undefined/null colors
   if (!color) {
     warn('withOpacity called with undefined color');
     return 'transparent';
   }
-  // Handle hex colors directly for backwards compatibility
-  if (color.startsWith('#')) {
-    return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
-  }
-  // Handle CSS variable references
+  // color-mix works with both hex colors and CSS variable references
   return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 };
 
@@ -369,31 +364,3 @@ export const componentStyles = {
   },
 };
 
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * Merge multiple style objects
- * @param {...Object} styles - Style objects to merge
- * @returns {Object} Merged style object
- */
-export const mergeStyles = (...styleObjects) => {
-  return Object.assign({}, ...styleObjects);
-};
-
-/**
- * Create a style object with conditional properties
- * @param {Object} baseStyle - Base styles
- * @param {Object} conditionalStyles - Object with condition: styles pairs
- * @returns {Object} Merged style object
- */
-export const conditionalStyle = (baseStyle, conditionalStyles) => {
-  const result = { ...baseStyle };
-  Object.entries(conditionalStyles).forEach(([condition, styles]) => {
-    if (condition) {
-      Object.assign(result, styles);
-    }
-  });
-  return result;
-};
