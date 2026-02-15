@@ -4,6 +4,10 @@
 
 import '@testing-library/jest-dom';
 
+// Set required env vars for modules that validate at load time (e.g., lib/env.ts)
+import.meta.env.VITE_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://test.supabase.co';
+import.meta.env.VITE_SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'test-anon-key';
+
 // Mock window.matchMedia for components that use media queries
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

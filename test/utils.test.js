@@ -99,7 +99,8 @@ describe('formatDate', () => {
   });
 
   it('should format a Date object correctly', () => {
-    const result = formatDate(new Date('2025-06-20'));
+    // Use local date constructor to avoid UTC midnight timezone shift
+    const result = formatDate(new Date(2025, 5, 20));
     expect(result).toBe('Jun 20, 2025');
   });
 
@@ -144,7 +145,9 @@ describe('getTodayISO', () => {
 
   it('should return current date', () => {
     const today = getTodayISO();
-    const expected = new Date().toISOString().split('T')[0];
+    // Use local date components instead of toISOString (which uses UTC)
+    const d = new Date();
+    const expected = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     expect(today).toBe(expected);
   });
 });

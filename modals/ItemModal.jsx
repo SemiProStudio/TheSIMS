@@ -59,7 +59,7 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
         const { storageService } = await import('../lib/index.js');
         const result = await storageService.uploadFromDataUrl(croppedDataUrl, itemId);
         handleChange('image', result.url);
-      } catch (err) {
+      } catch (_err) {
         handleChange('image', croppedDataUrl);
       } finally {
         setImageUploading(false);

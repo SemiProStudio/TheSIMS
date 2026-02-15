@@ -12,6 +12,20 @@ import {
   validateThemeContrast,
   getContrastSummary,
   CONTRAST_PAIRS,
+  announce,
+  announceAssertive,
+  announceAdded,
+  announceRemoved,
+  announceLoading,
+  announceLoaded,
+  announceError,
+  announceSuccess,
+  announcePageChange,
+  announceModal,
+  announceSelection,
+  announceFilterChange,
+  focusAndAnnounce,
+  trapFocus,
 } from '../utils/accessibility.js';
 
 // =============================================================================
@@ -269,5 +283,259 @@ describe('CONTRAST_PAIRS', () => {
       expect(pair.label).toBeDefined();
       expect(pair.label.length).toBeGreaterThan(0);
     });
+  });
+});
+
+// =============================================================================
+// Screen Reader Announcement Tests
+// =============================================================================
+
+// NOTE: The announce module keeps a module-level `announcerElement` reference.
+// Once created, the element persists across calls. We do NOT remove it from the
+// DOM between tests — we just mock rAF and check textContent.
+
+describe('announce', () => {
+  let rAF;
+
+  beforeEach(() => {
+    rAF = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => cb());
+  });
+
+  afterEach(() => {
+    rAF.mockRestore();
+  });
+
+  it('should create announcer element with aria-live', () => {
+    announce('test');
+    const announcer = document.querySelector('[role="status"]');
+    expect(announcer).not.toBeNull();
+    expect(announcer.getAttribute('aria-live')).toBe('polite');
+    expect(announcer.getAttribute('aria-atomic')).toBe('true');
+  });
+
+  it('should set message text', () => {
+    announce('Hello world');
+    const announcer = document.querySelector('[role="status"]');
+    expect(announcer).not.toBeNull();
+    expect(announcer.textContent).toBe('Hello world');
+  });
+
+  it('should reuse existing announcer', () => {
+    announce('First');
+    announce('Second');
+    const announcers = document.querySelectorAll('[role="status"]');
+    expect(announcers.length).toBe(1);
+    expect(announcers[0].textContent).toBe('Second');
+  });
+});
+
+describe('announceAssertive', () => {
+  let rAF;
+
+  beforeEach(() => {
+    rAF = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => cb());
+  });
+
+  afterEach(() => {
+    rAF.mockRestore();
+  });
+
+  it('should set aria-live to assertive', () => {
+    announceAssertive('Urgent');
+    const announcer = document.querySelector('[role="status"]');
+    expect(announcer).not.toBeNull();
+    expect(announcer.getAttribute('aria-live')).toBe('assertive');
+  });
+});
+
+// =============================================================================
+// Announcement Helper Tests
+// =============================================================================
+
+describe('announcement helpers', () => {
+  let rAF;
+
+  beforeEach(() => {
+    rAF = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => cb());
+  });
+
+  afterEach(() => {
+    rAF.mockRestore();
+  });
+
+  it('announceAdded with context', () => {
+    announceAdded('Canon R5', 'inventory');
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Canon R5 added to inventory');
+  });
+
+  it('announceAdded without context', () => {
+    announceAdded('Canon R5');
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Canon R5 added');
+  });
+
+  it('announceRemoved with context', () => {
+    announceRemoved('Lens', 'cart');
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Lens removed from cart');
+  });
+
+  it('announceRemoved without context', () => {
+    announceRemoved('Lens');
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Lens removed');
+  });
+
+  it('announceLoading default', () => {
+    announceLoading();
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Content loading');
+  });
+
+  it('announceLoading custom', () => {
+    announceLoading('Items');
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Items loading');
+  });
+
+  it('announceLoaded with count', () => {
+    announceLoaded('Items', 42);
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toContain('42 items found');
+  });
+
+  it('announceLoaded without count', () => {
+    announceLoaded('Items');
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Items loaded');
+  });
+
+  it('announceError', () => {
+    announceError('Something broke');
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Error: Something broke');
+  });
+
+  it('announceSuccess', () => {
+    announceSuccess('Saved!');
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Saved!');
+  });
+
+  it('announcePageChange', () => {
+    announcePageChange('Inventory');
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Navigated to Inventory');
+  });
+
+  it('announceModal opened', () => {
+    announceModal('Add Item', true);
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Add Item dialog opened');
+  });
+
+  it('announceModal closed', () => {
+    announceModal('Add Item', false);
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Add Item dialog closed');
+  });
+
+  it('announceSelection selected', () => {
+    announceSelection('Camera', true);
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Camera selected');
+  });
+
+  it('announceSelection deselected', () => {
+    announceSelection('Camera', false);
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Camera deselected');
+  });
+
+  it('announceFilterChange', () => {
+    announceFilterChange('Category', 'Cameras');
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Category changed to Cameras');
+  });
+});
+
+// =============================================================================
+// Focus Management Tests
+// =============================================================================
+
+describe('focusAndAnnounce', () => {
+  let rAF;
+
+  beforeEach(() => {
+    rAF = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => cb());
+  });
+
+  afterEach(() => {
+    rAF.mockRestore();
+  });
+
+  it('should focus the element', () => {
+    const btn = document.createElement('button');
+    document.body.appendChild(btn);
+    const spy = vi.spyOn(btn, 'focus');
+    focusAndAnnounce(btn);
+    expect(spy).toHaveBeenCalled();
+    btn.remove();
+  });
+
+  it('should announce if message provided', () => {
+    const btn = document.createElement('button');
+    document.body.appendChild(btn);
+    focusAndAnnounce(btn, 'Focus moved');
+    const a = document.querySelector('[role="status"]');
+    expect(a.textContent).toBe('Focus moved');
+    btn.remove();
+  });
+
+  it('should not announce without message', () => {
+    const btn = document.createElement('button');
+    document.body.appendChild(btn);
+    focusAndAnnounce(btn);
+    btn.remove();
+  });
+
+  it('should not throw for null element', () => {
+    expect(() => focusAndAnnounce(null)).not.toThrow();
+  });
+});
+
+describe('trapFocus', () => {
+  it('should return noop for null container', () => {
+    const cleanup = trapFocus(null);
+    expect(typeof cleanup).toBe('function');
+    expect(() => cleanup()).not.toThrow();
+  });
+
+  it('should focus first focusable element', () => {
+    const container = document.createElement('div');
+    const btn1 = document.createElement('button');
+    const btn2 = document.createElement('button');
+    container.appendChild(btn1);
+    container.appendChild(btn2);
+    document.body.appendChild(container);
+
+    const spy = vi.spyOn(btn1, 'focus');
+    trapFocus(container);
+    expect(spy).toHaveBeenCalled();
+    container.remove();
+  });
+
+  it('should return cleanup function that removes listener', () => {
+    const container = document.createElement('div');
+    const btn = document.createElement('button');
+    container.appendChild(btn);
+    document.body.appendChild(container);
+
+    const removeSpy = vi.spyOn(container, 'removeEventListener');
+    const cleanup = trapFocus(container);
+    cleanup();
+    expect(removeSpy).toHaveBeenCalledWith('keydown', expect.any(Function));
+    container.remove();
   });
 });

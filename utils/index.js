@@ -49,6 +49,20 @@ export const generateId = () => {
 // ============================================================================
 
 /**
+ * Parse a date string or Date as local time (avoids UTC timezone shift).
+ * "2025-01-15" → local midnight, not UTC midnight.
+ */
+const parseLocalDate = (date) => {
+  if (date instanceof Date) return date;
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    // Date-only string: parse as local to avoid timezone shift
+    const [y, m, d] = date.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  return new Date(date);
+};
+
+/**
  * Format a date string to a readable format
  * @param {string|Date} date - The date to format
  * @returns {string} Formatted date like "Jan 15, 2025"
@@ -56,7 +70,7 @@ export const generateId = () => {
 export const formatDate = (date) => {
   if (!date) return '-';
   try {
-    const d = new Date(date);
+    const d = parseLocalDate(date);
     if (isNaN(d.getTime())) return '-';
     return d.toLocaleDateString('en-US', {
       month: 'short',
@@ -76,7 +90,7 @@ export const formatDate = (date) => {
 export const formatDateTime = (date) => {
   if (!date) return '-';
   try {
-    const d = new Date(date);
+    const d = parseLocalDate(date);
     if (isNaN(d.getTime())) return '-';
     return d.toLocaleString('en-US', {
       month: 'short',
@@ -94,7 +108,10 @@ export const formatDateTime = (date) => {
  * Get today's date as ISO string (YYYY-MM-DD)
  * @returns {string}
  */
-export const getTodayISO = () => new Date().toISOString().split('T')[0];
+export const getTodayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 /**
  * Check if a date is before today
@@ -439,8 +456,8 @@ export const flattenLocations = (locations, parentPath = '') => {
  * @returns {string|null} Next due date or null if no recurrence
  */
 export const getNextDueDate = (currentDueDate, recurrence) => {
-  const date = new Date(currentDueDate);
-  
+  const date = parseLocalDate(currentDueDate);
+
   switch (recurrence) {
     case 'weekly':
       date.setDate(date.getDate() + 7);
@@ -464,7 +481,7 @@ export const getNextDueDate = (currentDueDate, recurrence) => {
       return null;
   }
   
-  return date.toISOString().split('T')[0];
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
 /**

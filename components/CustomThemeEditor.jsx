@@ -351,7 +351,7 @@ function CustomThemeEditor({ onBack, onSave, existingTheme }) {
     try {
       const saved = localStorage.getItem('sims-custom-theme');
       if (saved) return { ...DEFAULT_CUSTOM_THEME, ...JSON.parse(saved) };
-    } catch (e) {}
+    } catch (_e) {}
     return { ...DEFAULT_CUSTOM_THEME };
   });
 

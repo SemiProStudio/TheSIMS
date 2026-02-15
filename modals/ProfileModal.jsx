@@ -126,7 +126,7 @@ function ProfileModal({ user, onSave, onClose }) {
         const { storageService } = await import('../lib/index.js');
         const result = await storageService.uploadFromDataUrl(croppedDataUrl, `profiles/${user.id}`);
         handleChange('logo', result.url);
-      } catch (err) {
+      } catch (_err) {
         // Fall back to data URL
         handleChange('logo', croppedDataUrl);
       } finally {
