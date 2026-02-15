@@ -18,6 +18,10 @@ import {
   getQueuedErrors,
   clearQueuedErrors,
   isErrorTrackingEnabled,
+  getConfig,
+  startTransaction,
+  measurePerformance,
+  withSentryErrorBoundary,
   ErrorSeverity,
   ErrorCategory,
 } from '../lib/errorTracking.js';
@@ -331,6 +335,143 @@ describe('Error Tracking Service', () => {
       expect(captured.context.user.id).toBe('user-123');
       expect(captured.context.tags.component).toBe('form');
       expect(captured.context.extra.value).toBe(999);
+    });
+  });
+
+  // =============================================================================
+  // getConfig Tests
+  // =============================================================================
+
+  describe('getConfig', () => {
+    it('should return a copy of the config', () => {
+      const config = getConfig();
+      expect(config).toBeDefined();
+      expect(typeof config.dsn === 'string' || config.dsn === undefined || config.dsn === null).toBe(true);
+      expect(config.maxBreadcrumbs).toBe(50);
+    });
+
+    it('should return a fresh copy each time', () => {
+      const config1 = getConfig();
+      const config2 = getConfig();
+      expect(config1).not.toBe(config2);
+      expect(config1).toEqual(config2);
+    });
+
+    it('should have ignoreErrors array', () => {
+      const config = getConfig();
+      expect(Array.isArray(config.ignoreErrors)).toBe(true);
+      expect(config.ignoreErrors.length).toBeGreaterThan(0);
+    });
+
+    it('should have denyUrls array', () => {
+      const config = getConfig();
+      expect(Array.isArray(config.denyUrls)).toBe(true);
+    });
+  });
+
+  // =============================================================================
+  // startTransaction Tests (without Sentry)
+  // =============================================================================
+
+  describe('startTransaction (no Sentry)', () => {
+    it('should return a no-op transaction', () => {
+      const transaction = startTransaction('test-task', 'task');
+      expect(transaction).toBeDefined();
+      expect(typeof transaction.finish).toBe('function');
+      expect(typeof transaction.setStatus).toBe('function');
+      expect(typeof transaction.setData).toBe('function');
+
+      // Should not throw when called
+      transaction.finish();
+      transaction.setStatus('ok');
+      transaction.setData('key', 'value');
+    });
+
+    it('should default op to "task"', () => {
+      const transaction = startTransaction('my-task');
+      expect(transaction).toBeDefined();
+    });
+  });
+
+  // =============================================================================
+  // measurePerformance Tests (without Sentry)
+  // =============================================================================
+
+  describe('measurePerformance (no Sentry)', () => {
+    it('should execute the function and return its result', async () => {
+      const result = await measurePerformance('test', () => 42);
+      expect(result).toBe(42);
+    });
+
+    it('should handle async functions', async () => {
+      const result = await measurePerformance('async-test', async () => {
+        return 'async-result';
+      });
+      expect(result).toBe('async-result');
+    });
+
+    it('should propagate errors', async () => {
+      await expect(
+        measurePerformance('error-test', () => {
+          throw new Error('Test error');
+        })
+      ).rejects.toThrow('Test error');
+    });
+  });
+
+  // =============================================================================
+  // withSentryErrorBoundary Tests (without Sentry)
+  // =============================================================================
+
+  describe('withSentryErrorBoundary (no Sentry)', () => {
+    it('should return the component unchanged when Sentry is not available', () => {
+      const MyComponent = () => 'hello';
+      const wrapped = withSentryErrorBoundary(MyComponent);
+      expect(wrapped).toBe(MyComponent);
+    });
+
+    it('should return the component with options', () => {
+      const MyComponent = () => 'hello';
+      const wrapped = withSentryErrorBoundary(MyComponent, { showDialog: true });
+      expect(wrapped).toBe(MyComponent);
+    });
+  });
+
+  // =============================================================================
+  // captureMessage with context
+  // =============================================================================
+
+  describe('captureMessage with tags', () => {
+    it('should include tags in context', () => {
+      captureMessage('Tagged message', ErrorSeverity.WARNING, {
+        tags: { component: 'header', action: 'render' },
+      });
+
+      const queued = getQueuedErrors();
+      expect(queued.length).toBe(1);
+      expect(queued[0].context.tags.component).toBe('header');
+    });
+  });
+
+  // =============================================================================
+  // Error queue edge cases
+  // =============================================================================
+
+  describe('Error queue edge cases', () => {
+    it('should FIFO drop oldest when exceeding 100 entries', () => {
+      // Fill to 100
+      for (let i = 0; i < 100; i++) {
+        captureException(new Error(`Error ${i}`));
+      }
+      expect(getQueuedErrors().length).toBe(100);
+      expect(getQueuedErrors()[0].error.message).toBe('Error 0');
+
+      // Add one more — oldest should be dropped
+      captureException(new Error('Error 100'));
+      const queued = getQueuedErrors();
+      expect(queued.length).toBe(100);
+      expect(queued[0].error.message).toBe('Error 1');
+      expect(queued[99].error.message).toBe('Error 100');
     });
   });
 });
