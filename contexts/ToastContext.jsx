@@ -10,6 +10,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import ToastContext from './ToastContext.js';
+import { colors, withOpacity, typography } from '../theme.js';
 
 const TOAST_DURATION = {
   success: 3000,
@@ -48,11 +49,11 @@ export function ToastProvider({ children }) {
 // Toast UI
 // =============================================================================
 
-const COLORS = {
-  success: { bg: '#0d3320', border: '#16a34a', text: '#86efac' },
-  error:   { bg: '#3b1118', border: '#dc2626', text: '#fca5a5' },
-  warning: { bg: '#3b2f08', border: '#ca8a04', text: '#fde68a' },
-  info:    { bg: '#0c2340', border: '#3b82f6', text: '#93c5fd' },
+const TOAST_COLORS = {
+  success: { bg: withOpacity(colors.success, 15), border: colors.success, text: colors.textPrimary },
+  error:   { bg: withOpacity(colors.danger, 15), border: colors.danger, text: colors.textPrimary },
+  warning: { bg: withOpacity(colors.warning, 15), border: colors.warning, text: colors.textPrimary },
+  info:    { bg: withOpacity(colors.primary, 15), border: colors.primary, text: colors.textPrimary },
 };
 
 function ToastContainer({ toasts, onDismiss }) {
@@ -74,15 +75,16 @@ function ToastContainer({ toasts, onDismiss }) {
       }}
     >
       {toasts.map((toast) => {
-        const colors = COLORS[toast.type] || COLORS.info;
+        const toastColors = TOAST_COLORS[toast.type] || TOAST_COLORS.info;
         return (
           <div
             key={toast.id}
             role="alert"
             style={{
-              background: colors.bg,
-              border: `1px solid ${colors.border}`,
-              color: colors.text,
+              background: toastColors.bg,
+              border: `1px solid ${toastColors.border}`,
+              color: toastColors.text,
+              fontFamily: typography.fontFamily,
               padding: '10px 14px',
               borderRadius: 8,
               fontSize: 13,
@@ -90,7 +92,7 @@ function ToastContainer({ toasts, onDismiss }) {
               display: 'flex',
               alignItems: 'flex-start',
               gap: 8,
-              boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+              boxShadow: 'var(--shadow-md)',
               animation: 'toast-in 0.2s ease-out',
             }}
           >
@@ -101,7 +103,7 @@ function ToastContainer({ toasts, onDismiss }) {
               style={{
                 background: 'none',
                 border: 'none',
-                color: colors.text,
+                color: toastColors.text,
                 cursor: 'pointer',
                 padding: '0 2px',
                 fontSize: 16,
