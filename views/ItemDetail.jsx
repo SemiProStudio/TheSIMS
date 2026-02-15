@@ -334,6 +334,7 @@ function ItemDetail({
   const { canEdit } = usePermissions();
   const canEditItems = canEdit('item_details');
   const [specsExpanded, setSpecsExpanded] = useState(false);
+  const [showAddReminderForm, setShowAddReminderForm] = useState(false);
 
   const isCheckedOut = item?.status === 'checked-out';
 
@@ -529,8 +530,35 @@ function ItemDetail({
             collapsed={isCollapsed('reminders')}
             onToggleCollapse={() => toggleCollapse('reminders')}
             padding={false}
+            action={
+              <button
+                onClick={() => {
+                  if (isCollapsed('reminders')) toggleCollapse('reminders');
+                  setShowAddReminderForm(prev => !prev);
+                }}
+                title={showAddReminderForm ? 'Cancel adding reminder' : 'Add reminder'}
+                aria-label={showAddReminderForm ? 'Cancel adding reminder' : 'Add reminder'}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: colors.textPrimary,
+                  cursor: 'pointer',
+                  padding: '2px 4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: borderRadius.sm,
+                  opacity: 0.8,
+                  transition: 'opacity 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '0.8'}
+              >
+                <Plus size={16} />
+              </button>
+            }
           >
-            <RemindersSection reminders={item.reminders || []} onAddReminder={onAddReminder} onCompleteReminder={onCompleteReminder} onUncompleteReminder={onUncompleteReminder} onDeleteReminder={onDeleteReminder} panelColor={remindersColor} />
+            <RemindersSection reminders={item.reminders || []} onAddReminder={onAddReminder} onCompleteReminder={onCompleteReminder} onUncompleteReminder={onUncompleteReminder} onDeleteReminder={onDeleteReminder} panelColor={remindersColor} showAddForm={showAddReminderForm} onToggleAddForm={setShowAddReminderForm} />
           </CollapsibleSection>
         );
       

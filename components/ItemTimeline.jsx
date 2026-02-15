@@ -4,14 +4,13 @@
 // ============================================================================
 
 import { memo, useState, useMemo } from 'react';
-import { 
-  Clock, CheckCircle, RefreshCw, Wrench, MessageSquare, Calendar, 
+import {
+  Clock, CheckCircle, RefreshCw, Wrench, MessageSquare, Calendar,
   Bell, AlertTriangle, DollarSign, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
 import { formatDate, formatDateTime, formatMoney } from '../utils';
 import { Badge } from './ui.jsx';
-import { Select } from './Select.jsx';
 
 // Event type configuration
 const EVENT_TYPES = {
@@ -206,7 +205,6 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
 
 // Main Timeline component
 function ItemTimeline({ item }) {
-  const [filter, setFilter] = useState('all');
   const [showAll, setShowAll] = useState(false);
 
   // Build unified timeline from all item data
@@ -339,39 +337,12 @@ function ItemTimeline({ item }) {
     return events;
   }, [item]);
 
-  // Filter events
-  const filteredEvents = useMemo(() => {
-    if (filter === 'all') return allEvents;
-    return allEvents.filter(e => {
-      const config = EVENT_TYPES[e.type];
-      return config && config.category === filter;
-    });
-  }, [allEvents, filter]);
-
   // Limit display unless "show all" is clicked
-  const displayedEvents = showAll ? filteredEvents : filteredEvents.slice(0, 5);
-
-  const filterOptions = [
-    { value: 'all', label: 'All Events' },
-    { value: 'checkout', label: 'Checkouts' },
-    { value: 'maintenance', label: 'Maintenance' },
-    { value: 'notes', label: 'Notes' },
-    { value: 'reservations', label: 'Reservations' },
-    { value: 'reminders', label: 'Reminders' },
-  ];
+  const displayedEvents = showAll ? allEvents : allEvents.slice(0, 5);
 
   return (
     <>
       <div style={{ padding: spacing[4] }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: spacing[3] }}>
-          <Select
-            value={filter}
-            onChange={e => setFilter(e.target.value)}
-            options={filterOptions}
-            style={{ width: 140 }}
-            aria-label="Filter timeline"
-          />
-        </div>
         {displayedEvents.length === 0 ? (
           <div style={{ textAlign: 'center', padding: spacing[6], color: colors.textMuted }}>
             <Clock size={32} style={{ marginBottom: spacing[2], opacity: 0.3 }} />
@@ -389,7 +360,7 @@ function ItemTimeline({ item }) {
               />
             ))}
             
-            {filteredEvents.length > 5 && !showAll && (
+            {allEvents.length > 5 && !showAll && (
               <button
                 onClick={() => setShowAll(true)}
                 style={{
@@ -403,11 +374,11 @@ function ItemTimeline({ item }) {
                 }}
               >
                 <ChevronDown size={16} />
-                Show Full Timeline ({filteredEvents.length} events)
+                Show Full Timeline ({allEvents.length} events)
               </button>
             )}
             
-            {showAll && filteredEvents.length > 5 && (
+            {showAll && allEvents.length > 5 && (
               <button
                 onClick={() => setShowAll(false)}
                 style={{

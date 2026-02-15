@@ -303,14 +303,15 @@ function RemindersSection({
   onCompleteReminder,
   onUncompleteReminder,
   onDeleteReminder,
-  panelColor
+  panelColor,
+  showAddForm = false,
+  onToggleAddForm,
 }) {
-  const [showAddForm, setShowAddForm] = useState(false);
   
   const handleAdd = useCallback((reminder) => {
     onAddReminder(reminder);
-    setShowAddForm(false);
-  }, [onAddReminder]);
+    if (onToggleAddForm) onToggleAddForm(false);
+  }, [onAddReminder, onToggleAddForm]);
   
   // Sort reminders: incomplete due first, then incomplete not due, then completed
   const sortedReminders = [...reminders]
@@ -335,20 +336,11 @@ function RemindersSection({
   return (
     <>
       <div style={{ padding: spacing[4] }}>
-        {/* Add button or form */}
-        {!showAddForm ? (
-          <Button
-            variant="secondary"
-            onClick={() => setShowAddForm(true)}
-            icon={Plus}
-            style={{ width: '100%', justifyContent: 'center', marginBottom: sortedReminders.length > 0 ? spacing[3] : 0 }}
-          >
-            Add Reminder
-          </Button>
-        ) : (
+        {/* Add form (toggled from header + button) */}
+        {showAddForm && (
           <AddReminderForm
             onAdd={handleAdd}
-            onCancel={() => setShowAddForm(false)}
+            onCancel={() => onToggleAddForm && onToggleAddForm(false)}
           />
         )}
         
