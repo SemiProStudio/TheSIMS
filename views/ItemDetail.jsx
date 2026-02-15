@@ -681,10 +681,10 @@ function ItemDetail({
                 <div key={entry.id || idx} style={getItemStyle(checkoutColor)}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[1] }}>
                     <Badge text={entry.type === 'checkout' ? 'Out' : 'In'} color={entry.type === 'checkout' ? colors.checkedOut : colors.available} size="xs" />
-                    <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>{entry.type === 'checkout' ? entry.checkedOutDate : entry.returnDate}</span>
+                    <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>{formatDate(entry.type === 'checkout' ? entry.checkedOutDate : entry.returnDate)}</span>
                   </div>
                   <div style={{ fontSize: typography.fontSize.base, color: colors.textPrimary }}>
-                    {entry.type === 'checkout' ? entry.borrowerName : `Returned by ${entry.returnedBy}`}
+                    {entry.type === 'checkout' ? (entry.borrowerName || 'Unknown') : `Returned by ${entry.returnedBy || 'Unknown'}`}
                   </div>
                 </div>
               ))}
