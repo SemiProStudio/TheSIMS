@@ -168,7 +168,9 @@ export function ThemeProvider({ children }) {
     return theme;
   }, [themeId, randomColors, customThemeColors]);
 
-  // Memoize available themes — only recompute when custom theme changes
+  // Memoize available themes — recompute when custom theme colors change
+  // (customThemeColors triggers re-read of localStorage via getAvailableThemes)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const availableThemes = useMemo(() => getAvailableThemes(), [customThemeColors]);
 
   const value = useMemo(() => ({
