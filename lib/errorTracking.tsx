@@ -7,29 +7,30 @@
  * Error tracking configuration
  */
 import { log, warn, error as logError } from './logger';
+import { env } from './env';
 
 const config = {
   // Sentry DSN - should be set via environment variable
-  dsn: import.meta.env.VITE_SENTRY_DSN || '',
-  
+  dsn: env.SENTRY_DSN,
+
   // Environment
-  environment: import.meta.env.MODE || 'development',
-  
+  environment: env.MODE,
+
   // Release version
-  release: import.meta.env.VITE_APP_VERSION || '1.0.0',
-  
+  release: env.APP_VERSION,
+
   // Sample rate for performance monitoring (0-1)
-  tracesSampleRate: import.meta.env.MODE === 'production' ? 0.1 : 1.0,
-  
+  tracesSampleRate: env.MODE === 'production' ? 0.1 : 1.0,
+
   // Sample rate for session replays (0-1)
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
-  
+
   // Enable in production only by default
-  enabled: import.meta.env.MODE === 'production' || import.meta.env.VITE_SENTRY_ENABLED === 'true',
-  
+  enabled: env.MODE === 'production' || env.SENTRY_ENABLED === 'true',
+
   // Debug mode for development
-  debug: import.meta.env.MODE === 'development',
+  debug: env.MODE === 'development',
   
   // Breadcrumb settings
   maxBreadcrumbs: 50,

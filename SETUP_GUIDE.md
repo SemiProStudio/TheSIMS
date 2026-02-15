@@ -27,60 +27,48 @@ Supabase provides the database, authentication, and serverless functions.
    - **Region:** Choose closest to your users
 4. Click **Create new project** and wait for provisioning (~2 minutes)
 
-### Step 1.2: Run Database Schema
+### Step 1.2: Set Up the Database
 
-**File:** `supabase/schema.sql`
+#### Recommended: Using Supabase CLI
 
-1. In Supabase dashboard, go to **SQL Editor**
-2. Click **New query**
-3. Copy the entire contents of `supabase/schema.sql`
-4. Click **Run** (or press Ctrl+Enter)
-5. Verify: Go to **Table Editor** - you should see tables like `inventory`, `packages`, `clients`, etc.
+If you have the [Supabase CLI](https://supabase.com/docs/guides/cli) installed:
 
-### Step 1.3: Run Notification Schema
+1. Link your project: `supabase link --project-ref YOUR_PROJECT_REF`
+2. Apply all migrations: `supabase db push`
+3. (Optional) Load sample data: Run `supabase/seed.sql` in the SQL Editor
 
-**File:** `notifications-schema.sql`
+#### Alternative: Manual SQL Setup (no CLI required)
 
-1. In **SQL Editor**, click **New query**
-2. Copy the entire contents of `notifications-schema.sql`
-3. Click **Run**
-4. Verify: You should now see `notification_preferences`, `notification_log`, and `email_templates` tables
+If you prefer not to use the CLI, run each migration file in the **SQL Editor** in order:
 
-### Step 1.4: Run Functions Schema
+1. `supabase/migrations/20240101000000_baseline_extensions.sql`
+2. `supabase/migrations/20240101000001_baseline_tables.sql`
+3. `supabase/migrations/20240101000002_baseline_helper_functions.sql`
+4. `supabase/migrations/20240101000003_baseline_rls_policies.sql`
+5. `supabase/migrations/20240101000004_baseline_triggers_views.sql`
+6. `supabase/migrations/20240101000005_baseline_rpc_functions.sql`
+7. `supabase/migrations/20240101000006_baseline_storage.sql`
+8. `supabase/migrations/20240101000007_baseline_smart_paste.sql`
 
-**File:** `supabase/functions.sql`
+Verify: Go to **Table Editor** — you should see tables like `inventory`, `packages`, `clients`, `notification_preferences`, etc.
 
-1. In **SQL Editor**, click **New query**
-2. Copy the entire contents of `supabase/functions.sql`
-3. Click **Run**
-4. This creates database functions like `get_items_due_soon()`
-
-### Step 1.5: (Optional) Load Sample Data
+### Step 1.3: (Optional) Load Sample Data
 
 **File:** `supabase/seed.sql`
 
 1. In **SQL Editor**, click **New query**
 2. Copy the contents of `supabase/seed.sql`
 3. Click **Run**
-4. This populates the database with sample inventory items
+4. This populates the database with sample inventory items and clients
 
-### Step 1.6: Configure Storage
-
-**File:** `supabase/storage.sql`
-
-1. In **SQL Editor**, click **New query**
-2. Copy the contents of `supabase/storage.sql`
-3. Click **Run**
-4. This creates the `item-images` storage bucket
-
-### Step 1.7: Get API Credentials
+### Step 1.4: Get API Credentials
 
 1. Go to **Settings** → **API**
 2. Copy these values (you'll need them later):
    - **Project URL** (e.g., `https://xxxxx.supabase.co`)
    - **anon/public key** (starts with `eyJ...`)
 
-### Step 1.8: (Optional) Deploy Edge Functions for Email
+### Step 1.5: (Optional) Deploy Edge Functions for Email
 
 **Files:**
 - `supabase/functions/send-email/index.ts`

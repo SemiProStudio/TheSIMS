@@ -1,7 +1,12 @@
 -- =============================================================================
+-- DEPRECATED: This file is kept for reference only.
+-- The source of truth for the database schema is supabase/migrations/.
+-- To set up a new database, run: supabase db reset
+-- To apply new changes, create a new migration: supabase migration new <name>
+-- =============================================================================
+--
 -- SIMS: Harden SECURITY DEFINER Functions
 -- Adds authentication checks and input validation to functions that bypass RLS
--- Run in Supabase SQL Editor
 -- =============================================================================
 
 -- =============================================================================

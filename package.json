@@ -17,7 +17,10 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
-    "db:setup": "echo 'Run schema.sql, then functions.sql, then seed.sql in Supabase SQL Editor'",
+    "db:setup": "echo 'Run: supabase db reset  (applies all migrations + seed data)'",
+    "db:migrate": "supabase migration up",
+    "db:reset": "supabase db reset",
+    "db:new-migration": "supabase migration new",
     "deploy:vercel": "vercel"
   },
   "dependencies": {
