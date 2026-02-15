@@ -60,7 +60,7 @@ export const CheckInModal = memo(function CheckInModal({
     
     onCheckIn({
       itemId: item.id,
-      returnedBy: currentUser?.name || item.checkedOutTo,
+      returnedBy: currentUser?.name || currentUser?.email?.split('@')[0] || item.checkedOutTo || 'Unknown',
       condition: formData.condition,
       conditionChanged: formData.conditionChanged,
       conditionAtCheckout: item.condition,
