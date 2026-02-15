@@ -475,7 +475,30 @@ function ItemDetail({
             headerColor={reservationsColor}
             collapsed={isCollapsed('reservations')}
             onToggleCollapse={() => toggleCollapse('reservations')}
-            action={canEditItems && <button onClick={onAddReservation} style={{ ...styles.btn, padding: `${spacing[1]}px ${spacing[2]}px`, fontSize: typography.fontSize.xs }}><Plus size={12} /></button>}
+            action={canEditItems && (
+              <button
+                onClick={onAddReservation}
+                title="Add reservation"
+                aria-label="Add reservation"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: colors.textPrimary,
+                  cursor: 'pointer',
+                  padding: '2px 4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: borderRadius.sm,
+                  opacity: 0.8,
+                  transition: 'opacity 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '0.8'}
+              >
+                <Plus size={16} />
+              </button>
+            )}
           >
             <div style={{ maxHeight: 280, overflowY: 'auto' }}>
               {!item.reservations || item.reservations.length === 0 ? (
