@@ -64,6 +64,7 @@ module.exports = {
   ignorePatterns: [
     'dist/',
     'node_modules/',
+    'coverage/',           // Auto-generated coverage reports
     'public/sw.js',        // Service worker runs in different context
     'supabase/functions/',  // Deno edge functions
     'e2e/',                // Playwright tests use different env
