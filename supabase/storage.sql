@@ -1,6 +1,11 @@
 -- =============================================================================
+-- DEPRECATED: This file is kept for reference only.
+-- The source of truth for the database schema is supabase/migrations/.
+-- To set up a new database, run: supabase db reset
+-- To apply new changes, create a new migration: supabase migration new <name>
+-- =============================================================================
+--
 -- SIMS Storage Setup
--- Run this in Supabase SQL Editor to set up file storage
 -- =============================================================================
 
 -- Create the equipment-images bucket

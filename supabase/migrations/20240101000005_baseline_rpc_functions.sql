@@ -1,15 +1,11 @@
 -- =============================================================================
--- DEPRECATED: This file is kept for reference only.
--- The source of truth for the database schema is supabase/migrations/.
--- To set up a new database, run: supabase db reset
--- To apply new changes, create a new migration: supabase migration new <name>
--- =============================================================================
---
--- SIMS Database Functions (RPC)
+-- SIMS Baseline Migration 6/8: RPC Functions
+-- Client-callable functions exposed via supabase.rpc()
+-- Includes hardened versions of increment_view/checkout_count
 -- =============================================================================
 
 -- =============================================================================
--- INCREMENT VIEW COUNT
+-- INCREMENT VIEW COUNT (hardened: auth + existence check)
 -- =============================================================================
 CREATE OR REPLACE FUNCTION increment_view_count(item_id VARCHAR)
 RETURNS void AS $$
@@ -25,7 +21,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
--- INCREMENT CHECKOUT COUNT
+-- INCREMENT CHECKOUT COUNT (hardened: auth + existence check)
 -- =============================================================================
 CREATE OR REPLACE FUNCTION increment_checkout_count(item_id VARCHAR)
 RETURNS void AS $$
@@ -42,7 +38,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- GET ITEM WITH DETAILS
--- Returns item with all related data (notes, reminders, reservations, maintenance)
+-- Returns item with all related data (notes, reminders, reservations, etc.)
 -- =============================================================================
 CREATE OR REPLACE FUNCTION get_item_with_details(p_item_id VARCHAR)
 RETURNS JSON AS $$
@@ -78,7 +74,7 @@ BEGIN
       LIMIT 50
     ), '[]'::json)
   ) INTO result;
-  
+
   RETURN result;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
@@ -93,7 +89,7 @@ BEGIN
   RETURN QUERY
   SELECT *
   FROM inventory
-  WHERE 
+  WHERE
     name ILIKE '%' || search_query || '%'
     OR brand ILIKE '%' || search_query || '%'
     OR id ILIKE '%' || search_query || '%'
@@ -111,7 +107,6 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- GET DASHBOARD STATISTICS
--- Returns comprehensive stats for dashboard
 -- =============================================================================
 CREATE OR REPLACE FUNCTION get_dashboard_stats()
 RETURNS JSON AS $$
@@ -127,17 +122,17 @@ BEGIN
     'overdue', (SELECT COUNT(*) FROM inventory WHERE status = 'checked-out' AND due_back < CURRENT_DATE),
     'total_value', (SELECT COALESCE(SUM(current_value), 0) FROM inventory),
     'upcoming_reservations', (
-      SELECT COUNT(*) FROM reservations 
-      WHERE start_date <= CURRENT_DATE + 7 
-      AND end_date >= CURRENT_DATE 
+      SELECT COUNT(*) FROM reservations
+      WHERE start_date <= CURRENT_DATE + 7
+      AND end_date >= CURRENT_DATE
       AND status = 'confirmed'
     ),
     'due_reminders', (
-      SELECT COUNT(*) FROM item_reminders 
+      SELECT COUNT(*) FROM item_reminders
       WHERE due_date <= CURRENT_DATE AND NOT completed
     ),
     'pending_maintenance', (
-      SELECT COUNT(*) FROM maintenance_records 
+      SELECT COUNT(*) FROM maintenance_records
       WHERE status IN ('scheduled', 'in-progress')
     ),
     'items_by_category', (
@@ -157,14 +152,13 @@ BEGIN
       ) stats
     )
   ) INTO result;
-  
+
   RETURN result;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- GET CLIENT RENTAL SUMMARY
--- Returns rental history summary for a client
 -- =============================================================================
 CREATE OR REPLACE FUNCTION get_client_rental_summary(p_client_id VARCHAR)
 RETURNS JSON AS $$
@@ -176,14 +170,14 @@ BEGIN
       SELECT COUNT(*) FROM reservations WHERE client_id = p_client_id
     ),
     'active_reservations', (
-      SELECT COUNT(*) FROM reservations 
-      WHERE client_id = p_client_id 
-      AND end_date >= CURRENT_DATE 
+      SELECT COUNT(*) FROM reservations
+      WHERE client_id = p_client_id
+      AND end_date >= CURRENT_DATE
       AND status = 'confirmed'
     ),
     'completed_reservations', (
-      SELECT COUNT(*) FROM reservations 
-      WHERE client_id = p_client_id 
+      SELECT COUNT(*) FROM reservations
+      WHERE client_id = p_client_id
       AND end_date < CURRENT_DATE
     ),
     'total_checkouts', (
@@ -205,14 +199,13 @@ BEGIN
       ) cats
     )
   ) INTO result;
-  
+
   RETURN result;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- CHECK ITEM AVAILABILITY
--- Checks if an item is available for a given date range
 -- =============================================================================
 CREATE OR REPLACE FUNCTION check_item_availability(
   p_item_id VARCHAR,
@@ -225,15 +218,12 @@ DECLARE
   item_status VARCHAR;
   conflicting_count INTEGER;
 BEGIN
-  -- Get current item status
   SELECT status INTO item_status FROM inventory WHERE id = p_item_id;
-  
-  -- If item is needs-attention or missing, it's not available
+
   IF item_status IN ('needs-attention', 'missing') THEN
     RETURN FALSE;
   END IF;
-  
-  -- Check for conflicting reservations
+
   SELECT COUNT(*) INTO conflicting_count
   FROM reservations
   WHERE item_id = p_item_id
@@ -241,14 +231,13 @@ BEGIN
     AND start_date <= p_end_date
     AND end_date >= p_start_date
     AND (p_exclude_reservation_id IS NULL OR id != p_exclude_reservation_id);
-  
+
   RETURN conflicting_count = 0;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- =============================================================================
 -- GET AVAILABLE ITEMS FOR DATE RANGE
--- Returns items available for a given date range, optionally filtered by category
 -- =============================================================================
 CREATE OR REPLACE FUNCTION get_available_items(
   p_start_date DATE,

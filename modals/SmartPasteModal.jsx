@@ -7,6 +7,7 @@ import { memo, useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Upload, FileText, ChevronDown, ChevronUp, AlertCircle, Check, X as XIcon } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
+import { env } from '../lib/env.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 import {
@@ -713,7 +714,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     setUrlLoading(true);
     setImportStatus('');
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseUrl = env.SUPABASE_URL;
       const proxyUrl = supabaseUrl ? `${supabaseUrl}/functions/v1/fetch-product-page` : null;
       const { text } = await fetchProductPage(urlInput, proxyUrl);
       setInputText(text);

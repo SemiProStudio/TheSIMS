@@ -1,7 +1,12 @@
 -- =============================================================================
+-- DEPRECATED: This file is kept for reference only.
+-- The source of truth for the database schema is supabase/migrations/.
+-- To set up a new database, run: supabase db reset
+-- To apply new changes, create a new migration: supabase migration new <name>
+-- =============================================================================
+--
 -- Smart Paste Community Aliases (5.3)
 -- Stores user-contributed field mappings that the parser can learn from.
--- Run after schema.sql and functions.sql.
 -- =============================================================================
 
 -- Table: smart_paste_aliases

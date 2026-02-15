@@ -1,7 +1,12 @@
 -- =============================================================================
+-- DEPRECATED: This file is kept for reference only.
+-- The source of truth for the database schema is supabase/migrations/.
+-- To set up a new database, run: supabase db reset
+-- To apply new changes, create a new migration: supabase migration new <name>
+-- =============================================================================
+--
 -- SIMS Database Schema for Supabase (Normalized)
 -- Version 2.0 - Full normalization for scalability
--- Run this in your Supabase SQL Editor to set up the database
 -- =============================================================================
 
 -- Enable required extensions
