@@ -1,84 +1,55 @@
 // ============================================================================
 // Package Handlers
-// Extracted from App.jsx — manages package CRUD
+// Extracted from App.jsx — manages adding items to packages from ItemDetail
 // ============================================================================
 import { useCallback } from 'react';
-import { VIEWS } from '../../constants.js';
+import { error as logError } from '../../lib/logger.js';
 
 export function usePackageHandlers({
   packages,
   inventory,
-  selectedPackage,
-  setSelectedPackage,
-  setCurrentView,
-  categories,
-  showConfirm,
   addChangeLog,
   dataContext,
 }) {
-  const deletePackage = useCallback((id) => {
-    showConfirm({
-      title: 'Delete Package',
-      message: 'Are you sure you want to delete this package? This action cannot be undone.',
-      confirmText: 'Delete',
-      variant: 'danger',
-      onConfirm: () => {
-        dataContext.removeLocalPackage(id);
-        if (selectedPackage?.id === id) {
-          setSelectedPackage(null);
-          setCurrentView(VIEWS.PACKAGES);
-        }
-      }
-    });
-  }, [selectedPackage, showConfirm, setSelectedPackage, setCurrentView, dataContext]);
-
-  const addItemToPackage = useCallback((packageId, itemId) => {
+  /**
+   * Add an item to a package — persists to DB via updatePackage,
+   * with optimistic local update via patchPackage.
+   */
+  const addItemToPackage = useCallback(async (packageId, itemId) => {
     const pkg = packages.find(p => p.id === packageId);
     const item = inventory.find(i => i.id === itemId);
-    
+
     if (pkg && item && !pkg.items.includes(itemId)) {
-      dataContext.patchPackage(packageId, p => ({
-        items: [...p.items, itemId]
-      }));
-      
+      const newItems = [...pkg.items, itemId];
+
+      // Optimistic local update
+      dataContext.patchPackage(packageId, { items: newItems });
+
+      // Persist to DB
+      if (dataContext?.updatePackage) {
+        try {
+          await dataContext.updatePackage(packageId, { items: newItems });
+        } catch (err) {
+          logError('Failed to persist addItemToPackage:', err);
+          // Revert optimistic update
+          dataContext.patchPackage(packageId, { items: pkg.items });
+        }
+      }
+
       addChangeLog({
         type: 'updated',
         itemId: packageId,
         itemType: 'package',
         itemName: pkg.name,
         description: `Added "${item.name}" to package "${pkg.name}"`,
-        changes: [{ 
-          field: 'packageContents', 
-          oldValue: null, 
-          newValue: `+ ${item.name} (${item.id})` 
+        changes: [{
+          field: 'packageContents',
+          oldValue: null,
+          newValue: `+ ${item.name} (${item.id})`
         }]
       });
     }
   }, [packages, inventory, addChangeLog, dataContext]);
 
-  const addPackage = useCallback(() => {
-    const newId = `pkg-${Date.now()}`;
-    const newPackage = {
-      id: newId,
-      name: 'New Package',
-      description: 'Package description',
-      category: categories[0] || 'General',
-      items: [],
-      notes: []
-    };
-    dataContext.addLocalPackage(newPackage);
-    setSelectedPackage(newPackage);
-    setCurrentView(VIEWS.PACKAGE_DETAIL);
-    
-    addChangeLog({
-      type: 'created',
-      itemId: newId,
-      itemType: 'package',
-      itemName: 'New Package',
-      description: 'Created new package',
-      changes: [{ field: 'package', oldValue: null, newValue: 'New Package' }]
-    });
-  }, [categories, addChangeLog, dataContext, setSelectedPackage, setCurrentView]);
-
-  return { deletePackage, addItemToPackage, addPackage };
+  return { addItemToPackage };
 }

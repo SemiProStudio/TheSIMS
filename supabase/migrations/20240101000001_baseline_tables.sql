@@ -360,6 +360,7 @@ CREATE TABLE packages (
   name VARCHAR(255) NOT NULL,
   description TEXT,
   category_name VARCHAR(100),
+  item_quantities JSONB DEFAULT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

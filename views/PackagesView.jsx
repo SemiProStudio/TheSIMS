@@ -4,38 +4,45 @@
 // ============================================================================
 
 import { memo, useState, useCallback, useMemo, useEffect } from 'react';
-import { Plus, Package, Trash2, ArrowLeft, ChevronRight, Edit2, AlertTriangle, Lightbulb } from 'lucide-react';
+import { Plus, Package, Trash2, ChevronRight, Edit2, AlertTriangle, Lightbulb } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
 import { formatMoney, getStatusColor } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
+import { Modal, ModalHeader } from '../modals/ModalBase.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import { useData } from '../contexts/DataContext.js';
+import { useToast } from '../contexts/ToastContext.js';
 
 import { error as logError } from '../lib/logger.js';
 
-function PackagesView({ 
-  packages, 
-  dataContext: propDataContext, 
-  inventory, 
+function PackagesView({
+  packages,
+  dataContext: propDataContext,
+  inventory,
+  categorySettings = {},
   onViewItem,
+  addAuditLog,
+  currentUser,
   initialSelectedPackage = null,
   onPackageSelect,
 }) {
   const ctxData = useData();
   const dataContext = propDataContext || ctxData;
+  const { addToast } = useToast();
   const [selectedPackage, setSelectedPackageInternal] = useState(initialSelectedPackage);
   const [showCreate, setShowCreate] = useState(false);
-  const [showDetailsPrompt, setShowDetailsPrompt] = useState(false); // Details popup
+  const [showDetailsPrompt, setShowDetailsPrompt] = useState(false);
   const [editingPackage, setEditingPackage] = useState(null);
   const [packageSearch, setPackageSearch] = useState('');
   const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, id: null, name: '' });
-  
+
   // Form state for create/edit
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formCategory, setFormCategory] = useState('');
   const [formItems, setFormItems] = useState([]);
+  const [formItemQuantities, setFormItemQuantities] = useState({});
   const [itemSearch, setItemSearch] = useState('');
   const [nameError, setNameError] = useState('');
 
@@ -52,6 +59,12 @@ function PackagesView({
     }
   }, [initialSelectedPackage]);
 
+  // Check if an item has quantity tracking
+  const hasQuantityTracking = useCallback((item) => {
+    const settings = categorySettings?.[item.category];
+    return settings?.trackQuantity === true;
+  }, [categorySettings]);
+
   // Get individual items (non-kits) for selection
   const individualItems = useMemo(() => inventory.filter(item => !item.isKit), [inventory]);
 
@@ -59,8 +72,8 @@ function PackagesView({
   const filteredPackages = useMemo(() => {
     if (!packageSearch.trim()) return packages;
     const q = packageSearch.toLowerCase();
-    return packages.filter(pkg => 
-      pkg.name.toLowerCase().includes(q) || 
+    return packages.filter(pkg =>
+      pkg.name.toLowerCase().includes(q) ||
       pkg.id.toLowerCase().includes(q) ||
       (pkg.description && pkg.description.toLowerCase().includes(q))
     );
@@ -78,22 +91,20 @@ function PackagesView({
   // Filter items for selection (by search AND category)
   const filteredItemsForSelect = useMemo(() => {
     let items = individualItems;
-    
-    // Filter by category first
+
     if (itemCategoryFilter !== 'all') {
       items = items.filter(item => item.category === itemCategoryFilter);
     }
-    
-    // Then filter by search
+
     if (itemSearch.trim()) {
       const q = itemSearch.toLowerCase();
-      items = items.filter(item => 
-        item.name.toLowerCase().includes(q) || 
+      items = items.filter(item =>
+        item.name.toLowerCase().includes(q) ||
         item.id.toLowerCase().includes(q) ||
         item.category.toLowerCase().includes(q)
       );
     }
-    
+
     return items;
   }, [individualItems, itemSearch, itemCategoryFilter]);
 
@@ -129,8 +140,11 @@ function PackagesView({
     return suggestions;
   }, [inventory]);
 
-  const calculateValue = useCallback((items) => {
-    return items.reduce((sum, item) => sum + (item.currentValue || 0), 0);
+  const calculateValue = useCallback((items, quantities = {}) => {
+    return items.reduce((sum, item) => {
+      const qty = quantities[item.id] || 1;
+      return sum + (item.currentValue || 0) * qty;
+    }, 0);
   }, []);
 
   const allItemsAvailable = useCallback((items) => {
@@ -143,6 +157,7 @@ function PackagesView({
     setFormDescription('');
     setFormCategory('');
     setFormItems([]);
+    setFormItemQuantities({});
     setItemSearch('');
     setItemCategoryFilter('all');
     setNameError('');
@@ -163,7 +178,7 @@ function PackagesView({
       return;
     }
     // Check for duplicate name (case-insensitive)
-    const isDuplicate = packages.some(pkg => 
+    const isDuplicate = packages.some(pkg =>
       pkg.name.toLowerCase() === trimmedName.toLowerCase()
     );
     if (isDuplicate) {
@@ -180,6 +195,7 @@ function PackagesView({
     setFormDescription(pkg.description || '');
     setFormCategory(pkg.category || '');
     setFormItems([...pkg.items]);
+    setFormItemQuantities({ ...(pkg.itemQuantities || {}) });
     setEditingPackage(pkg);
     setShowCreate(true);
     setSelectedPackage(null);
@@ -188,7 +204,6 @@ function PackagesView({
   // Cancel create/edit - return to package detail if editing
   const handleCancel = useCallback(() => {
     if (editingPackage) {
-      // Return to the package detail view
       const pkg = packages.find(p => p.id === editingPackage.id);
       if (pkg) {
         setSelectedPackage(pkg);
@@ -202,63 +217,131 @@ function PackagesView({
 
   // Toggle item selection
   const handleToggleItem = useCallback((itemId) => {
-    setFormItems(prev => 
-      prev.includes(itemId) 
+    setFormItems(prev =>
+      prev.includes(itemId)
         ? prev.filter(id => id !== itemId)
         : [...prev, itemId]
     );
   }, []);
 
+  // Update quantity for a multi-quantity item
+  const handleQuantityChange = useCallback((itemId, quantity) => {
+    const num = parseInt(quantity, 10);
+    if (isNaN(num) || num < 1) {
+      setFormItemQuantities(prev => {
+        const next = { ...prev };
+        delete next[itemId];
+        return next;
+      });
+    } else {
+      setFormItemQuantities(prev => ({ ...prev, [itemId]: num }));
+    }
+  }, []);
+
+  // Validate quantity against available stock
+  const getQuantityError = useCallback((item) => {
+    if (!hasQuantityTracking(item)) return null;
+    const requested = formItemQuantities[item.id] || 1;
+    const available = item.quantity ?? 1;
+    if (requested > available) {
+      return `Only ${available} available`;
+    }
+    return null;
+  }, [formItemQuantities, hasQuantityTracking]);
+
   // Save package (create or update)
   const handleSave = useCallback(async () => {
     if (!formName.trim() || formItems.length === 0) return;
 
+    // Check for quantity errors
+    const hasQtyErrors = formItems.some(id => {
+      const item = inventory.find(i => i.id === id);
+      return item && getQuantityError(item);
+    });
+    if (hasQtyErrors) {
+      addToast('Fix quantity errors before saving', 'warning');
+      return;
+    }
+
+    // Build quantities map (only for items that have quantity tracking and qty > 1)
+    const quantities = {};
+    formItems.forEach(id => {
+      const item = inventory.find(i => i.id === id);
+      if (item && hasQuantityTracking(item)) {
+        const qty = formItemQuantities[id] || 1;
+        if (qty > 1) {
+          quantities[id] = qty;
+        }
+      }
+    });
+
     if (editingPackage) {
       // Update existing
-      const updates = { 
-        name: formName.trim(), 
-        description: formDescription.trim(), 
-        category: formCategory.trim(), 
-        items: formItems 
+      const updates = {
+        name: formName.trim(),
+        description: formDescription.trim(),
+        category: formCategory.trim(),
+        items: formItems,
+        itemQuantities: quantities,
       };
-      
-      // Persist to Supabase via DataContext
+
       if (dataContext?.updatePackage) {
         try {
           await dataContext.updatePackage(editingPackage.id, updates);
+          addToast('Package updated', 'success');
+          addAuditLog?.({
+            type: 'package_updated',
+            itemId: editingPackage.id,
+            itemType: 'package',
+            itemName: updates.name,
+            userId: currentUser?.id,
+            userName: currentUser?.name,
+            description: `Updated package "${updates.name}"`,
+          });
         } catch (err) {
           logError('Failed to update package:', err);
+          addToast('Failed to update package — changes may not persist', 'error');
+          // Fallback to local state
+          dataContext.patchPackage(editingPackage.id, updates);
         }
       } else {
-        // Fallback to local state
         dataContext.patchPackage(editingPackage.id, updates);
       }
-      
-      // Return to the updated package detail
+
       setSelectedPackage({ ...editingPackage, ...updates });
       setShowCreate(false);
       setEditingPackage(null);
       resetForm();
     } else {
-      // Create new package - let DB generate the ID
+      // Create new
       const newPackage = {
         name: formName.trim(),
         description: formDescription.trim(),
         category: formCategory.trim(),
         items: formItems,
+        itemQuantities: quantities,
         notes: [],
       };
-      
-      // Persist to Supabase via DataContext
+
       if (dataContext?.createPackage) {
         try {
           const createdPackage = await dataContext.createPackage(newPackage);
-          // Show the new package with DB-generated ID
+          addToast('Package created', 'success');
+          addAuditLog?.({
+            type: 'package_created',
+            itemId: createdPackage.id,
+            itemType: 'package',
+            itemName: newPackage.name,
+            userId: currentUser?.id,
+            userName: currentUser?.name,
+            description: `Created package "${newPackage.name}"`,
+          });
           setSelectedPackage(createdPackage);
           setShowCreate(false);
           resetForm();
         } catch (err) {
           logError('Failed to create package:', err);
+          addToast('Failed to create package', 'error');
         }
       } else {
         // Fallback - generate local ID if no DB
@@ -275,45 +358,73 @@ function PackagesView({
         resetForm();
       }
     }
-  }, [formName, formDescription, formCategory, formItems, editingPackage, setSelectedPackage, resetForm, packages, dataContext]);
+  }, [formName, formDescription, formCategory, formItems, formItemQuantities, editingPackage,
+      setSelectedPackage, resetForm, packages, dataContext, inventory, addToast, addAuditLog,
+      currentUser, hasQuantityTracking, getQuantityError]);
 
-  // Delete package - close detail first, then show confirm
+  // Delete package
   const handleDeleteClick = useCallback((pkg) => {
     setConfirmDelete({ isOpen: true, id: pkg.id, name: pkg.name });
   }, []);
 
   const handleDeleteConfirm = useCallback(async () => {
-    const { id } = confirmDelete;
-    
-    // Persist to Supabase via DataContext
+    const { id, name } = confirmDelete;
+
     if (dataContext?.deletePackage) {
       try {
         await dataContext.deletePackage(id);
+        addToast('Package deleted', 'success');
+        addAuditLog?.({
+          type: 'package_deleted',
+          itemId: id,
+          itemType: 'package',
+          itemName: name,
+          userId: currentUser?.id,
+          userName: currentUser?.name,
+          description: `Deleted package "${name}"`,
+        });
       } catch (err) {
         logError('Failed to delete package:', err);
+        addToast('Failed to delete package', 'error');
         dataContext.removeLocalPackage(id);
       }
     } else {
       dataContext.removeLocalPackage(id);
     }
-    
+
     setSelectedPackage(null);
     setConfirmDelete({ isOpen: false, id: null, name: '' });
-  }, [confirmDelete, setSelectedPackage, dataContext]);
+  }, [confirmDelete, setSelectedPackage, dataContext, addToast, addAuditLog, currentUser]);
 
-  // Add suggested accessory to package
-  const handleAddSuggested = useCallback((itemId) => {
+  // Add suggested accessory to package — persists to DB
+  const handleAddSuggested = useCallback(async (itemId) => {
     if (!selectedPackage) return;
     const newItems = [...selectedPackage.items, itemId];
+    const updatedPkg = { ...selectedPackage, items: newItems };
+
+    // Optimistic local update
     dataContext.patchPackage(selectedPackage.id, { items: newItems });
-    setSelectedPackage(prev => ({ ...prev, items: newItems }));
-  }, [selectedPackage, setSelectedPackage, dataContext]);
+    setSelectedPackage(updatedPkg);
+
+    // Persist to DB
+    if (dataContext?.updatePackage) {
+      try {
+        await dataContext.updatePackage(selectedPackage.id, { items: newItems });
+      } catch (err) {
+        logError('Failed to add suggested accessory:', err);
+        addToast('Failed to save — change may not persist', 'warning');
+        // Revert
+        dataContext.patchPackage(selectedPackage.id, { items: selectedPackage.items });
+        setSelectedPackage(selectedPackage);
+      }
+    }
+  }, [selectedPackage, setSelectedPackage, dataContext, addToast]);
 
   // Handle viewing item with proper back context
   const handleViewItem = useCallback((itemId) => {
     if (onViewItem) {
-      onViewItem(itemId, { 
-        returnTo: 'package', 
+      onViewItem(itemId, {
+        returnTo: 'package',
         packageId: selectedPackage?.id,
         backLabel: 'Back to Package'
       });
@@ -328,73 +439,75 @@ function PackagesView({
     return (
       <>
         <PageHeader title="Packages" />
-        
-        <div className="modal-backdrop" style={styles.modal}>
-          <div style={{ ...styles.modalBox, maxWidth: 450 }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
-              <h3 style={{ margin: 0, color: colors.textPrimary }}>New Package</h3>
-            </div>
-            <div style={{ padding: spacing[4] }}>
-              <div className="form-section">
-                <label className={`form-label ${isNameEmpty ? 'label-required-empty' : ''}`}>
-                  Package Name <span className="required-indicator">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formName}
-                  onChange={e => { setFormName(e.target.value); setNameError(''); }}
-                  onKeyDown={e => e.key === 'Enter' && handleDetailsSubmit()}
-                  placeholder="e.g., Wedding Photography Package"
-                  className={`input ${isNameEmpty ? 'input-required-empty' : ''}`}
-                  autoFocus
-                />
-                {nameError && <span className="required-error-text">{nameError}</span>}
-              </div>
 
-              <div className="form-section">
-                <label className="form-label">Description</label>
-                <textarea
-                  value={formDescription}
-                  onChange={e => setFormDescription(e.target.value)}
-                  placeholder="Describe what this package is for..."
-                  rows={3}
-                  className="input"
-                  style={{ resize: 'vertical' }}
-                />
-              </div>
-
-              <div className="form-section">
-                <label className="form-label">Category</label>
-                <input
-                  type="text"
-                  value={formCategory}
-                  onChange={e => setFormCategory(e.target.value)}
-                  placeholder="e.g., Cameras, Audio, Lighting"
-                  className="input"
-                />
-              </div>
+        <Modal isOpen onClose={() => { setShowDetailsPrompt(false); resetForm(); }}>
+          <ModalHeader title="New Package" onClose={() => { setShowDetailsPrompt(false); resetForm(); }} />
+          <div style={{ padding: spacing[4] }}>
+            <div style={{ marginBottom: spacing[4] }}>
+              <label style={styles.label}>
+                Package Name <span style={{ color: colors.danger }}>*</span>
+              </label>
+              <input
+                type="text"
+                value={formName}
+                onChange={e => { setFormName(e.target.value); setNameError(''); }}
+                onKeyDown={e => e.key === 'Enter' && handleDetailsSubmit()}
+                placeholder="e.g., Wedding Photography Package"
+                style={{
+                  ...styles.input,
+                  ...(nameError ? { borderColor: colors.danger } : {}),
+                }}
+                autoFocus
+              />
+              {nameError && (
+                <div style={{ color: colors.danger, fontSize: typography.fontSize.xs, marginTop: spacing[1] }}>
+                  {nameError}
+                </div>
+              )}
             </div>
-            <div style={{ padding: spacing[4], paddingTop: 0, display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
-              <Button variant="secondary" onClick={() => { setShowDetailsPrompt(false); resetForm(); }}>Cancel</Button>
-              <Button onClick={handleDetailsSubmit} disabled={isNameEmpty}>Continue to Select Items</Button>
+
+            <div style={{ marginBottom: spacing[4] }}>
+              <label style={styles.label}>Description</label>
+              <textarea
+                value={formDescription}
+                onChange={e => setFormDescription(e.target.value)}
+                placeholder="Describe what this package is for..."
+                rows={3}
+                style={{ ...styles.input, resize: 'vertical' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: spacing[4] }}>
+              <label style={styles.label}>Category</label>
+              <input
+                type="text"
+                value={formCategory}
+                onChange={e => setFormCategory(e.target.value)}
+                placeholder="e.g., Cameras, Audio, Lighting"
+                style={styles.input}
+              />
             </div>
           </div>
-        </div>
+          <div style={{ padding: `0 ${spacing[4]}px ${spacing[4]}px`, display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
+            <Button variant="secondary" onClick={() => { setShowDetailsPrompt(false); resetForm(); }}>Cancel</Button>
+            <Button onClick={handleDetailsSubmit} disabled={isNameEmpty}>Continue to Select Items</Button>
+          </div>
+        </Modal>
       </>
     );
   }
 
   // ============================================================================
-  // Create/Edit View (Item Selection Only)
+  // Create/Edit View (Item Selection)
   // ============================================================================
   if (showCreate) {
     return (
-      <div className="view-container" style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
         height: '100%',
-        maxHeight: 'calc(100vh - 60px)', 
-        overflow: 'hidden' 
+        maxHeight: 'calc(100vh - 60px)',
+        overflow: 'hidden'
       }}>
         <PageHeader
           title={editingPackage ? `Edit: ${formName}` : `Create: ${formName}`}
@@ -402,8 +515,8 @@ function PackagesView({
           action={
             <div style={{ display: 'flex', gap: spacing[2] }}>
               <Button variant="secondary" onClick={handleCancel}>Cancel</Button>
-              <Button 
-                onClick={handleSave} 
+              <Button
+                onClick={handleSave}
                 disabled={formItems.length === 0}
                 icon={editingPackage ? Edit2 : Plus}
               >
@@ -413,19 +526,24 @@ function PackagesView({
           }
         />
 
-        <Card padding={false} style={{ 
-          flex: '1 1 auto', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          minHeight: 0, 
+        <Card padding={false} style={{
+          flex: '1 1 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
           maxHeight: 'calc(100vh - 180px)',
-          overflow: 'hidden' 
+          overflow: 'hidden'
         }}>
-          <div className="panel-header" style={{ flexShrink: 0, flexWrap: 'wrap', gap: spacing[2] }}>
-            <div className="panel-header-title">
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: `${spacing[3]}px ${spacing[4]}px`,
+            borderBottom: `1px solid ${colors.border}`,
+            flexShrink: 0, flexWrap: 'wrap', gap: spacing[2],
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
               <Package size={16} color={colors.primary} />
-              <strong>Select Items</strong>
-              <span className="panel-header-count">{formItems.length} selected</span>
+              <strong style={{ color: colors.textPrimary }}>Select Items</strong>
+              <Badge text={`${formItems.length} selected`} color={colors.primary} size="sm" />
             </div>
             <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center', flexWrap: 'wrap' }}>
               <Select
@@ -437,40 +555,78 @@ function PackagesView({
                 }))}
                 style={{ minWidth: '160px' }}
               />
-              <SearchInput 
-                value={itemSearch} 
-                onChange={setItemSearch} 
+              <SearchInput
+                value={itemSearch}
+                onChange={setItemSearch}
                 onClear={() => setItemSearch('')}
-                placeholder="Search items..." 
+                placeholder="Search items..."
               />
             </div>
           </div>
-          <div className="selection-list" style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
+          <div style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}>
             {filteredItemsForSelect.length === 0 ? (
               <div style={{ padding: spacing[4], textAlign: 'center', color: colors.textMuted }}>
                 No items found{itemCategoryFilter !== 'all' ? ` in ${itemCategoryFilter}` : ''}
                 {itemSearch && ` matching "${itemSearch}"`}
               </div>
             ) : (
-              filteredItemsForSelect.map(item => (
-                <div 
-                  key={item.id}
-                  className={`selection-item ${formItems.includes(item.id) ? 'selected' : ''}`}
-                  onClick={() => handleToggleItem(item.id)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={formItems.includes(item.id)}
-                    onChange={() => handleToggleItem(item.id)}
-                  />
-                  <div className="selection-item-info">
-                    <div className="selection-item-name">{item.name}</div>
-                    <div className="selection-item-meta">{item.id} • {item.category}</div>
+              filteredItemsForSelect.map(item => {
+                const isSelected = formItems.includes(item.id);
+                const showQuantity = hasQuantityTracking(item);
+                const qtyError = isSelected ? getQuantityError(item) : null;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleToggleItem(item.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: spacing[3],
+                      padding: `${spacing[3]}px ${spacing[4]}px`,
+                      borderBottom: `1px solid ${colors.borderLight}`,
+                      cursor: 'pointer',
+                      background: isSelected ? `${colors.primary}11` : 'transparent',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleToggleItem(item.id)}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, fontSize: typography.fontSize.sm }}>
+                        {item.name}
+                      </div>
+                      <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                        {item.id} • {item.category}
+                        {showQuantity && item.quantity != null && ` • ${item.quantity} in stock`}
+                      </div>
+                    </div>
+                    {showQuantity && isSelected && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1], flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                        <label style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Qty:</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max={item.quantity ?? undefined}
+                          value={formItemQuantities[item.id] || 1}
+                          onChange={e => handleQuantityChange(item.id, e.target.value)}
+                          style={{
+                            ...styles.input,
+                            width: 60, padding: `${spacing[1]}px ${spacing[2]}px`,
+                            textAlign: 'center',
+                            ...(qtyError ? { borderColor: colors.danger } : {}),
+                          }}
+                        />
+                        {qtyError && (
+                          <span style={{ fontSize: typography.fontSize.xs, color: colors.danger, whiteSpace: 'nowrap' }}>
+                            {qtyError}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <Badge text={item.status} color={getStatusColor(item.status)} size="sm" />
                   </div>
-                  <Badge text={item.status} color={getStatusColor(item.status)} size="sm" />
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </Card>
@@ -483,79 +639,106 @@ function PackagesView({
   // ============================================================================
   if (selectedPackage) {
     const packageItems = getPackageItems(selectedPackage);
-    const packageValue = calculateValue(packageItems);
+    const pkgQuantities = selectedPackage.itemQuantities || {};
+    const packageValue = calculateValue(packageItems, pkgQuantities);
     const allAvailable = allItemsAvailable(packageItems);
     const suggestedAccessories = getSuggestedAccessories(selectedPackage);
 
     return (
-      <div className="view-container">
-        <div className="detail-header">
-          <div className="detail-header-left">
-            <button className="btn-icon" onClick={() => setSelectedPackage(null)}>
-              <ArrowLeft size={18} />
-            </button>
-            <div className="detail-header-info">
-              <h2>
-                {selectedPackage.name}
-                <Badge text="Package" color={colors.accent2} style={{ marginLeft: 8 }} />
-              </h2>
-              <div className="detail-header-meta">
-                {selectedPackage.id} • {packageItems.length} items • {formatMoney(packageValue)} total value
-              </div>
+      <div>
+        <PageHeader
+          title={selectedPackage.name}
+          subtitle={`${selectedPackage.id} • ${packageItems.length} items • ${formatMoney(packageValue)} total value`}
+          onBack={() => setSelectedPackage(null)}
+          backLabel="Back to Packages"
+          action={
+            <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
+              <Button variant="secondary" onClick={() => handleStartEdit(selectedPackage)} icon={Edit2}>Edit</Button>
+              <button
+                onClick={() => handleDeleteClick(selectedPackage)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 32, height: 32, borderRadius: borderRadius.md,
+                  border: `1px solid ${colors.borderLight}`, background: 'transparent',
+                  cursor: 'pointer', color: colors.danger,
+                }}
+                title="Delete package"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
-          </div>
-          <div className="detail-header-actions">
-            <Button variant="secondary" onClick={() => handleStartEdit(selectedPackage)} icon={Edit2}>Edit</Button>
-            <button className="btn-icon danger" onClick={() => handleDeleteClick(selectedPackage)}>
-              <Trash2 size={16} />
-            </button>
-          </div>
-        </div>
+          }
+        />
 
         {selectedPackage.description && (
           <p style={{ color: colors.textSecondary, marginBottom: spacing[4], fontSize: typography.fontSize.sm }}>{selectedPackage.description}</p>
         )}
 
         {!allAvailable && (
-          <div className="alert-warning">
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: spacing[2],
+            padding: spacing[3], marginBottom: spacing[4],
+            background: `${colors.checkedOut}15`, borderRadius: borderRadius.md,
+            border: `1px solid ${colors.checkedOut}40`, color: colors.checkedOut,
+            fontSize: typography.fontSize.sm,
+          }}>
             <AlertTriangle size={16} />
             <span>Some items in this package are not available</span>
           </div>
         )}
-        
+
         <div style={{ display: 'flex', gap: spacing[4], flex: 1, minHeight: 0 }}>
           {/* Package Contents */}
           <Card padding={false} style={{ flex: 2, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
             <CardHeader title={`Package Contents (${packageItems.length})`} icon={Package} />
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              {packageItems.map(item => (
-                <div key={item.id} className="list-item" onClick={() => handleViewItem(item.id)}>
-                  {item.image ? (
-                    <OptimizedImage 
-                      src={item.image} 
-                      alt={item.name} 
-                      size="thumbnail"
-                      width={40} 
-                      height={40}
-                      style={{ borderRadius: borderRadius.md, flexShrink: 0 }}
-                      objectFit="cover"
-                    />
-                  ) : (
-                    <div className="list-item-image-placeholder">
-                      <Package size={16} color={colors.textMuted} />
+              {packageItems.map(item => {
+                const qty = pkgQuantities[item.id];
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => handleViewItem(item.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: spacing[3],
+                      padding: `${spacing[3]}px ${spacing[4]}px`,
+                      borderBottom: `1px solid ${colors.borderLight}`,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {item.image ? (
+                      <OptimizedImage
+                        src={item.image}
+                        alt={item.name}
+                        size="thumbnail"
+                        width={40}
+                        height={40}
+                        style={{ borderRadius: borderRadius.md, flexShrink: 0 }}
+                        objectFit="cover"
+                      />
+                    ) : (
+                      <div style={{
+                        width: 40, height: 40, borderRadius: borderRadius.md,
+                        background: colors.bgLight, display: 'flex',
+                        alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        <Package size={16} color={colors.textMuted} />
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', gap: spacing[1], marginBottom: 2 }}>
+                        <Badge text={item.id} color={colors.primary} />
+                        <Badge text={item.category} color={colors.accent2} />
+                        {qty && qty > 1 && <Badge text={`×${qty}`} color={colors.accent1} />}
+                      </div>
+                      <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, fontSize: typography.fontSize.sm }}>
+                        {item.name}
+                      </div>
                     </div>
-                  )}
-                  <div className="list-item-content">
-                    <div className="list-item-badges">
-                      <Badge text={item.id} color={colors.primary} />
-                      <Badge text={item.category} color={colors.accent2} />
-                    </div>
-                    <div className="list-item-title">{item.name}</div>
+                    <Badge text={item.status} color={getStatusColor(item.status)} />
+                    <ChevronRight size={16} color={colors.textMuted} />
                   </div>
-                  <Badge text={item.status} color={getStatusColor(item.status)} />
-                  <ChevronRight size={16} color={colors.textMuted} />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
 
@@ -580,7 +763,6 @@ function PackagesView({
           )}
         </div>
 
-        {/* Confirm dialog rendered here so it shows properly */}
         <ConfirmDialog
           isOpen={confirmDelete.isOpen}
           title="Delete Package"
@@ -607,22 +789,22 @@ function PackagesView({
       </div>
 
       <div style={{ borderBottom: `1px solid ${colors.border}`, marginBottom: spacing[4] }} />
-      
+
       {filteredPackages.length === 0 ? (
-        <EmptyState 
-          icon={Package} 
-          title="No Packages Found" 
-          description={packages.length === 0 ? "Packages group individual items together for specific jobs or purposes." : "No packages match your search."} 
+        <EmptyState
+          icon={Package}
+          title="No Packages Found"
+          description={packages.length === 0 ? "Packages group individual items together for specific jobs or purposes." : "No packages match your search."}
           action={packages.length === 0 && <Button onClick={handleStartCreate} icon={Plus}>Create Your First Package</Button>}
         />
       ) : (
-        <div className="card-grid">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: spacing[4] }}>
           {filteredPackages.map(pkg => {
             const packageItems = getPackageItems(pkg);
-            const packageValue = calculateValue(packageItems);
+            const packageValue = calculateValue(packageItems, pkg.itemQuantities || {});
             const allAvailable = allItemsAvailable(packageItems);
             return (
-              <Card key={pkg.id} onClick={() => setSelectedPackage(pkg)} className="card-clickable">
+              <Card key={pkg.id} onClick={() => setSelectedPackage(pkg)} style={{ cursor: 'pointer' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[3] }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
                     <Package size={18} color={colors.accent2} />

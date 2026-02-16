@@ -220,7 +220,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             packages={packages}
             dataContext={dataContext}
             inventory={inventory}
+            categorySettings={categorySettings}
             onViewItem={navigateToItem}
+            addAuditLog={addAuditLog}
+            currentUser={currentUser}
             initialSelectedPackage={selectedPackage}
             onPackageSelect={setSelectedPackage}
           />

@@ -363,8 +363,7 @@ export default function App() {
     addItemToPackage,
   } = usePackageHandlers({
     packages, inventory,
-    selectedPackage, setSelectedPackage, setCurrentView,
-    categories, showConfirm, addChangeLog, dataContext,
+    addChangeLog, dataContext,
   });
 
   // ============================================================================

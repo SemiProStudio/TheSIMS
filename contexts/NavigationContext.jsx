@@ -74,12 +74,16 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
       if (event.state?.view) {
         setCurrentView(event.state.view);
 
-        if (event.state.view === VIEWS.GEAR_DETAIL && event.state.selectedItemId) {
+        // Handle legacy PACKAGE_DETAIL entries in browser history
+        if (event.state.view === VIEWS.PACKAGE_DETAIL) {
+          setCurrentView(VIEWS.PACKAGES);
+          if (event.state.selectedPackageId) {
+            const pkg = packages.find(p => p.id === event.state.selectedPackageId);
+            if (pkg) setSelectedPackage(pkg);
+          }
+        } else if (event.state.view === VIEWS.GEAR_DETAIL && event.state.selectedItemId) {
           const item = inventory.find(i => i.id === event.state.selectedItemId);
           if (item) setSelectedItem(item);
-        } else if (event.state.view === VIEWS.PACKAGE_DETAIL && event.state.selectedPackageId) {
-          const pkg = packages.find(p => p.id === event.state.selectedPackageId);
-          if (pkg) setSelectedPackage(pkg);
         }
       } else {
         setCurrentView(VIEWS.DASHBOARD);
@@ -112,9 +116,11 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
     window.scrollTo(0, 0);
   }, []);
 
+  // Navigate to package detail — uses VIEWS.PACKAGES with initialSelectedPackage
+  // (PackagesView manages detail view internally via selectedPackage state)
   const navigateToPackage = useCallback((pkg) => {
     setSelectedPackage(pkg);
-    setCurrentView(VIEWS.PACKAGE_DETAIL);
+    setCurrentView(VIEWS.PACKAGES);
     window.scrollTo(0, 0);
   }, []);
 
