@@ -3,32 +3,10 @@
 // Sends emails using Resend API with templates from the database
 // =============================================================================
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeaders, jsonResponse, errorResponse, renderTemplate } from '../_shared/utils.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-// Simple template rendering
-function renderTemplate(template: string, data: Record<string, string>): string {
-  let result = template;
-  
-  for (const [key, value] of Object.entries(data)) {
-    const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-    result = result.replace(regex, value || '');
-  }
-  
-  // Handle conditional blocks
-  result = result.replace(/\{\{#if (\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (match, variable, content) => {
-    return data[variable] ? content : '';
-  });
-  
-  return result;
-}
-
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -39,20 +17,14 @@ serve(async (req) => {
 
     // Validate required fields
     if (!to || !templateKey) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields: to, templateKey' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('Missing required fields: to, templateKey');
     }
 
     // Get Resend API key
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
     if (!resendApiKey) {
       console.error('RESEND_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ error: 'Email service not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('Email service not configured', 500);
     }
 
     // Create Supabase client
@@ -71,10 +43,7 @@ serve(async (req) => {
 
       if (prefs && prefs.email_enabled === false) {
         console.log(`User ${userId} has email notifications disabled`);
-        return new Response(
-          JSON.stringify({ success: true, skipped: true, reason: 'notifications_disabled' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return jsonResponse({ success: true, skipped: true, reason: 'notifications_disabled' });
       }
     }
 
@@ -88,17 +57,14 @@ serve(async (req) => {
 
     if (templateError || !template) {
       console.error('Template not found:', templateKey, templateError);
-      return new Response(
-        JSON.stringify({ error: `Email template not found: ${templateKey}` }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse(`Email template not found: ${templateKey}`, 404);
     }
 
     // Render template
     const subject = renderTemplate(template.subject, templateData);
     const htmlBody = renderTemplate(template.body_html, templateData);
-    const textBody = template.body_text 
-      ? renderTemplate(template.body_text, templateData) 
+    const textBody = template.body_text
+      ? renderTemplate(template.body_text, templateData)
       : undefined;
 
     // Generate deduplication key
@@ -114,10 +80,7 @@ serve(async (req) => {
 
     if (existingLog) {
       console.log('Duplicate notification prevented:', dedupKey);
-      return new Response(
-        JSON.stringify({ success: true, skipped: true, reason: 'duplicate' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ success: true, skipped: true, reason: 'duplicate' });
     }
 
     // Create notification log entry
@@ -140,7 +103,7 @@ serve(async (req) => {
 
     // Send email via Resend
     const fromEmail = Deno.env.get('FROM_EMAIL') || 'SIMS <notifications@sims.app>';
-    
+
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -160,7 +123,7 @@ serve(async (req) => {
 
     if (!resendResponse.ok) {
       console.error('Resend API error:', resendResult);
-      
+
       // Update log entry with failure
       if (logEntry) {
         await supabase
@@ -172,10 +135,7 @@ serve(async (req) => {
           .eq('id', logEntry.id);
       }
 
-      return new Response(
-        JSON.stringify({ error: 'Failed to send email', details: resendResult }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return errorResponse('Failed to send email', 500);
     }
 
     // Update log entry with success
@@ -192,20 +152,14 @@ serve(async (req) => {
 
     console.log('Email sent successfully:', { to, templateKey, resendId: resendResult.id });
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        messageId: resendResult.id,
-        logId: logEntry?.id 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({
+      success: true,
+      messageId: resendResult.id,
+      logId: logEntry?.id
+    });
 
   } catch (error) {
     console.error('Edge function error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return errorResponse(error.message, 500);
   }
 });

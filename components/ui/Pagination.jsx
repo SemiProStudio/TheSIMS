@@ -148,17 +148,15 @@ export const Pagination = memo(function Pagination({
 
 Pagination.propTypes = {
   /** Current page (1-indexed) */
-  currentPage: PropTypes.number.isRequired,
+  page: PropTypes.number.isRequired,
   /** Total number of pages */
   totalPages: PropTypes.number.isRequired,
   /** Page change handler */
   onPageChange: PropTypes.func.isRequired,
-  /** Items per page options */
-  itemsPerPageOptions: PropTypes.arrayOf(PropTypes.number),
-  /** Current items per page */
-  itemsPerPage: PropTypes.number,
-  /** Items per page change handler */
-  onItemsPerPageChange: PropTypes.func,
   /** Total items count */
   totalItems: PropTypes.number,
+  /** Items per page */
+  pageSize: PropTypes.number,
+  /** Whether to show item count text */
+  showItemCount: PropTypes.bool,
 };

@@ -4,15 +4,10 @@
 // Schedule: Every day at 9:00 AM UTC
 // =============================================================================
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { corsHeaders, jsonResponse, errorResponse } from '../_shared/utils.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -38,10 +33,7 @@ serve(async (req) => {
 
     if (!itemsDue || itemsDue.length === 0) {
       console.log('No items due soon');
-      return new Response(
-        JSON.stringify({ success: true, processed: 0, message: 'No items due soon' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ success: true, processed: 0, message: 'No items due soon' });
     }
 
     console.log(`Found ${itemsDue.length} items due soon`);
@@ -73,15 +65,15 @@ serve(async (req) => {
 
     for (const item of itemsDue) {
       try {
-        const { 
-          item_id, 
-          item_name, 
+        const {
+          item_id,
+          item_name,
           item_brand,
-          due_back, 
-          days_until_due, 
+          due_back,
+          days_until_due,
           checked_out_to,
           borrower_email,
-          user_id 
+          user_id
         } = item;
 
         results.processed++;
@@ -89,10 +81,10 @@ serve(async (req) => {
         // Skip if no email address
         if (!borrower_email) {
           results.skipped++;
-          results.details.push({ 
-            itemId: item_id, 
-            status: 'skipped', 
-            reason: 'no_email' 
+          results.details.push({
+            itemId: item_id,
+            status: 'skipped',
+            reason: 'no_email'
           });
           continue;
         }
@@ -104,10 +96,10 @@ serve(async (req) => {
             // Check if due date reminders are enabled
             if (!prefs.due_date_reminders && days_until_due >= 0) {
               results.skipped++;
-              results.details.push({ 
-                itemId: item_id, 
-                status: 'skipped', 
-                reason: 'reminders_disabled' 
+              results.details.push({
+                itemId: item_id,
+                status: 'skipped',
+                reason: 'reminders_disabled'
               });
               continue;
             }
@@ -115,10 +107,10 @@ serve(async (req) => {
             // Check if overdue notifications are enabled
             if (!prefs.overdue_notifications && days_until_due < 0) {
               results.skipped++;
-              results.details.push({ 
-                itemId: item_id, 
-                status: 'skipped', 
-                reason: 'overdue_disabled' 
+              results.details.push({
+                itemId: item_id,
+                status: 'skipped',
+                reason: 'overdue_disabled'
               });
               continue;
             }
@@ -127,10 +119,10 @@ serve(async (req) => {
             const reminderDays = prefs.due_date_reminder_days || [1, 3];
             if (days_until_due >= 0 && !reminderDays.includes(days_until_due)) {
               results.skipped++;
-              results.details.push({ 
-                itemId: item_id, 
-                status: 'skipped', 
-                reason: `not_reminder_day (${days_until_due} not in ${reminderDays})` 
+              results.details.push({
+                itemId: item_id,
+                status: 'skipped',
+                reason: `not_reminder_day (${days_until_due} not in ${reminderDays})`
               });
               continue;
             }
@@ -168,23 +160,23 @@ serve(async (req) => {
         if (sendError) {
           console.error(`Failed to send reminder for ${item_id}:`, sendError);
           results.failed++;
-          results.details.push({ 
-            itemId: item_id, 
-            status: 'failed', 
-            reason: sendError.message 
+          results.details.push({
+            itemId: item_id,
+            status: 'failed',
+            reason: sendError.message
           });
         } else if (sendResult?.skipped) {
           results.skipped++;
-          results.details.push({ 
-            itemId: item_id, 
-            status: 'skipped', 
-            reason: sendResult.reason 
+          results.details.push({
+            itemId: item_id,
+            status: 'skipped',
+            reason: sendResult.reason
           });
         } else {
           results.sent++;
-          results.details.push({ 
-            itemId: item_id, 
-            status: 'sent' 
+          results.details.push({
+            itemId: item_id,
+            status: 'sent'
           });
           console.log(`Sent ${isOverdue ? 'overdue notice' : 'reminder'} for ${item_id} to ${borrower_email}`);
         }
@@ -192,26 +184,20 @@ serve(async (req) => {
       } catch (itemError) {
         console.error(`Error processing item:`, itemError);
         results.failed++;
-        results.details.push({ 
-          itemId: item.item_id, 
-          status: 'error', 
-          reason: itemError.message 
+        results.details.push({
+          itemId: item.item_id,
+          status: 'error',
+          reason: itemError.message
         });
       }
     }
 
     console.log('Due date reminder check complete:', results);
 
-    return new Response(
-      JSON.stringify({ success: true, ...results }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({ success: true, ...results });
 
   } catch (error) {
     console.error('Edge function error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return errorResponse(error.message, 500);
   }
 });

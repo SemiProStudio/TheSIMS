@@ -282,7 +282,7 @@ const withAlpha = (color, alpha) => {
   return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${alpha})`;
 };
 
-export function CollapsibleSection({
+export const CollapsibleSection = memo(function CollapsibleSection({
   title,
   icon: Icon,
   badge,
@@ -346,7 +346,7 @@ export function CollapsibleSection({
       
       {/* Content - shown when not collapsed */}
       {!collapsed && (
-        <div style={{ 
+        <div style={{
           padding: padding ? spacing[4] : 0,
           background: withAlpha(accentColor, 0.30),
         }}>
@@ -355,7 +355,7 @@ export function CollapsibleSection({
       )}
     </div>
   );
-}
+});
 
 // ============================================================================
 // Input - Form input field
@@ -1441,12 +1441,11 @@ Input.propTypes = {
 SelectInput.propTypes = {
   /** Label text */
   label: PropTypes.string,
-  /** Error message */
-  error: PropTypes.string,
-  /** Whether field is required */
-  required: PropTypes.bool,
-  /** Option elements */
-  children: PropTypes.node.isRequired,
+  /** Array of { value, label } options */
+  options: PropTypes.arrayOf(PropTypes.shape({
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    label: PropTypes.string.isRequired,
+  })).isRequired,
   /** Current value */
   value: PropTypes.string,
   /** Change handler */
@@ -1486,8 +1485,12 @@ ItemImage.propTypes = {
 };
 
 Modal.propTypes = {
+  /** Whether the modal is open */
+  isOpen: PropTypes.bool.isRequired,
   /** Close handler */
   onClose: PropTypes.func.isRequired,
+  /** Modal title */
+  title: PropTypes.string,
   /** Maximum width in pixels */
   maxWidth: PropTypes.number,
   /** Modal content */
@@ -1581,19 +1584,17 @@ Flex.propTypes = {
 
 Pagination.propTypes = {
   /** Current page (1-indexed) */
-  currentPage: PropTypes.number.isRequired,
+  page: PropTypes.number.isRequired,
   /** Total number of pages */
   totalPages: PropTypes.number.isRequired,
   /** Page change handler */
   onPageChange: PropTypes.func.isRequired,
-  /** Items per page options */
-  itemsPerPageOptions: PropTypes.arrayOf(PropTypes.number),
-  /** Current items per page */
-  itemsPerPage: PropTypes.number,
-  /** Items per page change handler */
-  onItemsPerPageChange: PropTypes.func,
   /** Total items count */
   totalItems: PropTypes.number,
+  /** Items per page */
+  pageSize: PropTypes.number,
+  /** Whether to show item count text */
+  showItemCount: PropTypes.bool,
 };
 
 LoadingSpinner.propTypes = {
@@ -1604,10 +1605,10 @@ LoadingSpinner.propTypes = {
 };
 
 LoadingOverlay.propTypes = {
-  /** Loading text */
-  text: PropTypes.string,
-  /** Show as inline rather than overlay */
-  inline: PropTypes.bool,
+  /** Loading message text */
+  message: PropTypes.string,
+  /** Whether to display as full-screen overlay */
+  fullScreen: PropTypes.bool,
 };
 
 VisuallyHidden.propTypes = {
