@@ -2,34 +2,21 @@
 // Profile Modal Component
 // ============================================================================
 
-import { memo, useState, useRef } from 'react';
-import { X, Upload, Save, User } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { memo, useState, useRef, useMemo } from 'react';
+import { Upload, Save, Eye, EyeOff } from 'lucide-react';
+import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
 import { Button } from '../components/ui.jsx';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from './ModalBase.jsx';
 import ImageCropEditor from '../components/ImageCropEditor.jsx';
 
-// Modal components (matching Modals.jsx pattern)
-const Modal = memo(function Modal({ onClose, maxWidth = 500, children }) {
-  return (
-    <div style={styles.modal} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ ...styles.modalBox, maxWidth }}>
-        {children}
-      </div>
-    </div>
-  );
-});
-
-const ModalHeader = memo(function ModalHeader({ title, icon: Icon, onClose }) {
-  return (
-    <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <h3 style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary, display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-        {Icon && <Icon size={20} />}
-        {title}
-      </h3>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', color: colors.textMuted, cursor: 'pointer', padding: spacing[1] }}><X size={20} /></button>
-    </div>
-  );
-});
+// Field definitions: [key, label, type, placeholder, maxLength]
+const PROFILE_FIELDS = [
+  ['displayName', 'Display Name', 'text', 'Your name or alias', 60],
+  ['businessName', 'Business Name', 'text', 'Company or studio name', 80],
+  ['phone', 'Phone', 'tel', '555-123-4567', 20],
+  ['email', 'Email', 'email', 'you@example.com', 100],
+  ['address', 'Address', 'text', 'Street, City, State', 120],
+];
 
 function ProfileModal({ user, onSave, onClose }) {
   const [profile, setProfile] = useState({
@@ -49,16 +36,16 @@ function ProfileModal({ user, onSave, onClose }) {
     }
   });
   const [errors, setErrors] = useState({});
-  const [cropSrc, setCropSrc] = useState(null); // raw image for cropping
+  const [cropSrc, setCropSrc] = useState(null);
   const fileInputRef = useRef(null);
 
   const validators = {
     email: (v) => {
-      if (!v) return null; // optional
+      if (!v) return null;
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? null : 'Enter a valid email address';
     },
     phone: (v) => {
-      if (!v) return null; // optional
+      if (!v) return null;
       const digits = v.replace(/\D/g, '');
       return digits.length >= 7 && digits.length <= 15 ? null : 'Enter a valid phone number (7–15 digits)';
     },
@@ -110,7 +97,6 @@ function ProfileModal({ user, onSave, onClose }) {
       reader.onload = (ev) => setCropSrc(ev.target.result);
       reader.readAsDataURL(file);
     }
-    // Reset input so same file can be re-selected
     if (e.target) e.target.value = '';
   };
 
@@ -118,8 +104,7 @@ function ProfileModal({ user, onSave, onClose }) {
 
   const handleCropComplete = async (croppedDataUrl) => {
     setCropSrc(null);
-    
-    // Upload to Supabase Storage if user has an ID
+
     if (user?.id) {
       setLogoUploading(true);
       try {
@@ -127,7 +112,6 @@ function ProfileModal({ user, onSave, onClose }) {
         const result = await storageService.uploadFromDataUrl(croppedDataUrl, `profiles/${user.id}`);
         handleChange('logo', result.url);
       } catch (_err) {
-        // Fall back to data URL
         handleChange('logo', croppedDataUrl);
       } finally {
         setLogoUploading(false);
@@ -147,18 +131,49 @@ function ProfileModal({ user, onSave, onClose }) {
     onClose();
   };
 
+  // Live branding preview data
+  const visibleFields = useMemo(() => {
+    const sf = profile.showFields || {};
+    const fields = [];
+    if (sf.businessName && profile.businessName) fields.push(profile.businessName);
+    if (sf.displayName && profile.displayName) fields.push(profile.displayName);
+    if (sf.phone && profile.phone) fields.push(profile.phone);
+    if (sf.email && profile.email) fields.push(profile.email);
+    if (sf.address && profile.address) fields.push(profile.address);
+    return fields;
+  }, [profile]);
+
+  const showLogo = profile.showFields?.logo && profile.logo;
+  const hasAnyVisible = visibleFields.length > 0 || showLogo;
+
   return (
-    <Modal onClose={onClose} maxWidth={550}>
-      <ModalHeader title="Profile Settings" icon={User} onClose={onClose} />
-      
-      {/* Content */}
-      <div style={{ padding: spacing[4], maxHeight: '70vh', overflowY: 'auto' }}>
+    <Modal onClose={onClose} maxWidth={550} title="Profile Settings">
+      <ModalHeader title="Profile Settings" onClose={onClose} />
+      <ModalBody>
         {/* Logo Upload / Crop Editor */}
         <div style={{ marginBottom: spacing[5] }}>
-          <label style={styles.label}>Profile Photo</label>
-          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[2] }}>
+            <label style={{ ...styles.label, marginBottom: 0 }}>Logo / Photo</label>
+            <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[2],
+              cursor: 'pointer',
+              fontSize: typography.fontSize.xs,
+              color: profile.showFields.logo ? colors.primary : colors.textMuted
+            }}>
+              <input
+                type="checkbox"
+                checked={profile.showFields.logo}
+                onChange={() => handleShowFieldToggle('logo')}
+                style={{ accentColor: colors.primary }}
+              />
+              {profile.showFields.logo ? <Eye size={12} /> : <EyeOff size={12} />}
+              Show on labels & reports
+            </label>
+          </div>
+
           {cropSrc ? (
-            /* Crop editor mode */
             <ImageCropEditor
               imageSrc={cropSrc}
               onCropComplete={handleCropComplete}
@@ -169,12 +184,7 @@ function ProfileModal({ user, onSave, onClose }) {
               title="Crop your photo"
             />
           ) : (
-            /* Normal upload/preview mode */
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: spacing[4]
-            }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4] }}>
               <div
                 onClick={() => fileInputRef.current?.click()}
                 style={{
@@ -186,7 +196,9 @@ function ProfileModal({ user, onSave, onClose }) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  opacity: profile.showFields.logo ? 1 : 0.5,
+                  transition: 'opacity 0.2s',
                 }}
               >
                 {profile.logo ? (
@@ -207,10 +219,7 @@ function ProfileModal({ user, onSave, onClose }) {
                 {profile.logo && (
                   <>
                     <button
-                      onClick={() => {
-                        // Re-crop existing image
-                        setCropSrc(profile.logo);
-                      }}
+                      onClick={() => setCropSrc(profile.logo)}
                       style={{
                         display: 'block',
                         background: 'none',
@@ -258,13 +267,7 @@ function ProfileModal({ user, onSave, onClose }) {
 
         {/* Form Fields */}
         <div style={{ display: 'grid', gap: spacing[4] }}>
-          {[
-            ['displayName', 'Display Name', 'text', 'Your name or alias'],
-            ['businessName', 'Business Name', 'text', 'Company or studio name'],
-            ['phone', 'Phone', 'tel', '555-123-4567'],
-            ['email', 'Email', 'email', 'you@example.com'],
-            ['address', 'Address', 'text', 'Street, City, State']
-          ].map(([field, label, type, placeholder]) => (
+          {PROFILE_FIELDS.map(([field, label, type, placeholder, maxLen]) => (
             <div key={field}>
               <div style={{
                 display: 'flex',
@@ -279,7 +282,7 @@ function ProfileModal({ user, onSave, onClose }) {
                   gap: spacing[2],
                   cursor: 'pointer',
                   fontSize: typography.fontSize.xs,
-                  color: colors.textMuted
+                  color: profile.showFields[field] ? colors.primary : colors.textMuted
                 }}>
                   <input
                     type="checkbox"
@@ -287,7 +290,8 @@ function ProfileModal({ user, onSave, onClose }) {
                     onChange={() => handleShowFieldToggle(field)}
                     style={{ accentColor: colors.primary }}
                   />
-                  Show on labels
+                  {profile.showFields[field] ? <Eye size={12} /> : <EyeOff size={12} />}
+                  Show on labels & reports
                 </label>
               </div>
               <input
@@ -296,51 +300,106 @@ function ProfileModal({ user, onSave, onClose }) {
                 onChange={e => handleChange(field, e.target.value)}
                 onBlur={() => validateField(field, profile[field])}
                 placeholder={placeholder}
+                maxLength={maxLen}
                 style={{
                   ...styles.input,
                   ...(errors[field] ? { borderColor: colors.danger } : {}),
+                  ...(!profile.showFields[field] ? { opacity: 0.6 } : {}),
                 }}
               />
-              {errors[field] && (
-                <div style={{
-                  color: colors.danger,
-                  fontSize: typography.fontSize.xs,
-                  marginTop: spacing[1],
-                }}>
-                  {errors[field]}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: spacing[1] }}>
+                <div>
+                  {errors[field] && (
+                    <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>
+                      {errors[field]}
+                    </span>
+                  )}
                 </div>
-              )}
+                {profile[field]?.length > maxLen * 0.8 && (
+                  <span style={{
+                    fontSize: typography.fontSize.xs,
+                    color: profile[field].length >= maxLen ? colors.danger : colors.textMuted
+                  }}>
+                    {profile[field].length}/{maxLen}
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Info */}
-        <div style={{
-          marginTop: spacing[5],
-          padding: spacing[3],
-          background: `${withOpacity(colors.primary, 10)}`,
-          borderRadius: borderRadius.md,
-          fontSize: typography.fontSize.sm,
-          color: colors.textSecondary
-        }}>
-          <strong style={{ color: colors.textPrimary }}>Branding Settings</strong>
-          <p style={{ margin: `${spacing[2]}px 0 0` }}>
-            Fields marked &quot;Show on labels&quot; will be included when generating labels or reports with branding enabled.
-          </p>
+        {/* Live Branding Preview */}
+        <div style={{ marginTop: spacing[5] }}>
+          <label style={{ ...styles.label, marginBottom: spacing[2] }}>Label & Report Preview</label>
+          <div style={{
+            padding: spacing[3],
+            border: `1px solid ${colors.borderLight}`,
+            borderRadius: borderRadius.md,
+            background: colors.bgLight,
+            minHeight: 48,
+          }}>
+            {hasAnyVisible ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
+                {showLogo && (
+                  <img
+                    src={profile.logo}
+                    alt=""
+                    style={{ height: 36, width: 36, objectFit: 'contain', borderRadius: borderRadius.sm }}
+                  />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {profile.showFields.businessName && profile.businessName && (
+                    <div style={{
+                      fontWeight: typography.fontWeight.semibold,
+                      fontSize: typography.fontSize.sm,
+                      color: colors.textPrimary,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {profile.businessName}
+                    </div>
+                  )}
+                  <div style={{
+                    fontSize: typography.fontSize.xs,
+                    color: colors.textMuted,
+                    display: 'flex',
+                    gap: spacing[2],
+                    flexWrap: 'wrap',
+                  }}>
+                    {profile.showFields.displayName && profile.displayName && (
+                      <span>{profile.displayName}</span>
+                    )}
+                    {profile.showFields.phone && profile.phone && (
+                      <span>{profile.phone}</span>
+                    )}
+                    {profile.showFields.email && profile.email && (
+                      <span>{profile.email}</span>
+                    )}
+                    {profile.showFields.address && profile.address && (
+                      <span>{profile.address}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                textAlign: 'center',
+                color: colors.textMuted,
+                fontSize: typography.fontSize.sm,
+                fontStyle: 'italic',
+                padding: spacing[2],
+              }}>
+                No branding fields enabled — toggle visibility above to show on labels & reports
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div style={{
-        padding: spacing[4],
-        borderTop: `1px solid ${colors.borderLight}`,
-        display: 'flex',
-        gap: spacing[3],
-        justifyContent: 'flex-end'
-      }}>
+      </ModalBody>
+      <ModalFooter>
         <Button variant="secondary" onClick={onClose}>Cancel</Button>
         <Button onClick={handleSave} icon={Save}>Save Profile</Button>
-      </div>
+      </ModalFooter>
     </Modal>
   );
 }
