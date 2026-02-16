@@ -811,17 +811,18 @@ export const ConfirmDialog = memo(function ConfirmDialog({
 // SearchInput - Search input with icon
 // ============================================================================
 
-export const SearchInput = memo(function SearchInput({ 
-  value, 
-  onChange, 
+export const SearchInput = memo(function SearchInput({
+  value,
+  onChange,
   placeholder = 'Search...',
   onClear,
   'aria-label': ariaLabel = 'Search',
   id,
   style: customStyle = {},
-  ...props 
+  ...props
 }) {
-  const inputId = id || `search-input-${Math.random().toString(36).substr(2, 9)}`;
+  const stableIdRef = useRef(id || `search-input-${Math.random().toString(36).substr(2, 9)}`);
+  const inputId = id || stableIdRef.current;
   const [isFocused, setIsFocused] = useState(false);
   
   return (

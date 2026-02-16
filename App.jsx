@@ -7,6 +7,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { VIEWS, MODALS, STATUS, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
 import { colors } from './theme.js';
 import { findById, sanitizeCSVCell } from './utils';
+import { openPrintWindow } from './lib/printUtil.js';
 import { useTheme } from './contexts/ThemeContext.js';
 import { PermissionsProvider } from './contexts/PermissionsContext.jsx';
 import { useAuth } from './contexts/AuthContext.js';
@@ -65,8 +66,26 @@ export default function App() {
   const specs = contextSpecs && Object.keys(contextSpecs).length ? contextSpecs : DEFAULT_SPECS;
   const categories = contextCategories?.length ? contextCategories : DEFAULT_CATEGORIES;
 
-  // Local-only state
-  const [changeLog, setChangeLog] = useState([]);
+  // Change log state — persisted to localStorage
+  const [changeLog, setChangeLog] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sims_change_log');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Persist change log to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      // Keep only the most recent 500 entries to avoid localStorage bloat
+      const toSave = changeLog.slice(-500);
+      localStorage.setItem('sims_change_log', JSON.stringify(toSave));
+    } catch {
+      // localStorage may be full or unavailable — silently ignore
+    }
+  }, [changeLog]);
 
   // ============================================================================
   // Auth State
@@ -383,6 +402,41 @@ export default function App() {
       a.download = 'inventory.csv';
       a.click();
       URL.revokeObjectURL(url);
+    } else if (options.format === 'pdf') {
+      // Generate a printable HTML table that opens the browser print dialog
+      // Users can print to PDF from there (all modern browsers support this)
+      const escHtml = (str) => str == null ? '' : String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const columnLabels = {
+        id: 'ID', name: 'Name', brand: 'Brand', category: 'Category',
+        status: 'Status', condition: 'Condition', location: 'Location',
+        value: 'Value', serialNumber: 'Serial #',
+      };
+      const headerRow = options.columns.map(col =>
+        `<th style="padding:8px 12px;text-align:left;border-bottom:2px solid #333;font-size:12px;">${escHtml(columnLabels[col] || col)}</th>`
+      ).join('');
+      const bodyRows = items.map(item =>
+        `<tr>${options.columns.map(col => {
+          const val = col === 'value' ? item.currentValue : item[col];
+          return `<td style="padding:6px 12px;border-bottom:1px solid #eee;font-size:11px;">${escHtml(val)}</td>`;
+        }).join('')}</tr>`
+      ).join('');
+      openPrintWindow({
+        title: 'Inventory Export',
+        styles: `
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; }
+          h1 { font-size: 18px; margin-bottom: 4px; }
+          .meta { font-size: 11px; color: #666; margin-bottom: 16px; }
+          table { width: 100%; border-collapse: collapse; }
+          tr:nth-child(even) { background: #f9f9f9; }
+          @media print { body { padding: 0; } }
+        `,
+        body: `
+          <h1>Inventory Export</h1>
+          <div class="meta">${items.length} items &bull; ${new Date().toLocaleDateString()}</div>
+          <table><thead><tr>${headerRow}</tr></thead><tbody>${bodyRows}</tbody></table>
+        `,
+      });
     }
   }, [inventory, selectedIds]);
 

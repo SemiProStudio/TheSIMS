@@ -12,15 +12,33 @@ import { Card, CardHeader, Button, SearchInput, Badge, PageHeader } from '../com
 import { error as logError } from '../lib/logger.js';
 import { openPrintWindow } from '../lib/printUtil.js';
 
+// ============================================================================
+// HTML Sanitization
+// Escapes HTML special characters to prevent XSS in label HTML generation
+// ============================================================================
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ============================================================================
 // Real QR Code Generator Component using qrcode library
+// ============================================================================
 const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
   const canvasRef = useRef(null);
-  
+  const [error, setError] = useState(false);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !data) return;
-    
-    // Generate real QR code using qrcode library
+
+    setError(false);
+
     QRCode.toCanvas(canvas, String(data), {
       width: size,
       margin: 1,
@@ -29,25 +47,48 @@ const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
         light: '#FFFFFF'
       },
       errorCorrectionLevel: 'M'
-    }, (error) => {
-      if (error) {
-        logError('QR Code generation error:', error);
+    }, (err) => {
+      if (err) {
+        logError('QR Code generation error:', err);
+        setError(true);
       }
     });
   }, [data, size]);
-  
+
   if (!data) return null;
-  
+
+  if (error) {
+    return (
+      <div
+        style={{
+          width: size,
+          height: size,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#f5f5f5',
+          borderRadius: borderRadius.sm,
+          fontSize: 10,
+          color: '#999',
+          textAlign: 'center',
+          padding: 4,
+        }}
+      >
+        QR error
+      </div>
+    );
+  }
+
   return (
-    <canvas 
-      ref={canvasRef} 
-      width={size} 
-      height={size} 
-      style={{ 
+    <canvas
+      ref={canvasRef}
+      width={size}
+      height={size}
+      style={{
         borderRadius: borderRadius.sm,
         display: 'block',
         backgroundColor: '#FFFFFF'
-      }} 
+      }}
     />
   );
 });
@@ -55,7 +96,7 @@ const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
 // Label Preview Component
 const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isPackage: _isPackage, containedItems }) {
   if (!item) return null;
-  
+
   const scale = 0.5;
   const w = format.width * 300 * scale;
   const h = format.height * 300 * scale;
@@ -65,15 +106,15 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   const isMedium = format.id === 'medium';
   const isLarge = format.id === 'large';
   const isKitOrPackageLabel = format.id === 'kit' || format.id === 'package';
-  
+
   // For small format, make it square
   const labelWidth = isSmall ? Math.min(w, h * 2) : w;
   const labelHeight = isSmall ? labelWidth : h;
-  
+
   // QR size - square and proportional
-  const qrSize = isSmall 
-    ? labelHeight * 0.85 
-    : isMedium 
+  const qrSize = isSmall
+    ? labelHeight * 0.85
+    : isMedium
       ? Math.min(labelWidth * 0.35, labelHeight * 0.85)
       : Math.min(labelWidth * 0.3, labelHeight * 0.4);
 
@@ -82,7 +123,7 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
     if (!user?.profile) return [];
     const showFields = user.profile.showFields || {};
     const fields = [];
-    
+
     if (showFields.businessName && user.profile.businessName) {
       fields.push({ label: 'Business', value: user.profile.businessName });
     }
@@ -98,7 +139,7 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
     if (showFields.address && user.profile.address) {
       fields.push({ label: 'Address', value: user.profile.address });
     }
-    
+
     return fields;
   };
 
@@ -109,14 +150,14 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
     if (item.category) specs.push({ label: 'Category', value: item.category });
     if (item.serialNumber) specs.push({ label: 'S/N', value: item.serialNumber });
     if (item.location) specs.push({ label: 'Location', value: item.location });
-    
+
     // Add custom specs from item
     if (item.specs && typeof item.specs === 'object') {
       Object.entries(item.specs).slice(0, 3).forEach(([key, value]) => {
         if (value) specs.push({ label: key, value: String(value) });
       });
     }
-    
+
     return specs.slice(0, 6); // Limit to 6 specs
   };
 
@@ -126,16 +167,16 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   // Small format - QR only (square)
   if (isSmall) {
     return (
-      <div style={{ 
-        width: labelWidth, 
-        height: labelHeight, 
-        background: '#fff', 
-        borderRadius: borderRadius.md, 
-        padding: spacing[2], 
-        display: 'flex', 
-        alignItems: 'center', 
+      <div style={{
+        width: labelWidth,
+        height: labelHeight,
+        background: '#fff',
+        borderRadius: borderRadius.md,
+        padding: spacing[2],
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
         <QRCodeCanvas data={item.id} size={qrSize} />
       </div>
@@ -145,16 +186,16 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   // Medium format - QR + Info with better text sizing
   if (isMedium) {
     return (
-      <div style={{ 
-        width: labelWidth, 
-        height: labelHeight, 
-        background: '#fff', 
-        borderRadius: borderRadius.md, 
-        padding: spacing[3], 
-        display: 'flex', 
+      <div style={{
+        width: labelWidth,
+        height: labelHeight,
+        background: '#fff',
+        borderRadius: borderRadius.md,
+        padding: spacing[3],
+        display: 'flex',
         gap: spacing[3],
         alignItems: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
         <QRCodeCanvas data={item.id} size={qrSize} />
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -169,15 +210,15 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   // Large format - Full Details
   if (isLarge) {
     return (
-      <div style={{ 
-        width: labelWidth, 
-        height: labelHeight, 
-        background: '#fff', 
-        borderRadius: borderRadius.md, 
-        padding: spacing[3], 
-        display: 'flex', 
+      <div style={{
+        width: labelWidth,
+        height: labelHeight,
+        background: '#fff',
+        borderRadius: borderRadius.md,
+        padding: spacing[3],
+        display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
         {/* Top section: QR + Basic Info */}
         <div style={{ display: 'flex', gap: spacing[3], marginBottom: spacing[2] }}>
@@ -188,13 +229,13 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
             <div style={{ fontSize: typography.fontSize.sm, color: '#666' }}>{item.brand}</div>
           </div>
         </div>
-        
+
         {/* Specs Grid */}
         {itemSpecs.length > 0 && (
-          <div style={{ 
-            flex: 1, 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(2, 1fr)', 
+          <div style={{
+            flex: 1,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
             gap: '4px 12px',
             fontSize: typography.fontSize.xs,
             borderTop: '1px solid #eee',
@@ -216,15 +257,15 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   if (isKitOrPackageLabel) {
     const itemsList = containedItems || [];
     return (
-      <div style={{ 
-        width: labelWidth, 
-        height: labelHeight, 
-        background: '#fff', 
-        borderRadius: borderRadius.md, 
-        padding: spacing[3], 
-        display: 'flex', 
+      <div style={{
+        width: labelWidth,
+        height: labelHeight,
+        background: '#fff',
+        borderRadius: borderRadius.md,
+        padding: spacing[3],
+        display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
         {/* Header: QR + Kit/Package Info */}
         <div style={{ display: 'flex', gap: spacing[3], marginBottom: spacing[2] }}>
@@ -240,10 +281,10 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
             <div style={{ fontSize: typography.fontSize.sm, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
           </div>
         </div>
-        
+
         {/* Items List */}
-        <div style={{ 
-          flex: 1, 
+        <div style={{
+          flex: 1,
           borderTop: '1px solid #eee',
           paddingTop: spacing[2],
           overflow: 'hidden',
@@ -271,15 +312,15 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   // Branding formats
   if (isBranding) {
     return (
-      <div style={{ 
-        width: labelWidth, 
-        height: labelHeight, 
-        background: '#fff', 
-        borderRadius: borderRadius.md, 
-        padding: spacing[3], 
-        display: 'flex', 
+      <div style={{
+        width: labelWidth,
+        height: labelHeight,
+        background: '#fff',
+        borderRadius: borderRadius.md,
+        padding: spacing[3],
+        display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
         {/* Top section: QR + Basic Info */}
         <div style={{ display: 'flex', gap: spacing[3], marginBottom: spacing[2] }}>
@@ -290,12 +331,12 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
             <div style={{ fontSize: typography.fontSize.sm, color: '#666' }}>{item.brand}</div>
           </div>
         </div>
-        
+
         {/* Specs section */}
         {itemSpecs.length > 0 && (
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(2, 1fr)', 
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
             gap: '4px 12px',
             fontSize: typography.fontSize.xs,
             marginBottom: spacing[2],
@@ -308,11 +349,11 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
             ))}
           </div>
         )}
-        
+
         {/* Branding Footer */}
-        <div style={{ 
+        <div style={{
           marginTop: 'auto',
-          borderTop: '1px solid #eee', 
+          borderTop: '1px solid #eee',
           paddingTop: spacing[2],
           display: 'flex',
           alignItems: 'center',
@@ -321,7 +362,7 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
           {showLogo && user?.profile?.logo && user?.profile?.showFields?.logo ? (
             <img src={user.profile.logo} alt="" style={{ height: 28, objectFit: 'contain' }} />
           ) : null}
-          
+
           <div style={{ flex: 1, overflow: 'hidden' }}>
             {profileFields.length > 0 ? (
               <div style={{ fontSize: typography.fontSize.xs, color: '#666', lineHeight: 1.4 }}>
@@ -365,21 +406,21 @@ function LabelsView({ inventory, packages = [], user }) {
     const q = search.toLowerCase();
     if (selectionTab === 'items') {
       if (!search.trim()) return regularItems;
-      return regularItems.filter(i => 
-        i.name.toLowerCase().includes(q) || 
-        i.id.toLowerCase().includes(q) || 
+      return regularItems.filter(i =>
+        i.name.toLowerCase().includes(q) ||
+        i.id.toLowerCase().includes(q) ||
         (i.brand && i.brand.toLowerCase().includes(q))
       );
     } else if (selectionTab === 'kits') {
       if (!search.trim()) return kits;
-      return kits.filter(i => 
-        i.name.toLowerCase().includes(q) || 
+      return kits.filter(i =>
+        i.name.toLowerCase().includes(q) ||
         i.id.toLowerCase().includes(q)
       );
     } else {
       if (!search.trim()) return packages;
-      return packages.filter(p => 
-        p.name.toLowerCase().includes(q) || 
+      return packages.filter(p =>
+        p.name.toLowerCase().includes(q) ||
         p.id.toLowerCase().includes(q)
       );
     }
@@ -414,7 +455,7 @@ function LabelsView({ inventory, packages = [], user }) {
   const previewItem = useMemo(() => {
     if (selectedItems.length === 0) return null;
     const id = selectedItems[0];
-    
+
     if (selectionTab === 'packages') {
       return packages.find(p => p.id === id);
     }
@@ -427,85 +468,39 @@ function LabelsView({ inventory, packages = [], user }) {
       // Add kit/package specific format
       return [
         ...LABEL_FORMATS,
-        { 
-          id: selectionTab === 'kits' ? 'kit' : 'package', 
-          name: `${selectionTab === 'kits' ? 'Kit' : 'Package'} - With Contents`, 
-          width: 3, 
-          height: 2.5, 
-          description: 'QR + item list' 
+        {
+          id: selectionTab === 'kits' ? 'kit' : 'package',
+          name: `${selectionTab === 'kits' ? 'Kit' : 'Package'} - With Contents`,
+          width: 3,
+          height: 2.5,
+          description: 'QR + item list'
         }
       ];
     }
     return LABEL_FORMATS;
   }, [selectionTab]);
 
-  // Generate QR code data URL for a given string
-  const generateQRDataURL = useCallback((data, size = 100) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return '';
-    
-    const modules = 21;
-    const moduleSize = size / modules;
-    
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = '#000000';
-    
-    const drawModule = (x, y) => {
-      ctx.fillRect(
-        Math.floor(x * moduleSize), 
-        Math.floor(y * moduleSize), 
-        Math.ceil(moduleSize), 
-        Math.ceil(moduleSize)
-      );
-    };
-    
-    const drawFinderPattern = (startX, startY) => {
-      for (let i = 0; i < 7; i++) {
-        drawModule(startX + i, startY);
-        drawModule(startX + i, startY + 6);
-        drawModule(startX, startY + i);
-        drawModule(startX + 6, startY + i);
-      }
-      for (let y = 2; y <= 4; y++) {
-        for (let x = 2; x <= 4; x++) {
-          drawModule(startX + x, startY + y);
-        }
-      }
-    };
-    
-    drawFinderPattern(0, 0);
-    drawFinderPattern(modules - 7, 0);
-    drawFinderPattern(0, modules - 7);
-    
-    for (let i = 8; i < modules - 8; i += 2) {
-      drawModule(i, 6);
-      drawModule(6, i);
+  // Generate a real, scannable QR code data URL using the qrcode library
+  const generateQRDataURL = useCallback(async (data, size = 100) => {
+    try {
+      return await QRCode.toDataURL(String(data), {
+        width: size,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        },
+        errorCorrectionLevel: 'M'
+      });
+    } catch (err) {
+      logError('QR Code toDataURL error:', err);
+      return '';
     }
-    
-    const dataStr = String(data);
-    const seed = dataStr.split('').reduce((acc, char, i) => acc + char.charCodeAt(0) * (i + 1), 0);
-    const seededRandom = (x, y) => {
-      const n = Math.sin(seed * 12.9898 + x * 78.233 + y * 45.164) * 43758.5453;
-      return n - Math.floor(n);
-    };
-    
-    for (let y = 0; y < modules; y++) {
-      for (let x = 0; x < modules; x++) {
-        if ((x < 8 && y < 8) || (x >= modules - 8 && y < 8) || (x < 8 && y >= modules - 8)) continue;
-        if (x === 6 || y === 6) continue;
-        if (seededRandom(x, y) > 0.5) drawModule(x, y);
-      }
-    }
-    
-    return canvas.toDataURL('image/png');
   }, []);
 
   // Generate label HTML that matches preview
-  const generateLabelHTML = useCallback((item, format, isKit = false, _isPackage = false, containedItems = []) => {
+  // Now accepts a pre-generated QR data URL (async generation happens before calling this)
+  const generateLabelHTML = useCallback((item, format, isKit = false, _isPackage = false, containedItems = [], qrDataURL = '') => {
     const widthPx = format.width * 96; // 96 DPI for screen/PDF
     const heightPx = format.height * 96;
     const isBranding = format.id.startsWith('branding');
@@ -514,22 +509,26 @@ function LabelsView({ inventory, packages = [], user }) {
     const isMedium = format.id === 'medium';
     const isLarge = format.id === 'large';
     const isKitOrPackageLabel = format.id === 'kit' || format.id === 'package';
-    
+
     const qrSize = isSmall ? 80 : isMedium ? 70 : 60;
-    const qrDataURL = generateQRDataURL(item.id, qrSize);
-    
+
+    // Sanitize all user-provided data
+    const safeId = escapeHtml(item.id);
+    const safeName = escapeHtml(item.name);
+    const safeBrand = escapeHtml(item.brand || '');
+
     // Get item specs for large/branding formats
     const getItemSpecs = () => {
       const specs = [];
-      if (item.brand) specs.push({ label: 'Brand', value: item.brand });
-      if (item.category) specs.push({ label: 'Category', value: item.category });
-      if (item.serialNumber) specs.push({ label: 'S/N', value: item.serialNumber });
-      if (item.location) specs.push({ label: 'Location', value: item.location });
+      if (item.brand) specs.push({ label: 'Brand', value: escapeHtml(item.brand) });
+      if (item.category) specs.push({ label: 'Category', value: escapeHtml(item.category) });
+      if (item.serialNumber) specs.push({ label: 'S/N', value: escapeHtml(item.serialNumber) });
+      if (item.location) specs.push({ label: 'Location', value: escapeHtml(item.location) });
       return specs.slice(0, 6);
     };
-    
+
     const itemSpecs = getItemSpecs();
-    
+
     // Small format - QR only
     if (isSmall) {
       return `
@@ -538,63 +537,63 @@ function LabelsView({ inventory, packages = [], user }) {
         </div>
       `;
     }
-    
+
     // Medium format - QR + Info
     if (isMedium) {
       return `
         <div style="width:${widthPx}px;height:${heightPx}px;background:#fff;border-radius:8px;padding:12px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.1);box-sizing:border-box;">
           <img src="${qrDataURL}" width="${qrSize}" height="${qrSize}" style="display:block;"/>
           <div style="flex:1;overflow:hidden;">
-            <div style="font-size:14px;font-weight:bold;color:#000;margin-bottom:4px;">${item.id}</div>
-            <div style="font-size:13px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;">${item.name}</div>
-            <div style="font-size:11px;color:#666;">${item.brand || ''}</div>
+            <div style="font-size:14px;font-weight:bold;color:#000;margin-bottom:4px;">${safeId}</div>
+            <div style="font-size:13px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;">${safeName}</div>
+            <div style="font-size:11px;color:#666;">${safeBrand}</div>
           </div>
         </div>
       `;
     }
-    
+
     // Large format - Full Details
     if (isLarge) {
       const specsHTML = itemSpecs.length > 0 ? `
         <div style="flex:1;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;font-size:10px;border-top:1px solid #eee;padding-top:8px;">
-          ${itemSpecs.map(spec => `<div><span style="color:#999">${spec.label}: </span><span style="color:#333">${spec.value}</span></div>`).join('')}
+          ${itemSpecs.map(spec => `<div><span style="color:#999">${escapeHtml(spec.label)}: </span><span style="color:#333">${spec.value}</span></div>`).join('')}
         </div>
       ` : '';
-      
+
       return `
         <div style="width:${widthPx}px;height:${heightPx}px;background:#fff;border-radius:8px;padding:12px;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(0,0,0,0.1);box-sizing:border-box;">
           <div style="display:flex;gap:12px;margin-bottom:8px;">
             <img src="${qrDataURL}" width="${qrSize}" height="${qrSize}" style="display:block;"/>
             <div style="flex:1;overflow:hidden;">
-              <div style="font-size:16px;font-weight:bold;color:#000;margin-bottom:2px;">${item.id}</div>
-              <div style="font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;">${item.name}</div>
-              <div style="font-size:12px;color:#666;">${item.brand || ''}</div>
+              <div style="font-size:16px;font-weight:bold;color:#000;margin-bottom:2px;">${safeId}</div>
+              <div style="font-size:14px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;">${safeName}</div>
+              <div style="font-size:12px;color:#666;">${safeBrand}</div>
             </div>
           </div>
           ${specsHTML}
         </div>
       `;
     }
-    
+
     // Kit/Package format - with item list
     if (isKitOrPackageLabel) {
       const itemsList = containedItems || [];
       const typeLabel = isKit ? 'Kit' : 'Package';
-      const itemsListHTML = itemsList.slice(0, 8).map(i => 
-        `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">• ${i.id} - ${i.name}</div>`
+      const itemsListHTML = itemsList.slice(0, 8).map(i =>
+        `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">&bull; ${escapeHtml(i.id)} - ${escapeHtml(i.name)}</div>`
       ).join('');
       const moreItemsHTML = itemsList.length > 8 ? `<div style="color:#999;font-style:italic;">+${itemsList.length - 8} more items</div>` : '';
-      
+
       return `
         <div style="width:${widthPx}px;height:${heightPx}px;background:#fff;border-radius:8px;padding:12px;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(0,0,0,0.1);box-sizing:border-box;">
           <div style="display:flex;gap:12px;margin-bottom:8px;">
             <img src="${qrDataURL}" width="${qrSize}" height="${qrSize}" style="display:block;"/>
             <div style="flex:1;overflow:hidden;">
               <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;">
-                <span style="font-size:10px;color:#666;text-transform:uppercase;">${typeLabel}</span>
+                <span style="font-size:10px;color:#666;text-transform:uppercase;">${escapeHtml(typeLabel)}</span>
               </div>
-              <div style="font-size:14px;font-weight:bold;color:#000;margin-bottom:2px;">${item.id}</div>
-              <div style="font-size:12px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.name}</div>
+              <div style="font-size:14px;font-weight:bold;color:#000;margin-bottom:2px;">${safeId}</div>
+              <div style="font-size:12px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeName}</div>
             </div>
           </div>
           <div style="flex:1;border-top:1px solid #eee;padding-top:8px;overflow:hidden;">
@@ -607,45 +606,45 @@ function LabelsView({ inventory, packages = [], user }) {
         </div>
       `;
     }
-    
+
     // Branding formats
     if (isBranding) {
       const specsHTML = itemSpecs.slice(0, 4).length > 0 ? `
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;font-size:9px;margin-bottom:8px;">
-          ${itemSpecs.slice(0, 4).map(spec => `<div><span style="color:#999">${spec.label}: </span><span style="color:#333">${spec.value}</span></div>`).join('')}
+          ${itemSpecs.slice(0, 4).map(spec => `<div><span style="color:#999">${escapeHtml(spec.label)}: </span><span style="color:#333">${spec.value}</span></div>`).join('')}
         </div>
       ` : '';
-      
+
       const profileFields = [];
       if (user?.profile?.showFields?.businessName && user?.profile?.businessName) {
-        profileFields.push(user.profile.businessName);
+        profileFields.push(escapeHtml(user.profile.businessName));
       }
       if (user?.profile?.showFields?.displayName && user?.profile?.displayName) {
-        profileFields.push(user.profile.displayName);
+        profileFields.push(escapeHtml(user.profile.displayName));
       }
       if (user?.profile?.showFields?.phone && user?.profile?.phone) {
-        profileFields.push(user.profile.phone);
+        profileFields.push(escapeHtml(user.profile.phone));
       }
       if (user?.profile?.showFields?.email && user?.profile?.email) {
-        profileFields.push(user.profile.email);
+        profileFields.push(escapeHtml(user.profile.email));
       }
-      
-      const brandingHTML = profileFields.length > 0 
+
+      const brandingHTML = profileFields.length > 0
         ? profileFields.map(f => `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f}</div>`).join('')
         : '<div style="color:#999;font-style:italic;">No branding info configured</div>';
-      
+
       const logoHTML = showLogo && user?.profile?.logo && user?.profile?.showFields?.logo
-        ? `<img src="${user.profile.logo}" style="height:28px;object-fit:contain;"/>`
+        ? `<img src="${escapeHtml(user.profile.logo)}" style="height:28px;object-fit:contain;"/>`
         : '';
-      
+
       return `
         <div style="width:${widthPx}px;height:${heightPx}px;background:#fff;border-radius:8px;padding:12px;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(0,0,0,0.1);box-sizing:border-box;">
           <div style="display:flex;gap:12px;margin-bottom:8px;">
             <img src="${qrDataURL}" width="${qrSize}" height="${qrSize}" style="display:block;"/>
             <div style="flex:1;overflow:hidden;">
-              <div style="font-size:14px;font-weight:bold;color:#000;margin-bottom:2px;">${item.id}</div>
-              <div style="font-size:12px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;">${item.name}</div>
-              <div style="font-size:11px;color:#666;">${item.brand || ''}</div>
+              <div style="font-size:14px;font-weight:bold;color:#000;margin-bottom:2px;">${safeId}</div>
+              <div style="font-size:12px;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;">${safeName}</div>
+              <div style="font-size:11px;color:#666;">${safeBrand}</div>
             </div>
           </div>
           ${specsHTML}
@@ -658,42 +657,53 @@ function LabelsView({ inventory, packages = [], user }) {
         </div>
       `;
     }
-    
+
     // Fallback
     return `
       <div style="width:${widthPx}px;height:${heightPx}px;background:#fff;border-radius:8px;padding:12px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.1);box-sizing:border-box;">
-        <img src="${qrDataURL}" width="${qrSize}" height="${qrSize}" style="display:block;"/>
+        <img src="${qrDataURL}" width="60" height="60" style="display:block;"/>
         <div style="flex:1;overflow:hidden;">
-          <div style="font-size:14px;font-weight:bold;color:#000;">${item.id}</div>
-          <div style="font-size:12px;color:#333;">${item.name}</div>
+          <div style="font-size:14px;font-weight:bold;color:#000;">${safeId}</div>
+          <div style="font-size:12px;color:#333;">${safeName}</div>
         </div>
       </div>
     `;
-  }, [generateQRDataURL, user]);
+  }, [user]);
 
-  const handlePrint = useCallback(() => {
-    const items = selectionTab === 'packages' 
+  // Build labels HTML with real QR codes (async)
+  const buildLabelsHTML = useCallback(async (items, format, isKitTab, isPackageTab) => {
+    // Pre-generate all QR data URLs in parallel
+    const qrSize = format.id === 'small' ? 80 : format.id === 'medium' ? 70 : 60;
+    const qrDataURLs = await Promise.all(
+      items.map(item => generateQRDataURL(item.id, qrSize))
+    );
+
+    return items.map((item, idx) => {
+      const contained = (isKitTab || isPackageTab) ? getContainedItems(item, isPackageTab) : [];
+      return generateLabelHTML(item, format, isKitTab, isPackageTab, contained, qrDataURLs[idx]);
+    }).join('');
+  }, [generateQRDataURL, generateLabelHTML, getContainedItems]);
+
+  const handlePrint = useCallback(async () => {
+    const items = selectionTab === 'packages'
       ? packages.filter(p => selectedItems.includes(p.id))
       : inventory.filter(i => selectedItems.includes(i.id));
     if (items.length === 0) return;
-    
+
     const isKitTab = selectionTab === 'kits';
     const isPackageTab = selectionTab === 'packages';
-    
-    const labelsHTML = items.map(item => {
-      const contained = (isKitTab || isPackageTab) ? getContainedItems(item, isPackageTab) : [];
-      return generateLabelHTML(item, selectedFormat, isKitTab, isPackageTab, contained);
-    }).join('');
-    
+
+    const labelsHTML = await buildLabelsHTML(items, selectedFormat, isKitTab, isPackageTab);
+
     openPrintWindow({
       title: 'Labels',
       styles: `
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
+        body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          padding: 20px; 
-          display: flex; 
-          flex-wrap: wrap; 
+          padding: 20px;
+          display: flex;
+          flex-wrap: wrap;
           gap: 16px;
           background: #f5f5f5;
         }
@@ -703,22 +713,19 @@ function LabelsView({ inventory, packages = [], user }) {
       `,
       body: labelsHTML,
     });
-  }, [inventory, packages, selectedItems, selectedFormat, selectionTab, getContainedItems, generateLabelHTML]);
+  }, [inventory, packages, selectedItems, selectedFormat, selectionTab, buildLabelsHTML]);
 
   const handleDownload = useCallback(async () => {
-    const items = selectionTab === 'packages' 
+    const items = selectionTab === 'packages'
       ? packages.filter(p => selectedItems.includes(p.id))
       : inventory.filter(i => selectedItems.includes(i.id));
     if (items.length === 0) return;
-    
+
     const isKitTab = selectionTab === 'kits';
     const isPackageTab = selectionTab === 'packages';
-    
-    const labelsHTML = items.map(item => {
-      const contained = (isKitTab || isPackageTab) ? getContainedItems(item, isPackageTab) : [];
-      return generateLabelHTML(item, selectedFormat, isKitTab, isPackageTab, contained);
-    }).join('');
-    
+
+    const labelsHTML = await buildLabelsHTML(items, selectedFormat, isKitTab, isPackageTab);
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -727,11 +734,11 @@ function LabelsView({ inventory, packages = [], user }) {
           <title>Labels Export</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
+            body {
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-              padding: 20px; 
-              display: flex; 
-              flex-wrap: wrap; 
+              padding: 20px;
+              display: flex;
+              flex-wrap: wrap;
               gap: 16px;
               background: #f5f5f5;
             }
@@ -743,7 +750,7 @@ function LabelsView({ inventory, packages = [], user }) {
         <body>${labelsHTML}</body>
       </html>
     `;
-    
+
     const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -753,7 +760,7 @@ function LabelsView({ inventory, packages = [], user }) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [inventory, packages, selectedItems, selectedFormat, selectionTab, getContainedItems, generateLabelHTML]);
+  }, [inventory, packages, selectedItems, selectedFormat, selectionTab, buildLabelsHTML]);
 
   // Reset selection when changing tabs
   useEffect(() => {
@@ -799,14 +806,14 @@ function LabelsView({ inventory, packages = [], user }) {
             <CardHeader title="Preview" />
             <div style={{ padding: spacing[4], display: 'flex', justifyContent: 'center', background: colors.bgLight, minHeight: 150 }}>
               {previewItem ? (
-                <LabelPreview 
-                  item={previewItem} 
-                  format={selectedFormat} 
+                <LabelPreview
+                  item={previewItem}
+                  format={selectedFormat}
                   user={user}
                   isKit={selectionTab === 'kits'}
                   isPackage={selectionTab === 'packages'}
                   containedItems={
-                    (selectionTab === 'kits' || selectionTab === 'packages') 
+                    (selectionTab === 'kits' || selectionTab === 'packages')
                       ? getContainedItems(previewItem, selectionTab === 'packages')
                       : null
                   }
@@ -821,8 +828,8 @@ function LabelsView({ inventory, packages = [], user }) {
         {/* Items Selection */}
         <Card padding={false} style={{ overflow: 'hidden', minWidth: 0 }}>
           {/* Tab Bar */}
-          <div style={{ 
-            display: 'flex', 
+          <div style={{
+            display: 'flex',
             borderBottom: `1px solid ${colors.borderLight}`,
           }}>
             {[
@@ -872,23 +879,23 @@ function LabelsView({ inventory, packages = [], user }) {
               </div>
             ) : (
               filteredItems.map(item => (
-                <label 
-                  key={item.id} 
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: spacing[3], 
-                    padding: `${spacing[3]}px ${spacing[4]}px`, 
-                    borderBottom: `1px solid ${colors.borderLight}`, 
-                    cursor: 'pointer', 
-                    background: selectedItems.includes(item.id) ? `${withOpacity(colors.primary, 8)}` : 'transparent' 
+                <label
+                  key={item.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: spacing[3],
+                    padding: `${spacing[3]}px ${spacing[4]}px`,
+                    borderBottom: `1px solid ${colors.borderLight}`,
+                    cursor: 'pointer',
+                    background: selectedItems.includes(item.id) ? `${withOpacity(colors.primary, 8)}` : 'transparent'
                   }}
                 >
-                  <input 
-                    type="checkbox" 
-                    checked={selectedItems.includes(item.id)} 
-                    onChange={() => toggleItem(item.id)} 
-                    style={{ accentColor: colors.primary }} 
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.includes(item.id)}
+                    onChange={() => toggleItem(item.id)}
+                    style={{ accentColor: colors.primary }}
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[1], flexWrap: 'wrap' }}>

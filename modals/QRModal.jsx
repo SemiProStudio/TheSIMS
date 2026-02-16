@@ -1,101 +1,77 @@
 // ============================================================================
 // QR Code Modal
 // Display and download QR codes for inventory items
+// Uses the real 'qrcode' library for scannable QR code generation
 // ============================================================================
 
-import { memo, useRef, useEffect } from 'react';
+import { memo, useRef, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Download } from 'lucide-react';
+import QRCodeLib from 'qrcode';
 import { colors, spacing, borderRadius } from '../theme.js';
 import { Badge, Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
+import { error as logError } from '../lib/logger.js';
+
 // ============================================================================
 // QR Code Generator Component
-// Generates a deterministic QR code pattern from input data
+// Generates a real, scannable QR code using the qrcode library
 // ============================================================================
 const QRCode = memo(function QRCode({ data, size = 150 }) {
   const canvasRef = useRef(null);
-  
+  const [error, setError] = useState(false);
+
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    
-    // Generate a deterministic pattern from the data
-    // This creates a valid-looking QR code structure
-    const modules = 21; // Version 1 QR code is 21x21
-    const moduleSize = size / modules;
-    
-    // Clear canvas with white background
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, size, size);
-    ctx.fillStyle = '#000000';
-    
-    // Helper to draw a module
-    const drawModule = (x, y) => {
-      ctx.fillRect(x * moduleSize, y * moduleSize, moduleSize, moduleSize);
-    };
-    
-    // Draw finder patterns (the three big squares in corners)
-    const drawFinderPattern = (startX, startY) => {
-      // Outer 7x7 black square
-      for (let i = 0; i < 7; i++) {
-        drawModule(startX + i, startY); // Top
-        drawModule(startX + i, startY + 6); // Bottom
-        drawModule(startX, startY + i); // Left
-        drawModule(startX + 6, startY + i); // Right
+    if (!canvas || !data) return;
+
+    setError(false);
+
+    QRCodeLib.toCanvas(canvas, String(data), {
+      width: size,
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      },
+      errorCorrectionLevel: 'M'
+    }, (err) => {
+      if (err) {
+        logError('QR Code generation error:', err);
+        setError(true);
       }
-      // Inner 3x3 black square
-      for (let y = 2; y <= 4; y++) {
-        for (let x = 2; x <= 4; x++) {
-          drawModule(startX + x, startY + y);
-        }
-      }
-    };
-    
-    // Draw the three finder patterns
-    drawFinderPattern(0, 0); // Top-left
-    drawFinderPattern(modules - 7, 0); // Top-right
-    drawFinderPattern(0, modules - 7); // Bottom-left
-    
-    // Draw timing patterns (alternating line between finder patterns)
-    for (let i = 8; i < modules - 8; i += 2) {
-      drawModule(i, 6); // Horizontal
-      drawModule(6, i); // Vertical
-    }
-    
-    // Generate data pattern from the input string
-    // Use a seeded random approach for deterministic results
-    const seed = data.split('').reduce((acc, char, i) => acc + char.charCodeAt(0) * (i + 1), 0);
-    const seededRandom = (x, y) => {
-      const n = Math.sin(seed * 12.9898 + x * 78.233 + y * 45.164) * 43758.5453;
-      return n - Math.floor(n);
-    };
-    
-    // Fill data area (avoid finder patterns and timing)
-    for (let y = 0; y < modules; y++) {
-      for (let x = 0; x < modules; x++) {
-        // Skip finder pattern areas
-        if ((x < 8 && y < 8) || (x >= modules - 8 && y < 8) || (x < 8 && y >= modules - 8)) continue;
-        // Skip timing patterns
-        if (x === 6 || y === 6) continue;
-        
-        // Use seeded random to determine if this module is black
-        if (seededRandom(x, y) > 0.5) {
-          drawModule(x, y);
-        }
-      }
-    }
-    
+    });
   }, [data, size]);
-  
+
+  if (error) {
+    return (
+      <div
+        style={{
+          width: size,
+          height: size,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#f5f5f5',
+          borderRadius: borderRadius.sm,
+          fontSize: 11,
+          color: '#999',
+          textAlign: 'center',
+          padding: 8,
+        }}
+      >
+        QR generation failed
+      </div>
+    );
+  }
+
   return (
-    <canvas 
-      ref={canvasRef} 
-      width={size} 
-      height={size} 
-      style={{ borderRadius: borderRadius.sm, border: `4px solid #FFFFFF` }} 
+    <canvas
+      ref={canvasRef}
+      width={size}
+      height={size}
+      style={{ borderRadius: borderRadius.sm, border: '4px solid #FFFFFF' }}
     />
   );
 });
@@ -104,9 +80,13 @@ const QRCode = memo(function QRCode({ data, size = 150 }) {
 // QR Modal
 // ============================================================================
 export const QRModal = memo(function QRModal({ item, onClose }) {
+  const qrCanvasRef = useRef(null);
+
   const handleDownload = () => {
-    // Find the canvas inside the modal
-    const canvas = document.querySelector('canvas');
+    // Use the ref to the QRCode's parent to find the canvas reliably
+    const container = qrCanvasRef.current;
+    if (!container) return;
+    const canvas = container.querySelector('canvas');
     if (canvas) {
       const link = document.createElement('a');
       link.download = `${item.id}-qr.png`;
@@ -114,18 +94,21 @@ export const QRModal = memo(function QRModal({ item, onClose }) {
       link.click();
     }
   };
-  
+
   return (
     <Modal onClose={onClose} maxWidth={350}>
       <ModalHeader title="QR Code" onClose={onClose} />
       <div style={{ padding: spacing[6], textAlign: 'center' }}>
-        <div style={{ 
-          marginBottom: spacing[4], 
-          display: 'inline-block',
-          background: '#FFFFFF',
-          padding: spacing[3],
-          borderRadius: borderRadius.lg
-        }}>
+        <div
+          ref={qrCanvasRef}
+          style={{
+            marginBottom: spacing[4],
+            display: 'inline-block',
+            background: '#FFFFFF',
+            padding: spacing[3],
+            borderRadius: borderRadius.lg
+          }}
+        >
           <QRCode data={item.id} size={180} />
         </div>
         <div style={{ marginBottom: spacing[2] }}>

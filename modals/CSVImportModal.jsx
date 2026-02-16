@@ -16,7 +16,42 @@ export const CSVImportModal = memo(function CSVImportModal({ categories, specs, 
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Drag-and-drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile && (droppedFile.type === 'text/csv' || droppedFile.name.endsWith('.csv'))) {
+      setFile(droppedFile);
+      setError(null);
+      setPreview(null);
+      try {
+        const text = await droppedFile.text();
+        const parsed = parseCSV(text);
+        setPreview(parsed);
+      } catch (err) {
+        setError(err.message);
+      }
+    } else if (droppedFile) {
+      setError('Please drop a CSV file');
+    }
+  };
   
   // CSV column definitions
   const requiredColumns = ['name', 'category'];
@@ -271,24 +306,28 @@ export const CSVImportModal = memo(function CSVImportModal({ categories, specs, 
         </div>
         
         {/* File upload */}
-        <div 
+        <div
           onClick={() => fileInputRef.current?.click()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
           style={{
-            border: `2px dashed ${colors.border}`,
+            border: `2px dashed ${isDragging ? colors.primary : colors.border}`,
             borderRadius: borderRadius.lg,
             padding: spacing[6],
             textAlign: 'center',
             cursor: 'pointer',
             marginBottom: spacing[4],
             transition: 'border-color 0.2s',
+            background: isDragging ? `${withOpacity(colors.primary, 8)}` : 'transparent',
           }}
         >
-          <Upload size={32} color={colors.textMuted} style={{ marginBottom: spacing[2] }} />
+          <Upload size={32} color={isDragging ? colors.primary : colors.textMuted} style={{ marginBottom: spacing[2] }} />
           <p style={{ color: colors.textPrimary, margin: `0 0 ${spacing[1]}px` }}>
             {file ? file.name : 'Click to select CSV file'}
           </p>
-          <p style={{ color: colors.textMuted, margin: 0, fontSize: typography.fontSize.sm }}>
-            or drag and drop
+          <p style={{ color: isDragging ? colors.primary : colors.textMuted, margin: 0, fontSize: typography.fontSize.sm }}>
+            {isDragging ? 'Drop CSV file here' : 'or drag and drop'}
           </p>
           <input
             ref={fileInputRef}
