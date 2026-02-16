@@ -34,6 +34,7 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [selectedReservationItem, setSelectedReservationItem] = useState(null);
   const [itemBackContext, setItemBackContext] = useState(null);
+  const [reservationBackView, setReservationBackView] = useState(null);
 
   // Track if navigation is from popstate (browser back/forward)
   const isPopstateNav = useRef(false);
@@ -124,11 +125,12 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
   }, []);
 
   const navigateToReservation = useCallback((reservation, item) => {
+    setReservationBackView(currentView);
     setSelectedReservation(reservation);
     setSelectedReservationItem(item);
     setCurrentView(VIEWS.RESERVATION_DETAIL);
     window.scrollTo(0, 0);
-  }, []);
+  }, [currentView]);
 
   const goBack = useCallback(() => {
     if (currentView === VIEWS.GEAR_DETAIL) {
@@ -144,12 +146,13 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
     } else if (currentView === VIEWS.RESERVATION_DETAIL) {
       setSelectedReservation(null);
       setSelectedReservationItem(null);
-      setCurrentView(VIEWS.SCHEDULE);
+      setCurrentView(reservationBackView || VIEWS.SCHEDULE);
+      setReservationBackView(null);
     } else {
       setCurrentView(VIEWS.DASHBOARD);
     }
     window.scrollTo(0, 0);
-  }, [currentView, itemBackContext]);
+  }, [currentView, itemBackContext, reservationBackView]);
 
   const isDetailView = [
     VIEWS.GEAR_DETAIL,
@@ -166,6 +169,7 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
     setSelectedReservation(null);
     setSelectedReservationItem(null);
     setItemBackContext(null);
+    setReservationBackView(null);
   }, []);
 
   // ============================================================================
@@ -180,6 +184,7 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
     selectedReservation,
     selectedReservationItem,
     itemBackContext,
+    reservationBackView,
     isDetailView,
 
     // Setters
@@ -190,6 +195,7 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
     setSelectedReservation,
     setSelectedReservationItem,
     setItemBackContext,
+    setReservationBackView,
 
     // Handlers
     navigate,
@@ -201,7 +207,7 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
     resetNavigation,
   }), [
     currentView, selectedItem, selectedPackage, selectedPackList,
-    selectedReservation, selectedReservationItem, itemBackContext, isDetailView,
+    selectedReservation, selectedReservationItem, itemBackContext, reservationBackView, isDetailView,
     navigate, navigateToItem, navigateToPackage, navigateToPackList,
     navigateToReservation, goBack, resetNavigation,
   ]);

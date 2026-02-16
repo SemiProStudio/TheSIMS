@@ -122,6 +122,7 @@ export default function App() {
     selectedReservation, setSelectedReservation,
     selectedReservationItem, setSelectedReservationItem,
     setItemBackContext,
+    setReservationBackView,
   } = useNavigationContext();
 
   const {
@@ -233,11 +234,12 @@ export default function App() {
   }, [inventory, dataContext, patchInventoryItem, setActiveModal, setCurrentView, setItemBackContext, setSelectedItem]);
 
   const navigateToReservation = useCallback((reservation, item) => {
+    setReservationBackView(currentView);
     setSelectedReservation(reservation);
     setSelectedReservationItem(item);
     setCurrentView(VIEWS.RESERVATION_DETAIL);
     window.scrollTo(0, 0);
-  }, [setSelectedReservation, setSelectedReservationItem, setCurrentView]);
+  }, [currentView, setReservationBackView, setSelectedReservation, setSelectedReservationItem, setCurrentView]);
 
   const navigateToFilteredSearch = useCallback((catFilter, statFilter) => {
     setCategoryFilter(catFilter);
