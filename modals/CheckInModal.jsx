@@ -84,8 +84,8 @@ export const CheckInModal = memo(function CheckInModal({
   return (
     <Modal onClose={onClose} maxWidth={550}>
       <ModalHeader title="Check In Item" onClose={onClose} />
-      <div style={{ padding: spacing[4], maxHeight: '75vh', overflowY: 'auto' }}>
-        
+      <div style={{ padding: spacing[4], maxHeight: 'calc(75vh - 80px)', overflowY: 'auto' }}>
+
         {/* Item Summary */}
         <div style={{
           display: 'flex',
@@ -256,7 +256,7 @@ export const CheckInModal = memo(function CheckInModal({
         </div>
         
         {/* Return Notes */}
-        <div style={{ marginBottom: spacing[4] }}>
+        <div>
           <label style={styles.label}>Return Notes (optional)</label>
           <textarea
             value={formData.returnNotes}
@@ -266,14 +266,20 @@ export const CheckInModal = memo(function CheckInModal({
             style={{ ...styles.input, resize: 'vertical' }}
           />
         </div>
-        
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit}>
-            Confirm Check In
-          </Button>
-        </div>
+      </div>
+
+      {/* Action Buttons - fixed outside scrollable area */}
+      <div style={{
+        display: 'flex',
+        gap: spacing[3],
+        justifyContent: 'flex-end',
+        padding: `${spacing[3]}px ${spacing[4]}px ${spacing[4]}px`,
+        borderTop: `1px solid ${colors.border}`,
+      }}>
+        <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button onClick={handleSubmit}>
+          Confirm Check In
+        </Button>
       </div>
     </Modal>
   );
