@@ -169,8 +169,7 @@ function ScheduleView({
     return segments;
   }, [isMonth, scheduleDates, filteredReservations, formatDateStr]);
 
-  // Assign lane indices per row to avoid overlapping bars
-  // eslint-disable-next-line no-unused-vars -- side-effect memo: assigns seg.lane on monthSpanSegments
+  // Assign lane indices per row to avoid overlapping bars (side-effect memo: assigns seg.lane)
   const _monthLanes = useMemo(() => {
     if (!isMonth) return {};
     // Group segments by row
