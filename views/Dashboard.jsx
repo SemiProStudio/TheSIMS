@@ -59,7 +59,6 @@ function Dashboard({
   onViewReservation,
   onFilteredView,
   onViewAlerts,
-  onViewOverdue,
   onViewLowStock,
   onViewReservations,
   onViewCheckedOut,

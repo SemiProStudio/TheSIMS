@@ -97,7 +97,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
   // Destructure handlers
   const {
     navigateToItem, navigateToReservation,
-    navigateToFilteredSearch, navigateToAlerts, navigateToOverdue,
+    navigateToFilteredSearch, navigateToAlerts,
     navigateToLowStock, navigateToReservations,
     handleToggleCollapse, handleSaveLayoutPrefs,
     createItem, deleteItem, openEditItem, handleBulkAction,
@@ -124,7 +124,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onViewReservation={navigateToReservation}
           onFilteredView={navigateToFilteredSearch}
           onViewAlerts={navigateToAlerts}
-          onViewOverdue={navigateToOverdue}
           onViewLowStock={navigateToLowStock}
           onViewReservations={navigateToReservations}
           onViewCheckedOut={() => navigateToFilteredSearch('all', STATUS.CHECKED_OUT)}
