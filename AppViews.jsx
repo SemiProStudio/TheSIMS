@@ -60,7 +60,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     selectedReservation,
     selectedReservationItem,
     itemBackContext, setItemBackContext,
-    reservationBackView,
+    reservationBackView, setReservationBackView,
   } = useNavigationContext();
 
   const {
@@ -522,10 +522,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             <ReportsPanel
               inventory={inventory}
               clients={clients}
-              currentUser={currentUser}
               onExport={() => openModal(MODALS.EXPORT)}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
               setCurrentView={setCurrentView}
+              setSelectedStatuses={setSelectedStatuses}
             />
           </Suspense>
         )}
@@ -576,7 +576,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               clients={clients}
               inventory={inventory}
               currentUser={currentUser}
-              onViewClient={() => {
+              onViewClient={(client) => {
+                if (client?.id) {
+                  setReservationBackView({ view: VIEWS.CLIENT_REPORT, context: { clientId: client.id } });
+                }
                 setCurrentView(VIEWS.CLIENTS);
               }}
               onBack={() => setCurrentView(VIEWS.REPORTS)}

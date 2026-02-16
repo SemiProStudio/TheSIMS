@@ -16,7 +16,6 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
   categories,
   currentUser,
   onViewItem,
-  onExport: _onExport,
   onBack
 }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -367,8 +366,6 @@ InsuranceReportPanel.propTypes = {
   categories: PropTypes.arrayOf(PropTypes.string).isRequired,
   /** Callback when item is clicked */
   onViewItem: PropTypes.func.isRequired,
-  /** Callback to export data */
-  onExport: PropTypes.func,
   /** Callback to go back */
   onBack: PropTypes.func.isRequired,
 };

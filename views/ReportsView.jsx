@@ -8,19 +8,20 @@ import PropTypes from 'prop-types';
 import { Download, Package, BarChart3, AlertTriangle, Wrench, DollarSign, Building2, Eye } from 'lucide-react';
 import { VIEWS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatMoney } from '../utils';
+import { formatMoney, sanitizeCSVCell } from '../utils';
 import { Card, Button, PageHeader } from '../components/ui.jsx';
 
-export const ReportsPanel = memo(function ReportsPanel({ 
-  inventory, 
-  clients = [], 
-  onExport, 
-  onBack, 
-  setCurrentView 
+export const ReportsPanel = memo(function ReportsPanel({
+  inventory,
+  clients = [],
+  onExport,
+  onBack,
+  setCurrentView,
+  setSelectedStatuses,
 }) {
   const alerts = inventory.filter(i => i.status === 'needs-attention');
   const totalVal = inventory.reduce((s, i) => s + (i.currentValue || 0), 0);
-  const totalCheckouts = inventory.reduce((s, i) => s + i.checkoutCount, 0);
+  const totalCheckouts = inventory.reduce((s, i) => s + (i.checkoutCount || 0), 0);
   
   // Calculate client stats
   const clientStats = useMemo(() => {
@@ -50,6 +51,75 @@ export const ReportsPanel = memo(function ReportsPanel({
     total: inventory.reduce((sum, i) => sum + (i.maintenanceHistory?.length || 0), 0),
     pending: inventory.reduce((sum, i) => sum + (i.maintenanceHistory?.filter(m => m.status === 'scheduled' || m.status === 'in-progress').length || 0), 0),
   }), [inventory]);
+
+  // CSV download helper
+  const downloadCSV = (headers, rows, filename) => {
+    const csvContent = [
+      headers.map(h => sanitizeCSVCell(h)).join(','),
+      ...rows.map(row => row.map(cell => sanitizeCSVCell(cell)).join(','))
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Direct CSV export: Maintenance
+  const exportMaintenance = () => {
+    const records = [];
+    inventory.forEach(item => {
+      (item.maintenanceHistory || []).forEach(record => {
+        records.push({ ...record, itemId: item.id, itemName: item.name });
+      });
+    });
+    const sorted = records.sort((a, b) => {
+      const aP = a.status === 'scheduled' || a.status === 'in-progress';
+      const bP = b.status === 'scheduled' || b.status === 'in-progress';
+      if (aP && !bP) return -1;
+      if (!aP && bP) return 1;
+      return new Date(b.completedDate || b.scheduledDate || b.createdAt) - new Date(a.completedDate || a.scheduledDate || a.createdAt);
+    });
+    downloadCSV(
+      ['Item', 'Item ID', 'Type', 'Description', 'Status', 'Vendor', 'Cost', 'Warranty', 'Scheduled Date', 'Completed Date'],
+      sorted.map(r => [r.itemName, r.itemId, r.type, r.description || '', r.status, r.vendor || '', r.cost || 0, r.warrantyWork ? 'Yes' : 'No', r.scheduledDate || '', r.completedDate || '']),
+      `maintenance-report-${new Date().toISOString().split('T')[0]}.csv`
+    );
+  };
+
+  // Direct CSV export: Insurance
+  const exportInsurance = () => {
+    const items = [...inventory].sort((a, b) => (b.currentValue || 0) - (a.currentValue || 0));
+    downloadCSV(
+      ['Item ID', 'Name', 'Brand', 'Category', 'Serial Number', 'Purchase Date', 'Purchase Price', 'Current Value', 'Condition', 'Location', 'Status'],
+      items.map(i => [i.id, i.name, i.brand, i.category, i.serialNumber || '', i.purchaseDate || '', i.purchasePrice || 0, i.currentValue || 0, i.condition || '', i.location || '', i.status]),
+      `insurance-inventory-${new Date().toISOString().split('T')[0]}.csv`
+    );
+  };
+
+  // Direct CSV export: Clients
+  const exportClients = () => {
+    const reservationCounts = {};
+    const totalValues = {};
+    inventory.forEach(item => {
+      (item.reservations || []).forEach(res => {
+        if (res.clientId) {
+          reservationCounts[res.clientId] = (reservationCounts[res.clientId] || 0) + 1;
+          totalValues[res.clientId] = (totalValues[res.clientId] || 0) + (res.value || 0);
+        }
+      });
+    });
+    const rows = clients
+      .map(c => ({ ...c, reservationCount: reservationCounts[c.id] || 0, totalValue: totalValues[c.id] || 0 }))
+      .sort((a, b) => b.reservationCount - a.reservationCount);
+    downloadCSV(
+      ['Client Name', 'Type', 'Company', 'Email', 'Phone', 'Reservations', 'Total Value', 'Favorite'],
+      rows.map(c => [c.name, c.type, c.company || '', c.email || '', c.phone || '', c.reservationCount, c.totalValue, c.favorite ? 'Yes' : 'No']),
+      `client-report-${new Date().toISOString().split('T')[0]}.csv`
+    );
+  };
 
   const buttonRowStyle = { display: 'flex', gap: spacing[2] };
   
@@ -127,11 +197,11 @@ export const ReportsPanel = memo(function ReportsPanel({
             <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Need Attention</div>
           </div>
           <div style={buttonRowStyle}>
-            <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.GEAR_LIST)} icon={Eye}>View</Button>
+            <Button variant="secondary" style={{ flex: 1 }} onClick={() => { setSelectedStatuses?.(['needs-attention']); setCurrentView(VIEWS.SEARCH); }} icon={Eye}>View</Button>
             <Button variant="secondary" style={{ flex: 1 }} onClick={onExport} icon={Download}>Export</Button>
           </div>
         </Card>
-        
+
         {/* Maintenance Report */}
         <Card>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing[3], marginBottom: spacing[4] }}>
@@ -155,7 +225,7 @@ export const ReportsPanel = memo(function ReportsPanel({
           </div>
           <div style={buttonRowStyle}>
             <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.MAINTENANCE_REPORT)} icon={Eye}>View</Button>
-            <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.MAINTENANCE_REPORT)} icon={Download}>Export</Button>
+            <Button variant="secondary" style={{ flex: 1 }} onClick={exportMaintenance} icon={Download}>Export</Button>
           </div>
         </Card>
 
@@ -176,7 +246,7 @@ export const ReportsPanel = memo(function ReportsPanel({
           </div>
           <div style={buttonRowStyle}>
             <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.INSURANCE_REPORT)} icon={Eye}>View</Button>
-            <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.INSURANCE_REPORT)} icon={Download}>Export</Button>
+            <Button variant="secondary" style={{ flex: 1 }} onClick={exportInsurance} icon={Download}>Export</Button>
           </div>
         </Card>
 
@@ -203,7 +273,7 @@ export const ReportsPanel = memo(function ReportsPanel({
           </div>
           <div style={buttonRowStyle}>
             <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.CLIENT_REPORT)} icon={Eye}>View</Button>
-            <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.CLIENT_REPORT)} icon={Download}>Export</Button>
+            <Button variant="secondary" style={{ flex: 1 }} onClick={exportClients} icon={Download}>Export</Button>
           </div>
         </Card>
       </div>
@@ -235,4 +305,6 @@ ReportsPanel.propTypes = {
   onBack: PropTypes.func.isRequired,
   /** Function to change current view */
   setCurrentView: PropTypes.func.isRequired,
+  /** Function to set selected statuses for filtering */
+  setSelectedStatuses: PropTypes.func,
 };

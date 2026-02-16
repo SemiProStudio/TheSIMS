@@ -45,9 +45,8 @@ export const ClientReportPanel = memo(function ClientReportPanel({
     const totalReservations = clientsWithStats.reduce((sum, c) => sum + c.reservationCount, 0);
     const totalValue = clientsWithStats.reduce((sum, c) => sum + c.totalValue, 0);
     const activeClients = clientsWithStats.filter(c => c.reservationCount > 0).length;
-    const avgReservations = clients.length > 0 ? totalReservations / clients.length : 0;
-    
-    return { totalReservations, totalValue, activeClients, avgReservations };
+
+    return { totalReservations, totalValue, activeClients };
   }, [clientsWithStats, clients.length]);
 
   // Export CSV
@@ -234,6 +233,13 @@ ClientReportPanel.propTypes = {
       value: PropTypes.number,
     })),
   })),
+  /** Currently logged in user */
+  currentUser: PropTypes.shape({
+    id: PropTypes.string,
+    name: PropTypes.string,
+    email: PropTypes.string,
+    profile: PropTypes.object,
+  }),
   /** Callback when client is clicked */
   onViewClient: PropTypes.func,
   /** Callback to go back */
