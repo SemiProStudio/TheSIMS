@@ -233,8 +233,8 @@ export default function App() {
     }
   }, [inventory, dataContext, patchInventoryItem, setActiveModal, setCurrentView, setItemBackContext, setSelectedItem]);
 
-  const navigateToReservation = useCallback((reservation, item) => {
-    setReservationBackView(currentView);
+  const navigateToReservation = useCallback((reservation, item, backContext = null) => {
+    setReservationBackView({ view: currentView, context: backContext });
     setSelectedReservation(reservation);
     setSelectedReservationItem(item);
     setCurrentView(VIEWS.RESERVATION_DETAIL);

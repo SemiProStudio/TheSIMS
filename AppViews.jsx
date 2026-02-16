@@ -59,7 +59,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     selectedReservation,
     selectedReservationItem,
     itemBackContext, setItemBackContext,
-    reservationBackView, setReservationBackView,
+    reservationBackView,
   } = useNavigationContext();
 
   const {
@@ -303,9 +303,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             reservation={selectedReservation}
             item={selectedReservationItem}
             onBack={() => {
-              const backView = selectedItem ? VIEWS.GEAR_DETAIL : (reservationBackView || VIEWS.SCHEDULE);
+              const backView = selectedItem ? VIEWS.GEAR_DETAIL : (reservationBackView?.view || VIEWS.SCHEDULE);
               setCurrentView(backView);
-              setReservationBackView(null);
+              // Don't clear reservationBackView here — let the target view
+              // read the context (e.g., clientId) before clearing it
             }}
             onEdit={() => openEditReservation(selectedReservation)}
             onDelete={() => {

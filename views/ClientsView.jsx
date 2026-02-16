@@ -15,6 +15,7 @@ import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from '../modals/ModalBase.jsx';
 import NotesSection from '../components/NotesSection.jsx';
 import { useData } from '../contexts/DataContext.js';
+import { useNavigationContext } from '../contexts/NavigationContext.js';
 
 import { error as logError } from '../lib/logger.js';
 
@@ -308,12 +309,12 @@ const ClientDetailView = memo(function ClientDetailView({
 
   const clientNotes = client.clientNotes || [];
 
-  // Navigate to reservation detail with proper item object
+  // Navigate to reservation detail with proper item object and back context
   const handleViewProject = useCallback((project) => {
     if (!onViewReservation) return;
     const item = inventory.find(i => i.id === project.itemId);
-    onViewReservation(project, item || { id: project.itemId, name: project.itemName });
-  }, [onViewReservation, inventory]);
+    onViewReservation(project, item || { id: project.itemId, name: project.itemName }, { clientId: client.id });
+  }, [onViewReservation, inventory, client.id]);
 
   return (
     <div>
@@ -519,8 +520,24 @@ function ClientsView({
 }) {
   const ctxData = useData();
   const dataContext = propDataContext || ctxData;
+  const { reservationBackView, setReservationBackView } = useNavigationContext();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedClient, setSelectedClient] = useState(null);
+
+  // Restore selected client when returning from reservation detail
+  const [selectedClient, setSelectedClient] = useState(() => {
+    const restoredClientId = reservationBackView?.context?.clientId;
+    if (restoredClientId) {
+      return clients.find(c => c.id === restoredClientId) || null;
+    }
+    return null;
+  });
+
+  // Clear the back context after we've consumed it
+  useEffect(() => {
+    if (reservationBackView?.context?.clientId) {
+      setReservationBackView(null);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [editingClient, setEditingClient] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, client: null });

@@ -124,8 +124,8 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
     window.scrollTo(0, 0);
   }, []);
 
-  const navigateToReservation = useCallback((reservation, item) => {
-    setReservationBackView(currentView);
+  const navigateToReservation = useCallback((reservation, item, backContext = null) => {
+    setReservationBackView({ view: currentView, context: backContext });
     setSelectedReservation(reservation);
     setSelectedReservationItem(item);
     setCurrentView(VIEWS.RESERVATION_DETAIL);
@@ -146,7 +146,7 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
     } else if (currentView === VIEWS.RESERVATION_DETAIL) {
       setSelectedReservation(null);
       setSelectedReservationItem(null);
-      setCurrentView(reservationBackView || VIEWS.SCHEDULE);
+      setCurrentView(reservationBackView?.view || VIEWS.SCHEDULE);
       setReservationBackView(null);
     } else {
       setCurrentView(VIEWS.DASHBOARD);
