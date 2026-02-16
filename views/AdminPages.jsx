@@ -359,6 +359,8 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
   const [newlyAddedIndex, setNewlyAddedIndex] = useState(null);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  // Track field renames per category: { category: { oldFieldName: newFieldName } }
+  const [fieldRenames, setFieldRenames] = useState({});
   const listRef = useRef(null);
   const newItemRef = useRef(null);
   const addInputRef = useRef(null);
@@ -385,9 +387,27 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
   }, [showAddForm]);
 
   const handleFieldChange = (index, key, value) => {
+    // Track field name renames so items can be updated
+    if (key === 'name') {
+      const oldName = editSpecs[selectedCategory]?.[index]?.name;
+      if (oldName && oldName !== value) {
+        setFieldRenames(prev => {
+          const catRenames = { ...(prev[selectedCategory] || {}) };
+          // Find original name (handle chained renames)
+          const originalName = Object.keys(catRenames).find(k => catRenames[k] === oldName);
+          const origSpecs = specs[selectedCategory] || [];
+          if (originalName) {
+            catRenames[originalName] = value;
+          } else if (origSpecs.some(f => f.name === oldName)) {
+            catRenames[oldName] = value;
+          }
+          return { ...prev, [selectedCategory]: catRenames };
+        });
+      }
+    }
     setEditSpecs(prev => ({
       ...prev,
-      [selectedCategory]: prev[selectedCategory].map((field, i) => 
+      [selectedCategory]: prev[selectedCategory].map((field, i) =>
         i === index ? { ...field, [key]: value } : field
       )
     }));
@@ -512,7 +532,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
 
   const handleSave = () => {
     if (hasDuplicates) return;
-    onSave(editSpecs);
+    onSave(editSpecs, fieldRenames);
     onBack();
   };
 
@@ -732,6 +752,8 @@ export const CategoriesPage = memo(function CategoriesPage({
   const [showAddForm, setShowAddForm] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  // Track category renames: { oldName → newName } so items can be updated
+  const [categoryRenames, setCategoryRenames] = useState({});
   const addInputRef = useRef(null);
   const dragNodeRef = useRef(null);
 
@@ -762,7 +784,7 @@ export const CategoriesPage = memo(function CategoriesPage({
   const handleRemoveCategory = (category) => {
     const count = getCategoryCount(category);
     if (count > 0) {
-      alert(`Cannot delete category "${category}" because it has ${count} item(s). Reassign items first.`);
+      setCategoryError(`Cannot delete "${category}" — it has ${count} item(s). Reassign items first.`);
       return;
     }
     setEditCategories(prev => prev.filter(c => c !== category));
@@ -798,6 +820,22 @@ export const CategoriesPage = memo(function CategoriesPage({
       }
       return copy;
     });
+    // Track rename: find the original name that maps to oldName
+    if (oldName !== newName) {
+      setCategoryRenames(prev => {
+        const updated = { ...prev };
+        // Check if oldName is itself a rename target (chained renames)
+        const originalName = Object.keys(updated).find(k => updated[k] === oldName);
+        if (originalName) {
+          // Update the existing chain: original → newName
+          updated[originalName] = newName;
+        } else if (categories.includes(oldName)) {
+          // oldName is an original category name
+          updated[oldName] = newName;
+        }
+        return updated;
+      });
+    }
   };
 
   const hasDuplicateCategories = useMemo(() => {
@@ -863,13 +901,13 @@ export const CategoriesPage = memo(function CategoriesPage({
 
   const handleSave = () => {
     if (hasDuplicateCategories) return;
-    onSave(editCategories, editSpecs, editSettings);
+    onSave(editCategories, editSpecs, editSettings, categoryRenames);
     onBack();
   };
 
   return (
     <>
-      <PageHeader 
+      <PageHeader
         title="Edit Categories"
         subtitle="Manage equipment categories and their settings"
         onBack={onBack}

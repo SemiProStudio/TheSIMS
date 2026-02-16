@@ -5,9 +5,10 @@
 
 import { memo, useState, useCallback } from 'react';
 import { Shield, Plus, Edit2, Trash2, Save, X, Users, Eye, EyeOff, Pencil, ChevronDown, ChevronRight } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity, zIndex } from '../theme.js';
+import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { APP_FUNCTIONS, PERMISSION_LEVELS } from '../constants.js';
 import { Button, Card, Badge } from '../components/ui.jsx';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '../modals/ModalBase.jsx';
 import { generateId } from '../utils';
 
 // Permission level badge colors
@@ -485,101 +486,52 @@ const UserAssignmentModal = memo(function UserAssignmentModal({ role, users = []
   };
 
   return (
-    <div className="modal-backdrop" style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: zIndex.modal,
-    }}>
-      <div style={{
-        background: colors.bgLight,
-        borderRadius: borderRadius.xl,
-        width: '100%',
-        maxWidth: 500,
-        maxHeight: '80vh',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
-        <div style={{
-          padding: spacing[4],
-          borderBottom: `1px solid ${colors.border}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
-          <div>
-            <h3 style={{ margin: 0, color: colors.textPrimary }}>Assign Users to Role</h3>
-            <p style={{ margin: `${spacing[1]}px 0 0`, color: colors.textMuted, fontSize: typography.fontSize.sm }}>
-              {role.name}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
+    <Modal onClose={onClose} maxWidth={500} title={`Assign Users — ${role.name}`}>
+      <ModalHeader title={`Assign Users to Role`} onClose={onClose} />
+      <ModalBody>
+        <p style={{ margin: `0 0 ${spacing[3]}px`, color: colors.textMuted, fontSize: typography.fontSize.sm }}>
+          {role.name}
+        </p>
+        {(users || []).map(user => (
+          <label
+            key={user.id}
+            className="list-item-hover"
             style={{
-              background: 'none',
-              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[3],
+              padding: spacing[2],
+              borderRadius: borderRadius.md,
               cursor: 'pointer',
-              color: colors.textMuted,
-              padding: spacing[1],
             }}
           >
-            <X size={20} />
-          </button>
-        </div>
-        
-        <div style={{ flex: 1, overflowY: 'auto', padding: spacing[3] }}>
-          {(users || []).map(user => (
-            <label
-              key={user.id}
-              className="list-item-hover"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: spacing[3],
-                padding: spacing[2],
-                borderRadius: borderRadius.md,
-                cursor: 'pointer',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={selectedUsers.has(user.id)}
-                onChange={() => toggleUser(user.id)}
-                style={{ width: 18, height: 18 }}
-              />
-              <div>
-                <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
-                  {user.name}
-                </div>
-                <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
-                  {user.email}
-                </div>
+            <input
+              type="checkbox"
+              checked={selectedUsers.has(user.id)}
+              onChange={() => toggleUser(user.id)}
+              style={{ width: 18, height: 18 }}
+            />
+            <div>
+              <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
+                {user.name}
               </div>
-            </label>
-          ))}
-        </div>
-        
-        <div style={{
-          padding: spacing[4],
-          borderTop: `1px solid ${colors.border}`,
-          display: 'flex',
-          gap: spacing[3],
-          justifyContent: 'flex-end',
-        }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} icon={Save}>Save Assignments</Button>
-        </div>
-      </div>
-    </div>
+              <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
+                {user.email}
+              </div>
+            </div>
+          </label>
+        ))}
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button onClick={handleSave} icon={Save}>Save Assignments</Button>
+      </ModalFooter>
+    </Modal>
   );
 });
 
 // Main Roles Manager Component
-function RolesManager({ roles = [], users = [], onSaveRole, onDeleteRole, onAssignUsers, onBack: _onBack }) {
+function RolesManager({ roles = [], users = [], onSaveRole, onDeleteRole, onAssignUsers, showConfirm, onBack: _onBack }) {
   const [editingRole, setEditingRole] = useState(null);
   const [assigningRole, setAssigningRole] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
@@ -601,7 +553,15 @@ function RolesManager({ roles = [], users = [], onSaveRole, onDeleteRole, onAssi
   };
 
   const handleDelete = (role) => {
-    if (window.confirm(`Are you sure you want to delete the "${role.name}" role? Users with this role will need to be reassigned.`)) {
+    if (showConfirm) {
+      showConfirm({
+        title: 'Delete Role',
+        message: `Are you sure you want to delete the "${role.name}" role? Users with this role will need to be reassigned.`,
+        confirmText: 'Delete',
+        variant: 'danger',
+        onConfirm: () => onDeleteRole?.(role.id),
+      });
+    } else {
       onDeleteRole?.(role.id);
     }
   };

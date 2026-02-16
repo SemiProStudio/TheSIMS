@@ -336,16 +336,19 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
     if ((itemCounts[location.id] || 0) > 0) return;
 
     const deleteFromTree = (locations) => {
-      return locations.filter(loc => {
-        if (loc.id === location.id) return false;
-        if (loc.children) {
-          loc.children = deleteFromTree(loc.children);
+      return locations.reduce((acc, loc) => {
+        if (loc.id === location.id) return acc; // skip deleted
+        // Deep clone children to avoid state mutation
+        const newLoc = { ...loc };
+        if (newLoc.children) {
+          newLoc.children = deleteFromTree(newLoc.children);
         }
-        return true;
-      });
+        acc.push(newLoc);
+        return acc;
+      }, []);
     };
 
-    setEditLocations(prev => deleteFromTree([...prev]));
+    setEditLocations(prev => deleteFromTree(prev));
   };
 
   // Save location (add or edit)

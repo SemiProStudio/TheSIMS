@@ -363,7 +363,43 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           <Suspense fallback={<ViewLoading message="Loading Specs Editor..." />}>
             <SpecsPage
               specs={specs}
-              onSave={(newSpecs) => updateSpecs(newSpecs)}
+              onSave={async (newSpecs, fieldRenames = {}) => {
+                updateSpecs(newSpecs);
+                addAuditLog({
+                  type: 'specs_updated',
+                  description: `Specification fields updated`,
+                  user: currentUser?.name || 'Unknown',
+                });
+                // Update inventory items whose spec field names were renamed
+                for (const [category, renames] of Object.entries(fieldRenames)) {
+                  if (!renames || Object.keys(renames).length === 0) continue;
+                  const affectedItems = inventory.filter(i =>
+                    i.category === category && i.specs && Object.keys(renames).some(oldKey => oldKey in i.specs)
+                  );
+                  for (const item of affectedItems) {
+                    const updatedSpecs = { ...item.specs };
+                    for (const [oldKey, newKey] of Object.entries(renames)) {
+                      if (oldKey in updatedSpecs) {
+                        updatedSpecs[newKey] = updatedSpecs[oldKey];
+                        delete updatedSpecs[oldKey];
+                      }
+                    }
+                    try {
+                      await dataContext.updateItem(item.id, { specs: updatedSpecs });
+                    } catch (err) {
+                      logError(`Failed to update specs for item ${item.id}:`, err);
+                    }
+                  }
+                  if (affectedItems.length > 0) {
+                    const renameDesc = Object.entries(renames).map(([o, n]) => `"${o}" → "${n}"`).join(', ');
+                    addAuditLog({
+                      type: 'spec_fields_renamed',
+                      description: `Spec fields renamed in ${category}: ${renameDesc} (${affectedItems.length} items updated)`,
+                      user: currentUser?.name || 'Unknown',
+                    });
+                  }
+                }
+              }}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />
           </Suspense>
@@ -378,9 +414,33 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               inventory={inventory}
               specs={specs}
               categorySettings={categorySettings}
-              onSave={(newCategories, newSpecs, newSettings) => {
+              onSave={async (newCategories, newSpecs, newSettings, categoryRenames = {}) => {
                 updateCategories(newCategories, newSettings);
                 updateSpecs(newSpecs);
+                addAuditLog({
+                  type: 'categories_updated',
+                  description: `Categories updated (${newCategories.length} categories)`,
+                  user: currentUser?.name || 'Unknown',
+                });
+                // Update inventory items whose category was renamed
+                for (const [oldName, newName] of Object.entries(categoryRenames)) {
+                  if (oldName === newName) continue;
+                  const affectedItems = inventory.filter(i => i.category === oldName);
+                  for (const item of affectedItems) {
+                    try {
+                      await dataContext.updateItem(item.id, { category: newName });
+                    } catch (err) {
+                      logError(`Failed to update item ${item.id} category from "${oldName}" to "${newName}":`, err);
+                    }
+                  }
+                  if (affectedItems.length > 0) {
+                    addAuditLog({
+                      type: 'category_renamed',
+                      description: `Category renamed: "${oldName}" → "${newName}" (${affectedItems.length} items updated)`,
+                      user: currentUser?.name || 'Unknown',
+                    });
+                  }
+                }
               }}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />
@@ -514,6 +574,11 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                 replaceLocations(newLocations);
                 try {
                   await locationsService.syncAll(newLocations);
+                  addAuditLog({
+                    type: 'locations_updated',
+                    description: 'Location hierarchy updated',
+                    user: currentUser?.name || 'Unknown',
+                  });
                 } catch (err) {
                   logError('Failed to save locations:', err);
                   addToast('Failed to save locations', 'error');
@@ -545,6 +610,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             <RolesManager
               roles={roles}
               users={users}
+              showConfirm={showConfirm}
               onSaveRole={async (roleData) => {
                 const existing = roles.find(r => r.id === roleData.id);
                 if (existing) {
@@ -555,6 +621,11 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                       name: roleData.name,
                       description: roleData.description || '',
                       permissions: roleData.permissions || {},
+                    });
+                    addAuditLog({
+                      type: 'role_updated',
+                      description: `Role updated: ${roleData.name}`,
+                      user: currentUser?.name || 'Unknown',
                     });
                   } catch (err) {
                     logError('Failed to update role:', err);
@@ -572,6 +643,11 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                       is_system: false,
                       permissions: newRole.permissions || {},
                     });
+                    addAuditLog({
+                      type: 'role_created',
+                      description: `Role created: ${newRole.name}`,
+                      user: currentUser?.name || 'Unknown',
+                    });
                   } catch (err) {
                     logError('Failed to create role:', err);
                     addToast('Failed to create role', 'error');
@@ -579,6 +655,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                 }
               }}
               onDeleteRole={async (roleId) => {
+                const deletedRole = roles.find(r => r.id === roleId);
                 removeLocalRole(roleId);
                 users.filter(u => u.roleId === roleId).forEach(u => patchUser(u.id, { roleId: 'role_user' }));
                 try {
@@ -587,16 +664,33 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                   for (const u of affectedUsers) {
                     await usersService.updateRole(u.id, 'role_user');
                   }
+                  addAuditLog({
+                    type: 'role_deleted',
+                    description: `Role deleted: ${deletedRole?.name || roleId}`,
+                    user: currentUser?.name || 'Unknown',
+                  });
                 } catch (err) {
                   logError('Failed to delete role:', err);
                   addToast('Failed to delete role', 'error');
                 }
               }}
               onAssignUsers={async (roleId, userIds) => {
+                const selectedSet = new Set(userIds);
+                // Find users previously assigned to this role who were deselected
+                const previouslyAssigned = (users || []).filter(u => u.roleId === roleId || u.role_id === roleId);
+                const unassignedUsers = previouslyAssigned.filter(u => !selectedSet.has(u.id));
+
+                // Assign selected users to this role
                 userIds.forEach(userId => patchUser(userId, { roleId }));
+                // Unassign removed users (reset to default user role)
+                unassignedUsers.forEach(u => patchUser(u.id, { roleId: 'role_user' }));
+
                 try {
                   for (const userId of userIds) {
                     await usersService.updateRole(userId, roleId);
+                  }
+                  for (const u of unassignedUsers) {
+                    await usersService.updateRole(u.id, 'role_user');
                   }
                 } catch (err) {
                   logError('Failed to assign users:', err);
