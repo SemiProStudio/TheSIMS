@@ -47,7 +47,7 @@ export const ClientReportPanel = memo(function ClientReportPanel({
     const activeClients = clientsWithStats.filter(c => c.reservationCount > 0).length;
 
     return { totalReservations, totalValue, activeClients };
-  }, [clientsWithStats, clients.length]);
+  }, [clientsWithStats]);
 
   // Export CSV
   const handleExport = () => {
