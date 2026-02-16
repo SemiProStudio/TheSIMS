@@ -521,9 +521,11 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           <Suspense fallback={<ViewLoading message="Loading Reports..." />}>
             <ReportsPanel
               inventory={inventory}
+              clients={clients}
               currentUser={currentUser}
               onExport={() => openModal(MODALS.EXPORT)}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
+              setCurrentView={setCurrentView}
             />
           </Suspense>
         )}
@@ -547,7 +549,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               inventory={inventory}
               currentUser={currentUser}
               onViewItem={navigateToItem}
-              onBack={() => setCurrentView(VIEWS.ADMIN)}
+              onBack={() => setCurrentView(VIEWS.REPORTS)}
             />
           </Suspense>
         )}
@@ -561,7 +563,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               categories={categories}
               currentUser={currentUser}
               onViewItem={navigateToItem}
-              onBack={() => setCurrentView(VIEWS.ADMIN)}
+              onBack={() => setCurrentView(VIEWS.REPORTS)}
             />
           </Suspense>
         )}
@@ -577,7 +579,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               onViewClient={() => {
                 setCurrentView(VIEWS.CLIENTS);
               }}
-              onBack={() => setCurrentView(VIEWS.ADMIN)}
+              onBack={() => setCurrentView(VIEWS.REPORTS)}
             />
           </Suspense>
         )}
