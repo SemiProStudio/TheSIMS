@@ -147,6 +147,10 @@ function PackagesView({
     }, 0);
   }, []);
 
+  const getTotalItemCount = useCallback((items, quantities = {}) => {
+    return items.reduce((sum, item) => sum + (quantities[item.id] || 1), 0);
+  }, []);
+
   const allItemsAvailable = useCallback((items) => {
     return items.every(item => item.status === 'available');
   }, []);
@@ -648,7 +652,7 @@ function PackagesView({
       <div>
         <PageHeader
           title={selectedPackage.name}
-          subtitle={`${selectedPackage.id} • ${packageItems.length} items • ${formatMoney(packageValue)} total value`}
+          subtitle={`${selectedPackage.id} • ${getTotalItemCount(packageItems, pkgQuantities)} items • ${formatMoney(packageValue)} total value`}
           onBack={() => setSelectedPackage(null)}
           backLabel="Back to Packages"
           action={
@@ -690,7 +694,7 @@ function PackagesView({
         <div style={{ display: 'flex', gap: spacing[4], flex: 1, minHeight: 0 }}>
           {/* Package Contents */}
           <Card padding={false} style={{ flex: 2, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-            <CardHeader title={`Package Contents (${packageItems.length})`} icon={Package} />
+            <CardHeader title={`Package Contents (${getTotalItemCount(packageItems, pkgQuantities)})`} icon={Package} />
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {packageItems.map(item => {
                 const qty = pkgQuantities[item.id];
@@ -814,7 +818,7 @@ function PackagesView({
                 </div>
                 <div style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[2], flexWrap: 'wrap' }}>
                   <Badge text={pkg.id} color={colors.accent2} />
-                  <Badge text={`${packageItems.length} items`} color={colors.accent1} />
+                  <Badge text={`${getTotalItemCount(packageItems, pkg.itemQuantities || {})} items`} color={colors.accent1} />
                   <Badge text={formatMoney(packageValue)} color={colors.available} />
                 </div>
                 {pkg.description && (
