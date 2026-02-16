@@ -4,9 +4,10 @@
 // Supports quantity input for items with quantity tracking
 // ============================================================================
 
-import React, { memo, useState, useCallback, useMemo } from 'react';
+import React, { memo, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Plus, Trash2, ArrowLeft, Download, Printer, Copy, Box, Layers, ChevronRight, ChevronDown, ChevronUp, Edit2, CheckSquare, Square } from 'lucide-react';
+import jsQR from 'jsqr';
+import { Plus, Trash2, ArrowLeft, Download, Printer, Copy, Box, Layers, ChevronRight, ChevronDown, ChevronUp, Edit2, CheckSquare, Square, ScanLine, X } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, generateId, getStatusColor } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog, PageHeader } from '../components/ui.jsx';
@@ -37,6 +38,7 @@ function PackListsView({
   const [showCreate, setShowCreate] = useState(false);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showScanToPack, setShowScanToPack] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, id: null, name: '' });
 
   // Wrapper to sync with parent state
@@ -834,8 +836,9 @@ function PackListsView({
             </div>
           </div>
           <div className="detail-header-actions">
+            <Button onClick={() => setShowScanToPack(true)} icon={ScanLine}>Scan to Pack</Button>
             <Button variant="secondary" onClick={() => handleStartEdit(selectedList)} icon={Edit2}>Edit</Button>
-            <Button onClick={() => setShowExport(true)} icon={Download}>Export / Print</Button>
+            <Button variant="secondary" onClick={() => setShowExport(true)} icon={Download}>Export / Print</Button>
             <button className="btn-icon danger" onClick={() => setConfirmDelete({ isOpen: true, id: selectedList.id, name: selectedList.name })}>
               <Trash2 size={16} />
             </button>
@@ -970,6 +973,16 @@ function PackListsView({
           </div>
         )}
         
+        {/* Scan to Pack Modal */}
+        {showScanToPack && (
+          <ScanToPackOverlay
+            listItems={listItems}
+            packedItems={packedItems}
+            onTogglePacked={handleTogglePacked}
+            onClose={() => setShowScanToPack(false)}
+          />
+        )}
+
         {/* Delete Confirmation */}
         {confirmDelete.isOpen && (
           <ConfirmDialog
@@ -1047,6 +1060,283 @@ function PackListsView({
     </>
   );
 }
+
+// ============================================================================
+// Scan to Pack Overlay
+// Full-screen scanner optimized for rapid pack scanning — scans a QR label,
+// auto-marks the item as packed, flashes a confirmation, and continues.
+// ============================================================================
+function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) {
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
+  const animationRef = useRef(null);
+
+  const [scanning, setScanning] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
+  const [scanLog, setScanLog] = useState([]); // { id, name, status: 'packed'|'already'|'not-found' }
+  const [flashItem, setFlashItem] = useState(null); // briefly shows last scanned item
+  const [manualCode, setManualCode] = useState('');
+  const lastScannedRef = useRef(null);
+  const flashTimeoutRef = useRef(null);
+
+  // Build lookup map of items in this pack list
+  const listItemMap = useMemo(() => {
+    const map = new Map();
+    listItems.forEach(item => {
+      map.set(item.id.toLowerCase(), item);
+      if (item.serialNumber) map.set(item.serialNumber.toLowerCase(), item);
+    });
+    return map;
+  }, [listItems]);
+
+  const packedCount = listItems.filter(i => packedItems.includes(i.id)).length;
+
+  // Process a scanned/entered code
+  const processCode = useCallback((code) => {
+    const item = listItemMap.get(code.toLowerCase());
+
+    if (!item) {
+      setScanLog(prev => [{ id: code, name: code, status: 'not-found', ts: Date.now() }, ...prev].slice(0, 50));
+      setFlashItem({ name: code, status: 'not-found' });
+    } else if (packedItems.includes(item.id)) {
+      setScanLog(prev => [{ id: item.id, name: item.name, status: 'already', ts: Date.now() }, ...prev].slice(0, 50));
+      setFlashItem({ name: item.name, status: 'already' });
+    } else {
+      onTogglePacked(item.id);
+      setScanLog(prev => [{ id: item.id, name: item.name, status: 'packed', ts: Date.now() }, ...prev].slice(0, 50));
+      setFlashItem({ name: item.name, status: 'packed' });
+    }
+
+    // Clear flash after 1.5s
+    if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    flashTimeoutRef.current = setTimeout(() => setFlashItem(null), 1500);
+  }, [listItemMap, packedItems, onTogglePacked]);
+
+  // Start camera
+  const startScanning = async () => {
+    try {
+      setCameraError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+        setScanning(true);
+        scanFrame();
+      }
+    } catch (err) {
+      logError('Camera error:', err);
+      setCameraError(err.name === 'NotAllowedError'
+        ? 'Camera access denied. Please allow camera access and try again.'
+        : 'Could not access camera. Use manual entry below.');
+    }
+  };
+
+  // Stop camera
+  const stopScanning = useCallback(() => {
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    if (streamRef.current) streamRef.current.getTracks().forEach(track => track.stop());
+    setScanning(false);
+  }, []);
+
+  // Frame scanning loop
+  const scanFrame = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const qr = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+
+      if (qr && qr.data && qr.data !== lastScannedRef.current) {
+        lastScannedRef.current = qr.data;
+        processCode(qr.data);
+        // Reset dedup after 2s so the same code can be re-scanned
+        setTimeout(() => { lastScannedRef.current = null; }, 2000);
+      }
+    }
+    animationRef.current = requestAnimationFrame(scanFrame);
+  };
+
+  // Manual entry
+  const handleManualEntry = useCallback(() => {
+    if (!manualCode.trim()) return;
+    processCode(manualCode.trim());
+    setManualCode('');
+  }, [manualCode, processCode]);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      stopScanning();
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    };
+  }, [stopScanning]);
+
+  const flashBg = flashItem?.status === 'packed' ? colors.success
+    : flashItem?.status === 'already' ? colors.warning
+    : colors.danger;
+
+  return (
+    <div className="modal-backdrop" style={{ ...styles.modal, zIndex: 1000 }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        ...styles.modalBox, maxWidth: 500, maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+      }}>
+        {/* Header */}
+        <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h3 style={{ margin: 0, color: colors.textPrimary }}>Scan to Pack</h3>
+            <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted, marginTop: 2 }}>
+              {packedCount}/{listItems.length} packed
+            </div>
+          </div>
+          <button className="btn-icon" onClick={() => { stopScanning(); onClose(); }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div style={{ padding: spacing[4], flex: 1, overflowY: 'auto' }}>
+          {/* Camera view */}
+          <div style={{
+            position: 'relative', width: '100%', aspectRatio: '4/3',
+            background: colors.bgDark, borderRadius: borderRadius.lg, overflow: 'hidden',
+            marginBottom: spacing[3],
+          }}>
+            <video ref={videoRef} style={{ width: '100%', height: '100%', objectFit: 'cover', display: scanning ? 'block' : 'none' }} playsInline muted />
+
+            {scanning && (
+              <>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                  <div style={{ width: '60%', height: '60%', border: `2px solid ${colors.primary}`, borderRadius: borderRadius.lg, boxShadow: '0 0 0 9999px rgba(0,0,0,0.4)' }} />
+                </div>
+                <div style={{
+                  position: 'absolute', bottom: spacing[2], left: '50%', transform: 'translateX(-50%)',
+                  background: 'rgba(0,0,0,0.7)', padding: `${spacing[1]}px ${spacing[3]}px`,
+                  borderRadius: borderRadius.md, color: '#fff', fontSize: typography.fontSize.sm,
+                }}>
+                  Point camera at QR label...
+                </div>
+              </>
+            )}
+
+            {!scanning && (
+              <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: colors.textMuted }}>
+                <ScanLine size={48} strokeWidth={1.5} />
+                <p style={{ marginTop: spacing[2], fontSize: typography.fontSize.sm }}>Camera not active</p>
+              </div>
+            )}
+
+            {/* Flash overlay for scan feedback */}
+            {flashItem && (
+              <div style={{
+                position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: withOpacity(flashBg, 25), transition: 'opacity 0.3s', pointerEvents: 'none',
+              }}>
+                <div style={{
+                  background: 'rgba(0,0,0,0.8)', color: '#fff', padding: `${spacing[2]}px ${spacing[4]}px`,
+                  borderRadius: borderRadius.lg, textAlign: 'center', maxWidth: '80%',
+                }}>
+                  <div style={{ fontSize: typography.fontSize.lg, fontWeight: typography.fontWeight.semibold }}>
+                    {flashItem.status === 'packed' ? '✓ Packed!' : flashItem.status === 'already' ? '✓ Already Packed' : '✗ Not in List'}
+                  </div>
+                  <div style={{ fontSize: typography.fontSize.sm, marginTop: 4, opacity: 0.8 }}>
+                    {flashItem.name}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
+          </div>
+
+          {/* Camera error */}
+          {cameraError && (
+            <div style={{
+              background: withOpacity(colors.danger, 20), border: `1px solid ${withOpacity(colors.danger, 50)}`,
+              borderRadius: borderRadius.md, padding: spacing[3], marginBottom: spacing[3],
+              color: colors.danger, fontSize: typography.fontSize.sm,
+            }}>
+              {cameraError}
+            </div>
+          )}
+
+          {/* Camera control */}
+          {!scanning ? (
+            <Button fullWidth onClick={startScanning} icon={ScanLine} style={{ marginBottom: spacing[3] }}>
+              Start Camera
+            </Button>
+          ) : (
+            <Button fullWidth variant="secondary" onClick={stopScanning} style={{ marginBottom: spacing[3] }}>
+              Stop Camera
+            </Button>
+          )}
+
+          {/* Manual entry */}
+          <div style={{ borderTop: `1px solid ${colors.borderLight}`, paddingTop: spacing[3], marginBottom: spacing[3] }}>
+            <label style={styles.label}>Or enter item ID manually</label>
+            <div style={{ display: 'flex', gap: spacing[2] }}>
+              <input
+                type="text"
+                value={manualCode}
+                onChange={e => setManualCode(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleManualEntry()}
+                placeholder="Item ID or Serial Number"
+                style={{ ...styles.input, flex: 1 }}
+              />
+              <Button onClick={handleManualEntry} disabled={!manualCode.trim()}>
+                Pack
+              </Button>
+            </div>
+          </div>
+
+          {/* Scan log */}
+          {scanLog.length > 0 && (
+            <div>
+              <label style={{ ...styles.label, marginBottom: spacing[2] }}>Scan History</label>
+              <div style={{ maxHeight: 180, overflowY: 'auto', borderRadius: borderRadius.md, border: `1px solid ${colors.borderLight}` }}>
+                {scanLog.map((entry, i) => (
+                  <div key={`${entry.id}-${entry.ts}`} style={{
+                    display: 'flex', alignItems: 'center', gap: spacing[2],
+                    padding: `${spacing[2]}px ${spacing[3]}px`,
+                    borderBottom: i < scanLog.length - 1 ? `1px solid ${colors.borderLight}` : 'none',
+                    fontSize: typography.fontSize.sm,
+                    background: entry.status === 'packed' ? withOpacity(colors.success, 8) : 'transparent',
+                  }}>
+                    <span style={{
+                      color: entry.status === 'packed' ? colors.success : entry.status === 'already' ? colors.warning : colors.danger,
+                      fontWeight: typography.fontWeight.semibold, minWidth: 16,
+                    }}>
+                      {entry.status === 'packed' ? '✓' : entry.status === 'already' ? '–' : '✗'}
+                    </span>
+                    <span style={{ flex: 1, color: colors.textPrimary }}>{entry.name}</span>
+                    <span style={{ color: colors.textMuted, fontSize: typography.fontSize.xs }}>
+                      {entry.status === 'packed' ? 'Packed' : entry.status === 'already' ? 'Already packed' : 'Not in list'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ScanToPackOverlay.propTypes = {
+  listItems: PropTypes.array.isRequired,
+  packedItems: PropTypes.array.isRequired,
+  onTogglePacked: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
 
 PackListsView.propTypes = {
   packLists: PropTypes.array.isRequired,
