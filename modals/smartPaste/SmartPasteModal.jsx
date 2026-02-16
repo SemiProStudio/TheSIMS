@@ -388,15 +388,33 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
       const supabaseUrl = env.SUPABASE_URL;
       const proxyUrl = supabaseUrl ? `${supabaseUrl}/functions/v1/fetch-product-page` : null;
       const { text } = await fetchProductPage(urlInput, proxyUrl);
+
+      if (!text || !text.trim()) {
+        setImportStatus('error:No text content found at that URL');
+        return;
+      }
+
       setInputText(text);
       setInputMode('paste');
-      setImportStatus(`Fetched content from ${urlInput}`);
+
+      // Auto-parse the fetched content (matches file-import behavior)
+      const parseOpts = communityAliases ? { communityAliases } : {};
+      const result = parseProductText(text, specs, parseOpts);
+      setParseResult(result);
+      resetParseState();
+
+      const matchCount = [...result.fields.values()].filter(f => f.value).length;
+      savePasteHistory(text, { matchedCount: matchCount, name: result.name });
+      setPasteHistory(getPasteHistory());
+
+      setImportStatus(`success:Fetched & parsed ${matchCount} fields from URL`);
     } catch (e) {
-      setImportStatus(`⚠ ${e.message}`);
+      logError('URL fetch error:', e);
+      setImportStatus(`error:${e.message}`);
     } finally {
       setUrlLoading(false);
     }
-  }, [urlInput]);
+  }, [urlInput, specs, communityAliases, savePasteHistory, getPasteHistory, resetParseState]);
 
   const handleDiffExisting = useCallback((existingSpecs) => {
     if (!parseResult) return;
