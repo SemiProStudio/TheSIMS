@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { lazy, Suspense, memo } from 'react';
-import { VIEWS, MODALS } from './constants.js';
+import { VIEWS, MODALS, STATUS } from './constants.js';
 import { error as logError } from './lib/logger.js';
 import { useToast } from './contexts/ToastContext.js';
 import { rolesService, locationsService, usersService } from './lib/services.js';
@@ -127,6 +127,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onViewOverdue={navigateToOverdue}
           onViewLowStock={navigateToLowStock}
           onViewReservations={navigateToReservations}
+          onViewCheckedOut={() => navigateToFilteredSearch('all', STATUS.CHECKED_OUT)}
           onCustomizeLayout={() => setCurrentView(VIEWS.CUSTOMIZE_DASHBOARD)}
           onToggleCollapse={handleToggleCollapse}
         />

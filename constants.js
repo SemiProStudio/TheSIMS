@@ -190,12 +190,15 @@ export const MODALS = {
 // Layout configuration for customizable sections
 // Each section has: id, label, default visibility, and default order
 export const DASHBOARD_SECTIONS = {
-  STATS: { id: 'stats', label: 'Statistics', order: 0 },
-  QUICK_SEARCH: { id: 'quickSearch', label: 'Quick Gear Search', order: 1 },
-  ALERTS: { id: 'alerts', label: 'Alerts', order: 2 },
-  REMINDERS: { id: 'reminders', label: 'Due Reminders', order: 3 },
-  LOW_STOCK: { id: 'lowStock', label: 'Low Stock Items', order: 4 },
-  RESERVATIONS: { id: 'reservations', label: 'Upcoming Reservations', order: 5 },
+  STATS: { id: 'stats', label: 'Statistics', description: 'Item counts by status', order: 0 },
+  QUICK_SEARCH: { id: 'quickSearch', label: 'Quick Gear Search', description: 'Search inventory by name, ID, or brand', order: 1 },
+  CHECKED_OUT: { id: 'checkedOut', label: 'Currently Checked Out', description: 'Items currently out with borrower and due dates', order: 2 },
+  ALERTS: { id: 'alerts', label: 'Alerts', description: 'Items needing attention', order: 3 },
+  REMINDERS: { id: 'reminders', label: 'Due Reminders', description: 'Upcoming and overdue maintenance reminders', order: 4 },
+  LOW_STOCK: { id: 'lowStock', label: 'Low Stock Items', description: 'Items at or below reorder threshold', order: 5 },
+  RESERVATIONS: { id: 'reservations', label: 'Upcoming Reservations', description: 'Scheduled reservations starting soon', order: 6 },
+  MAINTENANCE: { id: 'maintenance', label: 'Upcoming Maintenance', description: 'Scheduled and in-progress maintenance', order: 7 },
+  RECENT_ACTIVITY: { id: 'recentActivity', label: 'Recent Activity', description: 'Latest checkouts, returns, and status changes', order: 8 },
 };
 
 export const ITEM_DETAIL_SECTIONS = {

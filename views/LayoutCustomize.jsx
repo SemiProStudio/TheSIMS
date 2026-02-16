@@ -258,15 +258,26 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
                 <GripVertical size={18} />
               </div>
 
-              {/* Section name */}
-              <span style={{
-                flex: 1,
-                color: section.visible ? colors.textPrimary : colors.textMuted,
-                fontSize: typography.fontSize.sm,
-                textDecoration: section.visible ? 'none' : 'line-through',
-              }}>
-                {section.label}
-              </span>
+              {/* Section name and description */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{
+                  color: section.visible ? colors.textPrimary : colors.textMuted,
+                  fontSize: typography.fontSize.sm,
+                  textDecoration: section.visible ? 'none' : 'line-through',
+                }}>
+                  {section.label}
+                </span>
+                {section.description && (
+                  <div style={{
+                    fontSize: typography.fontSize.xs,
+                    color: colors.textMuted,
+                    marginTop: 2,
+                    textDecoration: 'none',
+                  }}>
+                    {section.description}
+                  </div>
+                )}
+              </div>
 
               {/* Visibility toggle */}
               <button

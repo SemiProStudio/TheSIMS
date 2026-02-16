@@ -6,7 +6,8 @@
 import { memo, useState, useMemo, useEffect } from 'react';
 import {
   Package, CheckCircle, Clock, AlertTriangle, Calendar,
-  ChevronRight, Search, Bell, TrendingDown, Layout, Loader
+  ChevronRight, Search, Bell, TrendingDown, Layout, Loader,
+  LogOut, LogIn, Wrench, Activity, Bookmark
 } from 'lucide-react';
 import { STATUS, DASHBOARD_SECTIONS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
@@ -19,11 +20,36 @@ import { useData } from '../contexts/DataContext.js';
 const PANEL_COLORS = {
   stats: 'var(--panel-stats)',
   search: 'var(--panel-search)',
+  checkedOut: 'var(--panel-checkedout)',
   alerts: 'var(--panel-alerts)',
   reminders: 'var(--panel-reminders)',
   lowStock: 'var(--panel-lowstock)',
   reservations: 'var(--panel-reservations)',
+  maintenance: 'var(--panel-maintenance)',
+  recentActivity: 'var(--panel-activity)',
 };
+
+// Shared empty state style
+const emptyStateStyle = {
+  padding: spacing[4],
+  color: colors.textMuted,
+  fontSize: typography.fontSize.sm,
+  textAlign: 'center',
+  margin: 0,
+};
+
+// Shared list item style builder
+const listItemStyle = (panelColor) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: spacing[3],
+  padding: spacing[3],
+  borderRadius: borderRadius.md,
+  cursor: 'pointer',
+  marginBottom: spacing[2],
+  background: withOpacity(panelColor, 15),
+  border: `1px solid ${withOpacity(panelColor, 40)}`,
+});
 
 function Dashboard({
   inventory = [],
@@ -36,6 +62,7 @@ function Dashboard({
   onViewOverdue,
   onViewLowStock,
   onViewReservations,
+  onViewCheckedOut,
   onCustomizeLayout,
   onToggleCollapse,
 }) {
@@ -44,7 +71,7 @@ function Dashboard({
 
   // Permissions
   const { canEdit: _canEdit } = usePermissions();
-  
+
   // Local state for collapsed sections (for immediate UI response)
   const [collapsedSections, setCollapsedSections] = useState(() => {
     const initial = {};
@@ -71,7 +98,7 @@ function Dashboard({
 
   // Check if section is collapsed (use local state)
   const isCollapsed = (sectionId) => collapsedSections[sectionId] || false;
-  
+
   // Handle collapse toggle - update local state immediately, then notify parent
   const toggleCollapse = (sectionId) => {
     setCollapsedSections(prev => ({
@@ -95,7 +122,7 @@ function Dashboard({
       const pref = layoutPrefs?.sections?.[sectionId];
       return pref?.visible !== false;
     };
-    const sections = ['stats', 'quickSearch', 'alerts', 'reminders', 'lowStock', 'reservations'];
+    const sections = ['stats', 'quickSearch', 'checkedOut', 'alerts', 'reminders', 'lowStock', 'reservations', 'maintenance', 'recentActivity'];
     return sections
       .filter(id => isVisible(id))
       .map(id => ({ id, order: getOrder(id) }))
@@ -106,9 +133,9 @@ function Dashboard({
   // Computed stats
   const stats = useMemo(() => {
     const today = getTodayISO();
-    
+
     // Get all due reminders across all items
-    const dueReminders = inventory.flatMap(item => 
+    const dueReminders = inventory.flatMap(item =>
       (item.reminders || [])
         .filter(r => isReminderDue(r))
         .map(r => ({ ...r, item }))
@@ -118,26 +145,84 @@ function Dashboard({
     const lowStockItems = inventory.filter(item => {
       const settings = categorySettings?.[item.category];
       if (!settings?.trackQuantity) return false;
-      
+
       // Only consider items that have a quantity defined
       if (item.quantity === undefined || item.quantity === null) return false;
-      
+
       const quantity = item.quantity;
       const threshold = item.reorderPoint || settings.lowStockThreshold || 0;
-      
+
       return threshold > 0 && quantity <= threshold;
     });
-    
+
+    // Get checked out items sorted by due date
+    const checkedOutItems = inventory
+      .filter(i => i.status === STATUS.CHECKED_OUT)
+      .sort((a, b) => {
+        // Items with due dates first, sorted ascending; no due date last
+        if (!a.dueBack && !b.dueBack) return 0;
+        if (!a.dueBack) return 1;
+        if (!b.dueBack) return -1;
+        return a.dueBack.localeCompare(b.dueBack);
+      });
+
+    // Get pending maintenance from items
+    const pendingMaintenance = inventory.flatMap(item =>
+      (item.maintenanceHistory || [])
+        .filter(m => m.status === 'scheduled' || m.status === 'in-progress')
+        .map(m => ({ ...m, item }))
+    ).sort((a, b) => {
+      if (!a.scheduledDate && !b.scheduledDate) return 0;
+      if (!a.scheduledDate) return 1;
+      if (!b.scheduledDate) return -1;
+      return a.scheduledDate.localeCompare(b.scheduledDate);
+    });
+
+    // Build recent activity from checked out items
+    const recentActivity = inventory
+      .filter(i => i.checkedOutDate || i.lastCheckedIn)
+      .map(i => {
+        const events = [];
+        if (i.status === STATUS.CHECKED_OUT && i.checkedOutDate) {
+          events.push({
+            id: `${i.id}-checkout`,
+            type: 'checkout',
+            item: i,
+            date: i.checkedOutDate,
+            who: i.checkedOutTo || 'Unknown',
+          });
+        }
+        if (i.lastCheckedIn) {
+          events.push({
+            id: `${i.id}-checkin`,
+            type: 'checkin',
+            item: i,
+            date: i.lastCheckedIn,
+            who: i.lastCheckedInBy || 'Unknown',
+          });
+        }
+        return events;
+      })
+      .flat()
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+      .slice(0, 8);
+
+    const reserved = inventory.filter(i => i.status === STATUS.RESERVED).length;
+
     return {
       total: inventory.length,
       available: inventory.filter(i => i.status === STATUS.AVAILABLE).length,
-      checkedOut: inventory.filter(i => i.status === STATUS.CHECKED_OUT).length,
+      checkedOut: checkedOutItems.length,
+      reserved,
       alerts: inventory.filter(i => i.status === STATUS.NEEDS_ATTENTION),
       overdue: inventory.filter(i =>
         i.status === STATUS.CHECKED_OUT && i.dueBack && i.dueBack < today
       ),
       dueReminders,
-      lowStockItems
+      lowStockItems,
+      checkedOutItems,
+      pendingMaintenance,
+      recentActivity,
     };
   }, [inventory, categorySettings]);
 
@@ -180,7 +265,7 @@ function Dashboard({
           >
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
               gap: spacing[3],
             }}>
               <StatCard
@@ -205,11 +290,24 @@ function Dashboard({
                 onClick={() => onFilteredView('all', STATUS.CHECKED_OUT)}
               />
               <StatCard
+                icon={Bookmark}
+                value={stats.reserved}
+                label="Reserved"
+                color={colors.reserved || PANEL_COLORS.reservations}
+                onClick={() => onFilteredView('all', STATUS.RESERVED)}
+              />
+              <StatCard
                 icon={AlertTriangle}
-                value={stats.overdue.length}
-                label="Overdue"
+                value={stats.alerts.length}
+                label="Needs Attention"
                 color={colors.danger}
-                onClick={onViewOverdue}
+                onClick={onViewAlerts}
+              />
+              <StatCard
+                icon={Wrench}
+                value={stats.pendingMaintenance.length}
+                label="Maintenance"
+                color={PANEL_COLORS.maintenance}
               />
             </div>
           </CollapsibleSection>
@@ -238,17 +336,7 @@ function Dashboard({
                   <div
                     key={item.id}
                     onClick={() => onViewItem(item.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing[3],
-                      padding: spacing[3],
-                      borderRadius: borderRadius.md,
-                      cursor: 'pointer',
-                      marginBottom: spacing[2],
-                      background: withOpacity(PANEL_COLORS.search, 15),
-                      border: `1px solid ${withOpacity(PANEL_COLORS.search, 40)}`,
-                    }}
+                    style={listItemStyle(PANEL_COLORS.search)}
                   >
                     <div style={{
                       width: 36,
@@ -282,7 +370,7 @@ function Dashboard({
                         fontSize: typography.fontSize.xs,
                         color: colors.textMuted
                       }}>
-                        {item.id} • {item.category}
+                        {item.id} &bull; {item.category}
                       </div>
                     </div>
                     <Badge text={item.status} color={getStatusColor(item.status)} />
@@ -292,27 +380,72 @@ function Dashboard({
             )}
 
             {quickSearch && searchResults.length === 0 && (
-              <p style={{
-                color: colors.textMuted,
-                textAlign: 'center',
-                fontSize: typography.fontSize.sm,
-                padding: spacing[4],
-                margin: 0
-              }}>
-                No items found
-              </p>
+              <p style={emptyStateStyle}>No items found</p>
             )}
 
             {!quickSearch && (
-              <p style={{
-                color: colors.textMuted,
-                textAlign: 'center',
-                fontSize: typography.fontSize.sm,
-                padding: spacing[4],
-                margin: 0
-              }}>
-                Start typing to search inventory
-              </p>
+              <p style={emptyStateStyle}>Start typing to search inventory</p>
+            )}
+          </CollapsibleSection>
+        );
+
+      case 'checkedOut':
+        return (
+          <CollapsibleSection
+            key="checkedOut"
+            title="Currently Checked Out"
+            icon={LogOut}
+            badge={stats.checkedOutItems.length || null}
+            badgeColor={PANEL_COLORS.checkedOut}
+            headerColor={PANEL_COLORS.checkedOut}
+            collapsed={isCollapsed('checkedOut')}
+            onToggleCollapse={() => toggleCollapse('checkedOut')}
+            action={stats.checkedOutItems.length > 0 ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); onViewCheckedOut?.(); }}
+                style={{ ...styles.btnSec, padding: `${spacing[1]}px ${spacing[2]}px`, fontSize: typography.fontSize.xs }}
+              >
+                View All
+              </button>
+            ) : null}
+            padding={false}
+          >
+            {stats.checkedOutItems.length === 0 ? (
+              <div style={emptyStateStyle}>All items are available</div>
+            ) : (
+              <div style={{ padding: spacing[4], maxHeight: 300, overflowY: 'auto' }}>
+                {stats.checkedOutItems.slice(0, 8).map(item => {
+                  const today = getTodayISO();
+                  const isOverdue = item.dueBack && item.dueBack < today;
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => onViewItem(item.id)}
+                      style={listItemStyle(PANEL_COLORS.checkedOut)}
+                    >
+                      <LogOut size={16} color={PANEL_COLORS.checkedOut} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: typography.fontSize.sm,
+                          color: colors.textPrimary,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {item.name}
+                        </div>
+                        <div style={{ fontSize: typography.fontSize.xs, color: PANEL_COLORS.checkedOut }}>
+                          {item.checkedOutTo || 'Unknown'}{item.dueBack ? ` \u2022 Due ${formatDate(item.dueBack)}` : ''}
+                        </div>
+                      </div>
+                      {isOverdue && (
+                        <Badge text="Overdue" color={colors.danger} size="xs" />
+                      )}
+                      <ChevronRight size={16} color={colors.textMuted} />
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </CollapsibleSection>
         );
@@ -339,26 +472,14 @@ function Dashboard({
             padding={false}
           >
             {stats.alerts.length === 0 ? (
-              <div style={{ padding: spacing[4], color: colors.textMuted, fontSize: typography.fontSize.sm, textAlign: 'center' }}>
-                No alerts
-              </div>
+              <div style={emptyStateStyle}>No alerts</div>
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
                 {stats.alerts.map(item => (
                   <div
                     key={item.id}
                     onClick={() => onViewItem(item.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing[3],
-                      padding: spacing[3],
-                      borderRadius: borderRadius.md,
-                      cursor: 'pointer',
-                      marginBottom: spacing[2],
-                      background: withOpacity(PANEL_COLORS.alerts, 15),
-                      border: `1px solid ${withOpacity(PANEL_COLORS.alerts, 40)}`,
-                    }}
+                    style={listItemStyle(PANEL_COLORS.alerts)}
                   >
                     <AlertTriangle size={16} color={PANEL_COLORS.alerts} />
                     <div style={{ flex: 1 }}>
@@ -366,7 +487,7 @@ function Dashboard({
                         {item.name}
                       </div>
                       <div style={{ fontSize: typography.fontSize.xs, color: PANEL_COLORS.alerts }}>
-                        Needs attention • {item.category}
+                        Needs attention &bull; {item.category}
                       </div>
                     </div>
                     <ChevronRight size={16} color={colors.textMuted} />
@@ -391,26 +512,14 @@ function Dashboard({
             padding={false}
           >
             {stats.dueReminders.length === 0 ? (
-              <div style={{ padding: spacing[4], color: colors.textMuted, fontSize: typography.fontSize.sm, textAlign: 'center' }}>
-                No due reminders
-              </div>
+              <div style={emptyStateStyle}>No due reminders</div>
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
                 {stats.dueReminders.map(reminder => (
                   <div
                     key={reminder.id}
                     onClick={() => onViewItem(reminder.item.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing[3],
-                      padding: spacing[3],
-                      borderRadius: borderRadius.md,
-                      cursor: 'pointer',
-                      marginBottom: spacing[2],
-                      background: withOpacity(PANEL_COLORS.reminders, 15),
-                      border: `1px solid ${withOpacity(PANEL_COLORS.reminders, 40)}`,
-                    }}
+                    style={listItemStyle(PANEL_COLORS.reminders)}
                   >
                     <Bell size={16} color={PANEL_COLORS.reminders} />
                     <div style={{ flex: 1 }}>
@@ -418,7 +527,7 @@ function Dashboard({
                         {reminder.title}
                       </div>
                       <div style={{ fontSize: typography.fontSize.xs, color: PANEL_COLORS.reminders }}>
-                        {reminder.item.name} • Due {formatDate(reminder.dueDate)}
+                        {reminder.item.name} &bull; Due {formatDate(reminder.dueDate)}
                       </div>
                     </div>
                     <ChevronRight size={16} color={colors.textMuted} />
@@ -451,26 +560,14 @@ function Dashboard({
             padding={false}
           >
             {stats.lowStockItems.length === 0 ? (
-              <div style={{ padding: spacing[4], color: colors.textMuted, fontSize: typography.fontSize.sm, textAlign: 'center' }}>
-                No low stock items
-              </div>
+              <div style={emptyStateStyle}>No low stock items</div>
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 200, overflowY: 'auto' }}>
                 {stats.lowStockItems.map(item => (
                   <div
                     key={item.id}
                     onClick={() => onViewItem(item.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing[3],
-                      padding: spacing[3],
-                      borderRadius: borderRadius.md,
-                      cursor: 'pointer',
-                      marginBottom: spacing[2],
-                      background: withOpacity(PANEL_COLORS.lowStock, 15),
-                      border: `1px solid ${withOpacity(PANEL_COLORS.lowStock, 40)}`,
-                    }}
+                    style={listItemStyle(PANEL_COLORS.lowStock)}
                   >
                     <TrendingDown size={16} color={PANEL_COLORS.lowStock} />
                     <div style={{ flex: 1 }}>
@@ -496,7 +593,7 @@ function Dashboard({
             key="reservations"
             title="Upcoming Reservations"
             icon={Calendar}
-            badge={upcomingReservations.length}
+            badge={upcomingReservations.length || null}
             badgeColor={PANEL_COLORS.reservations}
             headerColor={PANEL_COLORS.reservations}
             collapsed={isCollapsed('reservations')}
@@ -513,7 +610,7 @@ function Dashboard({
           >
             <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
               {upcomingReservations.length === 0 ? (
-                <p style={{ color: colors.textMuted, textAlign: 'center', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: spacing[2] }}>
+                <p style={{ ...emptyStateStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: spacing[2] }}>
                   {!tier2Loaded ? (
                     <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading reservations...</>
                   ) : (
@@ -576,7 +673,7 @@ function Dashboard({
                           fontSize: typography.fontSize.xs,
                           color: PANEL_COLORS.reservations
                         }}>
-                          {r.project} • {formatDate(r.start)}
+                          {r.project ? `${r.project} \u2022 ` : ''}{formatDate(r.start)}
                         </div>
                       </div>
                     </div>
@@ -584,6 +681,118 @@ function Dashboard({
                 </div>
               )}
             </div>
+          </CollapsibleSection>
+        );
+
+      case 'maintenance':
+        return (
+          <CollapsibleSection
+            key="maintenance"
+            title="Upcoming Maintenance"
+            icon={Wrench}
+            badge={stats.pendingMaintenance.length || null}
+            badgeColor={PANEL_COLORS.maintenance}
+            headerColor={PANEL_COLORS.maintenance}
+            collapsed={isCollapsed('maintenance')}
+            onToggleCollapse={() => toggleCollapse('maintenance')}
+            padding={false}
+          >
+            {stats.pendingMaintenance.length === 0 ? (
+              <div style={emptyStateStyle}>
+                {!tier2Loaded ? (
+                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: spacing[2] }}>
+                    <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading maintenance...
+                  </span>
+                ) : (
+                  'No scheduled maintenance'
+                )}
+              </div>
+            ) : (
+              <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
+                {stats.pendingMaintenance.slice(0, 6).map(record => (
+                  <div
+                    key={record.id}
+                    onClick={() => onViewItem(record.item.id)}
+                    style={listItemStyle(PANEL_COLORS.maintenance)}
+                  >
+                    <Wrench size={16} color={PANEL_COLORS.maintenance} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: typography.fontSize.sm,
+                        color: colors.textPrimary,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {record.item.name}
+                      </div>
+                      <div style={{ fontSize: typography.fontSize.xs, color: PANEL_COLORS.maintenance }}>
+                        {record.type || 'Maintenance'}{record.scheduledDate ? ` \u2022 ${formatDate(record.scheduledDate)}` : ''}
+                      </div>
+                    </div>
+                    <Badge
+                      text={record.status === 'in-progress' ? 'In Progress' : 'Scheduled'}
+                      color={record.status === 'in-progress' ? colors.warning : PANEL_COLORS.maintenance}
+                      size="xs"
+                    />
+                    <ChevronRight size={16} color={colors.textMuted} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </CollapsibleSection>
+        );
+
+      case 'recentActivity':
+        return (
+          <CollapsibleSection
+            key="recentActivity"
+            title="Recent Activity"
+            icon={Activity}
+            badge={null}
+            headerColor={PANEL_COLORS.recentActivity}
+            collapsed={isCollapsed('recentActivity')}
+            onToggleCollapse={() => toggleCollapse('recentActivity')}
+            padding={false}
+          >
+            {stats.recentActivity.length === 0 ? (
+              <div style={emptyStateStyle}>No recent activity</div>
+            ) : (
+              <div style={{ padding: spacing[4], maxHeight: 300, overflowY: 'auto' }}>
+                {stats.recentActivity.map(event => (
+                  <div
+                    key={event.id}
+                    onClick={() => onViewItem(event.item.id)}
+                    style={listItemStyle(PANEL_COLORS.recentActivity)}
+                  >
+                    {event.type === 'checkout' ? (
+                      <LogOut size={16} color={PANEL_COLORS.recentActivity} />
+                    ) : (
+                      <LogIn size={16} color={PANEL_COLORS.recentActivity} />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: typography.fontSize.sm,
+                        color: colors.textPrimary,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {event.item.name}
+                      </div>
+                      <div style={{ fontSize: typography.fontSize.xs, color: PANEL_COLORS.recentActivity }}>
+                        {event.type === 'checkout' ? 'Checked out to' : 'Returned by'} {event.who} &bull; {formatDate(event.date)}
+                      </div>
+                    </div>
+                    <Badge
+                      text={event.type === 'checkout' ? 'Out' : 'In'}
+                      color={event.type === 'checkout' ? colors.checkedOut : colors.available}
+                      size="xs"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </CollapsibleSection>
         );
 
