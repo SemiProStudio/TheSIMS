@@ -43,6 +43,7 @@ const ReportsPanel = lazy(() => import('./views/ReportsView.jsx').then(m => ({ d
 const AuditLogPanel = lazy(() => import('./views/AuditLogView.jsx').then(m => ({ default: m.AuditLogPanel })));
 const MaintenanceReportPanel = lazy(() => import('./views/MaintenanceReportView.jsx').then(m => ({ default: m.MaintenanceReportPanel })));
 const InsuranceReportPanel = lazy(() => import('./views/InsuranceReportView.jsx').then(m => ({ default: m.InsuranceReportPanel })));
+const ClientReportPanel = lazy(() => import('./views/ClientReportView.jsx').then(m => ({ default: m.ClientReportPanel })));
 
 const ItemFormPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ default: m.ItemFormPage })));
 const SpecsPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ default: m.SpecsPage })));
@@ -558,6 +559,23 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               categories={categories}
               currentUser={currentUser}
               onViewItem={navigateToItem}
+              onBack={() => setCurrentView(VIEWS.ADMIN)}
+            />
+          </Suspense>
+        )}
+      </PermissionGate>
+
+      <PermissionGate permission="reports">
+        {currentView === VIEWS.CLIENT_REPORT && (
+          <Suspense fallback={<ViewLoading message="Loading Client Report..." />}>
+            <ClientReportPanel
+              clients={clients}
+              inventory={inventory}
+              currentUser={currentUser}
+              onViewClient={(client) => {
+                setSelectedClient(client);
+                setCurrentView(VIEWS.CLIENT_DETAIL);
+              }}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />
           </Suspense>

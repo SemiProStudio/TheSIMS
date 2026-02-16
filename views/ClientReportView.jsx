@@ -10,11 +10,12 @@ import { colors, spacing, borderRadius, typography, withOpacity } from '../theme
 import { formatMoney, sanitizeCSVCell } from '../utils';
 import { Badge, Card, CardHeader, StatCard, EmptyState, Button, PageHeader } from '../components/ui.jsx';
 
-export const ClientReportPanel = memo(function ClientReportPanel({ 
-  clients = [], 
-  inventory = [], 
-  onViewClient, 
-  onBack 
+export const ClientReportPanel = memo(function ClientReportPanel({
+  clients = [],
+  inventory = [],
+  currentUser,
+  onViewClient,
+  onBack
 }) {
   // Calculate reservation counts for each client
   const clientsWithStats = useMemo(() => {
@@ -69,10 +70,12 @@ export const ClientReportPanel = memo(function ClientReportPanel({
     ].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
+    link.href = url;
     link.download = `client-report-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -85,6 +88,27 @@ export const ClientReportPanel = memo(function ClientReportPanel({
         action={<Button onClick={handleExport} icon={Download}>Export CSV</Button>}
       />
       
+      {/* Profile branding for print/export */}
+      {currentUser?.profile && (() => {
+        const p = currentUser.profile;
+        const sf = p.showFields || {};
+        const hasContent = Object.entries(sf).some(([k, v]) => v && p[k]);
+        if (!hasContent) return null;
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4], padding: spacing[3], marginBottom: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
+            {sf.logo && p.logo && <img src={p.logo} alt="" style={{ height: 36, objectFit: 'contain' }} />}
+            <div>
+              {sf.businessName && p.businessName && <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.textPrimary }}>{p.businessName}</div>}
+              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
+                {sf.displayName && p.displayName && <span>{p.displayName}</span>}
+                {sf.phone && p.phone && <span>{p.phone}</span>}
+                {sf.email && p.email && <span>{p.email}</span>}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Summary Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: spacing[4], marginBottom: spacing[6] }}>
         <StatCard icon={Building2} label="Total Clients" value={clients.length} color={colors.primary} />

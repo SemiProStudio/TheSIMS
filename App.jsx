@@ -388,34 +388,63 @@ export default function App() {
     const items = selectedIds.length
       ? inventory.filter(i => selectedIds.includes(i.id))
       : inventory;
+    const escHtml = (str) => str == null ? '' : String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const columnLabels = {
+      id: 'ID', name: 'Name', brand: 'Brand', category: 'Category',
+      status: 'Status', condition: 'Condition', location: 'Location',
+      purchaseDate: 'Purchase Date', purchasePrice: 'Purchase Price',
+      value: 'Current Value', serialNumber: 'Serial #', notes: 'Notes',
+    };
+    // Resolve a column value from an item
+    const getCellValue = (item, col) => {
+      if (col === 'value') return item.currentValue;
+      if (col === 'notes') {
+        const activeNotes = (item.notes || []).filter(n => !n.deleted);
+        return activeNotes.map(n => n.text).join('; ');
+      }
+      return item[col];
+    };
+    const timestamp = new Date().toISOString().split('T')[0];
+
     if (options.format === 'csv') {
-      const headers = options.columns.map(col => sanitizeCSVCell(col)).join(',');
+      const headers = options.columns.map(col => sanitizeCSVCell(columnLabels[col] || col)).join(',');
       const rows = items.map(i =>
-        options.columns.map(col => sanitizeCSVCell(col === 'value' ? i.currentValue : i[col])).join(',')
+        options.columns.map(col => sanitizeCSVCell(getCellValue(i, col))).join(',')
       );
       const csvContent = headers + '\n' + rows.join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'inventory.csv';
+      a.download = `inventory-${timestamp}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } else if (options.format === 'pdf') {
-      // Generate a printable HTML table that opens the browser print dialog
-      // Users can print to PDF from there (all modern browsers support this)
-      const escHtml = (str) => str == null ? '' : String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      const columnLabels = {
-        id: 'ID', name: 'Name', brand: 'Brand', category: 'Category',
-        status: 'Status', condition: 'Condition', location: 'Location',
-        value: 'Value', serialNumber: 'Serial #',
-      };
+      // Build branding header if enabled
+      let brandingHtml = '';
+      if (options.includeBranding && currentUser?.profile) {
+        const p = currentUser.profile;
+        const sf = p.showFields || {};
+        const parts = [];
+        if (sf.businessName && p.businessName) parts.push(`<strong>${escHtml(p.businessName)}</strong>`);
+        const details = [];
+        if (sf.displayName && p.displayName) details.push(escHtml(p.displayName));
+        if (sf.phone && p.phone) details.push(escHtml(p.phone));
+        if (sf.email && p.email) details.push(escHtml(p.email));
+        if (sf.address && p.address) details.push(escHtml(p.address));
+        if (details.length) parts.push(`<span style="font-size:11px;color:#666;">${details.join(' &bull; ')}</span>`);
+        const logoHtml = sf.logo && p.logo ? `<img src="${p.logo}" style="height:36px;object-fit:contain;margin-right:12px;" />` : '';
+        if (logoHtml || parts.length) {
+          brandingHtml = `<div style="display:flex;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #ddd;">${logoHtml}<div>${parts.join('<br/>')}</div></div>`;
+        }
+      }
+
       const headerRow = options.columns.map(col =>
         `<th style="padding:8px 12px;text-align:left;border-bottom:2px solid #333;font-size:12px;">${escHtml(columnLabels[col] || col)}</th>`
       ).join('');
       const bodyRows = items.map(item =>
         `<tr>${options.columns.map(col => {
-          const val = col === 'value' ? item.currentValue : item[col];
+          const val = getCellValue(item, col);
           return `<td style="padding:6px 12px;border-bottom:1px solid #eee;font-size:11px;">${escHtml(val)}</td>`;
         }).join('')}</tr>`
       ).join('');
@@ -431,13 +460,14 @@ export default function App() {
           @media print { body { padding: 0; } }
         `,
         body: `
+          ${brandingHtml}
           <h1>Inventory Export</h1>
           <div class="meta">${items.length} items &bull; ${new Date().toLocaleDateString()}</div>
           <table><thead><tr>${headerRow}</tr></thead><tbody>${bodyRows}</tbody></table>
         `,
       });
     }
-  }, [inventory, selectedIds]);
+  }, [inventory, selectedIds, currentUser]);
 
   const saveNotificationPreferences = useCallback(async (prefs) => {
     try {

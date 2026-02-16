@@ -155,10 +155,10 @@ export const ReportsPanel = memo(function ReportsPanel({
           </div>
           <div style={buttonRowStyle}>
             <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.MAINTENANCE_REPORT)} icon={Eye}>View</Button>
-            <Button variant="secondary" style={{ flex: 1 }} onClick={onExport} icon={Download}>Export</Button>
+            <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.MAINTENANCE_REPORT)} icon={Download}>Export</Button>
           </div>
         </Card>
-        
+
         {/* Insurance Report */}
         <Card>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing[3], marginBottom: spacing[4] }}>
@@ -176,10 +176,10 @@ export const ReportsPanel = memo(function ReportsPanel({
           </div>
           <div style={buttonRowStyle}>
             <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.INSURANCE_REPORT)} icon={Eye}>View</Button>
-            <Button variant="secondary" style={{ flex: 1 }} onClick={onExport} icon={Download}>Export</Button>
+            <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.INSURANCE_REPORT)} icon={Download}>Export</Button>
           </div>
         </Card>
-        
+
         {/* Client Report */}
         <Card>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing[3], marginBottom: spacing[4] }}>
@@ -203,7 +203,7 @@ export const ReportsPanel = memo(function ReportsPanel({
           </div>
           <div style={buttonRowStyle}>
             <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.CLIENT_REPORT)} icon={Eye}>View</Button>
-            <Button variant="secondary" style={{ flex: 1 }} onClick={onExport} icon={Download}>Export</Button>
+            <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.CLIENT_REPORT)} icon={Download}>Export</Button>
           </div>
         </Card>
       </div>

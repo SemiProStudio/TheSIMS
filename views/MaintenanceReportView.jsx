@@ -5,10 +5,10 @@
 
 import { memo, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { Wrench, Clock, AlertTriangle, DollarSign, Building2 } from 'lucide-react';
+import { Wrench, Clock, AlertTriangle, DollarSign, Building2, Download } from 'lucide-react';
 import { colors, spacing, typography } from '../theme.js';
-import { formatDate, formatMoney } from '../utils';
-import { Badge, Card, CardHeader, StatCard, PageHeader } from '../components/ui.jsx';
+import { formatDate, formatMoney, sanitizeCSVCell } from '../utils';
+import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
 
 export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({ 
   inventory, 
@@ -104,13 +104,42 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
     }
   };
 
+  // Export maintenance records to CSV
+  const handleExport = () => {
+    const headers = ['Item', 'Item ID', 'Type', 'Description', 'Status', 'Vendor', 'Cost', 'Warranty', 'Scheduled Date', 'Completed Date'];
+    const rows = sortedRecords.map(r => [
+      r.itemName,
+      r.itemId,
+      r.type,
+      r.description || '',
+      r.status,
+      r.vendor || '',
+      r.cost || 0,
+      r.warrantyWork ? 'Yes' : 'No',
+      r.scheduledDate || '',
+      r.completedDate || '',
+    ]);
+    const csvContent = [
+      headers.map(h => sanitizeCSVCell(h)).join(','),
+      ...rows.map(row => row.map(cell => sanitizeCSVCell(cell)).join(','))
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `maintenance-report-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
-      <PageHeader 
-        title="Maintenance Report" 
+      <PageHeader
+        title="Maintenance Report"
         subtitle="All maintenance records across inventory"
         onBack={onBack}
         backLabel="Back to Reports"
+        action={<Button onClick={handleExport} icon={Download}>Export CSV</Button>}
       />
       
       {/* Profile branding for print/export */}

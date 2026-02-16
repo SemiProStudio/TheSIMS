@@ -16,15 +16,18 @@ export const ExportModal = memo(function ExportModal({ onExport, onClose, user: 
   const [includeBranding, setIncludeBranding] = useState(false);
 
   const allColumns = [
-    { id: 'id', label: 'ID' }, 
-    { id: 'name', label: 'Name' }, 
+    { id: 'id', label: 'ID' },
+    { id: 'name', label: 'Name' },
     { id: 'brand', label: 'Brand' },
-    { id: 'category', label: 'Category' }, 
-    { id: 'status', label: 'Status' }, 
+    { id: 'category', label: 'Category' },
+    { id: 'status', label: 'Status' },
     { id: 'condition', label: 'Condition' },
-    { id: 'location', label: 'Location' }, 
-    { id: 'value', label: 'Value' }, 
-    { id: 'serialNumber', label: 'Serial #' }
+    { id: 'location', label: 'Location' },
+    { id: 'purchaseDate', label: 'Purchase Date' },
+    { id: 'purchasePrice', label: 'Purchase $' },
+    { id: 'value', label: 'Current Value' },
+    { id: 'serialNumber', label: 'Serial #' },
+    { id: 'notes', label: 'Notes' },
   ];
 
   const toggleColumn = (col) => setColumns(prev => 

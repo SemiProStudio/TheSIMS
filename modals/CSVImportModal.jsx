@@ -19,6 +19,11 @@ export const CSVImportModal = memo(function CSVImportModal({ categories, specs, 
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Build case-insensitive category lookup: lowercased name → original name
+  const categoryMap = Object.fromEntries(
+    categories.map(cat => [cat.toLowerCase(), cat])
+  );
+
   // Drag-and-drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -186,17 +191,6 @@ export const CSVImportModal = memo(function CSVImportModal({ categories, specs, 
       const text = await selectedFile.text();
       const parsed = parseCSV(text);
       setPreview(parsed);
-      
-      // Auto-map columns
-      const autoMapping = {};
-      parsed.headers.forEach(header => {
-        const lower = header.toLowerCase();
-        if (allColumns.includes(lower)) {
-          autoMapping[header] = lower;
-        } else if (lower.startsWith('spec:')) {
-          autoMapping[header] = header;
-        }
-      });
     } catch (err) {
       setError(err.message);
     }
@@ -223,30 +217,32 @@ export const CSVImportModal = memo(function CSVImportModal({ categories, specs, 
           errors.push(`Row ${idx + 2}: Missing category`);
           return;
         }
-        if (!categories.includes(row.category)) {
+        // Case-insensitive category matching: CSV value → actual category name
+        const matchedCategory = categoryMap[row.category.trim().toLowerCase()];
+        if (!matchedCategory) {
           errors.push(`Row ${idx + 2}: Unknown category "${row.category}"`);
           return;
         }
-        
-        // Build item object
+
+        // Build item object — all row keys are already lowercased by parseCSV
         const item = {
           name: row.name.trim(),
           brand: row.brand?.trim() || '',
-          category: row.category.trim(),
+          category: matchedCategory,
           status: row.status?.trim() || 'available',
           condition: row.condition?.trim() || 'excellent',
           location: row.location?.trim() || '',
-          purchaseDate: row.purchasedate?.trim() || row.purchaseDate?.trim() || '',
-          purchasePrice: parseFloat(row.purchaseprice || row.purchasePrice) || 0,
-          currentValue: parseFloat(row.currentvalue || row.currentValue) || 0,
-          serialNumber: row.serialnumber?.trim() || row.serialNumber?.trim() || '',
-          notes: row.notes?.trim() ? [{ 
-            id: `imported_${Date.now()}_${idx}`, 
-            user: 'Import', 
-            date: new Date().toISOString().split('T')[0], 
+          purchaseDate: row.purchasedate?.trim() || '',
+          purchasePrice: parseFloat(row.purchaseprice) || 0,
+          currentValue: parseFloat(row.currentvalue) || 0,
+          serialNumber: row.serialnumber?.trim() || '',
+          notes: row.notes?.trim() ? [{
+            id: `imported_${Date.now()}_${idx}`,
+            user: 'Import',
+            date: new Date().toISOString().split('T')[0],
             text: row.notes.trim(),
             replies: [],
-            deleted: false 
+            deleted: false
           }] : [],
           specs: {},
           reservations: [],
@@ -358,7 +354,7 @@ export const CSVImportModal = memo(function CSVImportModal({ categories, specs, 
         {preview && (
           <div style={{ marginBottom: spacing[4] }}>
             <h4 style={{ margin: `0 0 ${spacing[2]}px`, color: colors.textPrimary }}>
-              Preview ({preview.rows.length} items)
+              Preview ({preview.rows.length} items, {preview.headers.length} columns)
             </h4>
             <div style={{
               background: colors.bgLight,
@@ -369,15 +365,15 @@ export const CSVImportModal = memo(function CSVImportModal({ categories, specs, 
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: typography.fontSize.sm }}>
                 <thead>
                   <tr>
-                    {['name', 'brand', 'category', 'status'].map(col => (
+                    {['name', 'brand', 'category', 'status', 'purchaseprice'].map(col => (
                       <th key={col} style={{
-                        textAlign: 'left',
+                        textAlign: col === 'purchaseprice' ? 'right' : 'left',
                         padding: spacing[2],
                         borderBottom: `1px solid ${colors.border}`,
                         color: colors.textMuted,
                         fontWeight: typography.fontWeight.medium
                       }}>
-                        {col}
+                        {col === 'purchaseprice' ? 'Price' : col}
                       </th>
                     ))}
                   </tr>
@@ -385,13 +381,14 @@ export const CSVImportModal = memo(function CSVImportModal({ categories, specs, 
                 <tbody>
                   {preview.rows.slice(0, 5).map((row, idx) => (
                     <tr key={idx}>
-                      {['name', 'brand', 'category', 'status'].map(col => (
+                      {['name', 'brand', 'category', 'status', 'purchaseprice'].map(col => (
                         <td key={col} style={{
                           padding: spacing[2],
                           borderBottom: `1px solid ${colors.borderLight}`,
-                          color: colors.textPrimary
+                          color: colors.textPrimary,
+                          textAlign: col === 'purchaseprice' ? 'right' : 'left',
                         }}>
-                          {row[col] || '-'}
+                          {col === 'purchaseprice' ? (row[col] ? `$${row[col]}` : '-') : (row[col] || '-')}
                         </td>
                       ))}
                     </tr>
