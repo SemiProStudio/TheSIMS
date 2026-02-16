@@ -126,7 +126,7 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
 
   const navigateToPackList = useCallback((packList) => {
     setSelectedPackList(packList);
-    setCurrentView(VIEWS.PACK_LIST_DETAIL);
+    setCurrentView(VIEWS.PACK_LISTS);
     window.scrollTo(0, 0);
   }, []);
 
@@ -146,9 +146,6 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
     } else if (currentView === VIEWS.PACKAGE_DETAIL) {
       setSelectedPackage(null);
       setCurrentView(VIEWS.PACKAGES);
-    } else if (currentView === VIEWS.PACK_LIST_DETAIL) {
-      setSelectedPackList(null);
-      setCurrentView(VIEWS.PACK_LISTS);
     } else if (currentView === VIEWS.RESERVATION_DETAIL) {
       setSelectedReservation(null);
       setSelectedReservationItem(null);
@@ -163,7 +160,6 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
   const isDetailView = [
     VIEWS.GEAR_DETAIL,
     VIEWS.PACKAGE_DETAIL,
-    VIEWS.PACK_LIST_DETAIL,
     VIEWS.RESERVATION_DETAIL,
   ].includes(currentView);
 

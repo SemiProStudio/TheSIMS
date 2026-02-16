@@ -5,12 +5,14 @@
 // ============================================================================
 
 import React, { memo, useState, useCallback, useMemo } from 'react';
-import { Plus, Trash2, ArrowLeft, Download, Printer, Copy, Box, Layers, ChevronRight, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
+import PropTypes from 'prop-types';
+import { Plus, Trash2, ArrowLeft, Download, Printer, Copy, Box, Layers, ChevronRight, ChevronDown, ChevronUp, Edit2, CheckSquare, Square } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, generateId, getStatusColor } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { useData } from '../contexts/DataContext.js';
+import { useToast } from '../contexts/ToastContext.js';
 
 import { error as logError } from '../lib/logger.js';
 import { openPrintWindow } from '../lib/printUtil.js';
@@ -29,7 +31,9 @@ function PackListsView({
 }) {
   const ctxData = useData();
   const dataContext = propDataContext || ctxData;
+  const { addToast } = useToast();
   const [selectedListInternal, setSelectedListInternal] = useState(initialSelectedList);
+  const [isSaving, setIsSaving] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -174,32 +178,31 @@ function PackListsView({
   // Toggle individual item selection
   const handleToggleItem = useCallback((itemId) => {
     setSelectedItemIds(prev => {
-      const newSelected = prev.includes(itemId) 
+      const isRemoving = prev.includes(itemId);
+      const newSelected = isRemoving
         ? prev.filter(id => id !== itemId)
         : [...prev, itemId];
-      
+
       // Update package selections based on new item state
       const pkgIds = itemToPackagesMap.get(itemId) || [];
       pkgIds.forEach(pkgId => {
         const pkg = packages.find(p => p.id === pkgId);
         if (!pkg) return;
-        
-        const allSelected = pkg.items.every(id => 
-          id === itemId ? !prev.includes(itemId) : newSelected.includes(id)
-        );
-        
-        if (allSelected && !prev.includes(itemId)) {
-          setSelectedPackageIds(prevPkgs => 
+
+        const allSelected = pkg.items.every(id => newSelected.includes(id));
+
+        if (allSelected && !isRemoving) {
+          setSelectedPackageIds(prevPkgs =>
             prevPkgs.includes(pkgId) ? prevPkgs : [...prevPkgs, pkgId]
           );
-        } else if (!allSelected && selectedPackageIds.includes(pkgId)) {
+        } else if (!allSelected) {
           setSelectedPackageIds(prevPkgs => prevPkgs.filter(id => id !== pkgId));
         }
       });
-      
+
       return newSelected;
     });
-  }, [itemToPackagesMap, packages, selectedPackageIds]);
+  }, [itemToPackagesMap, packages]);
 
   // Update quantity for an item
   const handleQuantityChange = useCallback((itemId, quantity) => {
@@ -304,98 +307,104 @@ function PackListsView({
 
   // Save pack list (create or update)
   const handleSave = useCallback(async () => {
-    if (!listName.trim() || selectedItemIds.length === 0) return;
+    if (!listName.trim() || selectedItemIds.length === 0 || isSaving) return;
 
-    if (editingList) {
-      // Update existing list
-      const updatedList = {
-        ...editingList,
-        name: listName.trim(),
-        packages: [...selectedPackageIds],
-        items: selectedItemIds.map(id => ({
+    setIsSaving(true);
+    try {
+      if (editingList) {
+        // Build clean update payload — only fields the DB accepts
+        const items = selectedItemIds.map(id => ({
           id,
           quantity: itemQuantities[id] || 1,
-        })),
-        updatedAt: new Date().toISOString(),
-      };
+        }));
+        const updatePayload = {
+          name: listName.trim(),
+          packages: [...selectedPackageIds],
+          items,
+          packedItems: editingList.packedItems || [],
+          updated_at: new Date().toISOString(),
+        };
 
-      // Persist to Supabase via DataContext
-      if (dataContext?.updatePackList) {
-        try {
-          await dataContext.updatePackList(editingList.id, updatedList);
-        } catch (err) {
-          logError('Failed to update pack list:', err);
-          dataContext.patchPackList(editingList.id, updatedList);
+        // Persist to Supabase via DataContext
+        if (dataContext?.updatePackList) {
+          try {
+            await dataContext.updatePackList(editingList.id, updatePayload);
+          } catch (err) {
+            logError('Failed to update pack list:', err);
+            dataContext.patchPackList(editingList.id, updatePayload);
+          }
+        } else {
+          dataContext.patchPackList(editingList.id, updatePayload);
         }
-      } else {
-        dataContext.patchPackList(editingList.id, updatedList);
-      }
-      
-      // Log update
-      if (addAuditLog) {
-        addAuditLog({
-          type: 'pack_list_updated',
-          description: `Pack list "${updatedList.name}" updated with ${selectedItemIds.length} items`,
-          user: currentUser?.name || 'Unknown',
-          packListId: updatedList.id
-        });
-      }
-      
-      resetForm();
-      setShowCreate(false);
-      setSelectedList(updatedList);
-    } else {
-      // Create new list - let DB generate the ID
-      const newList = {
-        name: listName.trim(),
-        packages: [...selectedPackageIds],
-        items: selectedItemIds.map(id => ({
-          id,
-          quantity: itemQuantities[id] || 1,
-        })),
-      };
 
-      // Persist to Supabase via DataContext
-      if (dataContext?.createPackList) {
-        try {
-          const createdList = await dataContext.createPackList(newList);
-          
-          // Log creation
+        // Log update
+        if (addAuditLog) {
+          addAuditLog({
+            type: 'pack_list_updated',
+            description: `Pack list "${updatePayload.name}" updated with ${selectedItemIds.length} items`,
+            user: currentUser?.name || 'Unknown',
+            packListId: editingList.id
+          });
+        }
+
+        resetForm();
+        setShowCreate(false);
+        setSelectedList({ ...editingList, ...updatePayload });
+      } else {
+        // Create new list - let DB generate the ID
+        const newList = {
+          name: listName.trim(),
+          packages: [...selectedPackageIds],
+          items: selectedItemIds.map(id => ({
+            id,
+            quantity: itemQuantities[id] || 1,
+          })),
+        };
+
+        // Persist to Supabase via DataContext
+        if (dataContext?.createPackList) {
+          try {
+            const createdList = await dataContext.createPackList(newList);
+
+            // Log creation
+            if (addAuditLog) {
+              addAuditLog({
+                type: 'pack_list_created',
+                description: `Pack list "${createdList.name}" created with ${selectedItemIds.length} items`,
+                user: currentUser?.name || 'Unknown',
+                packListId: createdList.id
+              });
+            }
+
+            resetForm();
+            setShowCreate(false);
+            setSelectedList(createdList);
+          } catch (err) {
+            logError('Failed to create pack list:', err);
+          }
+        } else {
+          // Fallback for no DB - generate local ID
+          const localList = { ...newList, id: generateId(), createdAt: new Date().toISOString() };
+          dataContext.addLocalPackList(localList);
+
           if (addAuditLog) {
             addAuditLog({
               type: 'pack_list_created',
-              description: `Pack list "${createdList.name}" created with ${selectedItemIds.length} items`,
+              description: `Pack list "${localList.name}" created with ${selectedItemIds.length} items`,
               user: currentUser?.name || 'Unknown',
-              packListId: createdList.id
+              packListId: localList.id
             });
           }
-          
+
           resetForm();
           setShowCreate(false);
-          setSelectedList(createdList);
-        } catch (err) {
-          logError('Failed to create pack list:', err);
+          setSelectedList(localList);
         }
-      } else {
-        // Fallback for no DB - generate local ID
-        const localList = { ...newList, id: generateId(), createdAt: new Date().toISOString() };
-        dataContext.addLocalPackList(localList);
-        
-        if (addAuditLog) {
-          addAuditLog({
-            type: 'pack_list_created',
-            description: `Pack list "${localList.name}" created with ${selectedItemIds.length} items`,
-            user: currentUser?.name || 'Unknown',
-            packListId: localList.id
-          });
-        }
-        
-        resetForm();
-        setShowCreate(false);
-        setSelectedList(localList);
       }
+    } finally {
+      setIsSaving(false);
     }
-  }, [listName, selectedPackageIds, selectedItemIds, itemQuantities, resetForm, addAuditLog, currentUser, editingList, setSelectedList, dataContext]);
+  }, [listName, selectedPackageIds, selectedItemIds, itemQuantities, resetForm, addAuditLog, currentUser, editingList, setSelectedList, dataContext, isSaving]);
 
   // Delete pack list with audit logging
   const handleDelete = useCallback(async (id) => {
@@ -453,48 +462,53 @@ function PackListsView({
     if (exportFormat === 'clipboard') {
       const text = items.map(i => `${i.quantity}x\t${i.id}\t${i.name}\t${i.category}`).join('\n');
       navigator.clipboard.writeText(text);
-      alert('Copied to clipboard!');
+      addToast('Copied to clipboard!', 'success');
     } else {
       const fs = { XS: 10, S: 12, M: 14, L: 16, XL: 18 }[exportFontSize];
-      
+      const listPackages = (selectedList.packages || []).map(id => packages.find(p => p.id === id)).filter(Boolean);
+
       // Group items by category if sorted by category
       let tableContent = '';
+      const colCount = exportSort === 'category' ? 5 : 6;
       if (exportSort === 'category') {
-        // Group by category with headers
         const byCategory = {};
         items.forEach(item => {
           if (!byCategory[item.category]) byCategory[item.category] = [];
           byCategory[item.category].push(item);
         });
-        
+
         Object.entries(byCategory).forEach(([category, categoryItems]) => {
           tableContent += `
-            <tr class="category-header"><td colspan="4"><strong>${category}</strong></td></tr>
+            <tr class="category-header"><td colspan="${colCount}"><strong>${category}</strong></td></tr>
             ${categoryItems.map(i => `
               <tr>
                 <td class="check">☐</td>
                 <td class="qty">${i.quantity}</td>
                 <td>${i.id}</td>
                 <td>${i.name}</td>
+                <td>${i.brand || ''}</td>
               </tr>
             `).join('')}
           `;
         });
       } else {
-        // Alphabetical - show category column
         tableContent = items.map(i => `
           <tr>
             <td class="check">☐</td>
             <td class="qty">${i.quantity}</td>
             <td>${i.id}</td>
             <td>${i.name}</td>
+            <td>${i.brand || ''}</td>
             <td>${i.category}</td>
           </tr>
         `).join('');
       }
-      
+
       const categoryColumn = exportSort !== 'category' ? '<th>Category</th>' : '';
-      
+      const packagesLine = listPackages.length > 0
+        ? ` | Packages: ${listPackages.map(p => p.name).join(', ')}`
+        : '';
+
       openPrintWindow({
         title: selectedList.name,
         styles: `
@@ -504,8 +518,8 @@ function PackListsView({
           th { background: #f5f5f5; }
           .qty { width: 60px; text-align: center; }
           .check { width: 30px; }
-          .category-header { 
-            background: #e8e8e8; 
+          .category-header {
+            background: #e8e8e8;
             page-break-after: avoid;
           }
           .category-header td {
@@ -519,9 +533,9 @@ function PackListsView({
         `,
         body: `
           <h1>${selectedList.name}</h1>
-          <p>Created: ${formatDate(selectedList.createdAt)} | Items: ${items.length}</p>
+          <p>Created: ${formatDate(selectedList.createdAt)} | Items: ${items.length}${packagesLine}</p>
           <table>
-            <thead><tr><th class="check">✓</th><th class="qty">Qty</th><th>ID</th><th>Name</th>${categoryColumn}</tr></thead>
+            <thead><tr><th class="check">✓</th><th class="qty">Qty</th><th>ID</th><th>Name</th><th>Brand</th>${categoryColumn}</tr></thead>
             <tbody>${tableContent}</tbody>
           </table>
         `,
@@ -529,7 +543,7 @@ function PackListsView({
       });
     }
     setShowExport(false);
-  }, [selectedList, getListItems, getSortedItems, exportFormat, exportFontSize, exportSort]);
+  }, [selectedList, getListItems, getSortedItems, exportFormat, exportFontSize, exportSort, addToast, packages]);
 
   // Get which packages contain an item
   const getItemPackages = useCallback((itemId) => {
@@ -537,6 +551,34 @@ function PackListsView({
       .map(pkgId => packages.find(p => p.id === pkgId))
       .filter(Boolean);
   }, [itemToPackagesMap, packages]);
+
+  // Toggle packed state for an item in the detail view
+  const handleTogglePacked = useCallback(async (itemId) => {
+    if (!selectedList) return;
+    const packedItems = selectedList.packedItems || [];
+    const isPacked = packedItems.includes(itemId);
+    const newPackedItems = isPacked
+      ? packedItems.filter(id => id !== itemId)
+      : [...packedItems, itemId];
+
+    // Optimistically update local state
+    const updatedList = { ...selectedList, packedItems: newPackedItems };
+    setSelectedList(updatedList);
+    dataContext.patchPackList(selectedList.id, { packedItems: newPackedItems });
+
+    // Persist to Supabase
+    if (dataContext?.updatePackList) {
+      try {
+        await dataContext.updatePackList(selectedList.id, {
+          items: selectedList.items,
+          packages: selectedList.packages,
+          packedItems: newPackedItems,
+        });
+      } catch (err) {
+        logError('Failed to toggle packed state:', err);
+      }
+    }
+  }, [selectedList, setSelectedList, dataContext]);
 
   // ============================================================================
   // Name Prompt Modal
@@ -597,8 +639,8 @@ function PackListsView({
           action={
             <div style={{ display: 'flex', gap: spacing[2] }}>
               <Button variant="secondary" onClick={handleCancel}>Cancel</Button>
-              <Button onClick={handleSave} disabled={selectedItemIds.length === 0} icon={isEditing ? Edit2 : Plus}>
-                {isEditing ? 'Save Changes' : 'Create Pack List'}
+              <Button onClick={handleSave} disabled={selectedItemIds.length === 0 || isSaving} icon={isEditing ? Edit2 : Plus}>
+                {isSaving ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Pack List'}
               </Button>
             </div>
           }
@@ -772,6 +814,9 @@ function PackListsView({
     const listItems = getListItems(selectedList);
     const sortedItems = getSortedItems(listItems);
     const listPackages = (selectedList.packages || []).map(id => packages.find(p => p.id === id)).filter(Boolean);
+    const packedItems = selectedList.packedItems || [];
+    const packedCount = listItems.filter(i => packedItems.includes(i.id)).length;
+    const packProgress = listItems.length > 0 ? Math.round((packedCount / listItems.length) * 100) : 0;
 
     return (
       <div className="view-container">
@@ -797,6 +842,29 @@ function PackListsView({
           </div>
         </div>
 
+        {/* Pack progress bar */}
+        {listItems.length > 0 && (
+          <div style={{ marginBottom: spacing[4] }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[1] }}>
+              <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.semibold, color: colors.textSecondary }}>
+                Pack Progress
+              </span>
+              <span style={{ fontSize: typography.fontSize.sm, color: packProgress === 100 ? colors.success : colors.textMuted }}>
+                {packedCount}/{listItems.length} packed ({packProgress}%)
+              </span>
+            </div>
+            <div style={{ height: 8, borderRadius: borderRadius.full, background: withOpacity(colors.border, 50), overflow: 'hidden' }}>
+              <div style={{
+                height: '100%',
+                width: `${packProgress}%`,
+                borderRadius: borderRadius.full,
+                background: packProgress === 100 ? colors.success : colors.primary,
+                transition: 'width 0.3s ease, background 0.3s ease',
+              }} />
+            </div>
+          </div>
+        )}
+
         {/* Packages included */}
         {listPackages.length > 0 && (
           <div style={{ marginBottom: spacing[4] }}>
@@ -808,37 +876,59 @@ function PackListsView({
             </div>
           </div>
         )}
-        
+
         <Card padding={false} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
           <CardHeader title={`Items (${listItems.length})`} />
           <div style={{ flex: 1, overflowY: 'auto' }}>
-            {sortedItems.map(item => (
-              <div key={item.id} className="list-item" onClick={() => onViewItem(item.id, {
-                returnTo: 'packList',
-                packListId: selectedList?.id,
-                backLabel: 'Back to Pack List'
-              })}>
-                {item.quantity > 1 && (
-                  <div style={{ 
-                    minWidth: 32, height: 32, borderRadius: borderRadius.md,
-                    background: withOpacity(colors.primary, 20),
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontWeight: typography.fontWeight.semibold, color: colors.primary, fontSize: typography.fontSize.base,
-                  }}>
-                    {item.quantity}x
+            {sortedItems.map(item => {
+              const isPacked = packedItems.includes(item.id);
+              return (
+                <div key={item.id} className="list-item" style={{ opacity: isPacked ? 0.7 : 1 }}>
+                  <button
+                    className="btn-icon"
+                    onClick={(e) => { e.stopPropagation(); handleTogglePacked(item.id); }}
+                    title={isPacked ? 'Mark as unpacked' : 'Mark as packed'}
+                    style={{ color: isPacked ? colors.success : colors.textMuted }}
+                  >
+                    {isPacked ? <CheckSquare size={20} /> : <Square size={20} />}
+                  </button>
+                  {item.quantity > 1 && (
+                    <div style={{
+                      minWidth: 32, height: 32, borderRadius: borderRadius.md,
+                      background: withOpacity(colors.primary, 20),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontWeight: typography.fontWeight.semibold, color: colors.primary, fontSize: typography.fontSize.base,
+                    }}>
+                      {item.quantity}x
+                    </div>
+                  )}
+                  <div
+                    className="list-item-content"
+                    style={{ cursor: 'pointer', textDecoration: isPacked ? 'line-through' : 'none' }}
+                    onClick={() => onViewItem(item.id, {
+                      returnTo: 'packList',
+                      packListId: selectedList?.id,
+                      backLabel: 'Back to Pack List'
+                    })}
+                  >
+                    <div className="list-item-badges">
+                      <Badge text={item.id} color={colors.primary} />
+                      <Badge text={item.category} color={colors.accent2} />
+                    </div>
+                    <div className="list-item-title">
+                      {item.name}
+                      {item.brand && <span style={{ color: colors.textMuted, fontWeight: typography.fontWeight.normal }}> — {item.brand}</span>}
+                    </div>
                   </div>
-                )}
-                <div className="list-item-content">
-                  <div className="list-item-badges">
-                    <Badge text={item.id} color={colors.primary} />
-                    <Badge text={item.category} color={colors.accent2} />
-                  </div>
-                  <div className="list-item-title">{item.name}</div>
+                  <Badge text={item.status} color={getStatusColor(item.status)} />
+                  <ChevronRight size={16} color={colors.textMuted} style={{ cursor: 'pointer' }} onClick={() => onViewItem(item.id, {
+                    returnTo: 'packList',
+                    packListId: selectedList?.id,
+                    backLabel: 'Back to Pack List'
+                  })} />
                 </div>
-                <Badge text={item.status} color={getStatusColor(item.status)} />
-                <ChevronRight size={16} color={colors.textMuted} />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
         
@@ -886,7 +976,7 @@ function PackListsView({
             isOpen={confirmDelete.isOpen}
             title="Delete Pack List"
             message={`Are you sure you want to delete "${confirmDelete.name}"? This action cannot be undone.`}
-            onConfirm={() => { handleDelete(confirmDelete.id); setSelectedList(null); }}
+            onConfirm={() => handleDelete(confirmDelete.id)}
             onCancel={() => setConfirmDelete({ isOpen: false, id: null, name: '' })}
           />
         )}
@@ -957,5 +1047,18 @@ function PackListsView({
     </>
   );
 }
+
+PackListsView.propTypes = {
+  packLists: PropTypes.array.isRequired,
+  dataContext: PropTypes.object,
+  inventory: PropTypes.array.isRequired,
+  packages: PropTypes.array.isRequired,
+  categorySettings: PropTypes.object,
+  onViewItem: PropTypes.func.isRequired,
+  addAuditLog: PropTypes.func,
+  currentUser: PropTypes.object,
+  initialSelectedList: PropTypes.object,
+  onListSelect: PropTypes.func,
+};
 
 export default memo(PackListsView);

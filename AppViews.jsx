@@ -231,22 +231,24 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         </Suspense>
       )}
 
-      {currentView === VIEWS.PACK_LISTS && (
-        <Suspense fallback={<ViewLoading message="Loading Pack Lists..." />}>
-          <PackListsView
-            packLists={packLists}
-            dataContext={dataContext}
-            inventory={inventory}
-            packages={packages}
-            categorySettings={categorySettings}
-            onViewItem={navigateToItem}
-            addAuditLog={addAuditLog}
-            currentUser={currentUser}
-            initialSelectedList={selectedPackList}
-            onListSelect={setSelectedPackList}
-          />
-        </Suspense>
-      )}
+      <PermissionGate permission="pack_lists">
+        {currentView === VIEWS.PACK_LISTS && (
+          <Suspense fallback={<ViewLoading message="Loading Pack Lists..." />}>
+            <PackListsView
+              packLists={packLists}
+              dataContext={dataContext}
+              inventory={inventory}
+              packages={packages}
+              categorySettings={categorySettings}
+              onViewItem={navigateToItem}
+              addAuditLog={addAuditLog}
+              currentUser={currentUser}
+              initialSelectedList={selectedPackList}
+              onListSelect={setSelectedPackList}
+            />
+          </Suspense>
+        )}
+      </PermissionGate>
 
       {currentView === VIEWS.SCHEDULE && (
         <Suspense fallback={<ViewLoading message="Loading Schedule..." />}>
