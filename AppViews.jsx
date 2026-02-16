@@ -572,9 +572,8 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               clients={clients}
               inventory={inventory}
               currentUser={currentUser}
-              onViewClient={(client) => {
-                setSelectedClient(client);
-                setCurrentView(VIEWS.CLIENT_DETAIL);
+              onViewClient={() => {
+                setCurrentView(VIEWS.CLIENTS);
               }}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />

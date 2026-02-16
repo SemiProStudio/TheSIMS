@@ -60,8 +60,6 @@ export const CSVImportModal = memo(function CSVImportModal({ categories, specs, 
   
   // CSV column definitions
   const requiredColumns = ['name', 'category'];
-  const optionalColumns = ['brand', 'status', 'condition', 'location', 'purchaseDate', 'purchasePrice', 'currentValue', 'serialNumber', 'notes'];
-  const allColumns = [...requiredColumns, ...optionalColumns];
   
   // Generate CSV template
   const downloadTemplate = () => {
