@@ -364,7 +364,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             <SpecsPage
               specs={specs}
               onSave={async (newSpecs, fieldRenames = {}) => {
-                updateSpecs(newSpecs);
+                await updateSpecs(newSpecs);
                 addAuditLog({
                   type: 'specs_updated',
                   description: `Specification fields updated`,
@@ -415,8 +415,8 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               specs={specs}
               categorySettings={categorySettings}
               onSave={async (newCategories, newSpecs, newSettings, categoryRenames = {}) => {
-                updateCategories(newCategories, newSettings);
-                updateSpecs(newSpecs);
+                await updateCategories(newCategories, newSettings);
+                await updateSpecs(newSpecs);
                 addAuditLog({
                   type: 'categories_updated',
                   description: `Categories updated (${newCategories.length} categories)`,
