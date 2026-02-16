@@ -25,6 +25,8 @@ vi.mock('../lib/services.js', () => ({
     create: vi.fn((item) => Promise.resolve(item)),
     update: vi.fn((id, updates) => Promise.resolve({ id, ...updates })),
     delete: vi.fn((id) => Promise.resolve({ id })),
+    checkOut: vi.fn((id, data) => Promise.resolve({ id, status: 'checked-out', ...data })),
+    checkIn: vi.fn((id, data) => Promise.resolve({ id, status: 'available', ...data })),
     getByIdWithDetails: vi.fn((id) => Promise.resolve({ id, name: 'Test Camera', notes: [], reminders: [], reservations: [], maintenanceHistory: [], checkoutHistory: [] })),
   },
   packagesService: {
@@ -697,6 +699,165 @@ describe('DataProvider', () => {
       
       expect(capturedContext.inventory.length).toBe(initialCount);
     });
+  });
+});
+
+// =============================================================================
+// Check Out / Check In State Transition Tests
+// =============================================================================
+
+describe('Check Out / Check In State Transitions', () => {
+  it('checkOutItem transitions item to checked-out status', async () => {
+    let capturedContext;
+
+    render(
+      <DataProvider>
+        <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
+      </DataProvider>
+    );
+
+    await waitFor(() => {
+      expect(capturedContext?.checkOutItem).toBeDefined();
+      expect(capturedContext?.inventory?.length).toBeGreaterThan(0);
+    });
+
+    const checkoutData = {
+      userName: 'Alice',
+      userId: 'user-alice',
+      dueBack: '2025-06-15',
+      project: 'Wedding Shoot',
+      clientId: 'client-1',
+    };
+
+    await act(async () => {
+      await capturedContext.checkOutItem('CAM001', checkoutData);
+    });
+
+    // Verify state transition
+    const item = capturedContext.inventory.find(i => i.id === 'CAM001');
+    expect(item.status).toBe('checked-out');
+    expect(item.checkedOutTo).toBe('Alice');
+    expect(item.checkedOutToUserId).toBe('user-alice');
+    expect(item.dueBack).toBe('2025-06-15');
+    expect(item.checkoutProject).toBe('Wedding Shoot');
+    expect(item.checkoutClientId).toBe('client-1');
+    expect(item.checkedOutDate).toBeTruthy(); // today's date
+  });
+
+  it('checkInItem transitions item back to available', async () => {
+    let capturedContext;
+
+    render(
+      <DataProvider>
+        <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
+      </DataProvider>
+    );
+
+    await waitFor(() => {
+      expect(capturedContext?.checkOutItem).toBeDefined();
+      expect(capturedContext?.inventory?.length).toBeGreaterThan(0);
+    });
+
+    // First check out
+    await act(async () => {
+      await capturedContext.checkOutItem('CAM001', {
+        userName: 'Bob',
+        userId: 'user-bob',
+        dueBack: '2025-07-01',
+        project: 'Studio',
+        clientId: 'client-2',
+      });
+    });
+
+    expect(capturedContext.inventory.find(i => i.id === 'CAM001').status).toBe('checked-out');
+
+    // Then check in
+    await act(async () => {
+      await capturedContext.checkInItem('CAM001', {
+        returnedBy: 'Bob',
+        userId: 'user-bob',
+        condition: 'good',
+        damageReported: false,
+      });
+    });
+
+    const item = capturedContext.inventory.find(i => i.id === 'CAM001');
+    expect(item.status).toBe('available');
+    expect(item.condition).toBe('good');
+    expect(item.checkedOutTo).toBeNull();
+    expect(item.checkedOutToUserId).toBeNull();
+    expect(item.checkedOutDate).toBeNull();
+    expect(item.dueBack).toBeNull();
+    expect(item.checkoutProject).toBeNull();
+    expect(item.checkoutClientId).toBeNull();
+  });
+
+  it('checkInItem sets needs-attention when damage is reported', async () => {
+    let capturedContext;
+
+    render(
+      <DataProvider>
+        <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
+      </DataProvider>
+    );
+
+    await waitFor(() => {
+      expect(capturedContext?.checkOutItem).toBeDefined();
+      expect(capturedContext?.inventory?.length).toBeGreaterThan(0);
+    });
+
+    // Check out first
+    await act(async () => {
+      await capturedContext.checkOutItem('CAM001', {
+        userName: 'Carol',
+        userId: 'user-carol',
+        dueBack: '2025-08-01',
+      });
+    });
+
+    // Check in with damage
+    await act(async () => {
+      await capturedContext.checkInItem('CAM001', {
+        returnedBy: 'Carol',
+        userId: 'user-carol',
+        condition: 'poor',
+        damageReported: true,
+        damageDescription: 'Cracked LCD screen',
+      });
+    });
+
+    const item = capturedContext.inventory.find(i => i.id === 'CAM001');
+    expect(item.status).toBe('needs-attention');
+    expect(item.condition).toBe('poor');
+    expect(item.checkedOutTo).toBeNull();
+  });
+
+  it('checkOutItem does not affect other items', async () => {
+    let capturedContext;
+
+    render(
+      <DataProvider>
+        <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
+      </DataProvider>
+    );
+
+    await waitFor(() => {
+      expect(capturedContext?.checkOutItem).toBeDefined();
+      expect(capturedContext?.inventory?.length).toBe(2);
+    });
+
+    await act(async () => {
+      await capturedContext.checkOutItem('CAM001', {
+        userName: 'Dave',
+        userId: 'user-dave',
+        dueBack: '2025-09-01',
+      });
+    });
+
+    // CAM001 should be checked out
+    expect(capturedContext.inventory.find(i => i.id === 'CAM001').status).toBe('checked-out');
+    // LENS001 should remain available
+    expect(capturedContext.inventory.find(i => i.id === 'LENS001').status).toBe('available');
   });
 });
 

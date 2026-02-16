@@ -13,6 +13,8 @@ import {
   isOverdue,
   getAllReservationConflicts,
   formatMoney,
+  formatPhoneNumber,
+  sanitizeCSVCell,
   getStatusColor,
   getConditionColor,
   updateById,
@@ -856,5 +858,350 @@ describe('getConditionColor', () => {
   it('should return default color for unknown condition', () => {
     const color = getConditionColor('unknown');
     expect(color).toBeDefined();
+  });
+});
+
+// =============================================================================
+// CSV Sanitization Tests
+// =============================================================================
+
+describe('sanitizeCSVCell', () => {
+  it('should wrap normal text in double quotes', () => {
+    expect(sanitizeCSVCell('hello')).toBe('"hello"');
+  });
+
+  it('should return empty quoted string for null', () => {
+    expect(sanitizeCSVCell(null)).toBe('""');
+  });
+
+  it('should return empty quoted string for undefined', () => {
+    expect(sanitizeCSVCell(undefined)).toBe('""');
+  });
+
+  it('should convert numbers to quoted strings', () => {
+    expect(sanitizeCSVCell(42)).toBe('"42"');
+    expect(sanitizeCSVCell(0)).toBe('"0"');
+  });
+
+  it('should prefix = to prevent formula injection', () => {
+    expect(sanitizeCSVCell('=SUM(A1:A10)')).toBe("\"'=SUM(A1:A10)\"");
+  });
+
+  it('should prefix + to prevent formula injection', () => {
+    expect(sanitizeCSVCell('+cmd|exe')).toBe("\"'+cmd|exe\"");
+  });
+
+  it('should prefix - to prevent formula injection', () => {
+    expect(sanitizeCSVCell('-1+1')).toBe("\"'-1+1\"");
+  });
+
+  it('should prefix @ to prevent formula injection', () => {
+    expect(sanitizeCSVCell('@SUM(A1)')).toBe("\"'@SUM(A1)\"");
+  });
+
+  it('should prefix tab character to prevent formula injection', () => {
+    expect(sanitizeCSVCell('\tdata')).toBe("\"'\tdata\"");
+  });
+
+  it('should prefix carriage return to prevent formula injection', () => {
+    expect(sanitizeCSVCell('\rdata')).toBe("\"'\rdata\"");
+  });
+
+  it('should escape embedded double quotes by doubling them', () => {
+    expect(sanitizeCSVCell('say "hello"')).toBe('"say ""hello"""');
+  });
+
+  it('should handle empty string', () => {
+    expect(sanitizeCSVCell('')).toBe('""');
+  });
+
+  it('should handle strings with commas', () => {
+    expect(sanitizeCSVCell('one, two, three')).toBe('"one, two, three"');
+  });
+
+  it('should handle strings with newlines', () => {
+    expect(sanitizeCSVCell('line1\nline2')).toBe('"line1\nline2"');
+  });
+
+  it('should handle boolean values', () => {
+    expect(sanitizeCSVCell(true)).toBe('"true"');
+    expect(sanitizeCSVCell(false)).toBe('"false"');
+  });
+});
+
+// =============================================================================
+// Phone Formatting Tests
+// =============================================================================
+
+describe('formatPhoneNumber', () => {
+  it('should return empty string for null/undefined', () => {
+    expect(formatPhoneNumber(null)).toBe('');
+    expect(formatPhoneNumber(undefined)).toBe('');
+  });
+
+  it('should return empty string for empty input', () => {
+    expect(formatPhoneNumber('')).toBe('');
+  });
+
+  it('should return digits only for 3 or fewer digits', () => {
+    expect(formatPhoneNumber('1')).toBe('1');
+    expect(formatPhoneNumber('12')).toBe('12');
+    expect(formatPhoneNumber('123')).toBe('123');
+  });
+
+  it('should add first dash after 3 digits', () => {
+    expect(formatPhoneNumber('1234')).toBe('123-4');
+    expect(formatPhoneNumber('12345')).toBe('123-45');
+    expect(formatPhoneNumber('123456')).toBe('123-456');
+  });
+
+  it('should add second dash after 6 digits', () => {
+    expect(formatPhoneNumber('1234567')).toBe('123-456-7');
+    expect(formatPhoneNumber('1234567890')).toBe('123-456-7890');
+  });
+
+  it('should strip non-digit characters', () => {
+    expect(formatPhoneNumber('(123) 456-7890')).toBe('123-456-7890');
+    expect(formatPhoneNumber('123.456.7890')).toBe('123-456-7890');
+    expect(formatPhoneNumber('abc123def456')).toBe('123-456');
+  });
+
+  it('should cap at 10 digits', () => {
+    expect(formatPhoneNumber('12345678901234')).toBe('123-456-7890');
+  });
+
+  it('should handle already formatted input', () => {
+    expect(formatPhoneNumber('123-456-7890')).toBe('123-456-7890');
+  });
+});
+
+// =============================================================================
+// Depreciation — Declining Balance & Double Declining Tests
+// =============================================================================
+
+describe('calculateDepreciation — declining-balance method', () => {
+  const purchasePrice = 10000;
+  const usefulLife = 5;
+  const salvageValue = 1000;
+
+  it('should calculate declining-balance depreciation', () => {
+    const result = calculateDepreciation(
+      purchasePrice,
+      '2020-01-01',
+      usefulLife,
+      salvageValue,
+      DEPRECIATION_METHODS.DECLINING_BALANCE
+    );
+    expect(result).toBeDefined();
+    expect(result.currentValue).toBeGreaterThanOrEqual(salvageValue);
+    expect(result.schedule).toHaveLength(usefulLife);
+    expect(result.annualDepreciation).toBeGreaterThan(0);
+  });
+
+  it('should not depreciate below salvage value', () => {
+    const result = calculateDepreciation(
+      purchasePrice,
+      '2010-01-01', // very old
+      usefulLife,
+      salvageValue,
+      DEPRECIATION_METHODS.DECLINING_BALANCE
+    );
+    expect(result.currentValue).toBeGreaterThanOrEqual(salvageValue);
+  });
+
+  it('should return full price when no purchase date', () => {
+    const result = calculateDepreciation(
+      purchasePrice,
+      null,
+      usefulLife,
+      salvageValue,
+      DEPRECIATION_METHODS.DECLINING_BALANCE
+    );
+    expect(result.currentValue).toBe(purchasePrice);
+    expect(result.totalDepreciation).toBe(0);
+    expect(result.schedule).toEqual([]);
+  });
+
+  it('declining-balance schedule should have decreasing depreciation each year', () => {
+    const result = calculateDepreciation(
+      purchasePrice,
+      '2020-01-01',
+      usefulLife,
+      salvageValue,
+      DEPRECIATION_METHODS.DECLINING_BALANCE
+    );
+    // Each year's start value should be less than the previous
+    for (let i = 1; i < result.schedule.length; i++) {
+      expect(result.schedule[i].startValue).toBeLessThanOrEqual(result.schedule[i - 1].startValue);
+    }
+  });
+
+  it('schedule end value of each year equals start value of next', () => {
+    const result = calculateDepreciation(
+      purchasePrice,
+      '2020-01-01',
+      usefulLife,
+      salvageValue,
+      DEPRECIATION_METHODS.DECLINING_BALANCE
+    );
+    for (let i = 0; i < result.schedule.length - 1; i++) {
+      expect(result.schedule[i].endValue).toBeCloseTo(result.schedule[i + 1].startValue, 2);
+    }
+  });
+});
+
+describe('calculateDepreciation — double-declining method', () => {
+  const purchasePrice = 10000;
+  const usefulLife = 5;
+  const salvageValue = 1000;
+
+  it('should calculate double-declining depreciation', () => {
+    const result = calculateDepreciation(
+      purchasePrice,
+      '2020-01-01',
+      usefulLife,
+      salvageValue,
+      DEPRECIATION_METHODS.DOUBLE_DECLINING
+    );
+    expect(result).toBeDefined();
+    expect(result.currentValue).toBeGreaterThanOrEqual(salvageValue);
+    expect(result.schedule).toHaveLength(usefulLife);
+    expect(result.annualDepreciation).toBeGreaterThan(0);
+  });
+
+  it('double-declining rate should be higher than declining-balance', () => {
+    const ddb = calculateDepreciation(
+      purchasePrice,
+      '2020-01-01',
+      usefulLife,
+      salvageValue,
+      DEPRECIATION_METHODS.DOUBLE_DECLINING
+    );
+    const db = calculateDepreciation(
+      purchasePrice,
+      '2020-01-01',
+      usefulLife,
+      salvageValue,
+      DEPRECIATION_METHODS.DECLINING_BALANCE
+    );
+    // First year depreciation of DDB (200% rate) > DB (150% rate)
+    expect(ddb.schedule[0].depreciation).toBeGreaterThan(db.schedule[0].depreciation);
+  });
+
+  it('should not depreciate below salvage value', () => {
+    const result = calculateDepreciation(
+      purchasePrice,
+      '2010-01-01',
+      usefulLife,
+      salvageValue,
+      DEPRECIATION_METHODS.DOUBLE_DECLINING
+    );
+    expect(result.currentValue).toBeGreaterThanOrEqual(salvageValue);
+  });
+
+  it('should switch to straight-line when it gives higher depreciation', () => {
+    // With DDB, later years may switch to straight-line
+    const result = calculateDepreciation(
+      purchasePrice,
+      '2020-01-01',
+      usefulLife,
+      salvageValue,
+      DEPRECIATION_METHODS.DOUBLE_DECLINING
+    );
+    // The final year's end value should be close to or at salvage value
+    const lastEntry = result.schedule[result.schedule.length - 1];
+    expect(lastEntry.endValue).toBeCloseTo(salvageValue, 0);
+  });
+
+  it('schedule end value of each year equals start value of next', () => {
+    const result = calculateDepreciation(
+      purchasePrice,
+      '2020-01-01',
+      usefulLife,
+      salvageValue,
+      DEPRECIATION_METHODS.DOUBLE_DECLINING
+    );
+    for (let i = 0; i < result.schedule.length - 1; i++) {
+      expect(result.schedule[i].endValue).toBeCloseTo(result.schedule[i + 1].startValue, 2);
+    }
+  });
+});
+
+describe('calculateDepreciation — edge cases', () => {
+  it('should handle zero useful life gracefully', () => {
+    // With zero useful life, division by zero would occur
+    // Straight-line: depreciableAmount / 0 = Infinity
+    const result = calculateDepreciation(
+      10000,
+      '2020-01-01',
+      0,
+      1000,
+      DEPRECIATION_METHODS.STRAIGHT_LINE
+    );
+    // Should still return a result without crashing
+    expect(result).toBeDefined();
+  });
+
+  it('should handle salvage value equal to purchase price', () => {
+    const result = calculateDepreciation(
+      10000,
+      '2020-01-01',
+      5,
+      10000, // same as purchase price
+      DEPRECIATION_METHODS.STRAIGHT_LINE
+    );
+    expect(result.annualDepreciation).toBe(0);
+    expect(result.currentValue).toBe(10000);
+  });
+
+  it('should handle zero salvage value with zero purchase price', () => {
+    const result = calculateDepreciation(
+      0,
+      '2020-01-01',
+      5,
+      0,
+      DEPRECIATION_METHODS.STRAIGHT_LINE
+    );
+    expect(result.currentValue).toBe(0);
+    expect(result.totalDepreciation).toBe(0);
+  });
+
+  it('should return default for unknown method', () => {
+    const result = calculateDepreciation(
+      10000,
+      '2020-01-01',
+      5,
+      1000,
+      'unknown-method'
+    );
+    expect(result.currentValue).toBe(10000);
+    expect(result.annualDepreciation).toBe(0);
+  });
+
+  it('should include percentDepreciated', () => {
+    const result = calculateDepreciation(
+      10000,
+      '2020-01-01',
+      5,
+      1000,
+      DEPRECIATION_METHODS.STRAIGHT_LINE
+    );
+    expect(typeof result.percentDepreciated).toBe('number');
+    expect(result.percentDepreciated).toBeGreaterThanOrEqual(0);
+    expect(result.percentDepreciated).toBeLessThanOrEqual(100);
+  });
+
+  it('should include ageInMonths and ageInYears', () => {
+    const result = calculateDepreciation(
+      10000,
+      '2023-01-01',
+      5,
+      1000,
+      DEPRECIATION_METHODS.STRAIGHT_LINE
+    );
+    expect(typeof result.ageInYears).toBe('number');
+    expect(typeof result.ageInMonths).toBe('number');
+    expect(result.ageInYears).toBeGreaterThan(0);
+    expect(result.ageInMonths).toBeGreaterThan(0);
   });
 });

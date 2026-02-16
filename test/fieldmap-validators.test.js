@@ -185,6 +185,77 @@ describe('toDb', () => {
   it('returns null for null input', () => {
     expect(toDb(null, INVENTORY_FIELD_MAP)).toBeNull();
   });
+
+  // ===========================================================================
+  // Date column sanitization: empty strings → null for Postgres date columns
+  // ===========================================================================
+
+  it('converts empty string to null for date columns (_date suffix)', () => {
+    const item = { purchaseDate: '' };
+    const result = toDb(item, INVENTORY_FIELD_MAP, { partial: true });
+    expect(result.purchase_date).toBeNull();
+  });
+
+  it('converts empty string to null for timestamp columns (_at suffix)', () => {
+    const item = { createdAt: '', updatedAt: '' };
+    const result = toDb(item, INVENTORY_FIELD_MAP, { partial: true });
+    expect(result.created_at).toBeNull();
+    expect(result.updated_at).toBeNull();
+  });
+
+  it('converts empty string to null for due_back column', () => {
+    const item = { dueBack: '' };
+    const result = toDb(item, INVENTORY_FIELD_MAP, { partial: true });
+    expect(result.due_back).toBeNull();
+  });
+
+  it('preserves non-empty date values', () => {
+    const item = { purchaseDate: '2024-06-15', dueBack: '2024-07-01' };
+    const result = toDb(item, INVENTORY_FIELD_MAP, { partial: true });
+    expect(result.purchase_date).toBe('2024-06-15');
+    expect(result.due_back).toBe('2024-07-01');
+  });
+
+  it('preserves null date values as-is', () => {
+    const item = { purchaseDate: null };
+    const result = toDb(item, INVENTORY_FIELD_MAP, { partial: true });
+    expect(result.purchase_date).toBeNull();
+  });
+
+  it('does NOT convert empty string for non-date columns', () => {
+    const item = { category: '', serialNumber: '' };
+    const result = toDb(item, INVENTORY_FIELD_MAP, { partial: true });
+    expect(result.category_name).toBe('');
+    expect(result.serial_number).toBe('');
+  });
+
+  it('converts empty string to null for reservation date columns', () => {
+    const reservation = { startDate: '', endDate: '', createdAt: '' };
+    const result = toDb(reservation, RESERVATION_FIELD_MAP, { partial: true });
+    expect(result.start_date).toBeNull();
+    expect(result.end_date).toBeNull();
+    expect(result.created_at).toBeNull();
+  });
+
+  it('converts empty string to null for maintenance date columns', () => {
+    const maintenance = { scheduledDate: '', completedDate: '' };
+    const result = toDb(maintenance, MAINTENANCE_FIELD_MAP, { partial: true });
+    expect(result.scheduled_date).toBeNull();
+    expect(result.completed_date).toBeNull();
+  });
+
+  it('converts empty string to null for reminder date columns', () => {
+    const reminder = { dueDate: '', completedAt: '' };
+    const result = toDb(reminder, REMINDER_FIELD_MAP, { partial: true });
+    expect(result.due_date).toBeNull();
+    expect(result.completed_at).toBeNull();
+  });
+
+  it('does NOT convert empty string for checked_out_to_name (not a date)', () => {
+    const item = { checkedOutTo: '' };
+    const result = toDb(item, INVENTORY_FIELD_MAP, { partial: true });
+    expect(result.checked_out_to_name).toBe('');
+  });
 });
 
 // =============================================================================
