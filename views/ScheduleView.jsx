@@ -2,7 +2,7 @@
 // Schedule View Component
 // ============================================================================
 
-import { memo, useMemo, useCallback } from 'react';
+import { memo, useMemo, useCallback, useState } from 'react';
 import { ArrowLeft, ArrowRight, Calendar, List, Clock, MapPin, Plus, Package, Loader, User } from 'lucide-react';
 import { SCHEDULE_MODES, SCHEDULE_PERIODS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
@@ -26,14 +26,17 @@ function shortDateRange(start, end) {
 
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-// Stable palette for assigning colors to different reservations
+// Distinct palette for differentiating reservations on the calendar.
+// Uses a mix of theme accent, status, and semantic colors for maximum contrast.
 const EVENT_COLORS = [
   colors.primary,
-  colors.accent1,
   colors.accent2,
+  colors.accent1,
+  colors.checkedOut,
   colors.accent3,
-  colors.accent4,
-  colors.accent5,
+  colors.success,
+  colors.warning,
+  colors.reserved,
 ];
 
 function getEventColor(idx) {
@@ -53,6 +56,9 @@ function ScheduleView({
   onAddReservation
 }) {
   const { tier2Loaded } = useData();
+
+  // Track which reservation is hovered (by evIdx) so all its segments highlight together
+  const [hoveredEvIdx, setHoveredEvIdx] = useState(null);
 
   // Get all reservations with item info
   const allReservations = useMemo(() => {
@@ -451,14 +457,16 @@ function ScheduleView({
                     const label = ev.project || (ev.itemCount > 1 ? `${ev.itemCount} items` : ev.items[0]?.name) || 'Reservation';
                     const lane = seg.lane ?? 0;
                     const top = DATE_HEADER_H + lane * (BAR_H + BAR_GAP) + BAR_GAP;
-                    // Use percentages for left/width so it scales with columns
                     const leftPct = (seg.colStart / 7) * 100;
                     const widthPct = (seg.colSpan / 7) * 100;
+                    const isHovered = hoveredEvIdx === seg.evIdx;
 
                     return (
                       <div
                         key={`bar-${seg.evIdx}-${si}`}
                         onClick={(e) => { e.stopPropagation(); onViewReservation(ev, ev.items[0]); }}
+                        onMouseEnter={() => setHoveredEvIdx(seg.evIdx)}
+                        onMouseLeave={() => setHoveredEvIdx(null)}
                         title={`${label} (${shortDateRange(ev.start, ev.end)})`}
                         style={{
                           position: 'absolute',
@@ -466,7 +474,7 @@ function ScheduleView({
                           left: `calc(${leftPct}% + 2px)`,
                           width: `calc(${widthPct}% - 4px)`,
                           height: BAR_H,
-                          background: withOpacity(evColor, 20),
+                          background: isHovered ? withOpacity(evColor, 38) : withOpacity(evColor, 20),
                           borderLeft: seg.isStart ? `3px solid ${evColor}` : 'none',
                           borderRadius: seg.isStart && seg.isEnd ? borderRadius.sm
                             : seg.isStart ? `${borderRadius.sm} 0 0 ${borderRadius.sm}`
@@ -478,11 +486,9 @@ function ScheduleView({
                           alignItems: 'center',
                           paddingLeft: seg.isStart ? 4 : 6,
                           paddingRight: 4,
-                          zIndex: 5,
+                          zIndex: isHovered ? 10 : 5,
                           transition: 'background 120ms ease',
                         }}
-                        onMouseEnter={e => e.currentTarget.style.background = withOpacity(evColor, 35)}
-                        onMouseLeave={e => e.currentTarget.style.background = withOpacity(evColor, 20)}
                       >
                         <span style={{
                           fontSize: 10,
@@ -493,7 +499,7 @@ function ScheduleView({
                           whiteSpace: 'nowrap',
                           lineHeight: `${BAR_H}px`,
                         }}>
-                          {seg.isStart ? label : `\u2026 ${label}`}
+                          {label}
                         </span>
                       </div>
                     );
@@ -591,11 +597,14 @@ function ScheduleView({
                 const leftPct = (item.startDay / 7) * 100;
                 const widthPct = (item.span / 7) * 100;
                 const top = BAR_GAP + item.lane * (BAR_H + BAR_GAP);
+                const isHovered = hoveredEvIdx === item.evIdx;
 
                 return (
                   <div
                     key={`week-${idx}`}
                     onClick={() => onViewReservation(ev, ev.items[0])}
+                    onMouseEnter={() => setHoveredEvIdx(item.evIdx)}
+                    onMouseLeave={() => setHoveredEvIdx(null)}
                     title={`${label} \u2013 ${shortDateRange(ev.start, ev.end)}`}
                     style={{
                       position: 'absolute',
@@ -603,7 +612,7 @@ function ScheduleView({
                       left: `calc(${leftPct}% + 3px)`,
                       width: `calc(${widthPct}% - 6px)`,
                       height: BAR_H,
-                      background: withOpacity(evColor, 15),
+                      background: isHovered ? withOpacity(evColor, 30) : withOpacity(evColor, 15),
                       borderLeft: item.isStart ? `3px solid ${evColor}` : 'none',
                       borderRadius: item.isStart && item.isEnd ? borderRadius.sm
                         : item.isStart ? `${borderRadius.sm} 0 0 ${borderRadius.sm}`
@@ -616,11 +625,9 @@ function ScheduleView({
                       gap: spacing[2],
                       paddingLeft: item.isStart ? spacing[2] : spacing[1],
                       paddingRight: spacing[1],
-                      zIndex: 5,
+                      zIndex: isHovered ? 10 : 5,
                       transition: 'background 120ms ease',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = withOpacity(evColor, 30)}
-                    onMouseLeave={e => e.currentTarget.style.background = withOpacity(evColor, 15)}
                   >
                     <span style={{
                       fontSize: typography.fontSize.xs,
@@ -632,7 +639,7 @@ function ScheduleView({
                       flex: 1,
                       minWidth: 0,
                     }}>
-                      {item.isStart ? label : `\u2026 ${label}`}
+                      {label}
                     </span>
                     {item.span >= 2 && subLabel && subLabel !== label && (
                       <span style={{
