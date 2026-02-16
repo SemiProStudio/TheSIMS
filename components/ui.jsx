@@ -811,7 +811,7 @@ export const ConfirmDialog = memo(function ConfirmDialog({
 // SearchInput - Search input with icon
 // ============================================================================
 
-export const SearchInput = memo(function SearchInput({
+export const SearchInput = memo(forwardRef(function SearchInput({
   value,
   onChange,
   placeholder = 'Search...',
@@ -820,9 +820,11 @@ export const SearchInput = memo(function SearchInput({
   id,
   style: customStyle = {},
   ...props
-}) {
+}, ref) {
   const stableIdRef = useRef(id || `search-input-${Math.random().toString(36).substr(2, 9)}`);
   const inputId = id || stableIdRef.current;
+  const internalRef = useRef(null);
+  const inputRef = ref || internalRef;
   const [isFocused, setIsFocused] = useState(false);
   
   return (
@@ -854,6 +856,7 @@ export const SearchInput = memo(function SearchInput({
         <line x1="21" y1="21" x2="16.65" y2="16.65" />
       </svg>
       <input
+        ref={inputRef}
         id={inputId}
         type="text"
         value={value}
@@ -908,7 +911,7 @@ export const SearchInput = memo(function SearchInput({
       )}
     </div>
   );
-});
+}));
 
 // ============================================================================
 // Avatar - User avatar

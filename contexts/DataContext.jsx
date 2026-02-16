@@ -359,8 +359,26 @@ export function DataProvider({ children }) {
       logError('Failed to delete item:', err);
       throw err;
     }
-    
+
     setInventory(prev => prev.filter(item => item.id !== id));
+
+    // Clean up stale item references in packages (DB cascades, but local state needs sync)
+    setPackages(prev => prev.map(pkg => {
+      if (!pkg.items?.includes(id)) return pkg;
+      return { ...pkg, items: pkg.items.filter(itemId => itemId !== id) };
+    }));
+
+    // Clean up stale item references in pack lists
+    setPackLists(prev => prev.map(pl => {
+      const hasItem = pl.items?.some(i => i.id === id);
+      const hasPacked = pl.packedItems?.includes(id);
+      if (!hasItem && !hasPacked) return pl;
+      return {
+        ...pl,
+        items: pl.items?.filter(i => i.id !== id) || [],
+        packedItems: pl.packedItems?.filter(itemId => itemId !== id) || [],
+      };
+    }));
   }, []);
 
   // Fetch item with all related data (notes, reminders, reservations, maintenance)
@@ -689,8 +707,14 @@ export function DataProvider({ children }) {
       logError('Failed to delete package:', err);
       throw err;
     }
-    
+
     setPackages(prev => prev.filter(pkg => pkg.id !== id));
+
+    // Clean up stale package references in pack lists
+    setPackLists(prev => prev.map(pl => {
+      if (!pl.packages?.includes(id)) return pl;
+      return { ...pl, packages: pl.packages.filter(pkgId => pkgId !== id) };
+    }));
   }, []);
 
   // =============================================================================

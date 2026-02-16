@@ -93,6 +93,8 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="btn-secondary"
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -108,7 +110,7 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
       </button>
 
       {isOpen && (
-        <div style={{
+        <div role="menu" style={{
           position: 'absolute',
           top: '100%',
           left: 0,
@@ -273,6 +275,7 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
 const GridItem = memo(function GridItem({ item, onViewItem, selectionMode, isSelected, onToggleSelect }) {
   return (
     <Card
+      aria-label={`${item.name} - ${item.status}${isSelected ? ', selected' : ''}`}
       onClick={() => selectionMode ? onToggleSelect(item.id) : onViewItem(item.id)}
       padding={false}
       style={{
@@ -376,6 +379,7 @@ const GridItem = memo(function GridItem({ item, onViewItem, selectionMode, isSel
 const ListItem = memo(function ListItem({ item, onViewItem, selectionMode, isSelected, onToggleSelect }) {
   return (
     <Card
+      aria-label={`${item.name} - ${item.status}${isSelected ? ', selected' : ''}`}
       onClick={() => selectionMode ? onToggleSelect(item.id) : onViewItem(item.id)}
       style={{
         cursor: 'pointer',
@@ -815,6 +819,8 @@ function GearList({
           }}>
             <button
               onClick={() => setIsGridView(true)}
+              aria-label="Grid view"
+              aria-pressed={isGridView}
               style={{
                 ...styles.btnSec,
                 border: 'none',
@@ -827,6 +833,8 @@ function GearList({
             </button>
             <button
               onClick={() => setIsGridView(false)}
+              aria-label="List view"
+              aria-pressed={!isGridView}
               style={{
                 ...styles.btnSec,
                 border: 'none',

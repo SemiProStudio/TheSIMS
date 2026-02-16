@@ -2,7 +2,7 @@
 // usePagination - Pagination logic hook
 // =============================================================================
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 
 /**
  * Hook for pagination
@@ -31,8 +31,8 @@ export function usePagination(items, pageSize = 20) {
     goToPage(page - 1);
   }, [page, goToPage]);
 
-  // Reset to page 1 when items change
-  useMemo(() => {
+  // Reset to page 1 when current page exceeds total pages
+  useEffect(() => {
     if (page > totalPages && totalPages > 0) {
       setPage(1);
     }

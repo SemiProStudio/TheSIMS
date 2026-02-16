@@ -2,14 +2,18 @@
 // Search View Component
 // ============================================================================
 
-import { memo, useMemo, useCallback } from 'react';
+import { memo, useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { Search, Eye, X, Filter } from 'lucide-react';
 import { STATUS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
-import { getStatusColor } from '../utils';
-import { Badge, Card, Button, SearchInput, PageHeader } from '../components/ui.jsx';
+import { getStatusColor, filterBySearch } from '../utils';
+import { Badge, Card, Button, SearchInput, Pagination, PageHeader } from '../components/ui.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import { MultiSelectDropdown } from '../components/MultiSelectDropdown.jsx';
+import { useDebounce, usePagination } from '../hooks/index.js';
+
+const SEARCH_FIELDS = ['name', 'brand', 'id', 'serialNumber'];
+const DEFAULT_PAGE_SIZE = 50;
 
 const ALL_STATUSES = Object.values(STATUS);
 
@@ -24,18 +28,21 @@ function SearchView({
   setSelectedStatuses,
   onViewItem
 }) {
-  // Filter inventory
-  const filteredItems = useMemo(() => {
-    let result = inventory;
+  // Debounce search for performance on large inventories
+  const debouncedSearch = useDebounce(searchQuery, 200);
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(i =>
-        i.name.toLowerCase().includes(q) ||
-        i.brand.toLowerCase().includes(q) ||
-        i.id.toLowerCase().includes(q)
-      );
-    }
+  // Auto-focus search input on mount
+  const searchInputRef = useRef(null);
+  useEffect(() => {
+    searchInputRef.current?.focus();
+  }, []);
+
+  // Pagination state
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE);
+
+  // Filter inventory using shared utility (null-safe, searches serialNumber too)
+  const filteredItems = useMemo(() => {
+    let result = filterBySearch(inventory, debouncedSearch, SEARCH_FIELDS);
 
     if (selectedCategories.length > 0) {
       result = result.filter(i => selectedCategories.includes(i.category));
@@ -46,7 +53,20 @@ function SearchView({
     }
 
     return result;
-  }, [inventory, searchQuery, selectedCategories, selectedStatuses]);
+  }, [inventory, debouncedSearch, selectedCategories, selectedStatuses]);
+
+  // Pagination
+  const {
+    page,
+    totalPages,
+    paginatedItems,
+    goToPage,
+  } = usePagination(filteredItems, pageSize);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    goToPage(1);
+  }, [debouncedSearch, selectedCategories, selectedStatuses, goToPage]);
 
   const clearAllFilters = useCallback(() => {
     setSearchQuery('');
@@ -91,10 +111,11 @@ function SearchView({
               Search
             </label>
             <SearchInput
+              ref={searchInputRef}
               value={searchQuery}
               onChange={setSearchQuery}
               onClear={() => setSearchQuery('')}
-              placeholder="Search by name, brand, or ID..."
+              placeholder="Search by name, brand, serial #, or ID..."
             />
           </div>
 
@@ -159,22 +180,29 @@ function SearchView({
         )}
       </Card>
 
-      {/* Results */}
+      {/* Results header with count */}
       <div style={{ marginBottom: spacing[3], color: colors.textMuted, fontSize: typography.fontSize.sm }}>
-        {filteredItems.length} results
+        {filteredItems.length} result{filteredItems.length !== 1 ? 's' : ''}
+        {totalPages > 1 && ` · Page ${page} of ${totalPages}`}
       </div>
-      
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-        {filteredItems.map(item => (
+        {paginatedItems.map(item => (
           <Card key={item.id} style={{ padding: spacing[3], display: 'flex', alignItems: 'center', gap: spacing[3] }}>
-            <div onClick={() => onViewItem(item.id)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: spacing[3], cursor: 'pointer' }}>
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => onViewItem(item.id)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewItem(item.id); }}}
+              style={{ flex: 1, display: 'flex', alignItems: 'center', gap: spacing[3], cursor: 'pointer' }}
+            >
               {item.image ? (
-                <OptimizedImage 
-                  src={item.image} 
-                  alt={item.name} 
+                <OptimizedImage
+                  src={item.image}
+                  alt={item.name}
                   size="thumbnail"
-                  width={48} 
-                  height={48} 
+                  width={48}
+                  height={48}
                   style={{ borderRadius: borderRadius.md }}
                   objectFit="cover"
                 />
@@ -191,18 +219,33 @@ function SearchView({
                 <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>{item.brand}</div>
               </div>
             </div>
-            <button onClick={() => onViewItem(item.id)} className="btn-secondary" style={{ padding: spacing[2] }}>
+            <button onClick={() => onViewItem(item.id)} className="btn-secondary" aria-label={`View ${item.name}`} style={{ padding: spacing[2] }}>
               <Eye size={16} />
             </button>
           </Card>
         ))}
       </div>
-      
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ marginTop: spacing[4] }}>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+          />
+        </div>
+      )}
+
       {filteredItems.length === 0 && (
         <Card style={{ textAlign: 'center', padding: spacing[10] }}>
           <Search size={48} color={colors.textMuted} style={{ marginBottom: spacing[3], opacity: 0.5 }} />
-          <div style={{ color: colors.textMuted }}>No items found matching your filters</div>
-          {hasFilters && (
+          <div style={{ color: colors.textMuted }}>
+            {inventory.length === 0
+              ? 'No items in your inventory yet'
+              : 'No items found matching your filters'}
+          </div>
+          {hasFilters && inventory.length > 0 && (
             <Button variant="secondary" onClick={clearAllFilters} style={{ marginTop: spacing[3] }}>
               Clear Filters
             </Button>
