@@ -44,14 +44,14 @@ export function useCheckoutHandlers({
   }, [inventory, openModal]);
 
   const processCheckout = useCallback(async (checkoutData) => {
-    const { itemId, borrowerName, borrowerEmail, project, projectType, dueDate, checkedOutDate } = checkoutData;
-    
+    const { itemId, borrowerName, borrowerEmail, clientId, clientName, project, projectType, dueDate, checkedOutDate } = checkoutData;
+
     try {
       await dataContext.checkOutItem(itemId, {
         userId: currentUser?.id,
         userName: borrowerName,
-        clientId: null,
-        clientName: null,
+        clientId: clientId || null,
+        clientName: clientName || null,
         project: project,
         dueBack: dueDate
       });

@@ -239,6 +239,7 @@ export default memo(function AppModals({ handlers, currentUser }) {
           <CheckOutModal
             item={checkoutItem}
             users={users}
+            clients={clients}
             currentUser={currentUser}
             onCheckOut={processCheckout}
             onClose={closeModal}

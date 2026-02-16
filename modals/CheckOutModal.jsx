@@ -14,6 +14,7 @@ import { Modal, ModalHeader } from './ModalBase.jsx';
 export const CheckOutModal = memo(function CheckOutModal({
   item,
   users: _users,
+  clients = [],
   currentUser,
   onCheckOut,
   onClose
@@ -22,6 +23,7 @@ export const CheckOutModal = memo(function CheckOutModal({
     borrowerName: currentUser?.name || '',
     borrowerEmail: currentUser?.email || '',
     borrowerPhone: '',
+    clientId: '',
     project: '',
     projectType: 'General',
     dueDate: '',
@@ -52,7 +54,22 @@ export const CheckOutModal = memo(function CheckOutModal({
   };
   
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'clientId' && value) {
+      // Auto-populate contact info from selected client
+      const client = clients.find(c => c.id === value);
+      if (client) {
+        setFormData(prev => ({
+          ...prev,
+          clientId: value,
+          borrowerEmail: client.email || prev.borrowerEmail,
+          borrowerPhone: client.phone || prev.borrowerPhone,
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, clientId: value }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: null }));
     }
@@ -70,11 +87,14 @@ export const CheckOutModal = memo(function CheckOutModal({
   const handleSubmit = () => {
     if (!validate()) return;
     
+    const selectedClient = formData.clientId ? clients.find(c => c.id === formData.clientId) : null;
     onCheckOut({
       itemId: item.id,
       borrowerName: formData.borrowerName.trim(),
       borrowerEmail: formData.borrowerEmail.trim(),
       borrowerPhone: formData.borrowerPhone.trim(),
+      clientId: formData.clientId || null,
+      clientName: selectedClient?.name || null,
       project: formData.project.trim(),
       projectType: formData.projectType,
       dueDate: formData.dueDate,
@@ -163,6 +183,30 @@ export const CheckOutModal = memo(function CheckOutModal({
           </div>
         </div>
         
+        {/* Client Selection (optional) */}
+        {clients.length > 0 && (
+          <div style={{ marginBottom: spacing[4] }}>
+            <label style={styles.label}>Client (Optional)</label>
+            <Select
+              value={formData.clientId}
+              onChange={e => handleChange('clientId', e.target.value)}
+              options={[
+                { value: '', label: '-- No client --' },
+                ...clients.map(c => ({
+                  value: c.id,
+                  label: c.name + (c.company ? ` (${c.company})` : '')
+                }))
+              ]}
+              aria-label="Client"
+            />
+            {formData.clientId && (
+              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: spacing[1] }}>
+                Contact info auto-populated from client record
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Project Section */}
         <div style={{ marginBottom: spacing[4] }}>
           <h4 style={{ margin: `0 0 ${spacing[3]}px`, color: colors.textPrimary, fontSize: typography.fontSize.base }}>
