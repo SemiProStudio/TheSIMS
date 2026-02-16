@@ -9,7 +9,7 @@ import {
   Star, MessageSquare,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatMoney, formatDate } from '../utils';
+import { formatMoney, formatDate, formatPhoneNumber, handlePhoneInput } from '../utils';
 import { Card, Button, SearchInput, Badge, ConfirmDialog, CollapsibleSection, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from '../modals/ModalBase.jsx';
@@ -131,7 +131,7 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
     type: client?.type || 'Individual',
     company: client?.company || '',
     email: client?.email || '',
-    phone: client?.phone || '',
+    phone: formatPhoneNumber(client?.phone) || '',
     address: client?.address || '',
     notes: client?.notes || '',
     favorite: client?.favorite || false,
@@ -219,9 +219,10 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
             <input
               type="tel"
               value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              onChange={(e) => handlePhoneInput(e, v => setFormData(prev => ({ ...prev, phone: v })))}
               style={styles.input}
               placeholder="555-123-4567"
+              maxLength={12}
             />
           </div>
         </div>

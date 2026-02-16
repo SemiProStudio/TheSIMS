@@ -8,7 +8,7 @@ import PropTypes from 'prop-types';
 import { Plus, Save, AlertTriangle, Search, X, Package } from 'lucide-react';
 import { PROJECT_TYPES } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { getAllReservationConflicts } from '../utils';
+import { getAllReservationConflicts, formatPhoneNumber, handlePhoneInput } from '../utils';
 import { Button, Badge } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
@@ -368,7 +368,7 @@ export const ReservationModal = memo(function ReservationModal({
         setReservationForm(prev => ({ 
           ...prev, 
           clientId: value,
-          contactPhone: client.phone || prev.contactPhone,
+          contactPhone: formatPhoneNumber(client.phone) || prev.contactPhone,
           contactEmail: client.email || prev.contactEmail,
         }));
       } else {
@@ -661,12 +661,13 @@ export const ReservationModal = memo(function ReservationModal({
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
           <div>
             <label style={styles.label}>Contact Phone</label>
-            <input 
-              type="tel" 
-              value={reservationForm.contactPhone || ''} 
-              onChange={e => handleChange('contactPhone', e.target.value)} 
-              placeholder="555-123-4567" 
-              style={styles.input} 
+            <input
+              type="tel"
+              value={reservationForm.contactPhone || ''}
+              onChange={e => handlePhoneInput(e, v => handleChange('contactPhone', v))}
+              placeholder="555-123-4567"
+              maxLength={12}
+              style={styles.input}
             />
           </div>
           <div>

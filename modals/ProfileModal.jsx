@@ -5,6 +5,7 @@
 import { memo, useState, useRef, useMemo } from 'react';
 import { Upload, Save, Eye, EyeOff } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
+import { formatPhoneNumber, handlePhoneInput } from '../utils';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from './ModalBase.jsx';
 import ImageCropEditor from '../components/ImageCropEditor.jsx';
@@ -22,7 +23,7 @@ function ProfileModal({ user, onSave, onClose }) {
   const [profile, setProfile] = useState({
     displayName: user?.profile?.displayName || user?.name || '',
     businessName: user?.profile?.businessName || '',
-    phone: user?.profile?.phone || '',
+    phone: formatPhoneNumber(user?.profile?.phone) || '',
     email: user?.email || '',
     address: user?.profile?.address || '',
     logo: user?.profile?.logo || null,
@@ -297,10 +298,13 @@ function ProfileModal({ user, onSave, onClose }) {
               <input
                 type={type}
                 value={profile[field]}
-                onChange={e => handleChange(field, e.target.value)}
+                onChange={type === 'tel'
+                  ? e => handlePhoneInput(e, v => handleChange(field, v))
+                  : e => handleChange(field, e.target.value)
+                }
                 onBlur={() => validateField(field, profile[field])}
                 placeholder={placeholder}
-                maxLength={maxLen}
+                maxLength={type === 'tel' ? 12 : maxLen}
                 style={{
                   ...styles.input,
                   ...(errors[field] ? { borderColor: colors.danger } : {}),

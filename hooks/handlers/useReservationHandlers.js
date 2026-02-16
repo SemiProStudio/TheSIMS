@@ -4,7 +4,7 @@
 // ============================================================================
 import { useCallback } from 'react';
 import { VIEWS, MODALS } from '../../constants.js';
-import { generateId } from '../../utils';
+import { generateId, formatPhoneNumber } from '../../utils';
 import { error as logError } from '../../lib/logger.js';
 
 export function useReservationHandlers({
@@ -177,7 +177,7 @@ export function useReservationHandlers({
       start: reservation.start,
       end: reservation.end,
       user: reservation.user,
-      contactPhone: reservation.contactPhone || '',
+      contactPhone: formatPhoneNumber(reservation.contactPhone) || '',
       contactEmail: reservation.contactEmail || '',
       location: reservation.location || ''
     });

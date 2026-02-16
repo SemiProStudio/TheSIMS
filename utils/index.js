@@ -219,6 +219,50 @@ export const formatMoney = (amount) => {
   });
 };
 
+/**
+ * Format a phone number string as ###-###-#### as the user types.
+ * Strips non-digits, caps at 10 digits, inserts dashes progressively.
+ * Returns the formatted string (stored value IS the formatted value).
+ * @param {string} raw - The raw input value
+ * @returns {string} Formatted phone string
+ */
+export const formatPhoneNumber = (raw) => {
+  const digits = (raw || '').replace(/\D/g, '').slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+};
+
+/**
+ * Handle phone input change with smooth backspace behavior.
+ * Call this from onChange with the input event and a setter callback.
+ * Manages cursor position so deleting through dashes feels natural.
+ * @param {Event} e - The input change event
+ * @param {function} setValue - Callback receiving the formatted phone string
+ */
+export const handlePhoneInput = (e, setValue) => {
+  const input = e.target;
+  const prev = input.value;
+  const caret = input.selectionStart;
+  const formatted = formatPhoneNumber(e.target.value);
+  setValue(formatted);
+
+  // Restore cursor position after React re-render
+  requestAnimationFrame(() => {
+    if (!input || !input.setSelectionRange) return;
+    // If user deleted a character and hit a dash, step back one more
+    const lengthDiff = formatted.length - prev.length;
+    let newCaret = caret + lengthDiff;
+    // When backspacing removes a dash, keep cursor in right spot
+    if (lengthDiff < 0 && caret > 0 && formatted[caret - 1] === '-') {
+      newCaret = caret - 1;
+    }
+    // Clamp
+    newCaret = Math.max(0, Math.min(newCaret, formatted.length));
+    input.setSelectionRange(newCaret, newCaret);
+  });
+};
+
 // ============================================================================
 // Color Utilities
 // ============================================================================

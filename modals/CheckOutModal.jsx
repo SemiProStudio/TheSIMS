@@ -6,6 +6,7 @@
 import { memo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
+import { formatPhoneNumber, handlePhoneInput } from '../utils';
 import { Badge, Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
@@ -62,7 +63,7 @@ export const CheckOutModal = memo(function CheckOutModal({
           ...prev,
           clientId: value,
           borrowerEmail: client.email || prev.borrowerEmail,
-          borrowerPhone: client.phone || prev.borrowerPhone,
+          borrowerPhone: formatPhoneNumber(client.phone) || prev.borrowerPhone,
         }));
       } else {
         setFormData(prev => ({ ...prev, clientId: value }));
@@ -175,8 +176,9 @@ export const CheckOutModal = memo(function CheckOutModal({
               <input
                 type="tel"
                 value={formData.borrowerPhone}
-                onChange={e => handleChange('borrowerPhone', e.target.value)}
+                onChange={e => handlePhoneInput(e, v => handleChange('borrowerPhone', v))}
                 placeholder="555-123-4567"
+                maxLength={12}
                 style={styles.input}
               />
             </div>
