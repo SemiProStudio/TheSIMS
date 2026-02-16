@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { VIEWS, MODALS, STATUS, DEFAULT_SPECS, CATEGORIES as DEFAULT_CATEGORIES, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
+import { VIEWS, MODALS, STATUS, DEFAULT_SPECS, DEFAULT_LAYOUT_PREFS, DEFAULT_ROLES } from './constants.js';
 import { colors } from './theme.js';
 import { findById, sanitizeCSVCell } from './utils';
 import { openPrintWindow } from './lib/printUtil.js';
@@ -55,7 +55,6 @@ export default function App() {
     packages,
     roles: contextRoles,
     specs: contextSpecs,
-    categories: contextCategories,
     patchInventoryItem,
     patchUser,
     addAuditLog,
@@ -64,7 +63,6 @@ export default function App() {
   // Apply defaults for data that may not be loaded yet
   const roles = contextRoles?.length ? contextRoles : DEFAULT_ROLES;
   const specs = contextSpecs && Object.keys(contextSpecs).length ? contextSpecs : DEFAULT_SPECS;
-  const categories = contextCategories?.length ? contextCategories : DEFAULT_CATEGORIES;
 
   // Change log state — persisted to localStorage
   const [changeLog, setChangeLog] = useState(() => {
