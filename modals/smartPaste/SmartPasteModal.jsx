@@ -387,7 +387,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     try {
       const supabaseUrl = env.SUPABASE_URL;
       const proxyUrl = supabaseUrl ? `${supabaseUrl}/functions/v1/fetch-product-page` : null;
-      const { text } = await fetchProductPage(urlInput, proxyUrl);
+      const { text } = await fetchProductPage(urlInput, proxyUrl, env.SUPABASE_ANON_KEY);
 
       if (!text || !text.trim()) {
         setImportStatus('error:No text content found at that URL');
