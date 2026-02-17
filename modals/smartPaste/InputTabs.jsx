@@ -195,6 +195,7 @@ export function InputTabs({
               type="url"
               value={urlInput}
               onChange={e => setUrlInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && urlInput.trim() && !urlLoading) handleUrlFetch(); }}
               placeholder="https://www.bhphotovideo.com/c/product/..."
               style={{
                 ...styles.input,

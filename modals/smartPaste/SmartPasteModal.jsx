@@ -83,9 +83,11 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
   const savePasteHistory = useCallback((text, resultSummary) => {
     try {
       const history = getPasteHistory();
+      // Cap stored text at 50KB to avoid sessionStorage quota issues
+      const maxFullText = 50_000;
       const entry = {
         text: text.slice(0, 500),
-        fullText: text,
+        fullText: text.length > maxFullText ? text.slice(0, maxFullText) : text,
         matchedCount: resultSummary.matchedCount,
         name: resultSummary.name || 'Unknown product',
         timestamp: Date.now(),
@@ -272,9 +274,21 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
         setImportStatus(`success:Imported ${file.name} (${text.split('\n').length} lines)`);
       }
 
-      const result = parseProductText(text, specs, communityAliases ? { communityAliases } : {});
-      setParseResult(result);
-      resetParseState();
+      // Auto-parse: detect batch vs single (same logic as handleParse)
+      const parseOpts = communityAliases ? { communityAliases } : {};
+      const segments = detectProductBoundaries(text);
+      if (segments.length > 1) {
+        const batch = parseBatchProducts(text, specs, parseOpts);
+        setBatchResults(batch);
+        setBatchSelected(new Set(batch.map((_, i) => i)));
+        setParseResult(null);
+        resetParseState();
+        setImportStatus(`success:Imported ${file.name} — detected ${batch.length} products`);
+      } else {
+        const result = parseProductText(text, specs, parseOpts);
+        setParseResult(result);
+        resetParseState();
+      }
     } catch (err) {
       logError('File import error:', err);
       setImportStatus(`error:${err.message || 'Failed to read file'}`);
@@ -343,7 +357,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
       const plainTabLines = plainText.split('\n').filter(l => l.includes('\t')).length;
       const htmlLines = cleaned.split('\n').filter(l => l.trim()).length;
       const plainLines = plainText.split('\n').filter(l => l.trim()).length;
-      const useHtml = htmlTabLines > plainTabLines || htmlLines >= plainLines;
+      const useHtml = htmlTabLines > plainTabLines || (htmlTabLines === plainTabLines && htmlLines > plainLines);
       const text = useHtml ? cleaned : plainText;
       setInputText(text);
       setParseResult(null);
@@ -364,12 +378,12 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     if (!batchResults) return;
     const selected = batchResults
       .filter((_, i) => batchSelected.has(i))
-      .map(({ result }) => buildApplyPayload(result, {}));
+      .map(({ result }) => buildApplyPayload(result, {}, { normalizeMetric }));
     if (selected.length > 0) {
       onApply(selected.length === 1 ? selected[0] : selected);
       onClose();
     }
-  }, [batchResults, batchSelected, onApply, onClose]);
+  }, [batchResults, batchSelected, normalizeMetric, onApply, onClose]);
 
   const handleBatchSelectSingle = useCallback((index) => {
     if (!batchResults?.[index]) return;
@@ -384,6 +398,9 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
     if (!urlInput.trim()) return;
     setUrlLoading(true);
     setImportStatus('');
+    setParseResult(null);
+    setBatchResults(null);
+    resetParseState();
     try {
       const supabaseUrl = env.SUPABASE_URL;
       const proxyUrl = supabaseUrl ? `${supabaseUrl}/functions/v1/fetch-product-page` : null;
@@ -397,17 +414,26 @@ export const SmartPasteModal = memo(function SmartPasteModal({ specs, onApply, o
       setInputText(text);
       setInputMode('paste');
 
-      // Auto-parse the fetched content (matches file-import behavior)
+      // Auto-parse: detect batch vs single (same logic as handleParse)
       const parseOpts = communityAliases ? { communityAliases } : {};
-      const result = parseProductText(text, specs, parseOpts);
-      setParseResult(result);
-      resetParseState();
+      const segments = detectProductBoundaries(text);
+      if (segments.length > 1) {
+        const batch = parseBatchProducts(text, specs, parseOpts);
+        setBatchResults(batch);
+        setBatchSelected(new Set(batch.map((_, i) => i)));
+        setParseResult(null);
+        setImportStatus(`success:Fetched URL — detected ${batch.length} products`);
+      } else {
+        const result = parseProductText(text, specs, parseOpts);
+        setParseResult(result);
+        resetParseState();
 
-      const matchCount = [...result.fields.values()].filter(f => f.value).length;
-      savePasteHistory(text, { matchedCount: matchCount, name: result.name });
-      setPasteHistory(getPasteHistory());
+        const matchCount = [...result.fields.values()].filter(f => f.value).length;
+        savePasteHistory(text, { matchedCount: matchCount, name: result.name });
+        setPasteHistory(getPasteHistory());
 
-      setImportStatus(`success:Fetched & parsed ${matchCount} fields from URL`);
+        setImportStatus(`success:Fetched & parsed ${matchCount} fields from URL`);
+      }
     } catch (e) {
       logError('URL fetch error:', e);
       setImportStatus(`error:${e.message}`);
