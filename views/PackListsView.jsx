@@ -25,6 +25,7 @@ import {
   ScanLine,
   X,
   RotateCcw,
+  ArrowUpDown,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, generateId, getStatusColor } from '../utils';
@@ -101,6 +102,9 @@ function PackListsView({
   const [itemCategoryFilter, setItemCategoryFilter] = useState('all');
   const [expandedPackages, setExpandedPackages] = useState(new Set());
   const [editingList, setEditingList] = useState(null);
+
+  // Detail view sort
+  const [detailSort, setDetailSort] = useState('category');
 
   // Export options
   const [exportSort, setExportSort] = useState('category');
@@ -507,16 +511,27 @@ function PackListsView({
     [inventory],
   );
 
-  // Sort items for export
+  // Sort items by a given sort key
+  const sortItems = useCallback((items, sortKey) => {
+    return [...items].sort((a, b) => {
+      switch (sortKey) {
+        case 'category':
+          return (a.category || '').localeCompare(b.category || '');
+        case 'alphabetical':
+        case 'name':
+          return (a.name || '').localeCompare(b.name || '');
+        case 'brand':
+          return (a.brand || '').localeCompare(b.brand || '');
+        default:
+          return 0;
+      }
+    });
+  }, []);
+
+  // Sort items for export (uses export sort setting)
   const getSortedItems = useCallback(
-    (items) => {
-      return [...items].sort((a, b) => {
-        if (exportSort === 'category') return a.category.localeCompare(b.category);
-        if (exportSort === 'alphabetical') return a.name.localeCompare(b.name);
-        return 0;
-      });
-    },
-    [exportSort],
+    (items) => sortItems(items, exportSort),
+    [sortItems, exportSort],
   );
 
   // Handle export with category headers
@@ -1004,7 +1019,7 @@ function PackListsView({
   // ============================================================================
   if (selectedList) {
     const listItems = getListItems(selectedList);
-    const sortedItems = getSortedItems(listItems);
+    const sortedItems = sortItems(listItems, detailSort);
     const listPackages = (selectedList.packages || [])
       .map((id) => packages.find((p) => p.id === id))
       .filter(Boolean);
@@ -1134,7 +1149,39 @@ function PackListsView({
             overflow: 'hidden',
           }}
         >
-          <CardHeader title={`Items (${listItems.length})`} />
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: `${spacing[3]}px ${spacing[4]}px`,
+              borderBottom: `1px solid ${colors.borderLight}`,
+            }}
+          >
+            <span
+              style={{
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.textPrimary,
+              }}
+            >
+              Items ({listItems.length})
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+              <ArrowUpDown size={14} color={colors.textMuted} />
+              <Select
+                value={detailSort}
+                onChange={(e) => setDetailSort(e.target.value)}
+                options={[
+                  { value: 'category', label: 'Category' },
+                  { value: 'name', label: 'Item Name' },
+                  { value: 'brand', label: 'Brand' },
+                ]}
+                compact
+                style={{ minWidth: 130 }}
+                aria-label="Sort items by"
+              />
+            </div>
+          </div>
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {sortedItems.map((item) => {
               const isPacked = packedItems.includes(item.id);
@@ -1151,24 +1198,30 @@ function PackListsView({
                   >
                     {isPacked ? <CheckSquare size={20} /> : <Square size={20} />}
                   </button>
-                  {item.quantity > 1 && (
-                    <div
-                      style={{
-                        minWidth: 32,
-                        height: 32,
-                        borderRadius: borderRadius.md,
-                        background: withOpacity(colors.primary, 20),
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: typography.fontWeight.semibold,
-                        color: colors.primary,
-                        fontSize: typography.fontSize.base,
-                      }}
-                    >
-                      {item.quantity}x
-                    </div>
-                  )}
+                  <div
+                    style={{
+                      minWidth: 42,
+                      height: 42,
+                      borderRadius: borderRadius.lg,
+                      background:
+                        item.quantity > 1
+                          ? withOpacity(colors.warning, 20)
+                          : withOpacity(colors.primary, 10),
+                      border:
+                        item.quantity > 1
+                          ? `2px solid ${withOpacity(colors.warning, 60)}`
+                          : `1px solid ${withOpacity(colors.primary, 20)}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: typography.fontWeight.bold,
+                      color: item.quantity > 1 ? colors.warning : colors.textMuted,
+                      fontSize: item.quantity > 1 ? typography.fontSize.lg : typography.fontSize.sm,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.quantity}x
+                  </div>
                   <div
                     className="list-item-content"
                     style={{
