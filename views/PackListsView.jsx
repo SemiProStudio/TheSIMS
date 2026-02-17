@@ -24,6 +24,7 @@ import {
   Square,
   ScanLine,
   X,
+  RotateCcw,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, generateId, getStatusColor } from '../utils';
@@ -668,6 +669,30 @@ function PackListsView({
     [selectedList, setSelectedList, dataContext],
   );
 
+  // Reset all packed items
+  const [confirmReset, setConfirmReset] = useState(false);
+  const handleResetPacked = useCallback(async () => {
+    if (!selectedList) return;
+    const updatedList = { ...selectedList, packedItems: [] };
+    setSelectedList(updatedList);
+    dataContext.patchPackList(selectedList.id, { packedItems: [] });
+
+    if (dataContext?.updatePackList) {
+      try {
+        await dataContext.updatePackList(selectedList.id, {
+          items: selectedList.items,
+          packages: selectedList.packages,
+          packedItems: [],
+        });
+      } catch (err) {
+        logError('Failed to reset packed items:', err);
+      }
+    }
+
+    setConfirmReset(false);
+    addToast('Pack list selections cleared', 'success');
+  }, [selectedList, setSelectedList, dataContext, addToast]);
+
   // ============================================================================
   // Name Prompt Modal
   // ============================================================================
@@ -1013,6 +1038,11 @@ function PackListsView({
             <Button variant="secondary" onClick={() => setShowExport(true)} icon={Download}>
               Export / Print
             </Button>
+            {packedCount > 0 && (
+              <Button variant="secondary" onClick={() => setConfirmReset(true)} icon={RotateCcw}>
+                Reset
+              </Button>
+            )}
             <button
               className="btn-icon danger"
               onClick={() =>
@@ -1296,6 +1326,17 @@ function PackListsView({
             message={`Are you sure you want to delete "${confirmDelete.name}"? This action cannot be undone.`}
             onConfirm={() => handleDelete(confirmDelete.id)}
             onCancel={() => setConfirmDelete({ isOpen: false, id: null, name: '' })}
+          />
+        )}
+
+        {/* Reset Packed Confirmation */}
+        {confirmReset && (
+          <ConfirmDialog
+            isOpen={confirmReset}
+            title="Reset Pack List"
+            message={`Clear all ${packedCount} packed selections? Items will be marked as unpacked.`}
+            onConfirm={handleResetPacked}
+            onCancel={() => setConfirmReset(false)}
           />
         )}
       </div>
