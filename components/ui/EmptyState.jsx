@@ -7,12 +7,7 @@ import { Card } from './Card.jsx';
 // EmptyState - No data placeholder
 // ============================================================================
 
-export const EmptyState = memo(function EmptyState({ 
-  icon: Icon, 
-  title, 
-  description,
-  action,
-}) {
+export const EmptyState = memo(function EmptyState({ icon: Icon, title, description, action }) {
   return (
     <Card style={{ padding: spacing[12], textAlign: 'center' }}>
       {Icon && (
@@ -41,9 +36,7 @@ export const EmptyState = memo(function EmptyState({
         {title}
       </h3>
       {description && (
-        <p style={{ color: colors.textMuted, marginBottom: spacing[5] }}>
-          {description}
-        </p>
+        <p style={{ color: colors.textMuted, marginBottom: spacing[5] }}>{description}</p>
       )}
       {action}
     </Card>

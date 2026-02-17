@@ -7,7 +7,16 @@ import { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import { Plus, Package, Trash2, ChevronRight, Edit2, AlertTriangle, Lightbulb } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
 import { formatMoney, getStatusColor } from '../utils';
-import { Badge, Card, CardHeader, Button, SearchInput, EmptyState, ConfirmDialog, PageHeader } from '../components/ui.jsx';
+import {
+  Badge,
+  Card,
+  CardHeader,
+  Button,
+  SearchInput,
+  EmptyState,
+  ConfirmDialog,
+  PageHeader,
+} from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from '../modals/ModalBase.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
@@ -47,10 +56,13 @@ function PackagesView({
   const [nameError, setNameError] = useState('');
 
   // Wrapper to sync with parent state
-  const setSelectedPackage = useCallback((pkg) => {
-    setSelectedPackageInternal(pkg);
-    if (onPackageSelect) onPackageSelect(pkg);
-  }, [onPackageSelect]);
+  const setSelectedPackage = useCallback(
+    (pkg) => {
+      setSelectedPackageInternal(pkg);
+      if (onPackageSelect) onPackageSelect(pkg);
+    },
+    [onPackageSelect],
+  );
 
   // Sync with initialSelectedPackage prop changes
   useEffect(() => {
@@ -60,28 +72,32 @@ function PackagesView({
   }, [initialSelectedPackage]);
 
   // Check if an item has quantity tracking
-  const hasQuantityTracking = useCallback((item) => {
-    const settings = categorySettings?.[item.category];
-    return settings?.trackQuantity === true;
-  }, [categorySettings]);
+  const hasQuantityTracking = useCallback(
+    (item) => {
+      const settings = categorySettings?.[item.category];
+      return settings?.trackQuantity === true;
+    },
+    [categorySettings],
+  );
 
   // Get individual items (non-kits) for selection
-  const individualItems = useMemo(() => inventory.filter(item => !item.isKit), [inventory]);
+  const individualItems = useMemo(() => inventory.filter((item) => !item.isKit), [inventory]);
 
   // Filter packages by search
   const filteredPackages = useMemo(() => {
     if (!packageSearch.trim()) return packages;
     const q = packageSearch.toLowerCase();
-    return packages.filter(pkg =>
-      pkg.name.toLowerCase().includes(q) ||
-      pkg.id.toLowerCase().includes(q) ||
-      (pkg.description && pkg.description.toLowerCase().includes(q))
+    return packages.filter(
+      (pkg) =>
+        pkg.name.toLowerCase().includes(q) ||
+        pkg.id.toLowerCase().includes(q) ||
+        (pkg.description && pkg.description.toLowerCase().includes(q)),
     );
   }, [packages, packageSearch]);
 
   // Get unique categories from inventory for filter dropdown
   const availableCategories = useMemo(() => {
-    const cats = new Set(individualItems.map(item => item.category).filter(Boolean));
+    const cats = new Set(individualItems.map((item) => item.category).filter(Boolean));
     return ['all', ...Array.from(cats).sort()];
   }, [individualItems]);
 
@@ -93,15 +109,16 @@ function PackagesView({
     let items = individualItems;
 
     if (itemCategoryFilter !== 'all') {
-      items = items.filter(item => item.category === itemCategoryFilter);
+      items = items.filter((item) => item.category === itemCategoryFilter);
     }
 
     if (itemSearch.trim()) {
       const q = itemSearch.toLowerCase();
-      items = items.filter(item =>
-        item.name.toLowerCase().includes(q) ||
-        item.id.toLowerCase().includes(q) ||
-        item.category.toLowerCase().includes(q)
+      items = items.filter(
+        (item) =>
+          item.name.toLowerCase().includes(q) ||
+          item.id.toLowerCase().includes(q) ||
+          item.category.toLowerCase().includes(q),
       );
     }
 
@@ -109,36 +126,42 @@ function PackagesView({
   }, [individualItems, itemSearch, itemCategoryFilter]);
 
   // Get items for a package
-  const getPackageItems = useCallback((pkg) => {
-    if (!pkg.items) return [];
-    return pkg.items.map(id => inventory.find(i => i.id === id)).filter(Boolean);
-  }, [inventory]);
+  const getPackageItems = useCallback(
+    (pkg) => {
+      if (!pkg.items) return [];
+      return pkg.items.map((id) => inventory.find((i) => i.id === id)).filter(Boolean);
+    },
+    [inventory],
+  );
 
   // Get suggested accessories for a package based on requiredAccessories
-  const getSuggestedAccessories = useCallback((pkg) => {
-    const packageItemIds = new Set(pkg.items || []);
-    const suggestions = [];
-    const seenIds = new Set();
+  const getSuggestedAccessories = useCallback(
+    (pkg) => {
+      const packageItemIds = new Set(pkg.items || []);
+      const suggestions = [];
+      const seenIds = new Set();
 
-    pkg.items?.forEach(itemId => {
-      const item = inventory.find(i => i.id === itemId);
-      if (!item) return;
+      pkg.items?.forEach((itemId) => {
+        const item = inventory.find((i) => i.id === itemId);
+        if (!item) return;
 
-      if (item.requiredAccessories && item.requiredAccessories.length > 0) {
-        item.requiredAccessories.forEach(accId => {
-          if (!packageItemIds.has(accId) && !seenIds.has(accId)) {
-            const accessory = inventory.find(i => i.id === accId);
-            if (accessory) {
-              suggestions.push({ item: accessory, reason: `Required for ${item.name}` });
-              seenIds.add(accId);
+        if (item.requiredAccessories && item.requiredAccessories.length > 0) {
+          item.requiredAccessories.forEach((accId) => {
+            if (!packageItemIds.has(accId) && !seenIds.has(accId)) {
+              const accessory = inventory.find((i) => i.id === accId);
+              if (accessory) {
+                suggestions.push({ item: accessory, reason: `Required for ${item.name}` });
+                seenIds.add(accId);
+              }
             }
-          }
-        });
-      }
-    });
+          });
+        }
+      });
 
-    return suggestions;
-  }, [inventory]);
+      return suggestions;
+    },
+    [inventory],
+  );
 
   const calculateValue = useCallback((items, quantities = {}) => {
     return items.reduce((sum, item) => {
@@ -152,7 +175,7 @@ function PackagesView({
   }, []);
 
   const allItemsAvailable = useCallback((items) => {
-    return items.every(item => item.status === 'available');
+    return items.every((item) => item.status === 'available');
   }, []);
 
   // Reset form
@@ -182,8 +205,8 @@ function PackagesView({
       return;
     }
     // Check for duplicate name (case-insensitive)
-    const isDuplicate = packages.some(pkg =>
-      pkg.name.toLowerCase() === trimmedName.toLowerCase()
+    const isDuplicate = packages.some(
+      (pkg) => pkg.name.toLowerCase() === trimmedName.toLowerCase(),
     );
     if (isDuplicate) {
       setNameError('A package with this name already exists');
@@ -194,21 +217,24 @@ function PackagesView({
   }, [formName, packages]);
 
   // Open edit mode - go straight to item selection (details already exist)
-  const handleStartEdit = useCallback((pkg) => {
-    setFormName(pkg.name);
-    setFormDescription(pkg.description || '');
-    setFormCategory(pkg.category || '');
-    setFormItems([...pkg.items]);
-    setFormItemQuantities({ ...(pkg.itemQuantities || {}) });
-    setEditingPackage(pkg);
-    setShowCreate(true);
-    setSelectedPackage(null);
-  }, [setSelectedPackage]);
+  const handleStartEdit = useCallback(
+    (pkg) => {
+      setFormName(pkg.name);
+      setFormDescription(pkg.description || '');
+      setFormCategory(pkg.category || '');
+      setFormItems([...pkg.items]);
+      setFormItemQuantities({ ...(pkg.itemQuantities || {}) });
+      setEditingPackage(pkg);
+      setShowCreate(true);
+      setSelectedPackage(null);
+    },
+    [setSelectedPackage],
+  );
 
   // Cancel create/edit - return to package detail if editing
   const handleCancel = useCallback(() => {
     if (editingPackage) {
-      const pkg = packages.find(p => p.id === editingPackage.id);
+      const pkg = packages.find((p) => p.id === editingPackage.id);
       if (pkg) {
         setSelectedPackage(pkg);
       }
@@ -221,10 +247,8 @@ function PackagesView({
 
   // Toggle item selection
   const handleToggleItem = useCallback((itemId) => {
-    setFormItems(prev =>
-      prev.includes(itemId)
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
+    setFormItems((prev) =>
+      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId],
     );
   }, []);
 
@@ -232,34 +256,37 @@ function PackagesView({
   const handleQuantityChange = useCallback((itemId, quantity) => {
     const num = parseInt(quantity, 10);
     if (isNaN(num) || num < 1) {
-      setFormItemQuantities(prev => {
+      setFormItemQuantities((prev) => {
         const next = { ...prev };
         delete next[itemId];
         return next;
       });
     } else {
-      setFormItemQuantities(prev => ({ ...prev, [itemId]: num }));
+      setFormItemQuantities((prev) => ({ ...prev, [itemId]: num }));
     }
   }, []);
 
   // Validate quantity against available stock
-  const getQuantityError = useCallback((item) => {
-    if (!hasQuantityTracking(item)) return null;
-    const requested = formItemQuantities[item.id] || 1;
-    const available = item.quantity ?? 1;
-    if (requested > available) {
-      return `Only ${available} available`;
-    }
-    return null;
-  }, [formItemQuantities, hasQuantityTracking]);
+  const getQuantityError = useCallback(
+    (item) => {
+      if (!hasQuantityTracking(item)) return null;
+      const requested = formItemQuantities[item.id] || 1;
+      const available = item.quantity ?? 1;
+      if (requested > available) {
+        return `Only ${available} available`;
+      }
+      return null;
+    },
+    [formItemQuantities, hasQuantityTracking],
+  );
 
   // Save package (create or update)
   const handleSave = useCallback(async () => {
     if (!formName.trim() || formItems.length === 0) return;
 
     // Check for quantity errors
-    const hasQtyErrors = formItems.some(id => {
-      const item = inventory.find(i => i.id === id);
+    const hasQtyErrors = formItems.some((id) => {
+      const item = inventory.find((i) => i.id === id);
       return item && getQuantityError(item);
     });
     if (hasQtyErrors) {
@@ -269,8 +296,8 @@ function PackagesView({
 
     // Build quantities map (only for items that have quantity tracking and qty > 1)
     const quantities = {};
-    formItems.forEach(id => {
-      const item = inventory.find(i => i.id === id);
+    formItems.forEach((id) => {
+      const item = inventory.find((i) => i.id === id);
       if (item && hasQuantityTracking(item)) {
         const qty = formItemQuantities[id] || 1;
         if (qty > 1) {
@@ -350,9 +377,9 @@ function PackagesView({
       } else {
         // Fallback - generate local ID if no DB
         const existingNumbers = packages
-          .map(p => p.id?.match?.(/^PKG-(\d+)$/))
+          .map((p) => p.id?.match?.(/^PKG-(\d+)$/))
           .filter(Boolean)
-          .map(m => parseInt(m[1], 10));
+          .map((m) => parseInt(m[1], 10));
         const nextNum = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
         const localId = `PKG-${String(nextNum).padStart(3, '0')}`;
         const localPackage = { ...newPackage, id: localId };
@@ -362,9 +389,24 @@ function PackagesView({
         resetForm();
       }
     }
-  }, [formName, formDescription, formCategory, formItems, formItemQuantities, editingPackage,
-      setSelectedPackage, resetForm, packages, dataContext, inventory, addToast, addAuditLog,
-      currentUser, hasQuantityTracking, getQuantityError]);
+  }, [
+    formName,
+    formDescription,
+    formCategory,
+    formItems,
+    formItemQuantities,
+    editingPackage,
+    setSelectedPackage,
+    resetForm,
+    packages,
+    dataContext,
+    inventory,
+    addToast,
+    addAuditLog,
+    currentUser,
+    hasQuantityTracking,
+    getQuantityError,
+  ]);
 
   // Delete package
   const handleDeleteClick = useCallback((pkg) => {
@@ -401,39 +443,45 @@ function PackagesView({
   }, [confirmDelete, setSelectedPackage, dataContext, addToast, addAuditLog, currentUser]);
 
   // Add suggested accessory to package — persists to DB
-  const handleAddSuggested = useCallback(async (itemId) => {
-    if (!selectedPackage) return;
-    const newItems = [...selectedPackage.items, itemId];
-    const updatedPkg = { ...selectedPackage, items: newItems };
+  const handleAddSuggested = useCallback(
+    async (itemId) => {
+      if (!selectedPackage) return;
+      const newItems = [...selectedPackage.items, itemId];
+      const updatedPkg = { ...selectedPackage, items: newItems };
 
-    // Optimistic local update
-    dataContext.patchPackage(selectedPackage.id, { items: newItems });
-    setSelectedPackage(updatedPkg);
+      // Optimistic local update
+      dataContext.patchPackage(selectedPackage.id, { items: newItems });
+      setSelectedPackage(updatedPkg);
 
-    // Persist to DB
-    if (dataContext?.updatePackage) {
-      try {
-        await dataContext.updatePackage(selectedPackage.id, { items: newItems });
-      } catch (err) {
-        logError('Failed to add suggested accessory:', err);
-        addToast('Failed to save — change may not persist', 'warning');
-        // Revert
-        dataContext.patchPackage(selectedPackage.id, { items: selectedPackage.items });
-        setSelectedPackage(selectedPackage);
+      // Persist to DB
+      if (dataContext?.updatePackage) {
+        try {
+          await dataContext.updatePackage(selectedPackage.id, { items: newItems });
+        } catch (err) {
+          logError('Failed to add suggested accessory:', err);
+          addToast('Failed to save — change may not persist', 'warning');
+          // Revert
+          dataContext.patchPackage(selectedPackage.id, { items: selectedPackage.items });
+          setSelectedPackage(selectedPackage);
+        }
       }
-    }
-  }, [selectedPackage, setSelectedPackage, dataContext, addToast]);
+    },
+    [selectedPackage, setSelectedPackage, dataContext, addToast],
+  );
 
   // Handle viewing item with proper back context
-  const handleViewItem = useCallback((itemId) => {
-    if (onViewItem) {
-      onViewItem(itemId, {
-        returnTo: 'package',
-        packageId: selectedPackage?.id,
-        backLabel: 'Back to Package'
-      });
-    }
-  }, [onViewItem, selectedPackage]);
+  const handleViewItem = useCallback(
+    (itemId) => {
+      if (onViewItem) {
+        onViewItem(itemId, {
+          returnTo: 'package',
+          packageId: selectedPackage?.id,
+          backLabel: 'Back to Package',
+        });
+      }
+    },
+    [onViewItem, selectedPackage],
+  );
 
   // ============================================================================
   // Details Prompt Modal (for Create)
@@ -444,8 +492,20 @@ function PackagesView({
       <>
         <PageHeader title="Packages" />
 
-        <Modal isOpen onClose={() => { setShowDetailsPrompt(false); resetForm(); }}>
-          <ModalHeader title="New Package" onClose={() => { setShowDetailsPrompt(false); resetForm(); }} />
+        <Modal
+          isOpen
+          onClose={() => {
+            setShowDetailsPrompt(false);
+            resetForm();
+          }}
+        >
+          <ModalHeader
+            title="New Package"
+            onClose={() => {
+              setShowDetailsPrompt(false);
+              resetForm();
+            }}
+          />
           <div style={{ padding: spacing[4] }}>
             <div style={{ marginBottom: spacing[4] }}>
               <label style={styles.label}>
@@ -454,8 +514,11 @@ function PackagesView({
               <input
                 type="text"
                 value={formName}
-                onChange={e => { setFormName(e.target.value); setNameError(''); }}
-                onKeyDown={e => e.key === 'Enter' && handleDetailsSubmit()}
+                onChange={(e) => {
+                  setFormName(e.target.value);
+                  setNameError('');
+                }}
+                onKeyDown={(e) => e.key === 'Enter' && handleDetailsSubmit()}
                 placeholder="e.g., Wedding Photography Package"
                 style={{
                   ...styles.input,
@@ -464,7 +527,13 @@ function PackagesView({
                 autoFocus
               />
               {nameError && (
-                <div style={{ color: colors.danger, fontSize: typography.fontSize.xs, marginTop: spacing[1] }}>
+                <div
+                  style={{
+                    color: colors.danger,
+                    fontSize: typography.fontSize.xs,
+                    marginTop: spacing[1],
+                  }}
+                >
                   {nameError}
                 </div>
               )}
@@ -474,7 +543,7 @@ function PackagesView({
               <label style={styles.label}>Description</label>
               <textarea
                 value={formDescription}
-                onChange={e => setFormDescription(e.target.value)}
+                onChange={(e) => setFormDescription(e.target.value)}
                 placeholder="Describe what this package is for..."
                 rows={3}
                 style={{ ...styles.input, resize: 'vertical' }}
@@ -486,15 +555,32 @@ function PackagesView({
               <input
                 type="text"
                 value={formCategory}
-                onChange={e => setFormCategory(e.target.value)}
+                onChange={(e) => setFormCategory(e.target.value)}
                 placeholder="e.g., Cameras, Audio, Lighting"
                 style={styles.input}
               />
             </div>
           </div>
-          <div style={{ padding: `0 ${spacing[4]}px ${spacing[4]}px`, display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
-            <Button variant="secondary" onClick={() => { setShowDetailsPrompt(false); resetForm(); }}>Cancel</Button>
-            <Button onClick={handleDetailsSubmit} disabled={isNameEmpty}>Continue to Select Items</Button>
+          <div
+            style={{
+              padding: `0 ${spacing[4]}px ${spacing[4]}px`,
+              display: 'flex',
+              gap: spacing[2],
+              justifyContent: 'flex-end',
+            }}
+          >
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowDetailsPrompt(false);
+                resetForm();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleDetailsSubmit} disabled={isNameEmpty}>
+              Continue to Select Items
+            </Button>
           </div>
         </Modal>
       </>
@@ -506,19 +592,23 @@ function PackagesView({
   // ============================================================================
   if (showCreate) {
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        maxHeight: 'calc(100vh - 60px)',
-        overflow: 'hidden'
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          maxHeight: 'calc(100vh - 60px)',
+          overflow: 'hidden',
+        }}
+      >
         <PageHeader
           title={editingPackage ? `Edit: ${formName}` : `Create: ${formName}`}
           subtitle={`${formItems.length} items selected${formDescription ? ` • ${formDescription}` : ''}`}
           action={
             <div style={{ display: 'flex', gap: spacing[2] }}>
-              <Button variant="secondary" onClick={handleCancel}>Cancel</Button>
+              <Button variant="secondary" onClick={handleCancel}>
+                Cancel
+              </Button>
               <Button
                 onClick={handleSave}
                 disabled={formItems.length === 0}
@@ -530,32 +620,43 @@ function PackagesView({
           }
         />
 
-        <Card padding={false} style={{
-          flex: '1 1 auto',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0,
-          maxHeight: 'calc(100vh - 180px)',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: `${spacing[3]}px ${spacing[4]}px`,
-            borderBottom: `1px solid ${colors.border}`,
-            flexShrink: 0, flexWrap: 'wrap', gap: spacing[2],
-          }}>
+        <Card
+          padding={false}
+          style={{
+            flex: '1 1 auto',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+            maxHeight: 'calc(100vh - 180px)',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: `${spacing[3]}px ${spacing[4]}px`,
+              borderBottom: `1px solid ${colors.border}`,
+              flexShrink: 0,
+              flexWrap: 'wrap',
+              gap: spacing[2],
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
               <Package size={16} color={colors.primary} />
               <strong style={{ color: colors.textPrimary }}>Select Items</strong>
               <Badge text={`${formItems.length} selected`} color={colors.primary} size="sm" />
             </div>
-            <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center', flexWrap: 'wrap' }}>
+            <div
+              style={{ display: 'flex', gap: spacing[2], alignItems: 'center', flexWrap: 'wrap' }}
+            >
               <Select
                 value={itemCategoryFilter}
-                onChange={e => setItemCategoryFilter(e.target.value)}
-                options={availableCategories.map(cat => ({
+                onChange={(e) => setItemCategoryFilter(e.target.value)}
+                options={availableCategories.map((cat) => ({
                   value: cat,
-                  label: cat === 'all' ? 'All Categories' : cat
+                  label: cat === 'all' ? 'All Categories' : cat,
                 }))}
                 style={{ minWidth: '160px' }}
               />
@@ -574,7 +675,7 @@ function PackagesView({
                 {itemSearch && ` matching "${itemSearch}"`}
               </div>
             ) : (
-              filteredItemsForSelect.map(item => {
+              filteredItemsForSelect.map((item) => {
                 const isSelected = formItems.includes(item.id);
                 const showQuantity = hasQuantityTracking(item);
                 const qtyError = isSelected ? getQuantityError(item) : null;
@@ -583,7 +684,9 @@ function PackagesView({
                     key={item.id}
                     onClick={() => handleToggleItem(item.id)}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: spacing[3],
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: spacing[3],
                       padding: `${spacing[3]}px ${spacing[4]}px`,
                       borderBottom: `1px solid ${colors.borderLight}`,
                       cursor: 'pointer',
@@ -594,9 +697,16 @@ function PackagesView({
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => handleToggleItem(item.id)}
+                      style={{ accentColor: colors.primary }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, fontSize: typography.fontSize.sm }}>
+                      <div
+                        style={{
+                          fontWeight: typography.fontWeight.medium,
+                          color: colors.textPrimary,
+                          fontSize: typography.fontSize.sm,
+                        }}
+                      >
                         {item.name}
                       </div>
                       <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
@@ -605,23 +715,42 @@ function PackagesView({
                       </div>
                     </div>
                     {showQuantity && isSelected && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1], flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                        <label style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Qty:</label>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: spacing[1],
+                          flexShrink: 0,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <label
+                          style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}
+                        >
+                          Qty:
+                        </label>
                         <input
                           type="number"
                           min="1"
                           max={item.quantity ?? undefined}
                           value={formItemQuantities[item.id] || 1}
-                          onChange={e => handleQuantityChange(item.id, e.target.value)}
+                          onChange={(e) => handleQuantityChange(item.id, e.target.value)}
                           style={{
                             ...styles.input,
-                            width: 60, padding: `${spacing[1]}px ${spacing[2]}px`,
+                            width: 60,
+                            padding: `${spacing[1]}px ${spacing[2]}px`,
                             textAlign: 'center',
                             ...(qtyError ? { borderColor: colors.danger } : {}),
                           }}
                         />
                         {qtyError && (
-                          <span style={{ fontSize: typography.fontSize.xs, color: colors.danger, whiteSpace: 'nowrap' }}>
+                          <span
+                            style={{
+                              fontSize: typography.fontSize.xs,
+                              color: colors.danger,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
                             {qtyError}
                           </span>
                         )}
@@ -657,14 +786,26 @@ function PackagesView({
           backLabel="Back to Packages"
           action={
             <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
-              <Button variant="secondary" onClick={() => handleStartEdit(selectedPackage)} icon={Edit2}>Edit</Button>
+              <Button
+                variant="secondary"
+                onClick={() => handleStartEdit(selectedPackage)}
+                icon={Edit2}
+              >
+                Edit
+              </Button>
               <button
                 onClick={() => handleDeleteClick(selectedPackage)}
                 style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: 32, height: 32, borderRadius: borderRadius.md,
-                  border: `1px solid ${colors.borderLight}`, background: 'transparent',
-                  cursor: 'pointer', color: colors.danger,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 32,
+                  height: 32,
+                  borderRadius: borderRadius.md,
+                  border: `1px solid ${colors.borderLight}`,
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  color: colors.danger,
                 }}
                 title="Delete package"
               >
@@ -675,17 +816,32 @@ function PackagesView({
         />
 
         {selectedPackage.description && (
-          <p style={{ color: colors.textSecondary, marginBottom: spacing[4], fontSize: typography.fontSize.sm }}>{selectedPackage.description}</p>
+          <p
+            style={{
+              color: colors.textSecondary,
+              marginBottom: spacing[4],
+              fontSize: typography.fontSize.sm,
+            }}
+          >
+            {selectedPackage.description}
+          </p>
         )}
 
         {!allAvailable && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: spacing[2],
-            padding: spacing[3], marginBottom: spacing[4],
-            background: `${colors.checkedOut}15`, borderRadius: borderRadius.md,
-            border: `1px solid ${colors.checkedOut}40`, color: colors.checkedOut,
-            fontSize: typography.fontSize.sm,
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[2],
+              padding: spacing[3],
+              marginBottom: spacing[4],
+              background: `${colors.checkedOut}15`,
+              borderRadius: borderRadius.md,
+              border: `1px solid ${colors.checkedOut}40`,
+              color: colors.checkedOut,
+              fontSize: typography.fontSize.sm,
+            }}
+          >
             <AlertTriangle size={16} />
             <span>Some items in this package are not available</span>
           </div>
@@ -693,17 +849,31 @@ function PackagesView({
 
         <div style={{ display: 'flex', gap: spacing[4], flex: 1, minHeight: 0 }}>
           {/* Package Contents */}
-          <Card padding={false} style={{ flex: 2, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-            <CardHeader title={`Package Contents (${getTotalItemCount(packageItems, pkgQuantities)})`} icon={Package} />
+          <Card
+            padding={false}
+            style={{
+              flex: 2,
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0,
+              overflow: 'hidden',
+            }}
+          >
+            <CardHeader
+              title={`Package Contents (${getTotalItemCount(packageItems, pkgQuantities)})`}
+              icon={Package}
+            />
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              {packageItems.map(item => {
+              {packageItems.map((item) => {
                 const qty = pkgQuantities[item.id];
                 return (
                   <div
                     key={item.id}
                     onClick={() => handleViewItem(item.id)}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: spacing[3],
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: spacing[3],
                       padding: `${spacing[3]}px ${spacing[4]}px`,
                       borderBottom: `1px solid ${colors.borderLight}`,
                       cursor: 'pointer',
@@ -720,11 +890,18 @@ function PackagesView({
                         objectFit="cover"
                       />
                     ) : (
-                      <div style={{
-                        width: 40, height: 40, borderRadius: borderRadius.md,
-                        background: colors.bgLight, display: 'flex',
-                        alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      }}>
+                      <div
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: borderRadius.md,
+                          background: colors.bgLight,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
                         <Package size={16} color={colors.textMuted} />
                       </div>
                     )}
@@ -734,7 +911,13 @@ function PackagesView({
                         <Badge text={item.category} color={colors.accent2} />
                         {qty && qty > 1 && <Badge text={`×${qty}`} color={colors.accent1} />}
                       </div>
-                      <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, fontSize: typography.fontSize.sm }}>
+                      <div
+                        style={{
+                          fontWeight: typography.fontWeight.medium,
+                          color: colors.textPrimary,
+                          fontSize: typography.fontSize.sm,
+                        }}
+                      >
                         {item.name}
                       </div>
                     </div>
@@ -748,16 +931,55 @@ function PackagesView({
 
           {/* Suggested Accessories */}
           {suggestedAccessories.length > 0 && (
-            <Card padding={false} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-              <CardHeader title={`Suggested Accessories (${suggestedAccessories.length})`} icon={Lightbulb} />
+            <Card
+              padding={false}
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0,
+                overflow: 'hidden',
+              }}
+            >
+              <CardHeader
+                title={`Suggested Accessories (${suggestedAccessories.length})`}
+                icon={Lightbulb}
+              />
               <div style={{ flex: 1, overflowY: 'auto' }}>
                 {suggestedAccessories.map(({ item, reason }) => (
-                  <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: spacing[2], padding: `${spacing[3]}px ${spacing[4]}px`, borderBottom: `1px solid ${colors.borderLight}` }}>
-                    <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => handleViewItem(item.id)}>
-                      <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, fontSize: typography.fontSize.sm }}>{item.name}</div>
-                      <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>{reason}</div>
+                  <div
+                    key={item.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: spacing[2],
+                      padding: `${spacing[3]}px ${spacing[4]}px`,
+                      borderBottom: `1px solid ${colors.borderLight}`,
+                    }}
+                  >
+                    <div
+                      style={{ flex: 1, cursor: 'pointer' }}
+                      onClick={() => handleViewItem(item.id)}
+                    >
+                      <div
+                        style={{
+                          fontWeight: typography.fontWeight.medium,
+                          color: colors.textPrimary,
+                          fontSize: typography.fontSize.sm,
+                        }}
+                      >
+                        {item.name}
+                      </div>
+                      <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                        {reason}
+                      </div>
                     </div>
-                    <Button size="sm" variant="secondary" onClick={() => handleAddSuggested(item.id)} icon={Plus}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => handleAddSuggested(item.id)}
+                      icon={Plus}
+                    >
                       Add
                     </Button>
                   </div>
@@ -785,11 +1007,20 @@ function PackagesView({
     <>
       <PageHeader
         title="Packages"
-        action={<Button onClick={handleStartCreate} icon={Plus}>Create Package</Button>}
+        action={
+          <Button onClick={handleStartCreate} icon={Plus}>
+            Create Package
+          </Button>
+        }
       />
 
       <div style={{ marginBottom: spacing[4], maxWidth: 300 }}>
-        <SearchInput value={packageSearch} onChange={setPackageSearch} onClear={() => setPackageSearch('')} placeholder="Search packages..." />
+        <SearchInput
+          value={packageSearch}
+          onChange={setPackageSearch}
+          onClear={() => setPackageSearch('')}
+          placeholder="Search packages..."
+        />
       </div>
 
       <div style={{ borderBottom: `1px solid ${colors.border}`, marginBottom: spacing[4] }} />
@@ -798,31 +1029,85 @@ function PackagesView({
         <EmptyState
           icon={Package}
           title="No Packages Found"
-          description={packages.length === 0 ? "Packages group individual items together for specific jobs or purposes." : "No packages match your search."}
-          action={packages.length === 0 && <Button onClick={handleStartCreate} icon={Plus}>Create Your First Package</Button>}
+          description={
+            packages.length === 0
+              ? 'Packages group individual items together for specific jobs or purposes.'
+              : 'No packages match your search.'
+          }
+          action={
+            packages.length === 0 && (
+              <Button onClick={handleStartCreate} icon={Plus}>
+                Create Your First Package
+              </Button>
+            )
+          }
         />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: spacing[4] }}>
-          {filteredPackages.map(pkg => {
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: spacing[4],
+          }}
+        >
+          {filteredPackages.map((pkg) => {
             const packageItems = getPackageItems(pkg);
             const packageValue = calculateValue(packageItems, pkg.itemQuantities || {});
             const allAvailable = allItemsAvailable(packageItems);
             return (
-              <Card key={pkg.id} onClick={() => setSelectedPackage(pkg)} style={{ cursor: 'pointer' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[3] }}>
+              <Card
+                key={pkg.id}
+                onClick={() => setSelectedPackage(pkg)}
+                style={{ cursor: 'pointer' }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: spacing[3],
+                  }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
                     <Package size={18} color={colors.accent2} />
-                    <h3 style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary }}>{pkg.name}</h3>
+                    <h3
+                      style={{
+                        margin: 0,
+                        fontSize: typography.fontSize.lg,
+                        color: colors.textPrimary,
+                      }}
+                    >
+                      {pkg.name}
+                    </h3>
                   </div>
                   {!allAvailable && <AlertTriangle size={16} color={colors.checkedOut} />}
                 </div>
-                <div style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[2], flexWrap: 'wrap' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: spacing[2],
+                    marginBottom: spacing[2],
+                    flexWrap: 'wrap',
+                  }}
+                >
                   <Badge text={pkg.id} color={colors.accent2} />
-                  <Badge text={`${getTotalItemCount(packageItems, pkg.itemQuantities || {})} items`} color={colors.accent1} />
+                  <Badge
+                    text={`${getTotalItemCount(packageItems, pkg.itemQuantities || {})} items`}
+                    color={colors.accent1}
+                  />
                   <Badge text={formatMoney(packageValue)} color={colors.available} />
                 </div>
                 {pkg.description && (
-                  <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pkg.description}</div>
+                  <div
+                    style={{
+                      fontSize: typography.fontSize.sm,
+                      color: colors.textMuted,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {pkg.description}
+                  </div>
                 )}
               </Card>
             );

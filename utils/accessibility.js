@@ -14,20 +14,23 @@
  */
 export function hexToRgb(hex) {
   if (!hex || typeof hex !== 'string') return null;
-  
+
   // Remove # if present
   hex = hex.replace(/^#/, '');
-  
+
   // Handle shorthand (#RGB)
   if (hex.length === 3) {
-    hex = hex.split('').map(c => c + c).join('');
+    hex = hex
+      .split('')
+      .map((c) => c + c)
+      .join('');
   }
-  
+
   if (hex.length !== 6) return null;
-  
+
   const result = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) return null;
-  
+
   return {
     r: parseInt(result[1], 16),
     g: parseInt(result[2], 16),
@@ -41,7 +44,7 @@ export function hexToRgb(hex) {
  * @returns {number} Luminance value (0-1)
  */
 export function getLuminance({ r, g, b }) {
-  const [rs, gs, bs] = [r, g, b].map(c => {
+  const [rs, gs, bs] = [r, g, b].map((c) => {
     c = c / 255;
     return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   });
@@ -57,15 +60,15 @@ export function getLuminance({ r, g, b }) {
 export function getContrastRatio(color1, color2) {
   const rgb1 = hexToRgb(color1);
   const rgb2 = hexToRgb(color2);
-  
+
   if (!rgb1 || !rgb2) return 1;
-  
+
   const l1 = getLuminance(rgb1);
   const l2 = getLuminance(rgb2);
-  
+
   const lighter = Math.max(l1, l2);
   const darker = Math.min(l1, l2);
-  
+
   return (lighter + 0.05) / (darker + 0.05);
 }
 
@@ -80,11 +83,11 @@ export function checkContrast(foreground, background, isLargeText = false) {
   const ratio = getContrastRatio(foreground, background);
   const minRatio = isLargeText ? 3 : 4.5;
   const aaaRatio = isLargeText ? 4.5 : 7;
-  
+
   let level = 'Fail';
   if (ratio >= aaaRatio) level = 'AAA';
   else if (ratio >= minRatio) level = 'AA';
-  
+
   return {
     ratio: Math.round(ratio * 100) / 100,
     passes: ratio >= minRatio,
@@ -138,15 +141,15 @@ export const CONTRAST_PAIRS = [
  * @returns {Array<{pair: Object, result: Object}>}
  */
 export function validateThemeContrast(themeColors) {
-  return CONTRAST_PAIRS.map(pair => {
+  return CONTRAST_PAIRS.map((pair) => {
     const fgColor = themeColors[pair.fg];
     const bgColor = themeColors[pair.bg];
-    
+
     // Skip if either color is not a hex value (e.g., rgba)
     if (!fgColor?.startsWith('#') || !bgColor?.startsWith('#')) {
       return { pair, result: { ratio: 0, passes: false, level: 'Unknown', skipped: true } };
     }
-    
+
     return {
       pair,
       result: checkContrast(fgColor, bgColor),
@@ -160,11 +163,11 @@ export function validateThemeContrast(themeColors) {
  * @returns {{passing: number, failing: number, skipped: number, score: number}}
  */
 export function getContrastSummary(validationResults) {
-  const passing = validationResults.filter(r => r.result.passes).length;
-  const failing = validationResults.filter(r => !r.result.passes && !r.result.skipped).length;
-  const skipped = validationResults.filter(r => r.result.skipped).length;
+  const passing = validationResults.filter((r) => r.result.passes).length;
+  const failing = validationResults.filter((r) => !r.result.passes && !r.result.skipped).length;
+  const skipped = validationResults.filter((r) => r.result.skipped).length;
   const total = validationResults.length - skipped;
-  
+
   return {
     passing,
     failing,
@@ -184,7 +187,7 @@ let announcerElement = null;
  */
 function getAnnouncer() {
   if (announcerElement) return announcerElement;
-  
+
   announcerElement = document.createElement('div');
   announcerElement.setAttribute('role', 'status');
   announcerElement.setAttribute('aria-live', 'polite');
@@ -202,7 +205,7 @@ function getAnnouncer() {
     border: '0',
   });
   document.body.appendChild(announcerElement);
-  
+
   return announcerElement;
 }
 
@@ -214,7 +217,7 @@ function getAnnouncer() {
 export function announce(message, politeness = 'polite') {
   const announcer = getAnnouncer();
   announcer.setAttribute('aria-live', politeness);
-  
+
   // Clear and re-set to trigger announcement
   announcer.textContent = '';
   requestAnimationFrame(() => {
@@ -339,7 +342,7 @@ export function announceFilterChange(filterType, value) {
  */
 export function focusAndAnnounce(element, announcement = '') {
   if (!element) return;
-  
+
   element.focus();
   if (announcement) {
     announce(announcement);
@@ -353,7 +356,7 @@ export function focusAndAnnounce(element, announcement = '') {
  */
 export function trapFocus(container) {
   if (!container) return () => {};
-  
+
   const focusableSelectors = [
     'button:not([disabled])',
     'input:not([disabled])',
@@ -362,14 +365,14 @@ export function trapFocus(container) {
     'a[href]',
     '[tabindex]:not([tabindex="-1"])',
   ].join(', ');
-  
+
   const focusableElements = container.querySelectorAll(focusableSelectors);
   const firstFocusable = focusableElements[0];
   const lastFocusable = focusableElements[focusableElements.length - 1];
-  
+
   const handleKeyDown = (e) => {
     if (e.key !== 'Tab') return;
-    
+
     if (e.shiftKey) {
       if (document.activeElement === firstFocusable) {
         e.preventDefault();
@@ -382,12 +385,12 @@ export function trapFocus(container) {
       }
     }
   };
-  
+
   container.addEventListener('keydown', handleKeyDown);
-  
+
   // Focus the first focusable element
   firstFocusable?.focus();
-  
+
   return () => {
     container.removeEventListener('keydown', handleKeyDown);
   };

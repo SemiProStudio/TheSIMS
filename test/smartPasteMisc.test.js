@@ -151,7 +151,10 @@ describe('fetchProductPage', () => {
     };
     global.fetch = vi.fn().mockResolvedValue(mockResponse);
 
-    const result = await fetchProductPage('https://example.com/product', 'https://proxy.example.com');
+    const result = await fetchProductPage(
+      'https://example.com/product',
+      'https://proxy.example.com',
+    );
 
     expect(global.fetch).toHaveBeenCalledWith('https://proxy.example.com', {
       method: 'POST',
@@ -171,7 +174,7 @@ describe('fetchProductPage', () => {
     });
 
     await expect(
-      fetchProductPage('https://example.com', 'https://proxy.example.com')
+      fetchProductPage('https://example.com', 'https://proxy.example.com'),
     ).rejects.toThrow('500');
   });
 

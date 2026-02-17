@@ -60,13 +60,13 @@ const getEventColor = (type) => EVENT_COLORS[type] || colors.primary;
 const formatEventType = (type) => {
   return type
     .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 };
 
 // Get unique event types from audit log
 const getEventTypes = (auditLog) => {
-  const types = new Set(auditLog.map(e => e.type));
+  const types = new Set(auditLog.map((e) => e.type));
   return [...types].sort();
 };
 
@@ -81,22 +81,21 @@ export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {
 
   // Sort by timestamp descending, then filter
   const filteredLog = useMemo(() => {
-    let entries = [...auditLog].sort((a, b) =>
-      new Date(b.timestamp) - new Date(a.timestamp)
-    );
+    let entries = [...auditLog].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     if (selectedType) {
-      entries = entries.filter(e => e.type === selectedType);
+      entries = entries.filter((e) => e.type === selectedType);
     }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      entries = entries.filter(e =>
-        (e.description || '').toLowerCase().includes(q) ||
-        (e.user || '').toLowerCase().includes(q) ||
-        (e.itemId || '').toLowerCase().includes(q) ||
-        (e.type || '').toLowerCase().includes(q) ||
-        (e.content || '').toLowerCase().includes(q)
+      entries = entries.filter(
+        (e) =>
+          (e.description || '').toLowerCase().includes(q) ||
+          (e.user || '').toLowerCase().includes(q) ||
+          (e.itemId || '').toLowerCase().includes(q) ||
+          (e.type || '').toLowerCase().includes(q) ||
+          (e.content || '').toLowerCase().includes(q),
       );
     }
 
@@ -117,7 +116,15 @@ export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {
 
       {/* Search & Filter Bar */}
       <Card style={{ marginBottom: spacing[4] }}>
-        <div style={{ padding: spacing[3], display: 'flex', gap: spacing[3], alignItems: 'center', flexWrap: 'wrap' }}>
+        <div
+          style={{
+            padding: spacing[3],
+            display: 'flex',
+            gap: spacing[3],
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
           <div style={{ flex: 1, minWidth: 200 }}>
             <SearchInput
               value={searchQuery}
@@ -130,13 +137,21 @@ export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {
             <Filter size={16} style={{ color: colors.textMuted }} />
             <select
               value={selectedType}
-              onChange={e => { setSelectedType(e.target.value); setVisibleCount(ITEMS_PER_PAGE); }}
-              style={{ ...styles.input, width: 'auto', minWidth: 160, padding: `${spacing[1]}px ${spacing[2]}px` }}
+              onChange={(e) => {
+                setSelectedType(e.target.value);
+                setVisibleCount(ITEMS_PER_PAGE);
+              }}
+              style={{
+                ...styles.input,
+                width: 'auto',
+                minWidth: 160,
+                padding: `${spacing[1]}px ${spacing[2]}px`,
+              }}
             >
               <option value="">All Events ({auditLog.length})</option>
-              {eventTypes.map(type => (
+              {eventTypes.map((type) => (
                 <option key={type} value={type}>
-                  {formatEventType(type)} ({auditLog.filter(e => e.type === type).length})
+                  {formatEventType(type)} ({auditLog.filter((e) => e.type === type).length})
                 </option>
               ))}
             </select>
@@ -153,9 +168,11 @@ export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {
         <EmptyState
           icon={Clock}
           title={searchQuery || selectedType ? 'No Matching Events' : 'No Events Yet'}
-          description={searchQuery || selectedType
-            ? 'Try adjusting your search or filter.'
-            : 'System events will appear here as actions are performed.'}
+          description={
+            searchQuery || selectedType
+              ? 'Try adjusting your search or filter.'
+              : 'System events will appear here as actions are performed.'
+          }
         />
       ) : (
         <Card padding={false}>
@@ -164,14 +181,19 @@ export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {
               key={entry.id || i}
               style={{
                 padding: spacing[4],
-                borderBottom: i < visibleEntries.length - 1 ? `1px solid ${colors.borderLight}` : 'none'
+                borderBottom:
+                  i < visibleEntries.length - 1 ? `1px solid ${colors.borderLight}` : 'none',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[2] }}>
-                <Badge
-                  text={formatEventType(entry.type)}
-                  color={getEventColor(entry.type)}
-                />
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: spacing[2],
+                }}
+              >
+                <Badge text={formatEventType(entry.type)} color={getEventColor(entry.type)} />
                 <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
                   {formatDateTime(entry.timestamp)}
                 </span>
@@ -180,16 +202,24 @@ export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {
                 {entry.description}
               </div>
               {entry.content && (
-                <div style={{
-                  fontSize: typography.fontSize.sm,
-                  color: colors.textSecondary,
-                  marginTop: spacing[1],
-                  fontStyle: 'italic'
-                }}>
+                <div
+                  style={{
+                    fontSize: typography.fontSize.sm,
+                    color: colors.textSecondary,
+                    marginTop: spacing[1],
+                    fontStyle: 'italic',
+                  }}
+                >
                   &quot;{entry.content}&quot;
                 </div>
               )}
-              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: spacing[1] }}>
+              <div
+                style={{
+                  fontSize: typography.fontSize.xs,
+                  color: colors.textMuted,
+                  marginTop: spacing[1],
+                }}
+              >
                 By: {entry.user || 'System'}
                 {entry.itemId && <> | Item: {entry.itemId}</>}
               </div>
@@ -200,7 +230,7 @@ export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {
           {hasMore && (
             <div style={{ padding: spacing[4], textAlign: 'center' }}>
               <button
-                onClick={() => setVisibleCount(prev => prev + ITEMS_PER_PAGE)}
+                onClick={() => setVisibleCount((prev) => prev + ITEMS_PER_PAGE)}
                 style={{
                   background: 'none',
                   border: `1px solid ${colors.border}`,
@@ -227,14 +257,16 @@ export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {
 // ============================================================================
 AuditLogPanel.propTypes = {
   /** Array of audit log entries */
-  auditLog: PropTypes.arrayOf(PropTypes.shape({
-    type: PropTypes.string.isRequired,
-    timestamp: PropTypes.string,
-    description: PropTypes.string,
-    content: PropTypes.string,
-    user: PropTypes.string,
-    itemId: PropTypes.string,
-  })).isRequired,
+  auditLog: PropTypes.arrayOf(
+    PropTypes.shape({
+      type: PropTypes.string.isRequired,
+      timestamp: PropTypes.string,
+      description: PropTypes.string,
+      content: PropTypes.string,
+      user: PropTypes.string,
+      itemId: PropTypes.string,
+    }),
+  ).isRequired,
   /** Callback to go back */
   onBack: PropTypes.func.isRequired,
 };

@@ -4,8 +4,19 @@
 // ============================================================================
 
 import { memo, useState, useMemo, useCallback } from 'react';
-import { History, Package, ChevronRight, Clock, User, Edit2, Plus, Trash2, RefreshCw, ArrowRight } from 'lucide-react';
-import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import {
+  History,
+  Package,
+  ChevronRight,
+  Clock,
+  User,
+  Edit2,
+  Plus,
+  Trash2,
+  RefreshCw,
+  ArrowRight,
+} from 'lucide-react';
+import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDateTime } from '../utils';
 import { Card, SearchInput, Badge, BackButton, PageHeader } from '../components/ui.jsx';
 
@@ -37,32 +48,38 @@ const formatFieldValue = (value) => {
 const ChangeEntry = memo(function ChangeEntry({ change, onViewItem, isExpanded }) {
   const config = CHANGE_TYPE_CONFIG[change.type] || CHANGE_TYPE_CONFIG.updated;
   const Icon = config.icon;
-  
+
   return (
-    <div style={{
-      padding: spacing[3],
-      borderBottom: `1px solid ${colors.border}`,
-      background: isExpanded ? `${withOpacity(colors.primary, 5)}` : 'transparent',
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: spacing[3],
-      }}>
-        {/* Icon */}
-        <div style={{
-          width: 36,
-          height: 36,
-          borderRadius: borderRadius.md,
-          background: withOpacity(config.color, 15),
+    <div
+      style={{
+        padding: spacing[3],
+        borderBottom: `1px solid ${colors.border}`,
+        background: isExpanded ? `${withOpacity(colors.primary, 5)}` : 'transparent',
+      }}
+    >
+      <div
+        style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}>
+          alignItems: 'flex-start',
+          gap: spacing[3],
+        }}
+      >
+        {/* Icon */}
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: borderRadius.md,
+            background: withOpacity(config.color, 15),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
           <Icon size={18} style={{ color: config.color }} />
         </div>
-        
+
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], flexWrap: 'wrap' }}>
@@ -89,33 +106,43 @@ const ChangeEntry = memo(function ChangeEntry({ change, onViewItem, isExpanded }
               </button>
             )}
           </div>
-          
+
           {/* Description */}
-          <p style={{ 
-            margin: `${spacing[1]}px 0 0`, 
-            color: colors.textPrimary,
-            fontSize: typography.fontSize.sm,
-          }}>
+          <p
+            style={{
+              margin: `${spacing[1]}px 0 0`,
+              color: colors.textPrimary,
+              fontSize: typography.fontSize.sm,
+            }}
+          >
             {change.description}
           </p>
-          
+
           {/* Field changes */}
           {change.changes && change.changes.length > 0 && (
-            <div style={{
-              marginTop: spacing[2],
-              padding: spacing[2],
-              background: colors.bgDark,
-              borderRadius: borderRadius.md,
-              fontSize: typography.fontSize.xs,
-            }}>
+            <div
+              style={{
+                marginTop: spacing[2],
+                padding: spacing[2],
+                background: colors.bgDark,
+                borderRadius: borderRadius.md,
+                fontSize: typography.fontSize.xs,
+              }}
+            >
               {change.changes.map((fieldChange, idx) => (
-                <div key={idx} style={{
-                  display: 'flex',
-                  gap: spacing[2],
-                  padding: `${spacing[1]}px 0`,
-                  borderBottom: idx < change.changes.length - 1 ? `1px solid ${colors.border}` : 'none',
-                }}>
-                  <span style={{ color: colors.textMuted, minWidth: 100 }}>{fieldChange.field}:</span>
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    gap: spacing[2],
+                    padding: `${spacing[1]}px 0`,
+                    borderBottom:
+                      idx < change.changes.length - 1 ? `1px solid ${colors.border}` : 'none',
+                  }}
+                >
+                  <span style={{ color: colors.textMuted, minWidth: 100 }}>
+                    {fieldChange.field}:
+                  </span>
                   <span style={{ color: colors.danger, textDecoration: 'line-through' }}>
                     {formatFieldValue(fieldChange.oldValue)}
                   </span>
@@ -127,16 +154,18 @@ const ChangeEntry = memo(function ChangeEntry({ change, onViewItem, isExpanded }
               ))}
             </div>
           )}
-          
+
           {/* Meta info */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[3],
-            marginTop: spacing[2],
-            fontSize: typography.fontSize.xs,
-            color: colors.textMuted,
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[3],
+              marginTop: spacing[2],
+              fontSize: typography.fontSize.xs,
+              color: colors.textMuted,
+            }}
+          >
             <span style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
               <Clock size={12} />
               {formatDateTime(change.timestamp)}
@@ -155,56 +184,64 @@ const ChangeEntry = memo(function ChangeEntry({ change, onViewItem, isExpanded }
 // Item history view
 const ItemHistoryView = memo(function ItemHistoryView({ item, changes, onBack, onViewItem }) {
   if (!item) return null;
-  
-  const itemChanges = changes.filter(c => c.itemId === item.id);
-  
+
+  const itemChanges = changes.filter((c) => c.itemId === item.id);
+
   return (
     <div>
       <BackButton onClick={onBack} label="Back to Change Log" />
-      
+
       <Card style={{ marginTop: spacing[4] }}>
-        <div style={{
-          padding: spacing[4],
-          borderBottom: `1px solid ${colors.border}`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: spacing[3],
-        }}>
-          <div style={{
-            width: 48,
-            height: 48,
-            borderRadius: borderRadius.lg,
-            background: `${withOpacity(colors.primary, 15)}`,
+        <div
+          style={{
+            padding: spacing[4],
+            borderBottom: `1px solid ${colors.border}`,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-          }}>
+            gap: spacing[3],
+          }}
+        >
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: borderRadius.lg,
+              background: `${withOpacity(colors.primary, 15)}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <History size={24} style={{ color: colors.primary }} />
           </div>
           <div>
             <h3 style={{ margin: 0, color: colors.textPrimary }}>{item.name}</h3>
-            <p style={{ margin: `${spacing[1]}px 0 0`, color: colors.textMuted, fontSize: typography.fontSize.sm }}>
+            <p
+              style={{
+                margin: `${spacing[1]}px 0 0`,
+                color: colors.textMuted,
+                fontSize: typography.fontSize.sm,
+              }}
+            >
               {item.id} • {itemChanges.length} change{itemChanges.length !== 1 ? 's' : ''} recorded
             </p>
           </div>
         </div>
-        
+
         {itemChanges.length > 0 ? (
           <div>
             {itemChanges.map((change, idx) => (
-              <ChangeEntry 
-                key={change.id || idx} 
-                change={change} 
-                onViewItem={onViewItem}
-              />
+              <ChangeEntry key={change.id || idx} change={change} onViewItem={onViewItem} />
             ))}
           </div>
         ) : (
-          <div style={{
-            padding: spacing[6],
-            textAlign: 'center',
-            color: colors.textMuted,
-          }}>
+          <div
+            style={{
+              padding: spacing[6],
+              textAlign: 'center',
+              color: colors.textMuted,
+            }}
+          >
             No changes recorded for this item.
           </div>
         )}
@@ -216,7 +253,7 @@ const ItemHistoryView = memo(function ItemHistoryView({ item, changes, onBack, o
 // Search result item
 const SearchResultItem = memo(function SearchResultItem({ item, onClick, changeCount }) {
   const isPackage = item.type === 'package';
-  
+
   return (
     <button
       onClick={onClick}
@@ -234,16 +271,24 @@ const SearchResultItem = memo(function SearchResultItem({ item, onClick, changeC
         textAlign: 'left',
       }}
     >
-      <div style={{
-        width: 40,
-        height: 40,
-        borderRadius: borderRadius.md,
-        background: isPackage ? `${withOpacity(colors.accent1, 15)}` : `${withOpacity(colors.primary, 15)}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        {isPackage ? <Package size={18} style={{ color: colors.accent1 }} /> : <History size={18} style={{ color: colors.primary }} />}
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: borderRadius.md,
+          background: isPackage
+            ? `${withOpacity(colors.accent1, 15)}`
+            : `${withOpacity(colors.primary, 15)}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {isPackage ? (
+          <Package size={18} style={{ color: colors.accent1 }} />
+        ) : (
+          <History size={18} style={{ color: colors.primary }} />
+        )}
       </div>
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
@@ -273,59 +318,63 @@ function ChangeLog({
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
-  
+
   // Get recent changes (last 10)
   const recentChanges = useMemo(() => {
     return [...changeLog]
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
       .slice(0, 10);
   }, [changeLog]);
-  
+
   // Combine inventory and packages for search
   const allItems = useMemo(() => {
-    const items = inventory.map(i => ({ ...i, type: 'item' }));
-    const pkgs = packages.map(p => ({ ...p, type: 'package' }));
+    const items = inventory.map((i) => ({ ...i, type: 'item' }));
+    const pkgs = packages.map((p) => ({ ...p, type: 'package' }));
     return [...items, ...pkgs];
   }, [inventory, packages]);
-  
+
   // Get change counts per item
   const changeCounts = useMemo(() => {
     const counts = {};
-    changeLog.forEach(change => {
+    changeLog.forEach((change) => {
       if (change.itemId) {
         counts[change.itemId] = (counts[change.itemId] || 0) + 1;
       }
     });
     return counts;
   }, [changeLog]);
-  
+
   // Search results
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
     return allItems
-      .filter(item => 
-        item.id?.toLowerCase().includes(query) ||
-        item.name?.toLowerCase().includes(query) ||
-        item.brand?.toLowerCase().includes(query)
+      .filter(
+        (item) =>
+          item.id?.toLowerCase().includes(query) ||
+          item.name?.toLowerCase().includes(query) ||
+          item.brand?.toLowerCase().includes(query),
       )
       .slice(0, 10);
   }, [searchQuery, allItems]);
-  
+
   // Handle view item from change entry
-  const handleViewItem = useCallback((itemId, _itemType) => {
-    const item = allItems.find(i => i.id === itemId);
-    if (item) {
-      setSelectedItem(item);
-    }
-  }, [allItems]);
-  
+  const handleViewItem = useCallback(
+    (itemId, _itemType) => {
+      const item = allItems.find((i) => i.id === itemId);
+      if (item) {
+        setSelectedItem(item);
+      }
+    },
+    [allItems],
+  );
+
   // Handle search result click
   const handleSearchResultClick = useCallback((item) => {
     setSelectedItem(item);
     setSearchQuery('');
   }, []);
-  
+
   // If viewing item history
   if (selectedItem) {
     return (
@@ -346,17 +395,19 @@ function ChangeLog({
         onBack={onBack}
         backLabel="Back to Admin"
       />
-      
+
       {/* Search Section */}
       <Card style={{ marginBottom: spacing[4] }}>
         <div style={{ padding: spacing[4] }}>
-          <label style={{
-            display: 'block',
-            marginBottom: spacing[2],
-            fontWeight: typography.fontWeight.medium,
-            color: colors.textPrimary,
-            fontSize: typography.fontSize.sm,
-          }}>
+          <label
+            style={{
+              display: 'block',
+              marginBottom: spacing[2],
+              fontWeight: typography.fontWeight.medium,
+              color: colors.textPrimary,
+              fontSize: typography.fontSize.sm,
+            }}
+          >
             Search Items, Kits & Packages
           </label>
           <div style={{ position: 'relative' }}>
@@ -368,11 +419,11 @@ function ChangeLog({
             />
           </div>
         </div>
-        
+
         {/* Search Results */}
         {searchResults.length > 0 && (
           <div style={{ borderTop: `1px solid ${colors.border}` }}>
-            {searchResults.map(item => (
+            {searchResults.map((item) => (
               <SearchResultItem
                 key={item.id}
                 item={item}
@@ -382,28 +433,32 @@ function ChangeLog({
             ))}
           </div>
         )}
-        
+
         {searchQuery && searchResults.length === 0 && (
-          <div style={{
-            padding: spacing[4],
-            textAlign: 'center',
-            color: colors.textMuted,
-            borderTop: `1px solid ${colors.border}`,
-          }}>
+          <div
+            style={{
+              padding: spacing[4],
+              textAlign: 'center',
+              color: colors.textMuted,
+              borderTop: `1px solid ${colors.border}`,
+            }}
+          >
             No items, kits or packages found matching &quot;{searchQuery}&quot;
           </div>
         )}
       </Card>
-      
+
       {/* Recent Changes */}
       <Card>
-        <div style={{
-          padding: spacing[4],
-          borderBottom: `1px solid ${colors.border}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
+        <div
+          style={{
+            padding: spacing[4],
+            borderBottom: `1px solid ${colors.border}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
             <Clock size={18} style={{ color: colors.primary }} />
             <h3 style={{ margin: 0, color: colors.textPrimary, fontSize: typography.fontSize.lg }}>
@@ -414,23 +469,21 @@ function ChangeLog({
             Last 10 changes
           </span>
         </div>
-        
+
         {recentChanges.length > 0 ? (
           <div>
             {recentChanges.map((change, idx) => (
-              <ChangeEntry
-                key={change.id || idx}
-                change={change}
-                onViewItem={handleViewItem}
-              />
+              <ChangeEntry key={change.id || idx} change={change} onViewItem={handleViewItem} />
             ))}
           </div>
         ) : (
-          <div style={{
-            padding: spacing[6],
-            textAlign: 'center',
-            color: colors.textMuted,
-          }}>
+          <div
+            style={{
+              padding: spacing[6],
+              textAlign: 'center',
+              color: colors.textMuted,
+            }}
+          >
             <History size={48} style={{ opacity: 0.3, marginBottom: spacing[3] }} />
             <p style={{ margin: 0 }}>No changes recorded yet.</p>
             <p style={{ margin: `${spacing[1]}px 0 0`, fontSize: typography.fontSize.sm }}>

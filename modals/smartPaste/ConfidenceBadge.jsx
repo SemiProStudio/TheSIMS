@@ -19,20 +19,22 @@ export function ConfidenceBadge({ confidence }) {
   }
 
   return (
-    <span style={{
-      display: 'inline-block',
-      fontSize: 10,
-      fontWeight: 600,
-      padding: '1px 6px',
-      borderRadius: 4,
-      background: `${withOpacity(color, 20)}`,
-      color,
-      textTransform: 'uppercase',
-      letterSpacing: '0.04em',
-      lineHeight: '16px',
-      whiteSpace: 'nowrap',
-      flexShrink: 0,
-    }}>
+    <span
+      style={{
+        display: 'inline-block',
+        fontSize: 10,
+        fontWeight: 600,
+        padding: '1px 6px',
+        borderRadius: 4,
+        background: `${withOpacity(color, 20)}`,
+        color,
+        textTransform: 'uppercase',
+        letterSpacing: '0.04em',
+        lineHeight: '16px',
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
+      }}
+    >
       {label}
     </span>
   );

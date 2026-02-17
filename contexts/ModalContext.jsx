@@ -198,23 +198,46 @@ export function ModalProvider({ children }) {
   // Confirm Dialog
   // ============================================================================
 
-  const showConfirm = useCallback(({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', variant = 'default', onConfirm, onCancel }) => {
-    setConfirmDialog({ isOpen: true, title, message, confirmText, cancelText, variant, onConfirm, onCancel });
-  }, []);
-
-  const showDeleteConfirm = useCallback((itemName, onConfirm) => {
-    showConfirm({
-      title: 'Delete Item',
-      message: `Are you sure you want to delete "${itemName}"? This action cannot be undone.`,
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-      variant: 'danger',
+  const showConfirm = useCallback(
+    ({
+      title,
+      message,
+      confirmText = 'Confirm',
+      cancelText = 'Cancel',
+      variant = 'default',
       onConfirm,
-    });
-  }, [showConfirm]);
+      onCancel,
+    }) => {
+      setConfirmDialog({
+        isOpen: true,
+        title,
+        message,
+        confirmText,
+        cancelText,
+        variant,
+        onConfirm,
+        onCancel,
+      });
+    },
+    [],
+  );
+
+  const showDeleteConfirm = useCallback(
+    (itemName, onConfirm) => {
+      showConfirm({
+        title: 'Delete Item',
+        message: `Are you sure you want to delete "${itemName}"? This action cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        variant: 'danger',
+        onConfirm,
+      });
+    },
+    [showConfirm],
+  );
 
   const closeConfirm = useCallback(() => {
-    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+    setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
   const handleConfirm = useCallback(() => {
@@ -232,11 +255,11 @@ export function ModalProvider({ children }) {
   // ============================================================================
 
   const updateItemForm = useCallback((field, value) => {
-    setItemForm(prev => ({ ...prev, [field]: value }));
+    setItemForm((prev) => ({ ...prev, [field]: value }));
   }, []);
 
   const updateReservationForm = useCallback((field, value) => {
-    setReservationForm(prev => ({ ...prev, [field]: value }));
+    setReservationForm((prev) => ({ ...prev, [field]: value }));
   }, []);
 
   const resetItemForm = useCallback(() => {
@@ -252,38 +275,94 @@ export function ModalProvider({ children }) {
   // ============================================================================
   // Memoized context value
   // ============================================================================
-  const value = useMemo(() => ({
-    activeModal, setActiveModal, modalData, setModalData, openModal, closeModal, isModalOpen,
-    editingItemId, setEditingItemId, editingReservationId, setEditingReservationId,
-    isEditing: editingItemId !== null || editingReservationId !== null,
-    itemForm, setItemForm, updateItemForm, resetItemForm,
-    reservationForm, setReservationForm, updateReservationForm, resetReservationForm,
-    openAddItemModal, openEditItemModal, closeItemModal,
-    openAddReservationModal, openEditReservationModal, closeReservationModal,
-    openCheckOutModal, openCheckInModal,
-    openQRModal, openExportModal, openMaintenanceModal,
-    openCSVImportModal, openQRScannerModal, openImageSelectorModal,
-    openBulkStatusModal, openBulkLocationModal, openBulkCategoryModal, openBulkDeleteModal,
-    confirmDialog, setConfirmDialog, showConfirm, showDeleteConfirm,
-    closeConfirm, handleConfirm, handleCancel,
-  }), [
-    activeModal, modalData, editingItemId, editingReservationId,
-    itemForm, reservationForm, confirmDialog,
-    openModal, closeModal, isModalOpen,
-    updateItemForm, resetItemForm, updateReservationForm, resetReservationForm,
-    openAddItemModal, openEditItemModal, closeItemModal,
-    openAddReservationModal, openEditReservationModal, closeReservationModal,
-    openCheckOutModal, openCheckInModal,
-    openQRModal, openExportModal, openMaintenanceModal,
-    openCSVImportModal, openQRScannerModal, openImageSelectorModal,
-    openBulkStatusModal, openBulkLocationModal, openBulkCategoryModal, openBulkDeleteModal,
-    showConfirm, showDeleteConfirm, closeConfirm, handleConfirm, handleCancel,
-  ]);
-
-  return (
-    <ModalContext.Provider value={value}>
-      {children}
-    </ModalContext.Provider>
+  const value = useMemo(
+    () => ({
+      activeModal,
+      setActiveModal,
+      modalData,
+      setModalData,
+      openModal,
+      closeModal,
+      isModalOpen,
+      editingItemId,
+      setEditingItemId,
+      editingReservationId,
+      setEditingReservationId,
+      isEditing: editingItemId !== null || editingReservationId !== null,
+      itemForm,
+      setItemForm,
+      updateItemForm,
+      resetItemForm,
+      reservationForm,
+      setReservationForm,
+      updateReservationForm,
+      resetReservationForm,
+      openAddItemModal,
+      openEditItemModal,
+      closeItemModal,
+      openAddReservationModal,
+      openEditReservationModal,
+      closeReservationModal,
+      openCheckOutModal,
+      openCheckInModal,
+      openQRModal,
+      openExportModal,
+      openMaintenanceModal,
+      openCSVImportModal,
+      openQRScannerModal,
+      openImageSelectorModal,
+      openBulkStatusModal,
+      openBulkLocationModal,
+      openBulkCategoryModal,
+      openBulkDeleteModal,
+      confirmDialog,
+      setConfirmDialog,
+      showConfirm,
+      showDeleteConfirm,
+      closeConfirm,
+      handleConfirm,
+      handleCancel,
+    }),
+    [
+      activeModal,
+      modalData,
+      editingItemId,
+      editingReservationId,
+      itemForm,
+      reservationForm,
+      confirmDialog,
+      openModal,
+      closeModal,
+      isModalOpen,
+      updateItemForm,
+      resetItemForm,
+      updateReservationForm,
+      resetReservationForm,
+      openAddItemModal,
+      openEditItemModal,
+      closeItemModal,
+      openAddReservationModal,
+      openEditReservationModal,
+      closeReservationModal,
+      openCheckOutModal,
+      openCheckInModal,
+      openQRModal,
+      openExportModal,
+      openMaintenanceModal,
+      openCSVImportModal,
+      openQRScannerModal,
+      openImageSelectorModal,
+      openBulkStatusModal,
+      openBulkLocationModal,
+      openBulkCategoryModal,
+      openBulkDeleteModal,
+      showConfirm,
+      showDeleteConfirm,
+      closeConfirm,
+      handleConfirm,
+      handleCancel,
+    ],
   );
-}
 
+  return <ModalContext.Provider value={value}>{children}</ModalContext.Provider>;
+}

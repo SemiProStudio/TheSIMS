@@ -14,8 +14,18 @@ import { colors, spacing, borderRadius, typography } from '../theme.js';
 // =============================================================================
 
 const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 const DAY_NAMES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -47,18 +57,20 @@ function formatDisplayDate(dateString) {
   if (!dateString) return '';
   const date = parseDate(dateString);
   if (!date || isNaN(date.getTime())) return '';
-  return date.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   });
 }
 
 function isSameDay(date1, date2) {
   if (!date1 || !date2) return false;
-  return date1.getFullYear() === date2.getFullYear() &&
-         date1.getMonth() === date2.getMonth() &&
-         date1.getDate() === date2.getDate();
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
 }
 
 function isToday(date) {
@@ -285,7 +297,7 @@ const DatePicker = memo(function DatePicker({
   const [hoveredNav, setHoveredNav] = useState(null);
   const [isFocused, setIsFocused] = useState(false);
   const [popupPos, setPopupPos] = useState({ top: 0, left: 0, openAbove: false });
-  
+
   const containerRef = useRef(null);
   const inputRef = useRef(null);
   const popupRef = useRef(null);
@@ -300,13 +312,13 @@ const DatePicker = memo(function DatePicker({
       const spaceAbove = rect.top;
       const openAbove = spaceBelow < 350 && spaceAbove > spaceBelow;
       const popupWidth = 300;
-      
+
       let left = rect.left;
       // Keep popup on screen horizontally
       if (left + popupWidth > window.innerWidth - 16) {
         left = Math.max(16, rect.right - popupWidth);
       }
-      
+
       setPopupPos({
         top: openAbove ? rect.top : rect.bottom + 4,
         left,
@@ -321,8 +333,10 @@ const DatePicker = memo(function DatePicker({
 
     const handleClickOutside = (e) => {
       if (
-        containerRef.current && !containerRef.current.contains(e.target) &&
-        popupRef.current && !popupRef.current.contains(e.target)
+        containerRef.current &&
+        !containerRef.current.contains(e.target) &&
+        popupRef.current &&
+        !popupRef.current.contains(e.target)
       ) {
         setIsOpen(false);
       }
@@ -355,12 +369,12 @@ const DatePicker = memo(function DatePicker({
 
   const handleInputClick = useCallback(() => {
     if (!disabled) {
-      setIsOpen(prev => !prev);
+      setIsOpen((prev) => !prev);
     }
   }, [disabled]);
 
   const handlePrevMonth = useCallback(() => {
-    setViewDate(prev => {
+    setViewDate((prev) => {
       if (prev.month === 0) {
         return { year: prev.year - 1, month: 11 };
       }
@@ -369,7 +383,7 @@ const DatePicker = memo(function DatePicker({
   }, []);
 
   const handleNextMonth = useCallback(() => {
-    setViewDate(prev => {
+    setViewDate((prev) => {
       if (prev.month === 11) {
         return { year: prev.year + 1, month: 0 };
       }
@@ -377,47 +391,50 @@ const DatePicker = memo(function DatePicker({
     });
   }, []);
 
-  const handleSelectDay = useCallback((day, isCurrentMonth) => {
-    let year = viewDate.year;
-    let month = viewDate.month;
-    
-    if (!isCurrentMonth) {
-      if (day > 15) {
-        // Previous month
-        month--;
-        if (month < 0) {
-          month = 11;
-          year--;
-        }
-      } else {
-        // Next month
-        month++;
-        if (month > 11) {
-          month = 0;
-          year++;
+  const handleSelectDay = useCallback(
+    (day, isCurrentMonth) => {
+      let year = viewDate.year;
+      let month = viewDate.month;
+
+      if (!isCurrentMonth) {
+        if (day > 15) {
+          // Previous month
+          month--;
+          if (month < 0) {
+            month = 11;
+            year--;
+          }
+        } else {
+          // Next month
+          month++;
+          if (month > 11) {
+            month = 0;
+            year++;
+          }
         }
       }
-    }
-    
-    const date = new Date(year, month, day);
-    const dateString = formatDate(date);
-    
-    // Check min/max constraints
-    if (min && dateString < min) return;
-    if (max && dateString > max) return;
-    
-    onChange({ target: { value: dateString } });
-    setIsOpen(false); // Auto-close on selection
-  }, [viewDate, onChange, min, max]);
+
+      const date = new Date(year, month, day);
+      const dateString = formatDate(date);
+
+      // Check min/max constraints
+      if (min && dateString < min) return;
+      if (max && dateString > max) return;
+
+      onChange({ target: { value: dateString } });
+      setIsOpen(false); // Auto-close on selection
+    },
+    [viewDate, onChange, min, max],
+  );
 
   const handleToday = useCallback(() => {
     const today = new Date();
     const dateString = formatDate(today);
-    
+
     // Check min/max constraints
     if (min && dateString < min) return;
     if (max && dateString > max) return;
-    
+
     onChange({ target: { value: dateString } });
     setIsOpen(false);
   }, [onChange, min, max]);
@@ -433,45 +450,51 @@ const DatePicker = memo(function DatePicker({
     const daysInMonth = getDaysInMonth(year, month);
     const firstDay = getFirstDayOfMonth(year, month);
     const daysInPrevMonth = getDaysInMonth(year, month - 1);
-    
+
     const days = [];
-    
+
     // Previous month days
     for (let i = firstDay - 1; i >= 0; i--) {
       const day = daysInPrevMonth - i;
       days.push({ day, isCurrentMonth: false, isPrev: true });
     }
-    
+
     // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
       days.push({ day, isCurrentMonth: true });
     }
-    
+
     // Next month days
     const remainingDays = 42 - days.length; // 6 rows * 7 days
     for (let day = 1; day <= remainingDays; day++) {
       days.push({ day, isCurrentMonth: false, isNext: true });
     }
-    
+
     return days.map((d, index) => {
       let dayYear = year;
       let dayMonth = month;
-      
+
       if (d.isPrev) {
         dayMonth--;
-        if (dayMonth < 0) { dayMonth = 11; dayYear--; }
+        if (dayMonth < 0) {
+          dayMonth = 11;
+          dayYear--;
+        }
       } else if (d.isNext) {
         dayMonth++;
-        if (dayMonth > 11) { dayMonth = 0; dayYear++; }
+        if (dayMonth > 11) {
+          dayMonth = 0;
+          dayYear++;
+        }
       }
-      
+
       const date = new Date(dayYear, dayMonth, d.day);
       const dateString = formatDate(date);
       const isSelected = selectedDate && isSameDay(date, selectedDate);
       const isTodayDate = isToday(date);
       const isDisabled = (min && dateString < min) || (max && dateString > max);
       const isHovered = hoveredDay === index;
-      
+
       const dayStyle = {
         ...styles.day,
         ...(d.isCurrentMonth ? {} : styles.dayOtherMonth),
@@ -480,7 +503,7 @@ const DatePicker = memo(function DatePicker({
         ...(isTodayDate && !isSelected ? styles.dayToday : {}),
         ...(isSelected ? styles.daySelected : {}),
       };
-      
+
       return (
         <button
           key={index}
@@ -491,7 +514,12 @@ const DatePicker = memo(function DatePicker({
           onMouseLeave={() => setHoveredDay(null)}
           disabled={isDisabled}
           tabIndex={isOpen ? 0 : -1}
-          aria-label={date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          aria-label={date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+          })}
           aria-selected={isSelected}
           aria-current={isTodayDate ? 'date' : undefined}
         >
@@ -541,101 +569,106 @@ const DatePicker = memo(function DatePicker({
         </div>
       </div>
 
-      {isOpen && createPortal(
-        <div 
-          ref={popupRef}
-          style={{
-            position: 'fixed',
-            top: popupPos.openAbove ? undefined : popupPos.top,
-            bottom: popupPos.openAbove ? `${window.innerHeight - popupPos.top + 4}px` : undefined,
-            left: popupPos.left,
-            zIndex: 10002,
-            background: colors.bgCard,
-            border: `1px solid ${colors.border}`,
-            borderRadius: borderRadius.lg,
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.4)',
-            padding: spacing[3],
-            minWidth: '280px',
-            animation: 'fadeIn 150ms ease',
-          }}
-          role="dialog"
-          aria-label="Choose date"
-        >
-          {/* Header */}
-          <div style={styles.header}>
-            <button
-              type="button"
-              style={{
-                ...styles.navButton,
-                ...(hoveredNav === 'prev' ? styles.navButtonHover : {}),
-              }}
-              onClick={handlePrevMonth}
-              onMouseEnter={() => setHoveredNav('prev')}
-              onMouseLeave={() => setHoveredNav(null)}
-              aria-label="Previous month"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <span style={styles.headerTitle}>
-              {MONTH_NAMES[viewDate.month]} {viewDate.year}
-            </span>
-            <button
-              type="button"
-              style={{
-                ...styles.navButton,
-                ...(hoveredNav === 'next' ? styles.navButtonHover : {}),
-              }}
-              onClick={handleNextMonth}
-              onMouseEnter={() => setHoveredNav('next')}
-              onMouseLeave={() => setHoveredNav(null)}
-              aria-label="Next month"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-
-          {/* Week days header */}
-          <div style={styles.weekDays}>
-            {DAY_NAMES.map(day => (
-              <div key={day} style={styles.weekDay}>{day}</div>
-            ))}
-          </div>
-
-          {/* Days grid */}
-          <div style={styles.days}>
-            {renderDays()}
-          </div>
-
-          {/* Footer */}
-          {(showTodayButton || clearable) && (
-            <div style={styles.footer}>
-              {clearable && value ? (
-                <button
-                  type="button"
-                  style={styles.clearButton}
-                  onClick={handleClear}
-                  onMouseEnter={(e) => e.target.style.color = colors.danger}
-                  onMouseLeave={(e) => e.target.style.color = colors.textMuted}
-                >
-                  Clear
-                </button>
-              ) : <span />}
-              {showTodayButton && (
-                <button
-                  type="button"
-                  style={styles.todayButton}
-                  onClick={handleToday}
-                  onMouseEnter={(e) => e.target.style.background = `color-mix(in srgb, ${colors.primary} 15%, transparent)`}
-                  onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                >
-                  Today
-                </button>
-              )}
+      {isOpen &&
+        createPortal(
+          <div
+            ref={popupRef}
+            style={{
+              position: 'fixed',
+              top: popupPos.openAbove ? undefined : popupPos.top,
+              bottom: popupPos.openAbove ? `${window.innerHeight - popupPos.top + 4}px` : undefined,
+              left: popupPos.left,
+              zIndex: 10002,
+              background: colors.bgCard,
+              border: `1px solid ${colors.border}`,
+              borderRadius: borderRadius.lg,
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.4)',
+              padding: spacing[3],
+              minWidth: '280px',
+              animation: 'fadeIn 150ms ease',
+            }}
+            role="dialog"
+            aria-label="Choose date"
+          >
+            {/* Header */}
+            <div style={styles.header}>
+              <button
+                type="button"
+                style={{
+                  ...styles.navButton,
+                  ...(hoveredNav === 'prev' ? styles.navButtonHover : {}),
+                }}
+                onClick={handlePrevMonth}
+                onMouseEnter={() => setHoveredNav('prev')}
+                onMouseLeave={() => setHoveredNav(null)}
+                aria-label="Previous month"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <span style={styles.headerTitle}>
+                {MONTH_NAMES[viewDate.month]} {viewDate.year}
+              </span>
+              <button
+                type="button"
+                style={{
+                  ...styles.navButton,
+                  ...(hoveredNav === 'next' ? styles.navButtonHover : {}),
+                }}
+                onClick={handleNextMonth}
+                onMouseEnter={() => setHoveredNav('next')}
+                onMouseLeave={() => setHoveredNav(null)}
+                aria-label="Next month"
+              >
+                <ChevronRight size={20} />
+              </button>
             </div>
-          )}
-        </div>,
-        document.body
-      )}
+
+            {/* Week days header */}
+            <div style={styles.weekDays}>
+              {DAY_NAMES.map((day) => (
+                <div key={day} style={styles.weekDay}>
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Days grid */}
+            <div style={styles.days}>{renderDays()}</div>
+
+            {/* Footer */}
+            {(showTodayButton || clearable) && (
+              <div style={styles.footer}>
+                {clearable && value ? (
+                  <button
+                    type="button"
+                    style={styles.clearButton}
+                    onClick={handleClear}
+                    onMouseEnter={(e) => (e.target.style.color = colors.danger)}
+                    onMouseLeave={(e) => (e.target.style.color = colors.textMuted)}
+                  >
+                    Clear
+                  </button>
+                ) : (
+                  <span />
+                )}
+                {showTodayButton && (
+                  <button
+                    type="button"
+                    style={styles.todayButton}
+                    onClick={handleToday}
+                    onMouseEnter={(e) =>
+                      (e.target.style.background = `color-mix(in srgb, ${colors.primary} 15%, transparent)`)
+                    }
+                    onMouseLeave={(e) => (e.target.style.background = 'transparent')}
+                  >
+                    Today
+                  </button>
+                )}
+              </div>
+            )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 });

@@ -27,15 +27,18 @@ export function ToastProvider({ children }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const addToast = useCallback((message, type = 'info') => {
-    const id = ++idRef.current;
-    const duration = TOAST_DURATION[type] || 4000;
+  const addToast = useCallback(
+    (message, type = 'info') => {
+      const id = ++idRef.current;
+      const duration = TOAST_DURATION[type] || 4000;
 
-    setToasts((prev) => [...prev.slice(-4), { id, message, type }]); // keep max 5
+      setToasts((prev) => [...prev.slice(-4), { id, message, type }]); // keep max 5
 
-    setTimeout(() => removeToast(id), duration);
-    return id;
-  }, [removeToast]);
+      setTimeout(() => removeToast(id), duration);
+      return id;
+    },
+    [removeToast],
+  );
 
   return (
     <ToastContext.Provider value={{ addToast, removeToast }}>
@@ -50,10 +53,18 @@ export function ToastProvider({ children }) {
 // =============================================================================
 
 const TOAST_COLORS = {
-  success: { bg: withOpacity(colors.success, 15), border: colors.success, text: colors.textPrimary },
-  error:   { bg: withOpacity(colors.danger, 15), border: colors.danger, text: colors.textPrimary },
-  warning: { bg: withOpacity(colors.warning, 15), border: colors.warning, text: colors.textPrimary },
-  info:    { bg: withOpacity(colors.primary, 15), border: colors.primary, text: colors.textPrimary },
+  success: {
+    bg: withOpacity(colors.success, 15),
+    border: colors.success,
+    text: colors.textPrimary,
+  },
+  error: { bg: withOpacity(colors.danger, 15), border: colors.danger, text: colors.textPrimary },
+  warning: {
+    bg: withOpacity(colors.warning, 15),
+    border: colors.warning,
+    text: colors.textPrimary,
+  },
+  info: { bg: withOpacity(colors.primary, 15), border: colors.primary, text: colors.textPrimary },
 };
 
 function ToastContainer({ toasts, onDismiss }) {

@@ -11,7 +11,7 @@ test.describe('Visual Regression - Pages', () => {
     test('login page should match baseline', async ({ page }) => {
       await page.goto('/');
       await page.waitForTimeout(500);
-      
+
       await expect(page).toHaveScreenshot('login-page.png', {
         maxDiffPixels: 100,
       });
@@ -19,16 +19,19 @@ test.describe('Visual Regression - Pages', () => {
 
     test('login page with error should match baseline', async ({ page }) => {
       await page.goto('/');
-      
+
       // Trigger an error by submitting invalid credentials
       await page.locator('input[type="email"]').fill('test@test.com');
       await page.locator('input[type="password"]').fill('wrongpassword');
       await page.locator('button[type="submit"]').click();
-      
+
       await page.waitForTimeout(1000);
-      
+
       // Only capture if there's an error visible
-      const hasError = await page.locator('text=/invalid|error|incorrect/i').isVisible().catch(() => false);
+      const hasError = await page
+        .locator('text=/invalid|error|incorrect/i')
+        .isVisible()
+        .catch(() => false);
       if (hasError) {
         await expect(page).toHaveScreenshot('login-page-error.png', {
           maxDiffPixels: 100,
@@ -40,7 +43,7 @@ test.describe('Visual Regression - Pages', () => {
       await page.setViewportSize({ width: 375, height: 667 });
       await page.goto('/');
       await page.waitForTimeout(500);
-      
+
       await expect(page).toHaveScreenshot('login-page-mobile.png', {
         maxDiffPixels: 100,
       });
@@ -52,7 +55,7 @@ test.describe('Visual Regression - Pages', () => {
       const loginPage = new LoginPage(page);
       await page.goto('/');
       await loginPage.loginAsAdmin();
-      
+
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();
       await page.waitForTimeout(1000);
@@ -72,7 +75,7 @@ test.describe('Visual Regression - Pages', () => {
     test('dashboard on tablet should match baseline', async ({ page }) => {
       await page.setViewportSize({ width: 768, height: 1024 });
       await page.waitForTimeout(500);
-      
+
       await expect(page).toHaveScreenshot('dashboard-tablet.png', {
         maxDiffPixels: 200,
       });
@@ -81,7 +84,7 @@ test.describe('Visual Regression - Pages', () => {
     test('dashboard on mobile should match baseline', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
       await page.waitForTimeout(500);
-      
+
       await expect(page).toHaveScreenshot('dashboard-mobile.png', {
         maxDiffPixels: 200,
       });
@@ -93,7 +96,7 @@ test.describe('Visual Regression - Pages', () => {
       const loginPage = new LoginPage(page);
       await page.goto('/');
       await loginPage.loginAsAdmin();
-      
+
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();
       await dashboard.navigateTo('Gear List');
@@ -113,7 +116,7 @@ test.describe('Visual Regression - Pages', () => {
         await gridButton.click();
         await page.waitForTimeout(500);
       }
-      
+
       await expect(page).toHaveScreenshot('gear-list-grid.png', {
         maxDiffPixels: 300,
       });
@@ -125,7 +128,7 @@ test.describe('Visual Regression - Pages', () => {
         await searchInput.fill('Camera');
         await page.waitForTimeout(500);
       }
-      
+
       await expect(page).toHaveScreenshot('gear-list-search.png', {
         maxDiffPixels: 300,
       });
@@ -134,7 +137,7 @@ test.describe('Visual Regression - Pages', () => {
     test('gear list on mobile should match baseline', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
       await page.waitForTimeout(500);
-      
+
       await expect(page).toHaveScreenshot('gear-list-mobile.png', {
         maxDiffPixels: 300,
       });
@@ -146,7 +149,7 @@ test.describe('Visual Regression - Pages', () => {
       const loginPage = new LoginPage(page);
       await page.goto('/');
       await loginPage.loginAsAdmin();
-      
+
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();
       await dashboard.navigateTo('Schedule');
@@ -156,11 +159,7 @@ test.describe('Visual Regression - Pages', () => {
     test('schedule view should match baseline', async ({ page }) => {
       await expect(page).toHaveScreenshot('schedule.png', {
         maxDiffPixels: 400,
-        mask: [
-          page.locator('time'),
-          page.locator('.date'),
-          page.locator('[data-date]'),
-        ],
+        mask: [page.locator('time'), page.locator('.date'), page.locator('[data-date]')],
       });
     });
   });
@@ -170,7 +169,7 @@ test.describe('Visual Regression - Pages', () => {
       const loginPage = new LoginPage(page);
       await page.goto('/');
       await loginPage.loginAsAdmin();
-      
+
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();
       await dashboard.navigateTo('Clients');
@@ -189,7 +188,7 @@ test.describe('Visual Regression - Pages', () => {
       const loginPage = new LoginPage(page);
       await page.goto('/');
       await loginPage.loginAsAdmin();
-      
+
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();
       await dashboard.navigateTo('Admin Panel');

@@ -41,8 +41,14 @@ function cropImageToCanvas(image, cropArea, outputSize, borderRadiusPx = 0) {
 
   ctx.drawImage(
     image,
-    cropArea.x, cropArea.y, cropArea.size, cropArea.size,
-    0, 0, outputSize, outputSize
+    cropArea.x,
+    cropArea.y,
+    cropArea.size,
+    cropArea.size,
+    0,
+    0,
+    outputSize,
+    outputSize,
   );
 
   return canvas.toDataURL('image/jpeg', 0.9);
@@ -94,24 +100,24 @@ const ImageCropEditor = memo(function ImageCropEditor({
   // ============================================================================
   const getCropArea = useCallback(() => {
     if (!imageRef.current) return { x: 0, y: 0, size: 0 };
-    
+
     const { width: natW, height: natH } = imageNatural;
     // The visible crop size in image-space: the smaller dimension divided by zoom
     const baseCropSize = Math.min(natW, natH);
     const cropSize = baseCropSize / zoom;
-    
+
     // Center point with pan offset
     const centerX = natW / 2 + pan.x;
     const centerY = natH / 2 + pan.y;
-    
+
     // Crop bounds
     let x = centerX - cropSize / 2;
     let y = centerY - cropSize / 2;
-    
+
     // Clamp to image bounds
     x = Math.max(0, Math.min(x, natW - cropSize));
     y = Math.max(0, Math.min(y, natH - cropSize));
-    
+
     return { x, y, size: cropSize };
   }, [imageNatural, zoom, pan]);
 
@@ -132,8 +138,14 @@ const ImageCropEditor = memo(function ImageCropEditor({
     // Draw cropped region
     ctx.drawImage(
       imageRef.current,
-      cropArea.x, cropArea.y, cropArea.size, cropArea.size,
-      0, 0, displaySize, displaySize
+      cropArea.x,
+      cropArea.y,
+      cropArea.size,
+      cropArea.size,
+      0,
+      0,
+      displaySize,
+      displaySize,
     );
   }, [imageLoaded, zoom, pan, getCropArea]);
 
@@ -146,35 +158,38 @@ const ImageCropEditor = memo(function ImageCropEditor({
     setDragStart({ x: e.clientX, y: e.clientY });
   }, []);
 
-  const handlePointerMove = useCallback((e) => {
-    if (!isDragging || !imageRef.current) return;
-    e.preventDefault();
+  const handlePointerMove = useCallback(
+    (e) => {
+      if (!isDragging || !imageRef.current) return;
+      e.preventDefault();
 
-    const { width: natW, height: natH } = imageNatural;
-    const container = containerRef.current;
-    if (!container) return;
+      const { width: natW, height: natH } = imageNatural;
+      const container = containerRef.current;
+      if (!container) return;
 
-    const containerSize = container.offsetWidth;
-    const baseCropSize = Math.min(natW, natH);
-    
-    // Convert pixel drag to image-space movement
-    const scale = baseCropSize / containerSize / zoom;
-    
-    const dx = (e.clientX - dragStart.x) * scale;
-    const dy = (e.clientY - dragStart.y) * scale;
+      const containerSize = container.offsetWidth;
+      const baseCropSize = Math.min(natW, natH);
 
-    setPan(prev => {
-      const cropSize = baseCropSize / zoom;
-      const maxPanX = (natW - cropSize) / 2;
-      const maxPanY = (natH - cropSize) / 2;
-      return {
-        x: Math.max(-maxPanX, Math.min(maxPanX, prev.x - dx)),
-        y: Math.max(-maxPanY, Math.min(maxPanY, prev.y - dy)),
-      };
-    });
+      // Convert pixel drag to image-space movement
+      const scale = baseCropSize / containerSize / zoom;
 
-    setDragStart({ x: e.clientX, y: e.clientY });
-  }, [isDragging, dragStart, imageNatural, zoom]);
+      const dx = (e.clientX - dragStart.x) * scale;
+      const dy = (e.clientY - dragStart.y) * scale;
+
+      setPan((prev) => {
+        const cropSize = baseCropSize / zoom;
+        const maxPanX = (natW - cropSize) / 2;
+        const maxPanY = (natH - cropSize) / 2;
+        return {
+          x: Math.max(-maxPanX, Math.min(maxPanX, prev.x - dx)),
+          y: Math.max(-maxPanY, Math.min(maxPanY, prev.y - dy)),
+        };
+      });
+
+      setDragStart({ x: e.clientX, y: e.clientY });
+    },
+    [isDragging, dragStart, imageNatural, zoom],
+  );
 
   const handlePointerUp = useCallback(() => {
     setIsDragging(false);
@@ -198,7 +213,7 @@ const ImageCropEditor = memo(function ImageCropEditor({
   const handleWheel = useCallback((e) => {
     e.preventDefault();
     const delta = -e.deltaY * ZOOM_WHEEL_SENSITIVITY;
-    setZoom(prev => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev + delta)));
+    setZoom((prev) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev + delta)));
   }, []);
 
   // Attach wheel listener with passive: false
@@ -212,9 +227,12 @@ const ImageCropEditor = memo(function ImageCropEditor({
   // ============================================================================
   // Zoom controls
   // ============================================================================
-  const zoomIn = () => setZoom(prev => Math.min(MAX_ZOOM, prev + ZOOM_STEP * 3));
-  const zoomOut = () => setZoom(prev => Math.max(MIN_ZOOM, prev - ZOOM_STEP * 3));
-  const resetView = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
+  const zoomIn = () => setZoom((prev) => Math.min(MAX_ZOOM, prev + ZOOM_STEP * 3));
+  const zoomOut = () => setZoom((prev) => Math.max(MIN_ZOOM, prev - ZOOM_STEP * 3));
+  const resetView = () => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  };
 
   // ============================================================================
   // Commit crop
@@ -230,8 +248,8 @@ const ImageCropEditor = memo(function ImageCropEditor({
   // ============================================================================
   // Crop overlay shape
   // ============================================================================
-  const overlayBorderRadius = cropShape === 'circle' ? '50%' : 
-                                cropShape === 'rounded-square' ? `${cropBorderRadius}px` : '0';
+  const overlayBorderRadius =
+    cropShape === 'circle' ? '50%' : cropShape === 'rounded-square' ? `${cropBorderRadius}px` : '0';
 
   // ============================================================================
   // Render
@@ -241,12 +259,14 @@ const ImageCropEditor = memo(function ImageCropEditor({
   return (
     <div style={{ padding: spacing[4] }}>
       {/* Title */}
-      <div style={{ 
-        marginBottom: spacing[3], 
-        fontWeight: typography.fontWeight.medium, 
-        color: colors.textPrimary,
-        fontSize: typography.fontSize.base,
-      }}>
+      <div
+        style={{
+          marginBottom: spacing[3],
+          fontWeight: typography.fontWeight.medium,
+          color: colors.textPrimary,
+          fontSize: typography.fontSize.base,
+        }}
+      >
         {title}
       </div>
 
@@ -284,28 +304,32 @@ const ImageCropEditor = memo(function ImageCropEditor({
 
         {/* Loading state */}
         {!imageLoaded && (
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: colors.textMuted,
-          }}>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: colors.textMuted,
+            }}
+          >
             Loading...
           </div>
         )}
       </div>
 
       {/* Zoom slider & controls */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: spacing[2],
-        marginTop: spacing[3],
-        maxWidth: 300,
-        margin: `${spacing[3]}px auto 0`,
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: spacing[2],
+          marginTop: spacing[3],
+          maxWidth: 300,
+          margin: `${spacing[3]}px auto 0`,
+        }}
+      >
         <button
           onClick={zoomOut}
           style={{
@@ -366,22 +390,26 @@ const ImageCropEditor = memo(function ImageCropEditor({
       </div>
 
       {/* Hint text */}
-      <div style={{
-        textAlign: 'center',
-        fontSize: typography.fontSize.xs,
-        color: colors.textMuted,
-        marginTop: spacing[2],
-      }}>
+      <div
+        style={{
+          textAlign: 'center',
+          fontSize: typography.fontSize.xs,
+          color: colors.textMuted,
+          marginTop: spacing[2],
+        }}
+      >
         Drag to reposition · Scroll to zoom
       </div>
 
       {/* Action buttons */}
-      <div style={{
-        display: 'flex',
-        gap: spacing[3],
-        justifyContent: 'center',
-        marginTop: spacing[4],
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: spacing[3],
+          justifyContent: 'center',
+          marginTop: spacing[4],
+        }}
+      >
         <Button variant="secondary" onClick={onCancel} icon={X} size="sm">
           Cancel
         </Button>

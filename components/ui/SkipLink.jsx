@@ -3,7 +3,10 @@ import PropTypes from 'prop-types';
 import { colors, borderRadius, spacing } from '../../theme.js';
 
 // SkipLink - Allow keyboard users to skip to main content
-export const SkipLink = memo(function SkipLink({ targetId = 'main-content', children = 'Skip to main content' }) {
+export const SkipLink = memo(function SkipLink({
+  targetId = 'main-content',
+  children = 'Skip to main content',
+}) {
   return (
     <a
       href={`#${targetId}`}

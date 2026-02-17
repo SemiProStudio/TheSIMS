@@ -22,7 +22,6 @@ import {
   CONFIDENCE,
 } from '../lib/smartPaste/index.js';
 
-
 // =============================================================================
 // cleanInputText
 // =============================================================================
@@ -44,7 +43,8 @@ describe('cleanInputText', () => {
   });
 
   it('should convert HTML tables to tab-separated lines', () => {
-    const html = '<table><tr><td>Weight</td><td>500g</td></tr><tr><td>Color</td><td>Black</td></tr></table>';
+    const html =
+      '<table><tr><td>Weight</td><td>500g</td></tr><tr><td>Color</td><td>Black</td></tr></table>';
     const result = cleanInputText(html);
     expect(result).toContain('Weight\t500g');
     expect(result).toContain('Color\tBlack');
@@ -114,7 +114,6 @@ describe('cleanInputText', () => {
   });
 });
 
-
 // =============================================================================
 // normalize
 // =============================================================================
@@ -150,7 +149,6 @@ describe('normalize', () => {
   });
 });
 
-
 // =============================================================================
 // expandAbbreviations
 // =============================================================================
@@ -173,7 +171,6 @@ describe('expandAbbreviations', () => {
     expect(expandAbbreviations('hello world')).toBe('hello world');
   });
 });
-
 
 // =============================================================================
 // levenshtein
@@ -201,7 +198,6 @@ describe('levenshtein', () => {
     expect(levenshtein('cats', 'cat')).toBe(1);
   });
 });
-
 
 // =============================================================================
 // similarityScore
@@ -245,21 +241,14 @@ describe('similarityScore', () => {
   });
 });
 
-
 // =============================================================================
 // buildSpecAliasMap
 // =============================================================================
 
 describe('buildSpecAliasMap', () => {
   const mockSpecs = {
-    Cameras: [
-      { name: 'Sensor Type', required: true },
-      { name: 'Effective Pixels' },
-    ],
-    Lenses: [
-      { name: 'Focal Length' },
-      { name: 'Maximum Aperture' },
-    ],
+    Cameras: [{ name: 'Sensor Type', required: true }, { name: 'Effective Pixels' }],
+    Lenses: [{ name: 'Focal Length' }, { name: 'Maximum Aperture' }],
   };
 
   it('should return empty results for null input', () => {
@@ -313,7 +302,6 @@ describe('buildSpecAliasMap', () => {
   });
 });
 
-
 // =============================================================================
 // parseProductText — end-to-end
 // =============================================================================
@@ -327,16 +315,8 @@ describe('parseProductText', () => {
       { name: 'ISO Range' },
       { name: 'Weight' },
     ],
-    Lenses: [
-      { name: 'Focal Length' },
-      { name: 'Maximum Aperture' },
-      { name: 'Lens Mount' },
-    ],
-    Lighting: [
-      { name: 'Light Type' },
-      { name: 'Color Temperature' },
-      { name: 'Max Power Output' },
-    ],
+    Lenses: [{ name: 'Focal Length' }, { name: 'Maximum Aperture' }, { name: 'Lens Mount' }],
+    Lighting: [{ name: 'Light Type' }, { name: 'Color Temperature' }, { name: 'Max Power Output' }],
   };
 
   it('should return empty result for null/empty input', () => {
@@ -353,7 +333,8 @@ describe('parseProductText', () => {
   });
 
   it('should parse tab-separated key-value pairs', () => {
-    const text = 'Sony A7 IV Camera\nSensor Type\tFull-Frame CMOS\nEffective Pixels\t33 MP\nWeight\t658g';
+    const text =
+      'Sony A7 IV Camera\nSensor Type\tFull-Frame CMOS\nEffective Pixels\t33 MP\nWeight\t658g';
     const result = parseProductText(text, specsConfig);
     expect(result.fields.get('Sensor Type')?.value).toBe('Full-Frame CMOS');
     expect(result.fields.get('Effective Pixels')?.value).toBe('33 MP');
@@ -361,7 +342,8 @@ describe('parseProductText', () => {
   });
 
   it('should parse colon-separated key-value pairs', () => {
-    const text = 'Canon RF 50mm f/1.2L Lens\nFocal Length: 50mm\nMaximum Aperture: f/1.2\nLens Mount: Canon RF';
+    const text =
+      'Canon RF 50mm f/1.2L Lens\nFocal Length: 50mm\nMaximum Aperture: f/1.2\nLens Mount: Canon RF';
     const result = parseProductText(text, specsConfig);
     expect(result.fields.get('Focal Length')?.value).toBe('50mm');
     expect(result.fields.get('Maximum Aperture')?.value).toBe('f/1.2');
@@ -417,7 +399,8 @@ describe('parseProductText', () => {
   });
 
   it('should detect category via keyword scoring', () => {
-    const text = 'LED Light Panel\nLight Type: LED\nColor Temperature: 5600K\nMax Power Output: 300W';
+    const text =
+      'LED Light Panel\nLight Type: LED\nColor Temperature: 5600K\nMax Power Output: 300W';
     const result = parseProductText(text, specsConfig);
     expect(result.category).toBe('Lighting');
   });
@@ -439,7 +422,7 @@ describe('parseProductText', () => {
   it('should collect unmatched pairs', () => {
     const text = 'Sony Camera\nSensor Type: CMOS\nFoo Bar: Baz Qux';
     const result = parseProductText(text, specsConfig);
-    const unmatched = result.unmatchedPairs.find(p => p.key === 'Foo Bar');
+    const unmatched = result.unmatchedPairs.find((p) => p.key === 'Foo Bar');
     expect(unmatched).toBeDefined();
     expect(unmatched.value).toBe('Baz Qux');
   });
@@ -448,7 +431,7 @@ describe('parseProductText', () => {
     const text = 'Camera\nSensor Type: CMOS\nWeight: 500g';
     const result = parseProductText(text, specsConfig);
     expect(result.rawExtracted.length).toBeGreaterThanOrEqual(2);
-    expect(result.rawExtracted.some(p => p.key === 'Sensor Type')).toBe(true);
+    expect(result.rawExtracted.some((p) => p.key === 'Sensor Type')).toBe(true);
   });
 
   it('should store source lines', () => {
@@ -485,10 +468,11 @@ describe('parseProductText', () => {
   });
 
   it('should filter out noise lines', () => {
-    const text = 'Sony Camera\nAdd to Cart\nBuy Now\nSensor Type: CMOS\nFree Shipping\nWeight: 500g';
+    const text =
+      'Sony Camera\nAdd to Cart\nBuy Now\nSensor Type: CMOS\nFree Shipping\nWeight: 500g';
     const result = parseProductText(text, specsConfig);
     // Should not include "Add to Cart" or similar as key-value pairs
-    expect(result.unmatchedPairs.every(p => p.key !== 'Add to Cart')).toBe(true);
+    expect(result.unmatchedPairs.every((p) => p.key !== 'Add to Cart')).toBe(true);
   });
 
   it('should skip values that start with http', () => {
@@ -499,7 +483,8 @@ describe('parseProductText', () => {
   });
 
   it('should work with HTML input by cleaning first', () => {
-    const text = '<table><tr><td>Sensor Type</td><td>CMOS</td></tr><tr><td>Weight</td><td>500g</td></tr></table>';
+    const text =
+      '<table><tr><td>Sensor Type</td><td>CMOS</td></tr><tr><td>Weight</td><td>500g</td></tr></table>';
     const result = parseProductText(text, specsConfig);
     expect(result.fields.get('Sensor Type')?.value).toBe('CMOS');
     expect(result.fields.get('Weight')?.value).toBe('500g');
@@ -512,7 +497,6 @@ describe('parseProductText', () => {
     expect(result.priceNote).toContain('Range');
   });
 });
-
 
 // =============================================================================
 // normalizeUnits
@@ -610,7 +594,6 @@ describe('normalizeUnits', () => {
   });
 });
 
-
 // =============================================================================
 // coerceFieldValue
 // =============================================================================
@@ -677,7 +660,6 @@ describe('coerceFieldValue', () => {
   });
 });
 
-
 // =============================================================================
 // buildApplyPayload
 // =============================================================================
@@ -715,7 +697,7 @@ describe('buildApplyPayload', () => {
   });
 
   it('should respect user-selected overrides', () => {
-    const payload = buildApplyPayload(mockParseResult, { 'Weight': '700g' });
+    const payload = buildApplyPayload(mockParseResult, { Weight: '700g' });
     expect(payload.specs['Weight']).toBe('700g');
     expect(payload.specs['Sensor Type']).toBe('Full-Frame CMOS');
   });
@@ -742,9 +724,7 @@ describe('buildApplyPayload', () => {
   it('should not apply normalization when normalizeMetric is false (default)', () => {
     const parseResult = {
       ...mockParseResult,
-      fields: new Map([
-        ['Weight', { value: '2 lbs', confidence: 90 }],
-      ]),
+      fields: new Map([['Weight', { value: '2 lbs', confidence: 90 }]]),
     };
     const payload = buildApplyPayload(parseResult, {});
     expect(payload.specs['Weight']).toBe('2 lbs');
@@ -766,7 +746,7 @@ describe('buildApplyPayload', () => {
   it('should apply normalization to manually-mapped values', () => {
     const selectedValues = {
       _manualMappings: {
-        'Weight': '3 lbs',
+        Weight: '3 lbs',
       },
     };
     const parseResult = { ...mockParseResult, fields: new Map() };
@@ -789,8 +769,13 @@ describe('buildApplyPayload', () => {
 
   it('should handle empty parse result gracefully', () => {
     const emptyResult = {
-      name: '', brand: '', category: '', purchasePrice: '',
-      priceNote: '', serialNumber: '', modelNumber: '',
+      name: '',
+      brand: '',
+      category: '',
+      purchasePrice: '',
+      priceNote: '',
+      serialNumber: '',
+      modelNumber: '',
       fields: new Map(),
     };
     const payload = buildApplyPayload(emptyResult, {});
@@ -798,7 +783,6 @@ describe('buildApplyPayload', () => {
     expect(Object.keys(payload.specs).length).toBe(0);
   });
 });
-
 
 // =============================================================================
 // detectProductBoundaries
@@ -816,13 +800,15 @@ describe('detectProductBoundaries', () => {
   });
 
   it('should detect products separated by horizontal rules', () => {
-    const text = 'Sony A7 IV\nSensor Type: Full-Frame CMOS\nWeight: 658g\n---\nCanon R6 II\nSensor Type: Full-Frame CMOS\nWeight: 680g';
+    const text =
+      'Sony A7 IV\nSensor Type: Full-Frame CMOS\nWeight: 658g\n---\nCanon R6 II\nSensor Type: Full-Frame CMOS\nWeight: 680g';
     const boundaries = detectProductBoundaries(text);
     expect(boundaries.length).toBe(2);
   });
 
   it('should detect products separated by markdown headings', () => {
-    const text = '# Sony A7 IV\nSensor Type: Full-Frame\nWeight: 658g\n# Canon R6 II\nSensor Type: Full-Frame\nWeight: 680g';
+    const text =
+      '# Sony A7 IV\nSensor Type: Full-Frame\nWeight: 658g\n# Canon R6 II\nSensor Type: Full-Frame\nWeight: 680g';
     const boundaries = detectProductBoundaries(text);
     expect(boundaries.length).toBe(2);
     expect(boundaries[0].name).toContain('Sony');
@@ -830,29 +816,33 @@ describe('detectProductBoundaries', () => {
   });
 
   it('should detect products with "Product Name:" labels', () => {
-    const text = 'Product Name: Sony A7 IV\nSensor Type: CMOS\nWeight: 658g\nProduct Name: Canon R6\nSensor Type: CMOS\nWeight: 680g';
+    const text =
+      'Product Name: Sony A7 IV\nSensor Type: CMOS\nWeight: 658g\nProduct Name: Canon R6\nSensor Type: CMOS\nWeight: 680g';
     const boundaries = detectProductBoundaries(text);
     expect(boundaries.length).toBe(2);
   });
 
   it('should detect products by brand names after blank lines', () => {
-    const text = 'Sony A7 IV\nSensor Type: Full-Frame\nWeight: 658g\n\nCanon R6 Mark II\nSensor Type: Full-Frame\nWeight: 680g';
+    const text =
+      'Sony A7 IV\nSensor Type: Full-Frame\nWeight: 658g\n\nCanon R6 Mark II\nSensor Type: Full-Frame\nWeight: 680g';
     const boundaries = detectProductBoundaries(text);
     expect(boundaries.length).toBe(2);
   });
 
   it('should use full KNOWN_BRANDS list (bug fix verification)', () => {
     // Deity and Tentacle Sync were NOT in the old 17-brand hardcoded list
-    const text = 'Deity V-Mic D4 Duo\nType: Shotgun Microphone\nFrequency: 20Hz-20kHz\nWeight: 300g\n\nTentacle Sync E\nType: Timecode Generator\nBattery: 35 hours\nWeight: 45g';
+    const text =
+      'Deity V-Mic D4 Duo\nType: Shotgun Microphone\nFrequency: 20Hz-20kHz\nWeight: 300g\n\nTentacle Sync E\nType: Timecode Generator\nBattery: 35 hours\nWeight: 45g';
     const boundaries = detectProductBoundaries(text);
     expect(boundaries.length).toBe(2);
   });
 
   it('should store segment text and metadata', () => {
-    const text = '# Product A\nSpec1: Value1\nSpec2: Value2\n# Product B\nSpec3: Value3\nSpec4: Value4';
+    const text =
+      '# Product A\nSpec1: Value1\nSpec2: Value2\n# Product B\nSpec3: Value3\nSpec4: Value4';
     const boundaries = detectProductBoundaries(text);
     expect(boundaries.length).toBe(2);
-    boundaries.forEach(b => {
+    boundaries.forEach((b) => {
       expect(b).toHaveProperty('startLine');
       expect(b).toHaveProperty('endLine');
       expect(b).toHaveProperty('name');
@@ -861,7 +851,6 @@ describe('detectProductBoundaries', () => {
     });
   });
 });
-
 
 // =============================================================================
 // parseBatchProducts
@@ -880,7 +869,8 @@ describe('parseBatchProducts', () => {
   });
 
   it('should parse each segment independently for multi-product text', () => {
-    const text = '# Sony A7 IV\nSensor Type: Full-Frame\nWeight: 658g\n# Canon R6\nSensor Type: Dual Pixel\nWeight: 680g';
+    const text =
+      '# Sony A7 IV\nSensor Type: Full-Frame\nWeight: 658g\n# Canon R6\nSensor Type: Dual Pixel\nWeight: 680g';
     const results = parseBatchProducts(text, specsConfig);
     expect(results.length).toBe(2);
     expect(results[0].result.fields.get('Sensor Type')?.value).toBe('Full-Frame');
@@ -888,15 +878,15 @@ describe('parseBatchProducts', () => {
   });
 
   it('should include segment metadata', () => {
-    const text = '# Product 1\nSensor Type: A\nWeight: 100g\n# Product 2\nSensor Type: B\nWeight: 200g';
+    const text =
+      '# Product 1\nSensor Type: A\nWeight: 100g\n# Product 2\nSensor Type: B\nWeight: 200g';
     const results = parseBatchProducts(text, specsConfig);
-    results.forEach(r => {
+    results.forEach((r) => {
       expect(r.segment).toHaveProperty('name');
       expect(r.result).toHaveProperty('fields');
     });
   });
 });
-
 
 // =============================================================================
 // diffSpecs
@@ -914,7 +904,7 @@ describe('diffSpecs', () => {
   });
 
   it('should detect removed fields', () => {
-    const existing = { 'Weight': '500g' };
+    const existing = { Weight: '500g' };
     const newFields = new Map();
     const diff = diffSpecs(existing, newFields);
     expect(diff.length).toBe(1);
@@ -923,7 +913,7 @@ describe('diffSpecs', () => {
   });
 
   it('should detect changed fields', () => {
-    const existing = { 'Weight': '500g' };
+    const existing = { Weight: '500g' };
     const newFields = new Map([['Weight', { value: '658g', confidence: 90 }]]);
     const diff = diffSpecs(existing, newFields);
     expect(diff.length).toBe(1);
@@ -933,7 +923,7 @@ describe('diffSpecs', () => {
   });
 
   it('should detect unchanged fields', () => {
-    const existing = { 'Weight': '500g' };
+    const existing = { Weight: '500g' };
     const newFields = new Map([['Weight', { value: '500g', confidence: 90 }]]);
     const diff = diffSpecs(existing, newFields);
     expect(diff.length).toBe(1);
@@ -948,26 +938,26 @@ describe('diffSpecs', () => {
   });
 
   it('should handle multiple fields of different statuses', () => {
-    const existing = { 'Weight': '500g', 'Sensor Type': 'CMOS', 'Old Field': 'old' };
+    const existing = { Weight: '500g', 'Sensor Type': 'CMOS', 'Old Field': 'old' };
     const newFields = new Map([
-      ['Weight', { value: '658g', confidence: 90 }],  // changed
-      ['Sensor Type', { value: 'CMOS', confidence: 100 }],  // unchanged
-      ['New Field', { value: 'new', confidence: 80 }],  // added
+      ['Weight', { value: '658g', confidence: 90 }], // changed
+      ['Sensor Type', { value: 'CMOS', confidence: 100 }], // unchanged
+      ['New Field', { value: 'new', confidence: 80 }], // added
     ]);
     const diff = diffSpecs(existing, newFields);
     expect(diff.length).toBe(4);
-    expect(diff.some(d => d.status === 'changed')).toBe(true);
-    expect(diff.some(d => d.status === 'unchanged')).toBe(true);
-    expect(diff.some(d => d.status === 'added')).toBe(true);
-    expect(diff.some(d => d.status === 'removed')).toBe(true);
+    expect(diff.some((d) => d.status === 'changed')).toBe(true);
+    expect(diff.some((d) => d.status === 'unchanged')).toBe(true);
+    expect(diff.some((d) => d.status === 'added')).toBe(true);
+    expect(diff.some((d) => d.status === 'removed')).toBe(true);
   });
 
   it('should sort by status: changed → added → unchanged → removed', () => {
     const existing = { A: '1', B: '2', C: '3' };
     const newFields = new Map([
-      ['A', { value: '1', confidence: 100 }],    // unchanged
-      ['B', { value: '99', confidence: 90 }],     // changed
-      ['D', { value: '4', confidence: 80 }],      // added
+      ['A', { value: '1', confidence: 100 }], // unchanged
+      ['B', { value: '99', confidence: 90 }], // changed
+      ['D', { value: '4', confidence: 80 }], // added
     ]);
     const diff = diffSpecs(existing, newFields);
     expect(diff[0].status).toBe('changed');
@@ -990,7 +980,6 @@ describe('diffSpecs', () => {
     expect(diff[0].confidence).toBe(85);
   });
 });
-
 
 // =============================================================================
 // KNOWN_BRANDS (constants verification)
@@ -1029,7 +1018,6 @@ describe('KNOWN_BRANDS', () => {
     expect(KNOWN_BRANDS).toContain('Quasar Science');
   });
 });
-
 
 // =============================================================================
 // CONFIDENCE constants

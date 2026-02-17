@@ -13,17 +13,17 @@ import { LoginPage, DashboardPage } from './fixtures.js';
 export const visualConfig = {
   // Threshold for pixel difference (0-1, lower = stricter)
   threshold: 0.2,
-  
+
   // Maximum allowed different pixels
   maxDiffPixels: 100,
-  
+
   // Screenshot options
   screenshotOptions: {
     fullPage: false,
     animations: 'disabled',
     caret: 'hide',
   },
-  
+
   // Mask dynamic content (timestamps, random data)
   maskSelectors: [
     '[data-testid="timestamp"]',
@@ -44,10 +44,10 @@ export const visualConfig = {
 export async function takeSnapshot(page, name, options = {}) {
   // Wait for any animations to complete
   await page.waitForTimeout(500);
-  
+
   // Wait for network to be idle
   await page.waitForLoadState('networkidle').catch(() => {});
-  
+
   // Mask dynamic elements
   const masks = [];
   for (const selector of visualConfig.maskSelectors) {
@@ -57,7 +57,7 @@ export async function takeSnapshot(page, name, options = {}) {
       masks.push(elements.nth(i));
     }
   }
-  
+
   return page.screenshot({
     ...visualConfig.screenshotOptions,
     ...options,
@@ -97,28 +97,28 @@ export const test = base.extend({
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     await loginPage.loginAsAdmin();
-    
+
     const dashboard = new DashboardPage(page);
     await dashboard.expectDashboard();
-    
+
     // Wait for initial load
     await page.waitForTimeout(1000);
-    
+
     await use(page);
   },
-  
+
   // Fixture for consistent viewport
   standardViewport: async ({ page }, use) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await use(page);
   },
-  
+
   // Fixture for mobile viewport
   mobileViewport: async ({ page }, use) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await use(page);
   },
-  
+
   // Fixture for tablet viewport
   tabletViewport: async ({ page }, use) => {
     await page.setViewportSize({ width: 768, height: 1024 });
@@ -139,7 +139,7 @@ export async function setTheme(page, themeName) {
   await page.evaluate((theme) => {
     localStorage.setItem('sims-theme', theme);
   }, themeName);
-  
+
   await page.reload();
   await page.waitForTimeout(500);
 }

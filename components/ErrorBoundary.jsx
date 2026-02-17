@@ -21,7 +21,7 @@ export class ErrorBoundary extends React.Component {
     // Log error to console (could also send to error reporting service)
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     this.setState({ errorInfo });
-    
+
     // TODO: Send to error reporting service like Sentry
     // if (typeof window !== 'undefined' && window.Sentry) {
     //   window.Sentry.captureException(error);
@@ -45,27 +45,27 @@ export class ErrorBoundary extends React.Component {
         <div style={styles.container}>
           <div style={styles.card}>
             <div style={styles.iconContainer}>
-              <svg 
-                width="64" 
-                height="64" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="#ef4444" 
+              <svg
+                width="64"
+                height="64"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#ef4444"
                 strokeWidth="2"
-                strokeLinecap="round" 
+                strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
             </div>
-            
+
             <h1 style={styles.title}>Something went wrong</h1>
-            
+
             <p style={styles.message}>
-              We&apos;re sorry, but something unexpected happened. 
-              Please try refreshing the page or contact support if the problem persists.
+              We&apos;re sorry, but something unexpected happened. Please try refreshing the page or
+              contact support if the problem persists.
             </p>
 
             {process.env.NODE_ENV === 'development' && this.state.error && (

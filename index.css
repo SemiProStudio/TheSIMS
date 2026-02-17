@@ -7,71 +7,71 @@
   /* Sidebar dimensions */
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 72px;
-  
+
   /* Backgrounds */
   --bg-dark: #1a1d21;
   --bg-medium: #22262b;
   --bg-light: #2a2f36;
   --bg-card: linear-gradient(135deg, rgba(42, 47, 54, 0.6), rgba(34, 38, 43, 0.4));
   --bg-card-solid: #22262b;
-  
+
   /* Theme background image - set by ThemeContext for themed backgrounds */
   --theme-bg-image: none;
-  
+
   /* Primary/Accent - Lightened for better contrast */
-  --primary: #6a9ab8;              /* Was #5d8aa8, now 5.4:1 on dark */
-  --primary-light: #8bb5cc;        /* Was #7ba3be, now 7.5:1 on dark */
+  --primary: #6a9ab8; /* Was #5d8aa8, now 5.4:1 on dark */
+  --primary-light: #8bb5cc; /* Was #7ba3be, now 7.5:1 on dark */
   --primary-dark: #5a8099;
-  --accent1: #7cb0b0;              /* Was #6b9e9e, now 6.8:1 on dark */
-  --accent2: #8fa88f;              /* Was #7a8f7a, now 5.9:1 on dark */
-  --accent3: #9fb5c5;              /* Was #8fa5b5, now 7.9:1 on dark */
-  
+  --accent1: #7cb0b0; /* Was #6b9e9e, now 6.8:1 on dark */
+  --accent2: #8fa88f; /* Was #7a8f7a, now 5.9:1 on dark */
+  --accent3: #9fb5c5; /* Was #8fa5b5, now 7.9:1 on dark */
+
   /* Status - Adjusted for 4.5:1+ contrast on dark backgrounds */
-  --status-available: #7db88a;     /* Was #6b9e78, now 6.6:1 on dark */
-  --status-checked-out: #9fb5c5;   /* Was #8fa5b5, now 7.9:1 on dark */
-  --status-reserved: #6a9ab8;      /* Was #5d8aa8, now 5.4:1 on dark */
+  --status-available: #7db88a; /* Was #6b9e78, now 6.6:1 on dark */
+  --status-checked-out: #9fb5c5; /* Was #8fa5b5, now 7.9:1 on dark */
+  --status-reserved: #6a9ab8; /* Was #5d8aa8, now 5.4:1 on dark */
   --status-needs-attention: #d4a574; /* Was #b58f6b, now 7.0:1 on dark */
-  --status-missing: #c08080;       /* Was #9e6b6b, now 5.4:1 on dark */
-  
+  --status-missing: #c08080; /* Was #9e6b6b, now 5.4:1 on dark */
+
   /* Condition - Adjusted for accessibility */
-  --condition-excellent: #7db88a;  /* Was #6b9e78 */
-  --condition-good: #8fa88f;       /* Was #7a8f7a */
-  --condition-fair: #d4c07a;       /* Was #b5a56b, now 8.3:1 on dark */
-  --condition-poor: #d4a574;       /* Was #b58f6b */
-  
+  --condition-excellent: #7db88a; /* Was #6b9e78 */
+  --condition-good: #8fa88f; /* Was #7a8f7a */
+  --condition-fair: #d4c07a; /* Was #b5a56b, now 8.3:1 on dark */
+  --condition-poor: #d4a574; /* Was #b58f6b */
+
   /* Text - Improved contrast ratios */
-  --text-primary: #e8ecf0;         /* Was #e2e6ea, now 14.1:1 on dark */
-  --text-secondary: rgba(232, 236, 240, 0.75);  /* Was 0.65, now ~8.4:1 */
-  --text-muted: rgba(232, 236, 240, 0.62);      /* Was 0.55, bumped for readability */
-  
+  --text-primary: #e8ecf0; /* Was #e2e6ea, now 14.1:1 on dark */
+  --text-secondary: rgba(232, 236, 240, 0.75); /* Was 0.65, now ~8.4:1 */
+  --text-muted: rgba(232, 236, 240, 0.62); /* Was 0.55, bumped for readability */
+
   /* Borders */
-  --border: rgba(106, 154, 184, 0.25);  /* Updated to match new primary */
+  --border: rgba(106, 154, 184, 0.25); /* Updated to match new primary */
   --border-light: rgba(106, 154, 184, 0.12);
-  
+
   /* Semantic - Improved for WCAG AA */
-  --danger: #d08080;               /* Was #b56b6b, now 5.4:1 on dark */
+  --danger: #d08080; /* Was #b56b6b, now 5.4:1 on dark */
   --danger-bg: rgba(208, 128, 128, 0.12);
-  --success: #7db88a;              /* Was #6b9e78, now 6.6:1 on dark */
-  --warning: #d4c07a;              /* Was #b5a56b, now 8.3:1 on dark */
-  
+  --success: #7db88a; /* Was #6b9e78, now 6.6:1 on dark */
+  --warning: #d4c07a; /* Was #b5a56b, now 8.3:1 on dark */
+
   /* RGB values for rgba() usage */
-  --primary-rgb: 106, 154, 184;    /* Updated */
-  --accent2-rgb: 143, 168, 143;    /* Updated */
-  --danger-rgb: 208, 128, 128;     /* Updated */
-  --status-needs-attention-rgb: 212, 165, 116;  /* Updated */
-  
+  --primary-rgb: 106, 154, 184; /* Updated */
+  --accent2-rgb: 143, 168, 143; /* Updated */
+  --danger-rgb: 208, 128, 128; /* Updated */
+  --status-needs-attention-rgb: 212, 165, 116; /* Updated */
+
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
   --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.25);
-  
+
   /* Input */
-  --input-bg: rgba(106, 154, 184, 0.12);  /* Updated to match new primary */
-  
+  --input-bg: rgba(106, 154, 184, 0.12); /* Updated to match new primary */
+
   /* Custom cursor */
   --theme-cursor: default;
-  
+
   /* Focus Ring - Accessibility */
   --focus-ring-color: var(--primary-light);
   --focus-ring-color-danger: var(--danger);
@@ -79,8 +79,9 @@
   --focus-ring-offset: 2px;
   --focus-ring-style: solid;
   --focus-ring: var(--focus-ring-width) var(--focus-ring-style) var(--focus-ring-color);
-  --focus-ring-danger: var(--focus-ring-width) var(--focus-ring-style) var(--focus-ring-color-danger);
-  
+  --focus-ring-danger: var(--focus-ring-width) var(--focus-ring-style)
+    var(--focus-ring-color-danger);
+
   /* Additional variables for CSS modules */
   --text-on-primary: #ffffff;
   --bg-hover: rgba(255, 255, 255, 0.08);
@@ -88,10 +89,10 @@
   --primary-hover: color-mix(in srgb, var(--primary) 85%, white);
   --danger-hover: #dc2626;
   --bg-tertiary: var(--bg-light);
-  --bg-secondary: var(--bg-medium);  /* Alias for CSS modules */
-  --border-color: var(--border);     /* Alias for CSS modules */
+  --bg-secondary: var(--bg-medium); /* Alias for CSS modules */
+  --border-color: var(--border); /* Alias for CSS modules */
   --text-primary-solid: #e8ecf0;
-  
+
   /* Spacing scale for CSS modules */
   --spacing-1: 4px;
   --spacing-2: 8px;
@@ -102,7 +103,7 @@
   --spacing-8: 32px;
   --spacing-10: 40px;
   --spacing-12: 48px;
-  
+
   /* Border radius scale */
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -136,7 +137,7 @@
 
 /* Buttons - primary and secondary */
 button:focus-visible,
-[role="button"]:focus-visible,
+[role='button']:focus-visible,
 .btn:focus-visible,
 .btn-primary:focus-visible,
 .btn-secondary:focus-visible {
@@ -162,8 +163,8 @@ select:focus-visible {
 }
 
 /* Checkboxes and radio buttons */
-input[type="checkbox"]:focus-visible,
-input[type="radio"]:focus-visible {
+input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
@@ -209,7 +210,9 @@ a:focus-visible {
 /* Tab buttons */
 .tab-button:focus-visible {
   outline: none;
-  box-shadow: inset 0 -2px 0 var(--primary), 0 0 0 3px rgba(var(--primary-rgb), 0.2);
+  box-shadow:
+    inset 0 -2px 0 var(--primary),
+    0 0 0 3px rgba(var(--primary-rgb), 0.2);
 }
 
 /* Dropdown/Select trigger */
@@ -256,7 +259,7 @@ a:focus-visible {
 /* Danger button focus - uses theme-customizable color */
 .btn-danger:focus-visible,
 button.danger:focus-visible,
-[data-danger="true"]:focus-visible {
+[data-danger='true']:focus-visible {
   outline: var(--focus-ring-danger);
   outline-offset: var(--focus-ring-offset);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--focus-ring-color-danger) 25%, transparent);
@@ -277,7 +280,9 @@ button.danger:focus-visible,
   }
 }
 
-html, body, #root {
+html,
+body,
+#root {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -328,7 +333,7 @@ body {
 /* Apply theme cursor to interactive elements */
 .app-wrapper a,
 .app-wrapper button,
-.app-wrapper [role="button"],
+.app-wrapper [role='button'],
 .app-wrapper input,
 .app-wrapper textarea,
 .app-wrapper select,
@@ -423,12 +428,12 @@ body {
     grid-template-columns: 1fr 280px;
     gap: 20px;
   }
-  
+
   .responsive-sidebar-first {
     grid-template-columns: 280px 1fr;
     gap: 16px;
   }
-  
+
   .item-detail-image {
     width: 200px;
     min-width: 200px;
@@ -442,7 +447,7 @@ body {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .responsive-sidebar-first {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -457,31 +462,31 @@ body {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .responsive-sidebar-first {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .responsive-three-col {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .item-detail-header {
     flex-direction: column;
   }
-  
+
   .item-detail-image {
     width: 100% !important;
     min-width: 100% !important;
     min-height: 200px;
     max-height: 300px;
   }
-  
+
   .item-detail-info {
     padding: 16px !important;
   }
-  
+
   /* Hide sidebar on mobile - it moves below main content */
   .mobile-stack-reverse {
     display: flex;
@@ -496,11 +501,11 @@ body {
   .responsive-three-col {
     grid-template-columns: 1fr;
   }
-  
+
   .responsive-form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .item-detail-image {
     min-height: 180px;
     max-height: 250px;
@@ -522,34 +527,74 @@ body {
 /* ============================================================================
    Utility: Flexbox helpers
    ============================================================================ */
-.flex { display: flex; }
-.flex-col { display: flex; flex-direction: column; }
-.flex-center { display: flex; align-items: center; }
-.flex-between { display: flex; justify-content: space-between; align-items: center; }
-.flex-wrap { flex-wrap: wrap; }
-.flex-1 { flex: 1; }
-.gap-1 { gap: 4px; }
-.gap-2 { gap: 8px; }
-.gap-3 { gap: 12px; }
-.gap-4 { gap: 16px; }
-.gap-5 { gap: 20px; }
+.flex {
+  display: flex;
+}
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+.flex-center {
+  display: flex;
+  align-items: center;
+}
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.flex-1 {
+  flex: 1;
+}
+.gap-1 {
+  gap: 4px;
+}
+.gap-2 {
+  gap: 8px;
+}
+.gap-3 {
+  gap: 12px;
+}
+.gap-4 {
+  gap: 16px;
+}
+.gap-5 {
+  gap: 20px;
+}
 
 /* ============================================================================
    Utility: Text colors (using CSS variables)
    ============================================================================ */
-.text-primary { color: var(--text-primary); }
-.text-secondary { color: var(--text-secondary); }
-.text-muted { color: var(--text-muted); }
-.text-success { color: var(--success); }
-.text-danger { color: var(--danger); }
-.text-warning { color: var(--warning); }
+.text-primary {
+  color: var(--text-primary);
+}
+.text-secondary {
+  color: var(--text-secondary);
+}
+.text-muted {
+  color: var(--text-muted);
+}
+.text-success {
+  color: var(--success);
+}
+.text-danger {
+  color: var(--danger);
+}
+.text-warning {
+  color: var(--warning);
+}
 
 /* ============================================================================
    App Layout - Sidebar and Main Content
    ============================================================================ */
 .app-sidebar {
   width: 260px;
-  transition: width 0.3s ease, transform 0.3s ease;
+  transition:
+    width 0.3s ease,
+    transform 0.3s ease;
 }
 
 .app-sidebar.collapsed {
@@ -559,7 +604,9 @@ body {
 .app-main {
   margin-left: 260px;
   padding: 32px;
-  transition: margin-left 0.3s ease, padding 0.3s ease;
+  transition:
+    margin-left 0.3s ease,
+    padding 0.3s ease;
   min-width: 0; /* Prevent flex item from overflowing */
 }
 
@@ -639,7 +686,7 @@ body {
     left: 220px !important;
     width: calc(100% - 220px) !important;
   }
-  
+
   .app-wrapper.sidebar-is-collapsed .modal-backdrop {
     left: var(--sidebar-collapsed-width) !important;
     width: calc(100% - var(--sidebar-collapsed-width)) !important;
@@ -676,16 +723,16 @@ body {
   .app-sidebar {
     width: 220px;
   }
-  
+
   .app-sidebar.collapsed {
     width: 72px;
   }
-  
+
   .app-main {
     margin-left: 220px;
     padding: 24px;
   }
-  
+
   .app-main.sidebar-collapsed {
     margin-left: 72px;
   }
@@ -704,26 +751,28 @@ body {
     width: 280px;
     max-width: 85vw;
     box-shadow: none;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
     /* Safe area padding for notched phones */
     padding-top: env(safe-area-inset-top, 0px);
   }
-  
+
   .app-sidebar.sidebar-open {
     transform: translateX(0);
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
   }
-  
+
   /* Don't allow collapse on mobile - use full sidebar */
   .app-sidebar.collapsed {
     width: 280px;
     max-width: 85vw;
   }
-  
+
   .sidebar-collapse-btn {
     display: none;
   }
-  
+
   .app-main {
     margin-left: 0;
     padding: 16px;
@@ -731,11 +780,11 @@ body {
     min-height: 100vh;
     min-height: 100dvh;
   }
-  
+
   .app-main.sidebar-collapsed {
     margin-left: 0;
   }
-  
+
   /* Show overlay when sidebar is open on mobile */
   .sidebar-overlay.visible {
     display: block !important;
@@ -749,34 +798,38 @@ body {
     padding: 12px;
     padding-top: calc(72px + env(safe-area-inset-top, 0px)) !important;
   }
-  
+
   /* Ensure cards/panels fit the screen */
-  .card, [class*="Card"] {
+  .card,
+  [class*='Card'] {
     max-width: 100%;
     overflow-x: hidden;
   }
-  
+
   /* Fix grid items on small screens */
   .responsive-three-col {
     grid-template-columns: 1fr;
   }
-  
+
   .responsive-form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .item-detail-image {
     min-height: 180px;
     max-height: 250px;
   }
-  
+
   /* Prevent horizontal overflow */
   * {
     max-width: 100%;
   }
-  
+
   /* But allow specific elements to size normally */
-  img, svg, video, canvas {
+  img,
+  svg,
+  video,
+  canvas {
     max-width: 100%;
     height: auto;
   }
@@ -805,12 +858,12 @@ body {
     /* Safe area for notched phones */
     padding-top: max(12px, env(safe-area-inset-top));
   }
-  
+
   /* Add padding to main content to account for fixed header */
   .app-main {
     padding-top: calc(72px + env(safe-area-inset-top, 0px)) !important;
   }
-  
+
   .sidebar-close-btn {
     display: block !important;
   }
@@ -827,12 +880,12 @@ body {
   justify-content: center;
   gap: 8px;
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  color: #1a1d21;  /* Dark text for better contrast on colored buttons */
+  color: #1a1d21; /* Dark text for better contrast on colored buttons */
   border: none;
   padding: 10px 16px;
   border-radius: 10px;
   cursor: pointer;
-  font-weight: 600;  /* Slightly bolder for better legibility */
+  font-weight: 600; /* Slightly bolder for better legibility */
   font-size: 13px;
   transition: all 150ms ease;
   text-decoration: none;
@@ -951,7 +1004,9 @@ body {
   font-size: 14px;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .input:focus {
@@ -998,7 +1053,9 @@ body {
   background-repeat: no-repeat;
   background-position: right 12px center;
   min-height: 42px;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
   /* Force browser to use dark mode styling for native dropdown */
   color-scheme: dark;
 }
@@ -1037,9 +1094,9 @@ select option:hover {
    ============================================================================ */
 
 /* Base date input styles */
-input[type="date"],
-input[type="datetime-local"],
-input[type="time"] {
+input[type='date'],
+input[type='datetime-local'],
+input[type='time'] {
   width: 100%;
   padding: 12px 16px;
   padding-right: 44px; /* Space for calendar icon */
@@ -1051,30 +1108,32 @@ input[type="time"] {
   font-family: inherit;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
   color-scheme: dark;
   min-height: 46px;
   cursor: pointer;
 }
 
-input[type="date"]:focus,
-input[type="datetime-local"]:focus,
-input[type="time"]:focus {
+input[type='date']:focus,
+input[type='datetime-local']:focus,
+input[type='time']:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
-input[type="date"]:disabled,
-input[type="datetime-local"]:disabled,
-input[type="time"]:disabled {
+input[type='date']:disabled,
+input[type='datetime-local']:disabled,
+input[type='time']:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
 /* WebKit (Chrome, Safari, Edge) date picker button - LARGER touch target */
-input[type="date"]::-webkit-calendar-picker-indicator,
-input[type="datetime-local"]::-webkit-calendar-picker-indicator,
-input[type="time"]::-webkit-calendar-picker-indicator {
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='datetime-local']::-webkit-calendar-picker-indicator,
+input[type='time']::-webkit-calendar-picker-indicator {
   cursor: pointer;
   border-radius: 6px;
   padding: 8px;
@@ -1084,77 +1143,79 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   /* Tint the icon to match primary color */
   filter: invert(0.6) sepia(1) saturate(3) hue-rotate(175deg) brightness(1.2);
   opacity: 0.9;
-  transition: opacity 150ms ease, transform 150ms ease;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
   background-color: transparent;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator:hover,
-input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
-input[type="time"]::-webkit-calendar-picker-indicator:hover {
+input[type='date']::-webkit-calendar-picker-indicator:hover,
+input[type='datetime-local']::-webkit-calendar-picker-indicator:hover,
+input[type='time']::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
   transform: scale(1.1);
 }
 
 /* Date input clear button */
-input[type="date"]::-webkit-clear-button,
-input[type="datetime-local"]::-webkit-clear-button {
+input[type='date']::-webkit-clear-button,
+input[type='datetime-local']::-webkit-clear-button {
   filter: invert(0.7);
   margin-right: 4px;
 }
 
 /* Inner spin button (time inputs) */
-input[type="date"]::-webkit-inner-spin-button,
-input[type="datetime-local"]::-webkit-inner-spin-button,
-input[type="time"]::-webkit-inner-spin-button {
+input[type='date']::-webkit-inner-spin-button,
+input[type='datetime-local']::-webkit-inner-spin-button,
+input[type='time']::-webkit-inner-spin-button {
   display: none;
 }
 
 /* WebKit date/time text styling */
-input[type="date"]::-webkit-datetime-edit,
-input[type="datetime-local"]::-webkit-datetime-edit,
-input[type="time"]::-webkit-datetime-edit {
+input[type='date']::-webkit-datetime-edit,
+input[type='datetime-local']::-webkit-datetime-edit,
+input[type='time']::-webkit-datetime-edit {
   padding: 0;
 }
 
-input[type="date"]::-webkit-datetime-edit-fields-wrapper,
-input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper,
-input[type="time"]::-webkit-datetime-edit-fields-wrapper {
+input[type='date']::-webkit-datetime-edit-fields-wrapper,
+input[type='datetime-local']::-webkit-datetime-edit-fields-wrapper,
+input[type='time']::-webkit-datetime-edit-fields-wrapper {
   padding: 0;
 }
 
-input[type="date"]::-webkit-datetime-edit-text,
-input[type="datetime-local"]::-webkit-datetime-edit-text {
+input[type='date']::-webkit-datetime-edit-text,
+input[type='datetime-local']::-webkit-datetime-edit-text {
   color: var(--text-muted);
   padding: 0 4px;
 }
 
-input[type="date"]::-webkit-datetime-edit-month-field,
-input[type="date"]::-webkit-datetime-edit-day-field,
-input[type="date"]::-webkit-datetime-edit-year-field,
-input[type="datetime-local"]::-webkit-datetime-edit-month-field,
-input[type="datetime-local"]::-webkit-datetime-edit-day-field,
-input[type="datetime-local"]::-webkit-datetime-edit-year-field,
-input[type="time"]::-webkit-datetime-edit-hour-field,
-input[type="time"]::-webkit-datetime-edit-minute-field {
+input[type='date']::-webkit-datetime-edit-month-field,
+input[type='date']::-webkit-datetime-edit-day-field,
+input[type='date']::-webkit-datetime-edit-year-field,
+input[type='datetime-local']::-webkit-datetime-edit-month-field,
+input[type='datetime-local']::-webkit-datetime-edit-day-field,
+input[type='datetime-local']::-webkit-datetime-edit-year-field,
+input[type='time']::-webkit-datetime-edit-hour-field,
+input[type='time']::-webkit-datetime-edit-minute-field {
   color: var(--text-primary);
   padding: 2px 4px;
   border-radius: 4px;
 }
 
-input[type="date"]::-webkit-datetime-edit-month-field:focus,
-input[type="date"]::-webkit-datetime-edit-day-field:focus,
-input[type="date"]::-webkit-datetime-edit-year-field:focus,
-input[type="datetime-local"]::-webkit-datetime-edit-month-field:focus,
-input[type="datetime-local"]::-webkit-datetime-edit-day-field:focus,
-input[type="datetime-local"]::-webkit-datetime-edit-year-field:focus,
-input[type="time"]::-webkit-datetime-edit-hour-field:focus,
-input[type="time"]::-webkit-datetime-edit-minute-field:focus {
+input[type='date']::-webkit-datetime-edit-month-field:focus,
+input[type='date']::-webkit-datetime-edit-day-field:focus,
+input[type='date']::-webkit-datetime-edit-year-field:focus,
+input[type='datetime-local']::-webkit-datetime-edit-month-field:focus,
+input[type='datetime-local']::-webkit-datetime-edit-day-field:focus,
+input[type='datetime-local']::-webkit-datetime-edit-year-field:focus,
+input[type='time']::-webkit-datetime-edit-hour-field:focus,
+input[type='time']::-webkit-datetime-edit-minute-field:focus {
   background: color-mix(in srgb, var(--primary) 30%, transparent);
   outline: none;
 }
 
 /* Firefox date picker */
-input[type="date"]::-moz-calendar-picker-indicator {
+input[type='date']::-moz-calendar-picker-indicator {
   filter: invert(0.7);
 }
 
@@ -1172,7 +1233,9 @@ input[type="date"]::-moz-calendar-picker-indicator {
   resize: vertical;
   min-height: 80px;
   font-family: inherit;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .textarea:focus {
@@ -1227,7 +1290,10 @@ input[type="date"]::-moz-calendar-picker-indicator {
 
 /* Hover with lift effect (translateY + shadow) */
 .hover-lift {
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
 }
 
 .hover-lift:hover {
@@ -1237,7 +1303,10 @@ input[type="date"]::-moz-calendar-picker-indicator {
 
 /* Admin card hover - combines lift with border color change */
 .admin-card {
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
   border: 1px solid var(--border-light);
 }
 
@@ -1255,7 +1324,11 @@ input[type="date"]::-moz-calendar-picker-indicator {
 
 .collapsible-header:hover {
   /* Uses CSS variable set inline for the accent color */
-  background: color-mix(in srgb, var(--section-accent-color, var(--primary)) 45%, transparent) !important;
+  background: color-mix(
+    in srgb,
+    var(--section-accent-color, var(--primary)) 45%,
+    transparent
+  ) !important;
 }
 
 /* List item hover (saved views, changelog items, permission rows) */
@@ -1281,14 +1354,16 @@ input[type="date"]::-moz-calendar-picker-indicator {
   transition: all 150ms ease;
 }
 
-.sidebar-nav-btn:hover:not([data-active="true"]) {
+.sidebar-nav-btn:hover:not([data-active='true']) {
   background: color-mix(in srgb, var(--primary) 15%, transparent);
   color: var(--text-primary);
 }
 
 /* Sidebar nav label transition for collapse animation */
 .sidebar-nav-label {
-  transition: opacity 200ms ease, width 200ms ease;
+  transition:
+    opacity 200ms ease,
+    width 200ms ease;
 }
 
 /* User menu item hover */
@@ -1313,31 +1388,64 @@ input[type="date"]::-moz-calendar-picker-indicator {
    Transition Utilities
    ============================================================================ */
 
-.transition-none { transition: none; }
-.transition-fast { transition: all 150ms ease; }
-.transition-normal { transition: all 250ms ease; }
-.transition-slow { transition: all 350ms ease; }
+.transition-none {
+  transition: none;
+}
+.transition-fast {
+  transition: all 150ms ease;
+}
+.transition-normal {
+  transition: all 250ms ease;
+}
+.transition-slow {
+  transition: all 350ms ease;
+}
 
-.transition-bg { transition: background 150ms ease; }
-.transition-opacity { transition: opacity 200ms ease; }
-.transition-transform { transition: transform 150ms ease; }
-.transition-colors { transition: color 150ms ease, background 150ms ease, border-color 150ms ease; }
+.transition-bg {
+  transition: background 150ms ease;
+}
+.transition-opacity {
+  transition: opacity 200ms ease;
+}
+.transition-transform {
+  transition: transform 150ms ease;
+}
+.transition-colors {
+  transition:
+    color 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease;
+}
 
 /* Sidebar collapse transitions */
 .transition-sidebar {
-  transition: opacity 200ms ease, width 200ms ease;
+  transition:
+    opacity 200ms ease,
+    width 200ms ease;
 }
 
 /* ============================================================================
    Cursor Utilities
    ============================================================================ */
 
-.cursor-pointer { cursor: pointer; }
-.cursor-default { cursor: default; }
-.cursor-grab { cursor: grab; }
-.cursor-grabbing { cursor: grabbing; }
-.cursor-not-allowed { cursor: not-allowed; }
-.cursor-text { cursor: text; }
+.cursor-pointer {
+  cursor: pointer;
+}
+.cursor-default {
+  cursor: default;
+}
+.cursor-grab {
+  cursor: grab;
+}
+.cursor-grabbing {
+  cursor: grabbing;
+}
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
+.cursor-text {
+  cursor: text;
+}
 
 /* Clickable elements - applies pointer cursor */
 .clickable {
@@ -1346,7 +1454,7 @@ input[type="date"]::-moz-calendar-picker-indicator {
 
 /* Disabled clickable - shows not-allowed */
 .clickable:disabled,
-.clickable[aria-disabled="true"] {
+.clickable[aria-disabled='true'] {
   cursor: not-allowed;
 }
 
@@ -1356,7 +1464,7 @@ input[type="date"]::-moz-calendar-picker-indicator {
 
 /* Standard disabled opacity */
 .disabled-opacity:disabled,
-.disabled-opacity[aria-disabled="true"],
+.disabled-opacity[aria-disabled='true'],
 .disabled-opacity.is-disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -1364,7 +1472,7 @@ input[type="date"]::-moz-calendar-picker-indicator {
 
 /* Disabled with pointer events none */
 .disabled-no-interact:disabled,
-.disabled-no-interact[aria-disabled="true"],
+.disabled-no-interact[aria-disabled='true'],
 .disabled-no-interact.is-disabled {
   opacity: 0.5;
   pointer-events: none;
@@ -1372,7 +1480,7 @@ input[type="date"]::-moz-calendar-picker-indicator {
 
 /* Subtle disabled (0.7 opacity for less critical elements) */
 .disabled-subtle:disabled,
-.disabled-subtle[aria-disabled="true"],
+.disabled-subtle[aria-disabled='true'],
 .disabled-subtle.is-disabled {
   opacity: 0.7;
 }
@@ -1384,12 +1492,12 @@ input[type="date"]::-moz-calendar-picker-indicator {
 
 /* Ensure buttons have pointer cursor by default */
 button:not(:disabled),
-[role="button"]:not([aria-disabled="true"]) {
+[role='button']:not([aria-disabled='true']) {
   cursor: pointer;
 }
 
 button:disabled,
-[role="button"][aria-disabled="true"] {
+[role='button'][aria-disabled='true'] {
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -1483,7 +1591,9 @@ button:disabled,
   border-radius: 6px;
   margin-bottom: 4px;
   border: 1px solid transparent;
-  transition: background 150ms ease, border-color 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
 }
 
 .selection-item:hover {
@@ -1738,7 +1848,9 @@ button:disabled,
 
 .card-clickable {
   cursor: pointer;
-  transition: transform 150ms ease, box-shadow 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .card-clickable:hover {
@@ -1815,7 +1927,9 @@ button:disabled,
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  transition: color 150ms ease, background 150ms ease;
+  transition:
+    color 150ms ease,
+    background 150ms ease;
 }
 
 .btn-icon:hover {
@@ -1833,6 +1947,12 @@ button:disabled,
 
 /* Toast animation */
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -5,11 +5,11 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { 
-  Button, 
-  SearchInput, 
-  ConfirmDialog, 
-  Badge, 
+import {
+  Button,
+  SearchInput,
+  ConfirmDialog,
+  Badge,
   Card,
   Input,
   Modal,
@@ -45,7 +45,11 @@ describe('Button', () => {
 
   it('should not call onClick when disabled', () => {
     const handleClick = vi.fn();
-    render(<Button onClick={handleClick} disabled>Click</Button>);
+    render(
+      <Button onClick={handleClick} disabled>
+        Click
+      </Button>,
+    );
     fireEvent.click(screen.getByText('Click'));
     expect(handleClick).not.toHaveBeenCalled();
   });
@@ -56,7 +60,11 @@ describe('Button', () => {
   });
 
   it('should apply aria-label for icon-only buttons', () => {
-    render(<Button iconOnly aria-label="Close">×</Button>);
+    render(
+      <Button iconOnly aria-label="Close">
+        ×
+      </Button>,
+    );
     expect(screen.getByLabelText('Close')).toBeInTheDocument();
   });
 
@@ -346,49 +354,81 @@ describe('Select', () => {
 
 describe('Modal', () => {
   it('should not render when isOpen is false', () => {
-    render(<Modal isOpen={false} onClose={() => {}} title="Test Modal">Content</Modal>);
+    render(
+      <Modal isOpen={false} onClose={() => {}} title="Test Modal">
+        Content
+      </Modal>,
+    );
     expect(screen.queryByText('Test Modal')).not.toBeInTheDocument();
   });
 
   it('should render when isOpen is true', () => {
-    render(<Modal isOpen={true} onClose={() => {}} title="Test Modal">Content</Modal>);
+    render(
+      <Modal isOpen={true} onClose={() => {}} title="Test Modal">
+        Content
+      </Modal>,
+    );
     expect(screen.getByText('Test Modal')).toBeInTheDocument();
     expect(screen.getByText('Content')).toBeInTheDocument();
   });
 
   it('should call onClose when backdrop clicked', () => {
     const handleClose = vi.fn();
-    render(<Modal isOpen={true} onClose={handleClose} title="Test">Content</Modal>);
+    render(
+      <Modal isOpen={true} onClose={handleClose} title="Test">
+        Content
+      </Modal>,
+    );
     fireEvent.click(screen.getByRole('dialog').parentElement);
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
   it('should not call onClose when modal content clicked', () => {
     const handleClose = vi.fn();
-    render(<Modal isOpen={true} onClose={handleClose} title="Test">Content</Modal>);
+    render(
+      <Modal isOpen={true} onClose={handleClose} title="Test">
+        Content
+      </Modal>,
+    );
     fireEvent.click(screen.getByText('Content'));
     expect(handleClose).not.toHaveBeenCalled();
   });
 
   it('should have role="dialog"', () => {
-    render(<Modal isOpen={true} onClose={() => {}} title="Test">Content</Modal>);
+    render(
+      <Modal isOpen={true} onClose={() => {}} title="Test">
+        Content
+      </Modal>,
+    );
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
   it('should have aria-modal="true"', () => {
-    render(<Modal isOpen={true} onClose={() => {}} title="Test">Content</Modal>);
+    render(
+      <Modal isOpen={true} onClose={() => {}} title="Test">
+        Content
+      </Modal>,
+    );
     expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
   });
 
   it('should call onClose when close button clicked', () => {
     const handleClose = vi.fn();
-    render(<Modal isOpen={true} onClose={handleClose} title="Test">Content</Modal>);
+    render(
+      <Modal isOpen={true} onClose={handleClose} title="Test">
+        Content
+      </Modal>,
+    );
     fireEvent.click(screen.getByLabelText('Close modal'));
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
   it('should render without title', () => {
-    render(<Modal isOpen={true} onClose={() => {}}>Content Only</Modal>);
+    render(
+      <Modal isOpen={true} onClose={() => {}}>
+        Content Only
+      </Modal>,
+    );
     expect(screen.getByText('Content Only')).toBeInTheDocument();
   });
 });

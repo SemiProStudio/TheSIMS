@@ -13,14 +13,9 @@ import PWAContext from './PWAContext.js';
  */
 export function PWAProvider({ children }) {
   const pwa = usePWA();
-  
+
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => pwa, [pwa]);
-  
-  return (
-    <PWAContext.Provider value={contextValue}>
-      {children}
-    </PWAContext.Provider>
-  );
-}
 
+  return <PWAContext.Provider value={contextValue}>{children}</PWAContext.Provider>;
+}

@@ -15,6 +15,7 @@ SIMS manages the full lifecycle of production equipment: acquisition, storage, c
 ## Features
 
 ### Inventory Management
+
 - Full item CRUD with category-specific specification fields (600+ spec definitions across 11 categories)
 - Grid and list views with pagination (24 items/page)
 - Fast debounced search with category, status, and multi-select dropdown filters
@@ -25,35 +26,41 @@ SIMS manages the full lifecycle of production equipment: acquisition, storage, c
 - Consumables tracking with quantity management and reorder point alerts
 
 ### Categories & Specifications
+
 - 11 default categories: Cameras, Lenses, Lighting, Audio, Support, Grip, Accessories, Storage, Monitors, Power, Consumables
 - Custom categories with per-category settings (quantity tracking, serial number requirements, low stock thresholds)
 - Custom spec fields per category (required/optional) with drag-to-reorder
 - Hierarchical location management (buildings, rooms, shelves, containers)
 
 ### Client Management
+
 - Client database with contact info, type classification (Individual, Company, Agency, Non-Profit, Government), and notes
 - Project tracking linked to reservations and rentals
 - Client rental history and active reservation views
 - Favorites for quick access
 
 ### Packages & Pack Lists
+
 - **Packages**: Reusable equipment templates for common setups (e.g., "Interview Kit A")
 - **Pack Lists**: Job-specific equipment lists built from packages and/or individual items
 - Sequential IDs (PKG-001, PL-001), duplicate name validation, quantity tracking, print/export
 
 ### Reservations & Scheduling
+
 - Calendar views: day, week, month with clickable date navigation
 - Multi-item reservations with conflict detection
 - Client integration and project type classification
 - Custom themed DatePicker component with smart viewport positioning
 
 ### Check-Out / Check-In
+
 - Equipment checkout with client association, project notes, and due dates
 - Overdue alerts on dashboard
 - Streamlined check-in with condition assessment
 - Non-blocking checkout (secondary operations like history logging and email don't block the main flow)
 
 ### Maintenance & Asset Tracking
+
 - Maintenance history: repairs, calibrations, service records with costs
 - One-time and recurring reminders (weekly, monthly, quarterly, yearly)
 - Depreciation calculator with multiple methods
@@ -61,6 +68,7 @@ SIMS manages the full lifecycle of production equipment: acquisition, storage, c
 - Insurance and maintenance reporting
 
 ### Administration
+
 - Multi-user support with role-based access (Admin / Staff / Viewer)
 - Custom roles with granular permissions
 - Audit log with timestamps and user attribution
@@ -68,6 +76,7 @@ SIMS manages the full lifecycle of production equipment: acquisition, storage, c
 - Reports: inventory statistics, utilization, maintenance summaries, insurance valuations
 
 ### User Interface
+
 - 15+ built-in themes with CSS custom properties for instant switching
 - Custom theme editor with WCAG contrast validation
 - Responsive design with collapsible sidebar overlay on mobile
@@ -79,18 +88,18 @@ SIMS manages the full lifecycle of production equipment: acquisition, storage, c
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Framework | React 18 + Vite 7 |
-| Styling | CSS-in-JS with CSS custom properties |
-| Icons | Lucide React |
-| Backend | Supabase (PostgreSQL + Auth + Edge Functions) |
-| Hosting | Vercel (via GitHub auto-deploy) |
-| State | React hooks with memoization (useState, useCallback, useMemo, memo) |
-| QR Codes | qrcode (generation) + jsQR (camera scanning) |
-| PDF Parsing | pdf.js (CDN, loaded on demand for Smart Paste) |
-| Error Tracking | Sentry |
-| Testing | Vitest (unit/integration) + Playwright (E2E) |
+| Layer          | Technology                                                          |
+| -------------- | ------------------------------------------------------------------- |
+| Framework      | React 18 + Vite 7                                                   |
+| Styling        | CSS-in-JS with CSS custom properties                                |
+| Icons          | Lucide React                                                        |
+| Backend        | Supabase (PostgreSQL + Auth + Edge Functions)                       |
+| Hosting        | Vercel (via GitHub auto-deploy)                                     |
+| State          | React hooks with memoization (useState, useCallback, useMemo, memo) |
+| QR Codes       | qrcode (generation) + jsQR (camera scanning)                        |
+| PDF Parsing    | pdf.js (CDN, loaded on demand for Smart Paste)                      |
+| Error Tracking | Sentry                                                              |
+| Testing        | Vitest (unit/integration) + Playwright (E2E)                        |
 
 ---
 
@@ -102,6 +111,7 @@ npm run dev
 ```
 
 Open http://localhost:5173. In demo mode (no Supabase configured), login with:
+
 - **Admin**: admin@studio.com / admin
 - **User**: sarah@studio.com / user
 
@@ -224,6 +234,7 @@ sims/
 Smart Paste imports product specifications from retailer pages, PDFs, or text files into item forms.
 
 **Architecture:**
+
 - `lib/smartPasteParser.js` — Extraction engine: text cleaning, HTML table conversion, key-value extraction, multi-strategy matching (direct alias, abbreviation expansion, Levenshtein fuzzy matching)
 - `modals/SmartPasteModal.jsx` — UI: tabbed Paste Text / Import File interface, drag-and-drop file zone, confidence badges, alternative selection dropdowns, category-aware result ordering
 
@@ -235,21 +246,21 @@ See [SMART_PASTE_IMPROVEMENTS.md](SMART_PASTE_IMPROVEMENTS.md) for the planned e
 
 Supabase (PostgreSQL) with Row Level Security. Key tables:
 
-| Table | Purpose |
-|-------|---------|
-| `inventory` | Equipment items with JSONB specs |
-| `categories` / `category_specs` | Category definitions and spec fields |
-| `clients` | Client records |
-| `reservations` / `reservation_items` | Equipment reservations |
-| `packages` / `package_items` | Reusable equipment templates |
-| `pack_lists` / `pack_list_items` | Job-specific equipment lists |
-| `maintenance_records` | Service history |
-| `item_notes` / `item_reminders` | Notes and reminders |
-| `checkout_history` | Check-out/check-in audit trail |
-| `audit_log` | System-wide activity log |
-| `locations` | Hierarchical storage locations |
-| `roles` / `role_permissions` | Custom role definitions |
-| `users` | Accounts with role assignments |
+| Table                                | Purpose                              |
+| ------------------------------------ | ------------------------------------ |
+| `inventory`                          | Equipment items with JSONB specs     |
+| `categories` / `category_specs`      | Category definitions and spec fields |
+| `clients`                            | Client records                       |
+| `reservations` / `reservation_items` | Equipment reservations               |
+| `packages` / `package_items`         | Reusable equipment templates         |
+| `pack_lists` / `pack_list_items`     | Job-specific equipment lists         |
+| `maintenance_records`                | Service history                      |
+| `item_notes` / `item_reminders`      | Notes and reminders                  |
+| `checkout_history`                   | Check-out/check-in audit trail       |
+| `audit_log`                          | System-wide activity log             |
+| `locations`                          | Hierarchical storage locations       |
+| `roles` / `role_permissions`         | Custom role definitions              |
+| `users`                              | Accounts with role assignments       |
 
 Run `schema.sql` → `functions.sql` → `seed.sql` in the Supabase SQL Editor.
 
@@ -283,12 +294,12 @@ npm run test:e2e      # Playwright E2E
 
 15+ built-in themes with CSS custom properties for instant switching. Custom themes via built-in editor with WCAG contrast validation.
 
-| Category | Themes |
-|----------|--------|
-| Dark | Default Dark, Midnight, Slate, Charcoal |
-| Light | Light, Cream |
-| Colorful | Ocean, Forest, Sunset, Berry, Copper |
-| Special | High Contrast, Cats 🐱, Dogs 🐕, Cheese 🧀 |
+| Category | Themes                                     |
+| -------- | ------------------------------------------ |
+| Dark     | Default Dark, Midnight, Slate, Charcoal    |
+| Light    | Light, Cream                               |
+| Colorful | Ocean, Forest, Sunset, Berry, Copper       |
+| Special  | High Contrast, Cats 🐱, Dogs 🐕, Cheese 🧀 |
 
 ---
 

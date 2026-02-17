@@ -5,7 +5,7 @@
 
 import { memo, useState } from 'react';
 import { Palette, Check, Shuffle, Settings, Sliders } from 'lucide-react';
-import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { useTheme } from '../contexts/ThemeContext.js';
 import { BackButton, Card } from '../components/ui.jsx';
 import CustomThemeEditor from '../components/CustomThemeEditor.jsx';
@@ -13,7 +13,7 @@ import CustomThemeEditor from '../components/CustomThemeEditor.jsx';
 // Preview component showing theme colors
 const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, onCustomize }) {
   const themeColors = theme.colors || {};
-  
+
   // Get preview colors (use defaults if random/empty)
   const bgDark = themeColors['--bg-dark'] || '#1a1d21';
   const bgMedium = themeColors['--bg-medium'] || '#22262b';
@@ -47,170 +47,221 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
         }}
       >
         {/* Color Preview Area */}
-        <div style={{
-          width: '100%',
-          height: 80,
-          position: 'relative',
-          background: theme.isRandom 
-            ? 'linear-gradient(135deg, #ff006e, #00f5d4, #fee440, #9b5de5)' 
-            : isCustom && !hasCustomColors
-              ? 'linear-gradient(135deg, #667eea, #764ba2, #f093fb)'
-              : bgDark,
-        }}>
+        <div
+          style={{
+            width: '100%',
+            height: 80,
+            position: 'relative',
+            background: theme.isRandom
+              ? 'linear-gradient(135deg, #ff006e, #00f5d4, #fee440, #9b5de5)'
+              : isCustom && !hasCustomColors
+                ? 'linear-gradient(135deg, #667eea, #764ba2, #f093fb)'
+                : bgDark,
+          }}
+        >
           {theme.isRandom ? (
             // Random theme shows gradient with shuffle icon
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Shuffle size={32} color="white" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Shuffle
+                size={32}
+                color="white"
+                style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+              />
             </div>
           ) : isCustom && !hasCustomColors ? (
             // Custom theme without colors shows settings icon
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Sliders size={32} color="white" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Sliders
+                size={32}
+                color="white"
+                style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+              />
             </div>
           ) : (
-          // Regular theme shows color blocks
-          <>
-            {/* Background layers */}
-            <div style={{
-              position: 'absolute',
-              top: 8,
-              left: 8,
-              right: '50%',
-              bottom: 40,
-              background: bgMedium,
-              borderRadius: borderRadius.sm,
-            }} />
-            <div style={{
-              position: 'absolute',
-              top: 8,
-              left: '52%',
-              right: 8,
-              bottom: 40,
-              background: bgLight,
-              borderRadius: borderRadius.sm,
-            }} />
-            
-            {/* Primary color bar */}
-            <div style={{
-              position: 'absolute',
-              bottom: 24,
-              left: 8,
-              right: 8,
-              height: 12,
-              background: primary,
-              borderRadius: borderRadius.sm,
-            }} />
-            
-            {/* Accent color dots */}
-            <div style={{
-              position: 'absolute',
-              bottom: 8,
-              left: 8,
-              display: 'flex',
-              gap: 4,
-            }}>
-              <div style={{ width: 12, height: 12, borderRadius: '50%', background: accent1 }} />
-              <div style={{ width: 12, height: 12, borderRadius: '50%', background: accent2 }} />
-              <div style={{ width: 12, height: 12, borderRadius: '50%', background: success }} />
-              <div style={{ width: 12, height: 12, borderRadius: '50%', background: warning }} />
-              <div style={{ width: 12, height: 12, borderRadius: '50%', background: danger }} />
+            // Regular theme shows color blocks
+            <>
+              {/* Background layers */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  left: 8,
+                  right: '50%',
+                  bottom: 40,
+                  background: bgMedium,
+                  borderRadius: borderRadius.sm,
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  left: '52%',
+                  right: 8,
+                  bottom: 40,
+                  background: bgLight,
+                  borderRadius: borderRadius.sm,
+                }}
+              />
+
+              {/* Primary color bar */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 24,
+                  left: 8,
+                  right: 8,
+                  height: 12,
+                  background: primary,
+                  borderRadius: borderRadius.sm,
+                }}
+              />
+
+              {/* Accent color dots */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  left: 8,
+                  display: 'flex',
+                  gap: 4,
+                }}
+              >
+                <div style={{ width: 12, height: 12, borderRadius: '50%', background: accent1 }} />
+                <div style={{ width: 12, height: 12, borderRadius: '50%', background: accent2 }} />
+                <div style={{ width: 12, height: 12, borderRadius: '50%', background: success }} />
+                <div style={{ width: 12, height: 12, borderRadius: '50%', background: warning }} />
+                <div style={{ width: 12, height: 12, borderRadius: '50%', background: danger }} />
+              </div>
+
+              {/* Text preview lines */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                  alignItems: 'flex-end',
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 4,
+                    background: textPrimary,
+                    borderRadius: 2,
+                    opacity: 0.9,
+                  }}
+                />
+                <div
+                  style={{
+                    width: 28,
+                    height: 3,
+                    background: textPrimary,
+                    borderRadius: 2,
+                    opacity: 0.5,
+                  }}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Selected checkmark */}
+          {isSelected && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                background: colors.primary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Check size={14} color="white" />
             </div>
-            
-            {/* Text preview lines */}
-            <div style={{
-              position: 'absolute',
-              bottom: 8,
-              right: 8,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-              alignItems: 'flex-end',
-            }}>
-              <div style={{ width: 40, height: 4, background: textPrimary, borderRadius: 2, opacity: 0.9 }} />
-              <div style={{ width: 28, height: 3, background: textPrimary, borderRadius: 2, opacity: 0.5 }} />
-            </div>
-          </>
-        )}
-        
-        {/* Selected checkmark */}
-        {isSelected && (
-          <div style={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            width: 24,
-            height: 24,
-            borderRadius: '50%',
-            background: colors.primary,
+          )}
+        </div>
+
+        {/* Theme Info */}
+        <div
+          style={{
+            padding: spacing[3],
+            textAlign: 'left',
+            borderTop: `1px solid ${colors.borderLight}`,
+          }}
+        >
+          <div
+            style={{
+              fontSize: typography.fontSize.sm,
+              fontWeight: typography.fontWeight.medium,
+              color: colors.textPrimary,
+              marginBottom: 2,
+            }}
+          >
+            {theme.name}
+          </div>
+          <div
+            style={{
+              fontSize: typography.fontSize.xs,
+              color: colors.textMuted,
+              lineHeight: 1.3,
+            }}
+          >
+            {theme.description}
+          </div>
+        </div>
+      </button>
+
+      {/* Customize button for custom theme */}
+      {isCustom && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onCustomize?.();
+          }}
+          style={{
+            marginTop: spacing[2],
+            padding: `${spacing[2]}px ${spacing[3]}px`,
+            background: colors.bgLight,
+            border: `1px solid ${colors.border}`,
+            borderRadius: borderRadius.md,
+            color: colors.textPrimary,
+            fontSize: typography.fontSize.sm,
+            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-          }}>
-            <Check size={14} color="white" />
-          </div>
-        )}
-      </div>
-      
-      {/* Theme Info */}
-      <div style={{
-        padding: spacing[3],
-        textAlign: 'left',
-        borderTop: `1px solid ${colors.borderLight}`,
-      }}>
-        <div style={{
-          fontSize: typography.fontSize.sm,
-          fontWeight: typography.fontWeight.medium,
-          color: colors.textPrimary,
-          marginBottom: 2,
-        }}>
-          {theme.name}
-        </div>
-        <div style={{
-          fontSize: typography.fontSize.xs,
-          color: colors.textMuted,
-          lineHeight: 1.3,
-        }}>
-          {theme.description}
-        </div>
-      </div>
-    </button>
-    
-    {/* Customize button for custom theme */}
-    {isCustom && (
-      <button
-        onClick={(e) => { e.stopPropagation(); onCustomize?.(); }}
-        style={{
-          marginTop: spacing[2],
-          padding: `${spacing[2]}px ${spacing[3]}px`,
-          background: colors.bgLight,
-          border: `1px solid ${colors.border}`,
-          borderRadius: borderRadius.md,
-          color: colors.textPrimary,
-          fontSize: typography.fontSize.sm,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: spacing[2],
-        }}
-      >
-        <Settings size={14} />
-        Customize Colors
-      </button>
-    )}
-  </div>
+            gap: spacing[2],
+          }}
+        >
+          <Settings size={14} />
+          Customize Colors
+        </button>
+      )}
+    </div>
   );
 });
 
@@ -231,7 +282,7 @@ function ThemeSelector({ onBack }) {
       <CustomThemeEditor
         onBack={() => setShowCustomEditor(false)}
         onSave={handleSaveCustomTheme}
-        existingTheme={availableThemes.find(t => t.id === 'custom')}
+        existingTheme={availableThemes.find((t) => t.id === 'custom')}
       />
     );
   }
@@ -239,43 +290,53 @@ function ThemeSelector({ onBack }) {
   return (
     <>
       <BackButton onClick={onBack}>Back to Dashboard</BackButton>
-      
+
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: spacing[3],
-        marginBottom: spacing[6],
-      }}>
-        <div style={{
-          width: 48,
-          height: 48,
-          borderRadius: borderRadius.lg,
-          background: `${withOpacity(colors.primary, 15)}`,
+      <div
+        style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}>
+          alignItems: 'flex-start',
+          gap: spacing[3],
+          marginBottom: spacing[6],
+        }}
+      >
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: borderRadius.lg,
+            background: `${withOpacity(colors.primary, 15)}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
           <Palette size={24} color={colors.primary} />
         </div>
         <div>
-          <h2 style={{ margin: 0, color: colors.textPrimary }}>
-            Theme Selector
-          </h2>
-          <p style={{ margin: `${spacing[1]}px 0 0`, color: colors.textMuted, fontSize: typography.fontSize.sm }}>
+          <h2 style={{ margin: 0, color: colors.textPrimary }}>Theme Selector</h2>
+          <p
+            style={{
+              margin: `${spacing[1]}px 0 0`,
+              color: colors.textMuted,
+              fontSize: typography.fontSize.sm,
+            }}
+          >
             Choose a visual theme for the application. Your selection is saved automatically.
           </p>
         </div>
       </div>
 
       {/* Theme Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-        gap: spacing[4],
-      }}>
-        {availableThemes.map(theme => (
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+          gap: spacing[4],
+        }}
+      >
+        {availableThemes.map((theme) => (
           <ThemePreview
             key={theme.id}
             theme={theme}
@@ -289,27 +350,31 @@ function ThemeSelector({ onBack }) {
       {/* Current Theme Info */}
       <Card style={{ marginTop: spacing[6], maxWidth: 500 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
-          <div style={{
-            width: 40,
-            height: 40,
-            borderRadius: borderRadius.md,
-            background: colors.primary,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: borderRadius.md,
+              background: colors.primary,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <Check size={20} color="white" />
           </div>
           <div>
-            <div style={{ 
-              fontSize: typography.fontSize.sm, 
-              fontWeight: typography.fontWeight.medium,
-              color: colors.textPrimary 
-            }}>
-              Current Theme: {availableThemes.find(t => t.id === themeId)?.name || 'Unknown'}
+            <div
+              style={{
+                fontSize: typography.fontSize.sm,
+                fontWeight: typography.fontWeight.medium,
+                color: colors.textPrimary,
+              }}
+            >
+              Current Theme: {availableThemes.find((t) => t.id === themeId)?.name || 'Unknown'}
             </div>
             <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-              {availableThemes.find(t => t.id === themeId)?.description || ''}
+              {availableThemes.find((t) => t.id === themeId)?.description || ''}
             </div>
           </div>
         </div>

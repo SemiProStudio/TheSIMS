@@ -36,7 +36,9 @@ Object.defineProperty(window, 'localStorage', {
 
 // Mock ResizeObserver (not available in jsdom)
 global.ResizeObserver = class ResizeObserver {
-  constructor(cb) { this._cb = cb; }
+  constructor(cb) {
+    this._cb = cb;
+  }
   observe() {}
   unobserve() {}
   disconnect() {}
@@ -44,11 +46,15 @@ global.ResizeObserver = class ResizeObserver {
 
 // Mock scrollHeight/scrollTop/clientHeight for scroll tests (read-only in jsdom)
 const scrollProps = ['scrollHeight', 'scrollTop', 'clientHeight'];
-scrollProps.forEach(prop => {
+scrollProps.forEach((prop) => {
   Object.defineProperty(HTMLElement.prototype, prop, {
     configurable: true,
-    get() { return this[`_${prop}`] || 0; },
-    set(val) { this[`_${prop}`] = val; },
+    get() {
+      return this[`_${prop}`] || 0;
+    },
+    set(val) {
+      this[`_${prop}`] = val;
+    },
   });
 });
 

@@ -31,17 +31,24 @@ export function CollapsibleSection({
   const accentColor = headerColor || colors.primary;
 
   return (
-    <div style={{
-      background: withAlpha(accentColor, 0.18),
-      borderRadius: borderRadius.lg,
-      border: `1px solid ${withAlpha(accentColor, 0.35)}`,
-      ...style,
-    }}>
+    <div
+      style={{
+        background: withAlpha(accentColor, 0.18),
+        borderRadius: borderRadius.lg,
+        border: `1px solid ${withAlpha(accentColor, 0.35)}`,
+        ...style,
+      }}
+    >
       {/* Header - clickable to toggle, hover handled by CSS */}
       <div
         className="collapsible-header"
         onClick={onToggleCollapse}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleCollapse(); } }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggleCollapse();
+          }
+        }}
         role="button"
         tabIndex={0}
         aria-expanded={!collapsed}
@@ -53,40 +60,38 @@ export function CollapsibleSection({
           gap: spacing[2],
           cursor: 'pointer',
           userSelect: 'none',
-          background: collapsed ? withAlpha(accentColor, 0.30) : withAlpha(accentColor, 0.38),
+          background: collapsed ? withAlpha(accentColor, 0.3) : withAlpha(accentColor, 0.38),
           borderBottom: collapsed ? 'none' : `1px solid ${withAlpha(accentColor, 0.4)}`,
           borderLeft: `4px solid ${accentColor}`,
         }}
       >
         {Icon && <Icon size={16} color={accentColor} />}
-        <strong style={{ color: colors.textPrimary, flex: 1 }}>
-          {title}
-        </strong>
+        <strong style={{ color: colors.textPrimary, flex: 1 }}>{title}</strong>
         {badge !== undefined && badge !== null && (
-          <span style={{
-            background: withAlpha(accentColor, 0.5),
-            color: colors.textPrimary,
-            padding: '2px 8px',
-            borderRadius: borderRadius.full,
-            fontSize: typography.fontSize.xs,
-            fontWeight: typography.fontWeight.medium,
-          }}>
+          <span
+            style={{
+              background: withAlpha(accentColor, 0.5),
+              color: colors.textPrimary,
+              padding: '2px 8px',
+              borderRadius: borderRadius.full,
+              fontSize: typography.fontSize.xs,
+              fontWeight: typography.fontWeight.medium,
+            }}
+          >
             {badge}
           </span>
         )}
-        {action && (
-          <div onClick={e => e.stopPropagation()}>
-            {action}
-          </div>
-        )}
+        {action && <div onClick={(e) => e.stopPropagation()}>{action}</div>}
       </div>
-      
+
       {/* Content - shown when not collapsed */}
       {!collapsed && (
-        <div style={{ 
-          padding: padding ? spacing[4] : 0,
-          background: withAlpha(accentColor, 0.30),
-        }}>
+        <div
+          style={{
+            padding: padding ? spacing[4] : 0,
+            background: withAlpha(accentColor, 0.3),
+          }}
+        >
           {children}
         </div>
       )}

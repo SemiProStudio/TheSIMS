@@ -405,7 +405,7 @@ describe('validateItem (extended)', () => {
   it('should accept custom categories', () => {
     const result = validateItem(
       { name: 'Widget', category: 'Custom' },
-      { customCategories: ['Custom'] }
+      { customCategories: ['Custom'] },
     );
     expect(result.isValid).toBe(true);
   });
@@ -672,9 +672,7 @@ describe('validateItems (extended)', () => {
   });
 
   it('should pass through options', () => {
-    const items = [
-      { name: 'Widget', category: 'Custom' },
-    ];
+    const items = [{ name: 'Widget', category: 'Custom' }];
     const result = validateItems(items, { customCategories: ['Custom'] });
     expect(result.isValid).toBe(true);
   });

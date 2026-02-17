@@ -202,9 +202,7 @@ describe('getAllReservationConflicts', () => {
   it('should detect reservation conflicts', () => {
     const item = {
       ...baseItem,
-      reservations: [
-        { id: 'res1', start: '2025-01-03', end: '2025-01-10' },
-      ],
+      reservations: [{ id: 'res1', start: '2025-01-03', end: '2025-01-10' }],
     };
     const result = getAllReservationConflicts(item, '2025-01-01', '2025-01-05');
     expect(result.reservationConflicts).toHaveLength(1);
@@ -214,9 +212,7 @@ describe('getAllReservationConflicts', () => {
   it('should not detect conflict for non-overlapping dates', () => {
     const item = {
       ...baseItem,
-      reservations: [
-        { id: 'res1', start: '2025-01-10', end: '2025-01-15' },
-      ],
+      reservations: [{ id: 'res1', start: '2025-01-10', end: '2025-01-15' }],
     };
     const result = getAllReservationConflicts(item, '2025-01-01', '2025-01-05');
     expect(result.reservationConflicts).toHaveLength(0);
@@ -226,9 +222,7 @@ describe('getAllReservationConflicts', () => {
   it('should exclude the specified reservation from conflict check', () => {
     const item = {
       ...baseItem,
-      reservations: [
-        { id: 'res1', start: '2025-01-03', end: '2025-01-10' },
-      ],
+      reservations: [{ id: 'res1', start: '2025-01-03', end: '2025-01-10' }],
     };
     const result = getAllReservationConflicts(item, '2025-01-01', '2025-01-05', 'res1');
     expect(result.reservationConflicts).toHaveLength(0);
@@ -323,7 +317,7 @@ describe('removeById', () => {
   it('should remove item by ID', () => {
     const result = removeById(items, '2');
     expect(result).toHaveLength(2);
-    expect(result.find(i => i.id === '2')).toBeUndefined();
+    expect(result.find((i) => i.id === '2')).toBeUndefined();
   });
 
   it('should not modify original array', () => {
@@ -482,9 +476,7 @@ describe('filterByStatus', () => {
 describe('addReplyToNote', () => {
   const notes = [
     { id: 'n1', text: 'Note 1', replies: [] },
-    { id: 'n2', text: 'Note 2', replies: [
-      { id: 'n2r1', text: 'Reply 1', replies: [] }
-    ]},
+    { id: 'n2', text: 'Note 2', replies: [{ id: 'n2r1', text: 'Reply 1', replies: [] }] },
   ];
 
   it('should add reply to top-level note', () => {
@@ -510,9 +502,12 @@ describe('addReplyToNote', () => {
 describe('markNoteDeleted', () => {
   const notes = [
     { id: 'n1', text: 'Note 1', deleted: false },
-    { id: 'n2', text: 'Note 2', deleted: false, replies: [
-      { id: 'n2r1', text: 'Reply', deleted: false }
-    ]},
+    {
+      id: 'n2',
+      text: 'Note 2',
+      deleted: false,
+      replies: [{ id: 'n2r1', text: 'Reply', deleted: false }],
+    },
   ];
 
   it('should mark top-level note as deleted', () => {
@@ -534,11 +529,11 @@ describe('markNoteDeleted', () => {
 describe('findNoteById', () => {
   const notes = [
     { id: 'n1', text: 'Note 1' },
-    { id: 'n2', text: 'Note 2', replies: [
-      { id: 'n2r1', text: 'Reply 1', replies: [
-        { id: 'n2r1r1', text: 'Nested reply' }
-      ]}
-    ]},
+    {
+      id: 'n2',
+      text: 'Note 2',
+      replies: [{ id: 'n2r1', text: 'Reply 1', replies: [{ id: 'n2r1r1', text: 'Nested reply' }] }],
+    },
   ];
 
   it('should find top-level note', () => {
@@ -568,14 +563,14 @@ describe('findNoteById', () => {
 
 describe('flattenLocations', () => {
   const locations = [
-    { 
-      id: '1', 
-      name: 'Building A', 
+    {
+      id: '1',
+      name: 'Building A',
       type: 'building',
       children: [
         { id: '2', name: 'Room 101', type: 'room', children: [] },
         { id: '3', name: 'Room 102', type: 'room', children: [] },
-      ]
+      ],
     },
     { id: '4', name: 'Building B', type: 'building', children: [] },
   ];
@@ -587,14 +582,14 @@ describe('flattenLocations', () => {
 
   it('should generate correct full paths', () => {
     const result = flattenLocations(locations);
-    const room101 = result.find(l => l.id === '2');
+    const room101 = result.find((l) => l.id === '2');
     expect(room101.fullPath).toBe('Building A > Room 101');
   });
 
   it('should set correct depth values', () => {
     const result = flattenLocations(locations);
-    const buildingA = result.find(l => l.id === '1');
-    const room101 = result.find(l => l.id === '2');
+    const buildingA = result.find((l) => l.id === '1');
+    const room101 = result.find((l) => l.id === '2');
     expect(buildingA.depth).toBe(0);
     expect(room101.depth).toBe(1);
   });
@@ -717,9 +712,9 @@ describe('calculateDepreciation', () => {
       oldPurchaseDate,
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.STRAIGHT_LINE
+      DEPRECIATION_METHODS.STRAIGHT_LINE,
     );
-    
+
     expect(result).toBeDefined();
     expect(result.currentValue).toBeDefined();
     expect(result.totalDepreciation).toBeDefined();
@@ -733,9 +728,9 @@ describe('calculateDepreciation', () => {
       '2010-01-01', // Very old date
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.STRAIGHT_LINE
+      DEPRECIATION_METHODS.STRAIGHT_LINE,
     );
-    
+
     expect(result.currentValue).toBeGreaterThanOrEqual(salvageValue);
   });
 
@@ -746,9 +741,9 @@ describe('calculateDepreciation', () => {
       today,
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.STRAIGHT_LINE
+      DEPRECIATION_METHODS.STRAIGHT_LINE,
     );
-    
+
     // Current value should be close to purchase price for new items
     expect(result.currentValue).toBeLessThanOrEqual(purchasePrice);
   });
@@ -759,9 +754,9 @@ describe('calculateDepreciation', () => {
       null,
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.STRAIGHT_LINE
+      DEPRECIATION_METHODS.STRAIGHT_LINE,
     );
-    
+
     expect(result.currentValue).toBe(purchasePrice);
   });
 
@@ -771,9 +766,9 @@ describe('calculateDepreciation', () => {
       oldPurchaseDate,
       usefulLife,
       0,
-      DEPRECIATION_METHODS.STRAIGHT_LINE
+      DEPRECIATION_METHODS.STRAIGHT_LINE,
     );
-    
+
     expect(result).toBeDefined();
     expect(result.currentValue).toBeGreaterThanOrEqual(0);
   });
@@ -784,9 +779,9 @@ describe('calculateDepreciation', () => {
       oldPurchaseDate,
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.DOUBLE_DECLINING
+      DEPRECIATION_METHODS.DOUBLE_DECLINING,
     );
-    
+
     expect(result).toBeDefined();
     expect(result.currentValue).toBeDefined();
   });
@@ -884,27 +879,27 @@ describe('sanitizeCSVCell', () => {
   });
 
   it('should prefix = to prevent formula injection', () => {
-    expect(sanitizeCSVCell('=SUM(A1:A10)')).toBe("\"'=SUM(A1:A10)\"");
+    expect(sanitizeCSVCell('=SUM(A1:A10)')).toBe('"\'=SUM(A1:A10)"');
   });
 
   it('should prefix + to prevent formula injection', () => {
-    expect(sanitizeCSVCell('+cmd|exe')).toBe("\"'+cmd|exe\"");
+    expect(sanitizeCSVCell('+cmd|exe')).toBe('"\'+cmd|exe"');
   });
 
   it('should prefix - to prevent formula injection', () => {
-    expect(sanitizeCSVCell('-1+1')).toBe("\"'-1+1\"");
+    expect(sanitizeCSVCell('-1+1')).toBe('"\'-1+1"');
   });
 
   it('should prefix @ to prevent formula injection', () => {
-    expect(sanitizeCSVCell('@SUM(A1)')).toBe("\"'@SUM(A1)\"");
+    expect(sanitizeCSVCell('@SUM(A1)')).toBe('"\'@SUM(A1)"');
   });
 
   it('should prefix tab character to prevent formula injection', () => {
-    expect(sanitizeCSVCell('\tdata')).toBe("\"'\tdata\"");
+    expect(sanitizeCSVCell('\tdata')).toBe('"\'\tdata"');
   });
 
   it('should prefix carriage return to prevent formula injection', () => {
-    expect(sanitizeCSVCell('\rdata')).toBe("\"'\rdata\"");
+    expect(sanitizeCSVCell('\rdata')).toBe('"\'\rdata"');
   });
 
   it('should escape embedded double quotes by doubling them', () => {
@@ -990,7 +985,7 @@ describe('calculateDepreciation — declining-balance method', () => {
       '2020-01-01',
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.DECLINING_BALANCE
+      DEPRECIATION_METHODS.DECLINING_BALANCE,
     );
     expect(result).toBeDefined();
     expect(result.currentValue).toBeGreaterThanOrEqual(salvageValue);
@@ -1004,7 +999,7 @@ describe('calculateDepreciation — declining-balance method', () => {
       '2010-01-01', // very old
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.DECLINING_BALANCE
+      DEPRECIATION_METHODS.DECLINING_BALANCE,
     );
     expect(result.currentValue).toBeGreaterThanOrEqual(salvageValue);
   });
@@ -1015,7 +1010,7 @@ describe('calculateDepreciation — declining-balance method', () => {
       null,
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.DECLINING_BALANCE
+      DEPRECIATION_METHODS.DECLINING_BALANCE,
     );
     expect(result.currentValue).toBe(purchasePrice);
     expect(result.totalDepreciation).toBe(0);
@@ -1028,7 +1023,7 @@ describe('calculateDepreciation — declining-balance method', () => {
       '2020-01-01',
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.DECLINING_BALANCE
+      DEPRECIATION_METHODS.DECLINING_BALANCE,
     );
     // Each year's start value should be less than the previous
     for (let i = 1; i < result.schedule.length; i++) {
@@ -1042,7 +1037,7 @@ describe('calculateDepreciation — declining-balance method', () => {
       '2020-01-01',
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.DECLINING_BALANCE
+      DEPRECIATION_METHODS.DECLINING_BALANCE,
     );
     for (let i = 0; i < result.schedule.length - 1; i++) {
       expect(result.schedule[i].endValue).toBeCloseTo(result.schedule[i + 1].startValue, 2);
@@ -1061,7 +1056,7 @@ describe('calculateDepreciation — double-declining method', () => {
       '2020-01-01',
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.DOUBLE_DECLINING
+      DEPRECIATION_METHODS.DOUBLE_DECLINING,
     );
     expect(result).toBeDefined();
     expect(result.currentValue).toBeGreaterThanOrEqual(salvageValue);
@@ -1075,14 +1070,14 @@ describe('calculateDepreciation — double-declining method', () => {
       '2020-01-01',
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.DOUBLE_DECLINING
+      DEPRECIATION_METHODS.DOUBLE_DECLINING,
     );
     const db = calculateDepreciation(
       purchasePrice,
       '2020-01-01',
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.DECLINING_BALANCE
+      DEPRECIATION_METHODS.DECLINING_BALANCE,
     );
     // First year depreciation of DDB (200% rate) > DB (150% rate)
     expect(ddb.schedule[0].depreciation).toBeGreaterThan(db.schedule[0].depreciation);
@@ -1094,7 +1089,7 @@ describe('calculateDepreciation — double-declining method', () => {
       '2010-01-01',
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.DOUBLE_DECLINING
+      DEPRECIATION_METHODS.DOUBLE_DECLINING,
     );
     expect(result.currentValue).toBeGreaterThanOrEqual(salvageValue);
   });
@@ -1106,7 +1101,7 @@ describe('calculateDepreciation — double-declining method', () => {
       '2020-01-01',
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.DOUBLE_DECLINING
+      DEPRECIATION_METHODS.DOUBLE_DECLINING,
     );
     // The final year's end value should be close to or at salvage value
     const lastEntry = result.schedule[result.schedule.length - 1];
@@ -1119,7 +1114,7 @@ describe('calculateDepreciation — double-declining method', () => {
       '2020-01-01',
       usefulLife,
       salvageValue,
-      DEPRECIATION_METHODS.DOUBLE_DECLINING
+      DEPRECIATION_METHODS.DOUBLE_DECLINING,
     );
     for (let i = 0; i < result.schedule.length - 1; i++) {
       expect(result.schedule[i].endValue).toBeCloseTo(result.schedule[i + 1].startValue, 2);
@@ -1136,7 +1131,7 @@ describe('calculateDepreciation — edge cases', () => {
       '2020-01-01',
       0,
       1000,
-      DEPRECIATION_METHODS.STRAIGHT_LINE
+      DEPRECIATION_METHODS.STRAIGHT_LINE,
     );
     // Should still return a result without crashing
     expect(result).toBeDefined();
@@ -1148,32 +1143,20 @@ describe('calculateDepreciation — edge cases', () => {
       '2020-01-01',
       5,
       10000, // same as purchase price
-      DEPRECIATION_METHODS.STRAIGHT_LINE
+      DEPRECIATION_METHODS.STRAIGHT_LINE,
     );
     expect(result.annualDepreciation).toBe(0);
     expect(result.currentValue).toBe(10000);
   });
 
   it('should handle zero salvage value with zero purchase price', () => {
-    const result = calculateDepreciation(
-      0,
-      '2020-01-01',
-      5,
-      0,
-      DEPRECIATION_METHODS.STRAIGHT_LINE
-    );
+    const result = calculateDepreciation(0, '2020-01-01', 5, 0, DEPRECIATION_METHODS.STRAIGHT_LINE);
     expect(result.currentValue).toBe(0);
     expect(result.totalDepreciation).toBe(0);
   });
 
   it('should return default for unknown method', () => {
-    const result = calculateDepreciation(
-      10000,
-      '2020-01-01',
-      5,
-      1000,
-      'unknown-method'
-    );
+    const result = calculateDepreciation(10000, '2020-01-01', 5, 1000, 'unknown-method');
     expect(result.currentValue).toBe(10000);
     expect(result.annualDepreciation).toBe(0);
   });
@@ -1184,7 +1167,7 @@ describe('calculateDepreciation — edge cases', () => {
       '2020-01-01',
       5,
       1000,
-      DEPRECIATION_METHODS.STRAIGHT_LINE
+      DEPRECIATION_METHODS.STRAIGHT_LINE,
     );
     expect(typeof result.percentDepreciated).toBe('number');
     expect(result.percentDepreciated).toBeGreaterThanOrEqual(0);
@@ -1197,7 +1180,7 @@ describe('calculateDepreciation — edge cases', () => {
       '2023-01-01',
       5,
       1000,
-      DEPRECIATION_METHODS.STRAIGHT_LINE
+      DEPRECIATION_METHODS.STRAIGHT_LINE,
     );
     expect(typeof result.ageInYears).toBe('number');
     expect(typeof result.ageInMonths).toBe('number');

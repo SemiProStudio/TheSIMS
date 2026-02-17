@@ -18,7 +18,7 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
   currentImage,
   itemId,
   onSelect,
-  onClose
+  onClose,
 }) {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [cropSrc, setCropSrc] = useState(null);
@@ -35,16 +35,16 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
         setError('Image must be smaller than 5MB');
         return;
       }
-      
+
       // Validate file type
       if (!file.type.startsWith('image/')) {
         setError('Please select an image file');
         return;
       }
-      
+
       setError(null);
       selectedFileRef.current = file;
-      
+
       // Open crop editor
       const reader = new FileReader();
       reader.onload = (ev) => setCropSrc(ev.target.result);
@@ -62,7 +62,7 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
   const handleCropCancel = () => {
     setCropSrc(null);
   };
-  
+
   const handleUseImage = async () => {
     if (!uploadedImage) return;
 
@@ -71,7 +71,8 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
 
     try {
       // Import storage service dynamically to avoid circular deps
-      const { storageService, isStorageUrl, getStoragePathFromUrl } = await import('../lib/index.js');
+      const { storageService, isStorageUrl, getStoragePathFromUrl } =
+        await import('../lib/index.js');
 
       if (!itemId) {
         // No itemId, just use the data URL
@@ -104,20 +105,22 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
       <ModalHeader title="Select Image" onClose={onClose} />
       <div style={{ padding: cropSrc ? 0 : spacing[4] }}>
         {error && (
-          <div style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: borderRadius.md,
-            padding: spacing[3],
-            margin: cropSrc ? spacing[4] : 0,
-            marginBottom: spacing[4],
-            fontSize: '14px',
-            color: colors.danger,
-          }}>
+          <div
+            style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: borderRadius.md,
+              padding: spacing[3],
+              margin: cropSrc ? spacing[4] : 0,
+              marginBottom: spacing[4],
+              fontSize: '14px',
+              color: colors.danger,
+            }}
+          >
             {error}
           </div>
         )}
-        
+
         {cropSrc ? (
           /* Crop editor step */
           <ImageCropEditor
@@ -130,14 +133,14 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
           />
         ) : (
           <>
-            <div 
-              onClick={() => !uploading && fileInputRef.current?.click()} 
-              style={{ 
-                border: `2px dashed ${colors.border}`, 
-                borderRadius: borderRadius.lg, 
-                padding: spacing[6], 
-                textAlign: 'center', 
-                cursor: uploading ? 'not-allowed' : 'pointer', 
+            <div
+              onClick={() => !uploading && fileInputRef.current?.click()}
+              style={{
+                border: `2px dashed ${colors.border}`,
+                borderRadius: borderRadius.lg,
+                padding: spacing[6],
+                textAlign: 'center',
+                cursor: uploading ? 'not-allowed' : 'pointer',
                 marginBottom: spacing[4],
                 opacity: uploading ? 0.6 : 1,
               }}
@@ -149,33 +152,33 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
               <p style={{ color: colors.textMuted, margin: '8px 0 0', fontSize: '12px' }}>
                 Max size: 5MB. Formats: JPG, PNG, WebP, GIF
               </p>
-              <input 
-                ref={fileInputRef} 
-                type="file" 
-                accept="image/jpeg,image/png,image/webp,image/gif" 
-                onChange={handleFileUpload} 
-                style={{ display: 'none' }} 
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleFileUpload}
+                style={{ display: 'none' }}
                 disabled={uploading}
               />
             </div>
-            
+
             {uploadedImage && (
               <div style={{ marginBottom: spacing[4] }}>
                 <p style={{ ...styles.label, marginBottom: spacing[2] }}>Preview</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
-                  <img 
-                    src={uploadedImage} 
-                    alt="Preview" 
-                    style={{ 
-                      width: 80, 
-                      height: 80, 
-                      objectFit: 'cover', 
-                      borderRadius: borderRadius.md 
-                    }} 
+                  <img
+                    src={uploadedImage}
+                    alt="Preview"
+                    style={{
+                      width: 80,
+                      height: 80,
+                      objectFit: 'cover',
+                      borderRadius: borderRadius.md,
+                    }}
                   />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-                    <Button 
-                      onClick={handleUseImage} 
+                    <Button
+                      onClick={handleUseImage}
                       icon={uploading ? null : Image}
                       disabled={uploading}
                     >
@@ -198,7 +201,7 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
                 </div>
               </div>
             )}
-            
+
             {currentImage && (
               <Button
                 variant="secondary"
@@ -208,12 +211,15 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
                   // Delete from storage if it's a storage URL
                   if (itemId) {
                     try {
-                      const { storageService, isStorageUrl, getStoragePathFromUrl } = await import('../lib/index.js');
+                      const { storageService, isStorageUrl, getStoragePathFromUrl } =
+                        await import('../lib/index.js');
                       if (isStorageUrl(currentImage)) {
                         const path = getStoragePathFromUrl(currentImage);
                         if (path) await storageService.deleteImage(path).catch(() => {});
                       }
-                    } catch (_e) { /* non-fatal */ }
+                    } catch (_e) {
+                      /* non-fatal */
+                    }
                   }
                   onSelect(null);
                 }}

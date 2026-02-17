@@ -62,7 +62,7 @@ describe('APP_FUNCTIONS', () => {
   });
 
   it('should have unique IDs for all functions', () => {
-    const ids = Object.values(APP_FUNCTIONS).map(f => f.id);
+    const ids = Object.values(APP_FUNCTIONS).map((f) => f.id);
     const uniqueIds = new Set(ids);
     expect(uniqueIds.size).toBe(ids.length);
   });
@@ -78,27 +78,27 @@ describe('DEFAULT_ROLES', () => {
   });
 
   it('should have Administrator role', () => {
-    const admin = DEFAULT_ROLES.find(r => r.name === 'Administrator');
+    const admin = DEFAULT_ROLES.find((r) => r.name === 'Administrator');
     expect(admin).toBeDefined();
     expect(admin.isSystem).toBe(true);
   });
 
   it('should have Standard User role', () => {
-    const user = DEFAULT_ROLES.find(r => r.name === 'Standard User');
+    const user = DEFAULT_ROLES.find((r) => r.name === 'Standard User');
     expect(user).toBeDefined();
     expect(user.isSystem).toBe(true);
   });
 
   it('should have permissions object for each role', () => {
-    DEFAULT_ROLES.forEach(role => {
+    DEFAULT_ROLES.forEach((role) => {
       expect(role.permissions).toBeDefined();
       expect(typeof role.permissions).toBe('object');
     });
   });
 
   it('Administrator should have EDIT on all permissions', () => {
-    const admin = DEFAULT_ROLES.find(r => r.name === 'Administrator');
-    Object.values(admin.permissions).forEach(permission => {
+    const admin = DEFAULT_ROLES.find((r) => r.name === 'Administrator');
+    Object.values(admin.permissions).forEach((permission) => {
       expect(permission).toBe(PERMISSION_LEVELS.EDIT);
     });
   });
@@ -180,7 +180,7 @@ describe('DASHBOARD_SECTIONS', () => {
   });
 
   it('should have id and label for each section', () => {
-    Object.values(DASHBOARD_SECTIONS).forEach(section => {
+    Object.values(DASHBOARD_SECTIONS).forEach((section) => {
       expect(section.id).toBeDefined();
       expect(section.label).toBeDefined();
       expect(typeof section.order).toBe('number');
@@ -188,7 +188,7 @@ describe('DASHBOARD_SECTIONS', () => {
   });
 
   it('should have unique order values', () => {
-    const orders = Object.values(DASHBOARD_SECTIONS).map(s => s.order);
+    const orders = Object.values(DASHBOARD_SECTIONS).map((s) => s.order);
     const uniqueOrders = new Set(orders);
     expect(uniqueOrders.size).toBe(orders.length);
   });
@@ -234,7 +234,7 @@ describe('CATEGORIES', () => {
   });
 
   it('should be an array of strings', () => {
-    CATEGORIES.forEach(category => {
+    CATEGORIES.forEach((category) => {
       expect(typeof category).toBe('string');
       expect(category.length).toBeGreaterThan(0);
     });
@@ -324,7 +324,7 @@ describe('DEFAULT_LOCATIONS', () => {
   });
 
   it('should have id, name, and type for each location', () => {
-    DEFAULT_LOCATIONS.forEach(location => {
+    DEFAULT_LOCATIONS.forEach((location) => {
       expect(location.id).toBeDefined();
       expect(location.name).toBeDefined();
       expect(location.type).toBeDefined();
@@ -335,14 +335,14 @@ describe('DEFAULT_LOCATIONS', () => {
 
 describe('LOCATION_TYPES', () => {
   it('should have essential location types', () => {
-    const values = LOCATION_TYPES.map(t => t.value);
+    const values = LOCATION_TYPES.map((t) => t.value);
     expect(values).toContain('building');
     expect(values).toContain('room');
     expect(values).toContain('shelf');
   });
 
   it('should have value, label, and icon for each type', () => {
-    LOCATION_TYPES.forEach(type => {
+    LOCATION_TYPES.forEach((type) => {
       expect(type.value).toBeDefined();
       expect(type.label).toBeDefined();
       expect(type.icon).toBeDefined();

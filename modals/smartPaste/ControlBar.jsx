@@ -11,23 +11,34 @@ const CONFIDENCE_MODES = [
   { key: 'aggressive', label: 'Aggressive', desc: '≥50 — catch more at lower accuracy' },
 ];
 
-export function ControlBar({ confidenceMode, setConfidenceMode, normalizeMetric, setNormalizeMetric, showSourceView, setShowSourceView }) {
+export function ControlBar({
+  confidenceMode,
+  setConfidenceMode,
+  normalizeMetric,
+  setNormalizeMetric,
+  showSourceView,
+  setShowSourceView,
+}) {
   return (
-    <div style={{
-      display: 'flex',
-      gap: spacing[1],
-      marginBottom: spacing[3],
-      alignItems: 'center',
-    }}>
-      <span style={{
-        fontSize: typography.fontSize.xs,
-        fontWeight: 600,
-        color: colors.textMuted,
-        marginRight: spacing[1],
-      }}>
+    <div
+      style={{
+        display: 'flex',
+        gap: spacing[1],
+        marginBottom: spacing[3],
+        alignItems: 'center',
+      }}
+    >
+      <span
+        style={{
+          fontSize: typography.fontSize.xs,
+          fontWeight: 600,
+          color: colors.textMuted,
+          marginRight: spacing[1],
+        }}
+      >
         Match Confidence:
       </span>
-      {CONFIDENCE_MODES.map(mode => {
+      {CONFIDENCE_MODES.map((mode) => {
         const isActive = confidenceMode === mode.key;
         return (
           <button
@@ -56,7 +67,7 @@ export function ControlBar({ confidenceMode, setConfidenceMode, normalizeMetric,
 
       {/* Unit normalization toggle */}
       <button
-        onClick={() => setNormalizeMetric(prev => !prev)}
+        onClick={() => setNormalizeMetric((prev) => !prev)}
         title={normalizeMetric ? 'Showing metric conversions' : 'Unit normalization off'}
         style={{
           padding: `3px ${spacing[2]}px`,
@@ -76,7 +87,7 @@ export function ControlBar({ confidenceMode, setConfidenceMode, normalizeMetric,
 
       {/* Source view toggle */}
       <button
-        onClick={() => setShowSourceView(prev => !prev)}
+        onClick={() => setShowSourceView((prev) => !prev)}
         title={showSourceView ? 'Hide source text' : 'Show source text alongside results'}
         style={{
           padding: `3px ${spacing[2]}px`,

@@ -22,17 +22,17 @@ export const generateItemCode = (category, existingCodes = []) => {
   let attempts = 0;
   const maxAttempts = 100;
   const codes = existingCodes || [];
-  
+
   do {
     code = prefix + Math.floor(1000 + Math.random() * 9000);
     attempts++;
   } while (codes.includes(code) && attempts < maxAttempts);
-  
+
   if (attempts >= maxAttempts) {
     // Fallback to timestamp-based code if random generation fails
     code = prefix + Date.now().toString().slice(-4);
   }
-  
+
   return code;
 };
 
@@ -75,7 +75,7 @@ export const formatDate = (date) => {
     return d.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
   } catch {
     return '-';
@@ -97,7 +97,7 @@ export const formatDateTime = (date) => {
       day: 'numeric',
       year: 'numeric',
       hour: 'numeric',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   } catch {
     return '-';
@@ -135,13 +135,18 @@ const doDateRangesOverlap = (start1, end1, start2, end2) => {
 };
 
 // Helper: Find conflicting reservations for a given date range
-const findConflictingReservations = (existingReservations, startDate, endDate, excludeReservationId = null) => {
+const findConflictingReservations = (
+  existingReservations,
+  startDate,
+  endDate,
+  excludeReservationId = null,
+) => {
   if (!existingReservations || !startDate || !endDate) return [];
-  
-  return existingReservations.filter(reservation => {
+
+  return existingReservations.filter((reservation) => {
     // Skip the reservation being edited
     if (excludeReservationId && reservation.id === excludeReservationId) return false;
-    
+
     // Check for date overlap
     return doDateRangesOverlap(startDate, endDate, reservation.start, reservation.end);
   });
@@ -150,7 +155,7 @@ const findConflictingReservations = (existingReservations, startDate, endDate, e
 // Helper: Check if an item is currently checked out during a date range
 const checkCheckoutConflict = (item, startDate, endDate) => {
   if (!item || item.status !== 'checked-out' || !item.checkedOutDate) return null;
-  
+
   // If item is checked out and no due date, it conflicts with everything
   if (!item.dueBack) {
     return {
@@ -158,10 +163,10 @@ const checkCheckoutConflict = (item, startDate, endDate) => {
       borrower: item.checkedOutTo,
       checkedOutDate: item.checkedOutDate,
       dueBack: null,
-      message: `Currently checked out to ${item.checkedOutTo} (no return date set)`
+      message: `Currently checked out to ${item.checkedOutTo} (no return date set)`,
     };
   }
-  
+
   // Check if the checkout period overlaps with the requested dates
   if (doDateRangesOverlap(startDate, endDate, item.checkedOutDate, item.dueBack)) {
     return {
@@ -169,10 +174,10 @@ const checkCheckoutConflict = (item, startDate, endDate) => {
       borrower: item.checkedOutTo,
       checkedOutDate: item.checkedOutDate,
       dueBack: item.dueBack,
-      message: `Checked out to ${item.checkedOutTo} until ${item.dueBack}`
+      message: `Checked out to ${item.checkedOutTo} until ${item.dueBack}`,
     };
   }
-  
+
   return null;
 };
 
@@ -184,22 +189,27 @@ const checkCheckoutConflict = (item, startDate, endDate) => {
  * @param {string} excludeReservationId - Optional reservation ID to exclude
  * @returns {Object} Object with reservationConflicts array and checkoutConflict
  */
-export const getAllReservationConflicts = (item, startDate, endDate, excludeReservationId = null) => {
+export const getAllReservationConflicts = (
+  item,
+  startDate,
+  endDate,
+  excludeReservationId = null,
+) => {
   if (!item) return { reservationConflicts: [], checkoutConflict: null };
-  
+
   const reservationConflicts = findConflictingReservations(
     item.reservations || [],
     startDate,
     endDate,
-    excludeReservationId
+    excludeReservationId,
   );
-  
+
   const checkoutConflict = checkCheckoutConflict(item, startDate, endDate);
-  
+
   return {
     reservationConflicts,
     checkoutConflict,
-    hasConflicts: reservationConflicts.length > 0 || checkoutConflict !== null
+    hasConflicts: reservationConflicts.length > 0 || checkoutConflict !== null,
   };
 };
 
@@ -213,10 +223,13 @@ export const getAllReservationConflicts = (item, startDate, endDate, excludeRese
  * @returns {string} Formatted currency like "$1,234"
  */
 export const formatMoney = (amount) => {
-  return '$' + (amount || 0).toLocaleString('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  });
+  return (
+    '$' +
+    (amount || 0).toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })
+  );
 };
 
 /**
@@ -310,7 +323,7 @@ export const getConditionColor = (condition) => {
  * @returns {Array} New array with updated item
  */
 export const updateById = (array, id, updates) => {
-  return array.map(item => {
+  return array.map((item) => {
     if (item.id !== id) return item;
     if (typeof updates === 'function') {
       return { ...item, ...updates(item) };
@@ -326,7 +339,7 @@ export const updateById = (array, id, updates) => {
  * @returns {Array} New array without the item
  */
 export const removeById = (array, id) => {
-  return array.filter(item => item.id !== id);
+  return array.filter((item) => item.id !== id);
 };
 
 /**
@@ -336,7 +349,7 @@ export const removeById = (array, id) => {
  * @returns {Object|undefined} The found item or undefined
  */
 export const findById = (array, id) => {
-  return array.find(item => item.id === id);
+  return array.find((item) => item.id === id);
 };
 
 // ============================================================================
@@ -353,10 +366,8 @@ export const findById = (array, id) => {
 export const filterBySearch = (items, query, fields = ['name', 'brand', 'id']) => {
   if (!query?.trim()) return items;
   const q = query.toLowerCase().trim();
-  return items.filter(item =>
-    fields.some(field => 
-      item[field]?.toString().toLowerCase().includes(q)
-    )
+  return items.filter((item) =>
+    fields.some((field) => item[field]?.toString().toLowerCase().includes(q)),
   );
 };
 
@@ -370,7 +381,7 @@ export const filterByCategory = (items, categories) => {
   if (!categories || categories === 'all') return items;
   const cats = Array.isArray(categories) ? categories : [categories];
   if (cats.length === 0) return items;
-  return items.filter(item => cats.includes(item.category));
+  return items.filter((item) => cats.includes(item.category));
 };
 
 /**
@@ -383,16 +394,16 @@ export const filterByStatus = (items, statuses) => {
   if (!statuses || statuses === 'all') return items;
   const stats = Array.isArray(statuses) ? statuses : [statuses];
   if (stats.length === 0) return items;
-  
+
   // Handle OVERDUE status specially - it's a computed state, not stored status
   if (stats.includes('overdue')) {
     const today = getTodayISO();
-    return items.filter(item => 
-      item.status === 'checked-out' && item.dueBack && item.dueBack < today
+    return items.filter(
+      (item) => item.status === 'checked-out' && item.dueBack && item.dueBack < today,
     );
   }
-  
-  return items.filter(item => stats.includes(item.status));
+
+  return items.filter((item) => stats.includes(item.status));
 };
 
 // ============================================================================
@@ -407,7 +418,7 @@ export const filterByStatus = (items, statuses) => {
  * @returns {Array} Updated notes array
  */
 export const addReplyToNote = (notes, parentId, reply) => {
-  return notes.map(note => {
+  return notes.map((note) => {
     if (note.id === parentId) {
       return { ...note, replies: [...(note.replies || []), reply] };
     }
@@ -425,7 +436,7 @@ export const addReplyToNote = (notes, parentId, reply) => {
  * @returns {Array} Updated notes array
  */
 export const markNoteDeleted = (notes, noteId) => {
-  return notes.map(note => {
+  return notes.map((note) => {
     if (note.id === noteId) {
       return { ...note, deleted: true };
     }
@@ -473,12 +484,12 @@ export const findNoteById = (notes, noteId) => {
  */
 export const flattenLocations = (locations, parentPath = '') => {
   const result = [];
-  locations.forEach(loc => {
+  locations.forEach((loc) => {
     const fullPath = parentPath ? `${parentPath} > ${loc.name}` : loc.name;
-    result.push({ 
-      id: loc.id, 
-      name: loc.name, 
-      fullPath, 
+    result.push({
+      id: loc.id,
+      name: loc.name,
+      fullPath,
       type: loc.type,
       depth: parentPath.split('>').length - 1 + (parentPath ? 1 : 0),
     });
@@ -524,7 +535,7 @@ export const getNextDueDate = (currentDueDate, recurrence) => {
     default:
       return null;
   }
-  
+
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
@@ -603,7 +614,13 @@ export const DEFAULT_USEFUL_LIFE = {
  * @param {string} method - Depreciation method
  * @returns {Object} Depreciation details including currentValue, schedule, etc.
  */
-export const calculateDepreciation = (purchasePrice, purchaseDate, usefulLife, salvageValue, method) => {
+export const calculateDepreciation = (
+  purchasePrice,
+  purchaseDate,
+  usefulLife,
+  salvageValue,
+  method,
+) => {
   if (!purchaseDate) {
     return {
       currentValue: purchasePrice,
@@ -619,12 +636,12 @@ export const calculateDepreciation = (purchasePrice, purchaseDate, usefulLife, s
   const today = new Date();
   const ageInYears = (today - purchase) / (365.25 * 24 * 60 * 60 * 1000);
   const ageInMonths = Math.floor(ageInYears * 12);
-  
+
   const depreciableAmount = purchasePrice - salvageValue;
-  
+
   let currentValue, annualDepreciation, monthlyDepreciation, totalDepreciation;
   let schedule = [];
-  
+
   switch (method) {
     case DEPRECIATION_METHODS.STRAIGHT_LINE:
       // Straight-line: Equal depreciation each year
@@ -632,12 +649,12 @@ export const calculateDepreciation = (purchasePrice, purchaseDate, usefulLife, s
       monthlyDepreciation = annualDepreciation / 12;
       totalDepreciation = Math.min(ageInYears * annualDepreciation, depreciableAmount);
       currentValue = Math.max(purchasePrice - totalDepreciation, salvageValue);
-      
+
       // Build schedule
       for (let year = 1; year <= usefulLife; year++) {
         const yearEnd = new Date(purchase);
         yearEnd.setFullYear(yearEnd.getFullYear() + year);
-        const startValue = purchasePrice - (annualDepreciation * (year - 1));
+        const startValue = purchasePrice - annualDepreciation * (year - 1);
         const endValue = Math.max(startValue - annualDepreciation, salvageValue);
         schedule.push({
           year,
@@ -649,26 +666,26 @@ export const calculateDepreciation = (purchasePrice, purchaseDate, usefulLife, s
         });
       }
       break;
-      
+
     case DEPRECIATION_METHODS.DECLINING_BALANCE: {
       // Declining balance: Fixed percentage of remaining value (150% of straight-line rate)
       const dbRate = (1 / usefulLife) * 1.5;
       let remainingValue = purchasePrice;
       totalDepreciation = 0;
-      
+
       for (let year = 1; year <= usefulLife; year++) {
         const yearEnd = new Date(purchase);
         yearEnd.setFullYear(yearEnd.getFullYear() + year);
         const startValue = remainingValue;
         let yearDepreciation = startValue * dbRate;
-        
+
         // Don't depreciate below salvage value
         if (remainingValue - yearDepreciation < salvageValue) {
           yearDepreciation = remainingValue - salvageValue;
         }
-        
+
         remainingValue = startValue - yearDepreciation;
-        
+
         // Track total depreciation up to current age
         if (year <= Math.ceil(ageInYears)) {
           if (year < Math.ceil(ageInYears)) {
@@ -678,7 +695,7 @@ export const calculateDepreciation = (purchasePrice, purchaseDate, usefulLife, s
             totalDepreciation += yearDepreciation * (ageInYears - Math.floor(ageInYears));
           }
         }
-        
+
         schedule.push({
           year,
           date: yearEnd.toISOString().split('T')[0],
@@ -688,38 +705,38 @@ export const calculateDepreciation = (purchasePrice, purchaseDate, usefulLife, s
           accumulated: purchasePrice - remainingValue,
         });
       }
-      
+
       currentValue = Math.max(purchasePrice - totalDepreciation, salvageValue);
       annualDepreciation = schedule[0]?.depreciation || 0;
       monthlyDepreciation = annualDepreciation / 12;
       break;
     }
-      
+
     case DEPRECIATION_METHODS.DOUBLE_DECLINING: {
       // Double declining balance: 200% of straight-line rate
       const ddbRate = (1 / usefulLife) * 2;
       let ddbRemainingValue = purchasePrice;
       totalDepreciation = 0;
-      
+
       for (let year = 1; year <= usefulLife; year++) {
         const yearEnd = new Date(purchase);
         yearEnd.setFullYear(yearEnd.getFullYear() + year);
         const startValue = ddbRemainingValue;
         let yearDepreciation = startValue * ddbRate;
-        
+
         // Switch to straight-line if it gives higher depreciation
         const straightLineRemaining = (ddbRemainingValue - salvageValue) / (usefulLife - year + 1);
         if (straightLineRemaining > yearDepreciation) {
           yearDepreciation = straightLineRemaining;
         }
-        
+
         // Don't depreciate below salvage value
         if (ddbRemainingValue - yearDepreciation < salvageValue) {
           yearDepreciation = ddbRemainingValue - salvageValue;
         }
-        
+
         ddbRemainingValue = startValue - yearDepreciation;
-        
+
         // Track total depreciation up to current age
         if (year <= Math.ceil(ageInYears)) {
           if (year < Math.ceil(ageInYears)) {
@@ -728,7 +745,7 @@ export const calculateDepreciation = (purchasePrice, purchaseDate, usefulLife, s
             totalDepreciation += yearDepreciation * (ageInYears - Math.floor(ageInYears));
           }
         }
-        
+
         schedule.push({
           year,
           date: yearEnd.toISOString().split('T')[0],
@@ -738,20 +755,20 @@ export const calculateDepreciation = (purchasePrice, purchaseDate, usefulLife, s
           accumulated: purchasePrice - ddbRemainingValue,
         });
       }
-      
+
       currentValue = Math.max(purchasePrice - totalDepreciation, salvageValue);
       annualDepreciation = schedule[0]?.depreciation || 0;
       monthlyDepreciation = annualDepreciation / 12;
       break;
     }
-      
+
     default:
       currentValue = purchasePrice;
       annualDepreciation = 0;
       monthlyDepreciation = 0;
       totalDepreciation = 0;
   }
-  
+
   return {
     currentValue,
     totalDepreciation,

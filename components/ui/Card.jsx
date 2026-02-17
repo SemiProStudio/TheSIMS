@@ -6,21 +6,19 @@ import { spacing } from '../../theme.js';
 // Card - Container component
 // ============================================================================
 
-export const Card = memo(function Card({ 
-  children, 
+export const Card = memo(function Card({
+  children,
   padding = true,
   onClick,
   style: customStyle,
   className: customClassName,
-  ...props 
+  ...props
 }) {
   const isClickable = !!onClick;
-  const classNames = [
-    'card', 
-    isClickable && 'card-clickable',
-    customClassName
-  ].filter(Boolean).join(' ');
-  
+  const classNames = ['card', isClickable && 'card-clickable', customClassName]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <div
       className={classNames}
@@ -33,12 +31,16 @@ export const Card = memo(function Card({
       // Make clickable cards keyboard accessible
       tabIndex={isClickable ? 0 : undefined}
       role={isClickable ? 'button' : undefined}
-      onKeyDown={isClickable ? (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick?.(e);
-        }
-      } : undefined}
+      onKeyDown={
+        isClickable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick?.(e);
+              }
+            }
+          : undefined
+      }
       {...props}
     >
       {children}

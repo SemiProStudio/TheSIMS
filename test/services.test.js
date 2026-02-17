@@ -49,7 +49,7 @@ function createChain(responseData, error) {
         if (prop === 'catch') return result.catch.bind(result);
         // Everything else returns the same chainable proxy
         return (..._args) => new Proxy({}, handler);
-      }
+      },
     };
     return new Proxy({}, handler);
   };
@@ -166,7 +166,11 @@ describe('notificationLogService', () => {
     it('should handle error message parameter', async () => {
       const returnData = { id: 'log-123', status: 'failed' };
       getSupabase.mockResolvedValueOnce(createMockSupabaseClient(returnData));
-      const result = await notificationLogService.updateStatus('log-123', 'failed', 'Network error');
+      const result = await notificationLogService.updateStatus(
+        'log-123',
+        'failed',
+        'Network error',
+      );
       expect(result).toEqual(returnData);
     });
   });
@@ -190,7 +194,9 @@ describe('emailService', () => {
     });
 
     it('should handle send errors gracefully', async () => {
-      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(null, { message: 'Edge Function not deployed' }));
+      getSupabase.mockResolvedValueOnce(
+        createMockSupabaseClient(null, { message: 'Edge Function not deployed' }),
+      );
       // emailService.send catches errors internally and returns fallback
       const result = await emailService.send({
         to: 'test@example.com',
@@ -222,7 +228,7 @@ describe('emailService', () => {
             borrower_name: 'Test User',
             item_name: 'Camera',
           }),
-        })
+        }),
       );
 
       sendSpy.mockRestore();
@@ -244,7 +250,7 @@ describe('emailService', () => {
           templateData: expect.objectContaining({
             item_brand: '',
           }),
-        })
+        }),
       );
 
       sendSpy.mockRestore();
@@ -265,7 +271,7 @@ describe('emailService', () => {
       expect(sendSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           templateKey: 'checkin_confirmation',
-        })
+        }),
       );
 
       sendSpy.mockRestore();
@@ -286,7 +292,7 @@ describe('emailService', () => {
       expect(sendSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           templateKey: 'reservation_confirmation',
-        })
+        }),
       );
 
       sendSpy.mockRestore();
@@ -308,7 +314,7 @@ describe('emailService', () => {
       expect(sendSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           templateKey: 'due_date_reminder',
-        })
+        }),
       );
 
       sendSpy.mockRestore();
@@ -387,7 +393,15 @@ describe('packagesService', () => {
 describe('packListsService', () => {
   describe('getAll', () => {
     it('should return pack lists array', async () => {
-      const lists = [{ id: 'pl-1', name: 'Corporate Shoot', created_at: '2024-01-01', pack_list_items: [], pack_list_packages: [] }];
+      const lists = [
+        {
+          id: 'pl-1',
+          name: 'Corporate Shoot',
+          created_at: '2024-01-01',
+          pack_list_items: [],
+          pack_list_packages: [],
+        },
+      ];
       getSupabase.mockResolvedValueOnce(createMockSupabaseClient(lists));
       const result = await packListsService.getAll();
       expect(result).toBeDefined();
@@ -426,7 +440,7 @@ describe('Service Error Handling', () => {
         templateData: expect.objectContaining({
           item_brand: '',
         }),
-      })
+      }),
     );
 
     sendSpy.mockRestore();
@@ -440,18 +454,32 @@ describe('Service Error Handling', () => {
 describe('reservationsService', () => {
   describe('getAll', () => {
     it('should return transformed reservations', async () => {
-      const dbData = [{
-        id: 'res-1',
-        item_id: 'CAM001',
-        client_id: 'client-1',
-        start_date: '2024-02-01',
-        end_date: '2024-02-05',
-        status: 'confirmed',
-        project: 'Film Shoot',
-        notes: 'Handle with care',
-        item: { id: 'CAM001', name: 'Camera', category_name: 'Cameras', brand: 'Canon', status: 'available' },
-        client: { id: 'client-1', name: 'Test Client', type: 'company', email: 'a@b.com', phone: '555' },
-      }];
+      const dbData = [
+        {
+          id: 'res-1',
+          item_id: 'CAM001',
+          client_id: 'client-1',
+          start_date: '2024-02-01',
+          end_date: '2024-02-05',
+          status: 'confirmed',
+          project: 'Film Shoot',
+          notes: 'Handle with care',
+          item: {
+            id: 'CAM001',
+            name: 'Camera',
+            category_name: 'Cameras',
+            brand: 'Canon',
+            status: 'available',
+          },
+          client: {
+            id: 'client-1',
+            name: 'Test Client',
+            type: 'company',
+            email: 'a@b.com',
+            phone: '555',
+          },
+        },
+      ];
       getSupabase.mockResolvedValueOnce(createMockSupabaseClient(dbData));
       const result = await reservationsService.getAll();
       expect(result).toHaveLength(1);
@@ -507,16 +535,18 @@ describe('reservationsService', () => {
 describe('maintenanceService', () => {
   describe('getAll', () => {
     it('should return transformed maintenance records', async () => {
-      const dbData = [{
-        id: 'maint-1',
-        item_id: 'CAM001',
-        maintenance_type: 'repair',
-        status: 'scheduled',
-        scheduled_date: '2024-03-01',
-        description: 'Sensor cleaning',
-        cost: 150,
-        item: { id: 'CAM001', name: 'Camera', category_name: 'Cameras', brand: 'Canon' },
-      }];
+      const dbData = [
+        {
+          id: 'maint-1',
+          item_id: 'CAM001',
+          maintenance_type: 'repair',
+          status: 'scheduled',
+          scheduled_date: '2024-03-01',
+          description: 'Sensor cleaning',
+          cost: 150,
+          item: { id: 'CAM001', name: 'Camera', category_name: 'Cameras', brand: 'Canon' },
+        },
+      ];
       getSupabase.mockResolvedValueOnce(createMockSupabaseClient(dbData));
       const result = await maintenanceService.getAll();
       expect(result).toHaveLength(1);
@@ -561,7 +591,10 @@ describe('maintenanceService', () => {
 describe('categoriesService', () => {
   describe('getAll', () => {
     it('should return categories array', async () => {
-      const cats = [{ id: 1, name: 'Cameras' }, { id: 2, name: 'Lenses' }];
+      const cats = [
+        { id: 1, name: 'Cameras' },
+        { id: 2, name: 'Lenses' },
+      ];
       getSupabase.mockResolvedValueOnce(createMockSupabaseClient(cats));
       const result = await categoriesService.getAll();
       expect(result).toEqual(cats);
@@ -662,9 +695,18 @@ describe('checkoutHistoryService', () => {
 describe('inventoryService (extended)', () => {
   describe('create', () => {
     it('should create and return a transformed item', async () => {
-      const dbItem = { id: 'CAM002', name: 'New Camera', category_name: 'Cameras', status: 'available' };
+      const dbItem = {
+        id: 'CAM002',
+        name: 'New Camera',
+        category_name: 'Cameras',
+        status: 'available',
+      };
       getSupabase.mockResolvedValueOnce(createMockSupabaseClient(dbItem));
-      const result = await inventoryService.create({ name: 'New Camera', category: 'Cameras', category_name: 'Cameras' });
+      const result = await inventoryService.create({
+        name: 'New Camera',
+        category: 'Cameras',
+        category_name: 'Cameras',
+      });
       expect(result).toBeDefined();
       expect(result.id).toBe('CAM002');
     });

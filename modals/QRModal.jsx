@@ -28,20 +28,25 @@ const QRCode = memo(function QRCode({ data, size = 150 }) {
 
     setError(false);
 
-    QRCodeLib.toCanvas(canvas, String(data), {
-      width: size,
-      margin: 1,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
+    QRCodeLib.toCanvas(
+      canvas,
+      String(data),
+      {
+        width: size,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF',
+        },
+        errorCorrectionLevel: 'M',
       },
-      errorCorrectionLevel: 'M'
-    }, (err) => {
-      if (err) {
-        logError('QR Code generation error:', err);
-        setError(true);
-      }
-    });
+      (err) => {
+        if (err) {
+          logError('QR Code generation error:', err);
+          setError(true);
+        }
+      },
+    );
   }, [data, size]);
 
   if (error) {
@@ -106,7 +111,7 @@ export const QRModal = memo(function QRModal({ item, onClose }) {
             display: 'inline-block',
             background: '#FFFFFF',
             padding: spacing[3],
-            borderRadius: borderRadius.lg
+            borderRadius: borderRadius.lg,
           }}
         >
           <QRCode data={item.id} size={180} />

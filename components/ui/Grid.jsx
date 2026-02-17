@@ -6,8 +6,8 @@ import { spacing } from '../../theme.js';
 // Grid - Responsive grid layout
 // ============================================================================
 
-export const Grid = memo(function Grid({ 
-  children, 
+export const Grid = memo(function Grid({
+  children,
   columns = 'auto-fill',
   minWidth = 180,
   gap = 4,

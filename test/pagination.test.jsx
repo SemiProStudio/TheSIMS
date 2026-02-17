@@ -27,16 +27,12 @@ describe('Pagination', () => {
     });
 
     it('should return null when totalPages is 1', () => {
-      const { container } = render(
-        <Pagination {...defaultProps} totalPages={1} />
-      );
+      const { container } = render(<Pagination {...defaultProps} totalPages={1} />);
       expect(container.firstChild).toBeNull();
     });
 
     it('should return null when totalPages is 0', () => {
-      const { container } = render(
-        <Pagination {...defaultProps} totalPages={0} totalItems={0} />
-      );
+      const { container } = render(<Pagination {...defaultProps} totalPages={0} totalItems={0} />);
       expect(container.firstChild).toBeNull();
     });
 
@@ -131,14 +127,7 @@ describe('Pagination', () => {
     });
 
     it('should show first and last page with ellipsis for many pages', () => {
-      render(
-        <Pagination
-          {...defaultProps}
-          page={5}
-          totalPages={10}
-          totalItems={100}
-        />
-      );
+      render(<Pagination {...defaultProps} page={5} totalPages={10} totalItems={100} />);
       // First page
       expect(screen.getByLabelText('Page 1')).toBeInTheDocument();
       // Last page
@@ -155,28 +144,14 @@ describe('Pagination', () => {
     });
 
     it('should show correct pages when near the beginning', () => {
-      render(
-        <Pagination
-          {...defaultProps}
-          page={2}
-          totalPages={10}
-          totalItems={100}
-        />
-      );
+      render(<Pagination {...defaultProps} page={2} totalPages={10} totalItems={100} />);
       // Should show page 1 and page 10 at minimum
       expect(screen.getByLabelText('Page 1')).toBeInTheDocument();
       expect(screen.getByLabelText('Page 10')).toBeInTheDocument();
     });
 
     it('should show correct pages when near the end', () => {
-      render(
-        <Pagination
-          {...defaultProps}
-          page={9}
-          totalPages={10}
-          totalItems={100}
-        />
-      );
+      render(<Pagination {...defaultProps} page={9} totalPages={10} totalItems={100} />);
       expect(screen.getByLabelText('Page 1')).toBeInTheDocument();
       expect(screen.getByLabelText('Page 10')).toBeInTheDocument();
     });

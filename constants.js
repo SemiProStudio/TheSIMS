@@ -12,24 +12,68 @@ export const PERMISSION_LEVELS = {
 
 // App functions/features that can be controlled
 export const APP_FUNCTIONS = {
-  DASHBOARD: { id: 'dashboard', name: 'Dashboard', description: 'Main dashboard with stats and alerts' },
+  DASHBOARD: {
+    id: 'dashboard',
+    name: 'Dashboard',
+    description: 'Main dashboard with stats and alerts',
+  },
   GEAR_LIST: { id: 'gear_list', name: 'Gear List', description: 'View and manage inventory items' },
-  ITEM_DETAILS: { id: 'item_details', name: 'Item Details', description: 'View/edit individual item details' },
-  SCHEDULE: { id: 'schedule', name: 'Schedule', description: 'Calendar and reservation management' },
+  ITEM_DETAILS: {
+    id: 'item_details',
+    name: 'Item Details',
+    description: 'View/edit individual item details',
+  },
+  SCHEDULE: {
+    id: 'schedule',
+    name: 'Schedule',
+    description: 'Calendar and reservation management',
+  },
   PACK_LISTS: { id: 'pack_lists', name: 'Pack Lists', description: 'Create and manage pack lists' },
   CLIENTS: { id: 'clients', name: 'Clients', description: 'Client management' },
   SEARCH: { id: 'search', name: 'Search', description: 'Global search functionality' },
   LABELS: { id: 'labels', name: 'Labels', description: 'Print labels for items' },
   REPORTS: { id: 'reports', name: 'Reports', description: 'View reports and analytics' },
   ADMIN_USERS: { id: 'admin_users', name: 'Admin: Users', description: 'Manage user accounts' },
-  ADMIN_CATEGORIES: { id: 'admin_categories', name: 'Admin: Categories', description: 'Manage item categories' },
-  ADMIN_SPECS: { id: 'admin_specs', name: 'Admin: Specifications', description: 'Manage item specifications' },
-  ADMIN_LOCATIONS: { id: 'admin_locations', name: 'Admin: Locations', description: 'Manage storage locations' },
-  ADMIN_THEMES: { id: 'admin_themes', name: 'Admin: Themes', description: 'Customize app appearance' },
-  ADMIN_LAYOUT: { id: 'admin_layout', name: 'Admin: Layout', description: 'Customize dashboard layout' },
-  ADMIN_NOTIFICATIONS: { id: 'admin_notifications', name: 'Admin: Notifications', description: 'Configure email notifications' },
-  ADMIN_ROLES: { id: 'admin_roles', name: 'Admin: Roles & Permissions', description: 'Manage user roles and permissions' },
-  ADMIN_AUDIT: { id: 'admin_audit', name: 'Admin: Audit Log', description: 'View system audit log' },
+  ADMIN_CATEGORIES: {
+    id: 'admin_categories',
+    name: 'Admin: Categories',
+    description: 'Manage item categories',
+  },
+  ADMIN_SPECS: {
+    id: 'admin_specs',
+    name: 'Admin: Specifications',
+    description: 'Manage item specifications',
+  },
+  ADMIN_LOCATIONS: {
+    id: 'admin_locations',
+    name: 'Admin: Locations',
+    description: 'Manage storage locations',
+  },
+  ADMIN_THEMES: {
+    id: 'admin_themes',
+    name: 'Admin: Themes',
+    description: 'Customize app appearance',
+  },
+  ADMIN_LAYOUT: {
+    id: 'admin_layout',
+    name: 'Admin: Layout',
+    description: 'Customize dashboard layout',
+  },
+  ADMIN_NOTIFICATIONS: {
+    id: 'admin_notifications',
+    name: 'Admin: Notifications',
+    description: 'Configure email notifications',
+  },
+  ADMIN_ROLES: {
+    id: 'admin_roles',
+    name: 'Admin: Roles & Permissions',
+    description: 'Manage user roles and permissions',
+  },
+  ADMIN_AUDIT: {
+    id: 'admin_audit',
+    name: 'Admin: Audit Log',
+    description: 'View system audit log',
+  },
 };
 
 // Default roles
@@ -194,14 +238,49 @@ export const MODALS = {
 // Each section has: id, label, default visibility, and default order
 export const DASHBOARD_SECTIONS = {
   STATS: { id: 'stats', label: 'Statistics', description: 'Item counts by status', order: 0 },
-  QUICK_SEARCH: { id: 'quickSearch', label: 'Quick Gear Search', description: 'Search inventory by name, ID, or brand', order: 1 },
-  CHECKED_OUT: { id: 'checkedOut', label: 'Currently Checked Out', description: 'Items currently out with borrower and due dates', order: 2 },
+  QUICK_SEARCH: {
+    id: 'quickSearch',
+    label: 'Quick Gear Search',
+    description: 'Search inventory by name, ID, or brand',
+    order: 1,
+  },
+  CHECKED_OUT: {
+    id: 'checkedOut',
+    label: 'Currently Checked Out',
+    description: 'Items currently out with borrower and due dates',
+    order: 2,
+  },
   ALERTS: { id: 'alerts', label: 'Alerts', description: 'Items needing attention', order: 3 },
-  REMINDERS: { id: 'reminders', label: 'Due Reminders', description: 'Upcoming and overdue maintenance reminders', order: 4 },
-  LOW_STOCK: { id: 'lowStock', label: 'Low Stock Items', description: 'Items at or below reorder threshold', order: 5 },
-  RESERVATIONS: { id: 'reservations', label: 'Upcoming Reservations', description: 'Scheduled reservations starting soon', order: 6 },
-  MAINTENANCE: { id: 'maintenance', label: 'Upcoming Maintenance', description: 'Scheduled and in-progress maintenance', order: 7 },
-  RECENT_ACTIVITY: { id: 'recentActivity', label: 'Recent Activity', description: 'Latest checkouts, returns, and status changes', order: 8 },
+  REMINDERS: {
+    id: 'reminders',
+    label: 'Due Reminders',
+    description: 'Upcoming and overdue maintenance reminders',
+    order: 4,
+  },
+  LOW_STOCK: {
+    id: 'lowStock',
+    label: 'Low Stock Items',
+    description: 'Items at or below reorder threshold',
+    order: 5,
+  },
+  RESERVATIONS: {
+    id: 'reservations',
+    label: 'Upcoming Reservations',
+    description: 'Scheduled reservations starting soon',
+    order: 6,
+  },
+  MAINTENANCE: {
+    id: 'maintenance',
+    label: 'Upcoming Maintenance',
+    description: 'Scheduled and in-progress maintenance',
+    order: 7,
+  },
+  RECENT_ACTIVITY: {
+    id: 'recentActivity',
+    label: 'Recent Activity',
+    description: 'Latest checkouts, returns, and status changes',
+    order: 8,
+  },
 };
 
 export const ITEM_DETAIL_SECTIONS = {
@@ -221,7 +300,7 @@ export const ITEM_DETAIL_SECTIONS = {
 // Helper to create default section prefs (visible, not collapsed, default order)
 const createDefaultSectionPrefs = (sections) => {
   const prefs = {};
-  Object.values(sections).forEach(s => {
+  Object.values(sections).forEach((s) => {
     prefs[s.id] = { visible: true, collapsed: false, order: s.order };
   });
   return prefs;
@@ -268,7 +347,7 @@ export const CATEGORIES = [
   'Grip',
   'Monitors',
   'Power',
-  'Consumables'
+  'Consumables',
 ];
 
 // Category code prefixes for ID generation
@@ -292,17 +371,72 @@ export const CATEGORY_PREFIXES = {
 // trackReorderPoint: whether to show reorder point field (only for consumables)
 // defaultLocation: default storage location for new items in this category
 export const DEFAULT_CATEGORY_SETTINGS = {
-  Cameras: { trackQuantity: false, trackSerialNumbers: true, trackReorderPoint: false, lowStockThreshold: 0 },
-  Lenses: { trackQuantity: false, trackSerialNumbers: true, trackReorderPoint: false, lowStockThreshold: 0 },
-  Lighting: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 2 },
-  Audio: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 2 },
-  Support: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 1 },
-  Accessories: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 3 },
-  Storage: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 5 },
-  Grip: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 2 },
-  Monitors: { trackQuantity: false, trackSerialNumbers: true, trackReorderPoint: false, lowStockThreshold: 0 },
-  Power: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: false, lowStockThreshold: 3 },
-  Consumables: { trackQuantity: true, trackSerialNumbers: false, trackReorderPoint: true, lowStockThreshold: 5 },
+  Cameras: {
+    trackQuantity: false,
+    trackSerialNumbers: true,
+    trackReorderPoint: false,
+    lowStockThreshold: 0,
+  },
+  Lenses: {
+    trackQuantity: false,
+    trackSerialNumbers: true,
+    trackReorderPoint: false,
+    lowStockThreshold: 0,
+  },
+  Lighting: {
+    trackQuantity: true,
+    trackSerialNumbers: false,
+    trackReorderPoint: false,
+    lowStockThreshold: 2,
+  },
+  Audio: {
+    trackQuantity: true,
+    trackSerialNumbers: false,
+    trackReorderPoint: false,
+    lowStockThreshold: 2,
+  },
+  Support: {
+    trackQuantity: true,
+    trackSerialNumbers: false,
+    trackReorderPoint: false,
+    lowStockThreshold: 1,
+  },
+  Accessories: {
+    trackQuantity: true,
+    trackSerialNumbers: false,
+    trackReorderPoint: false,
+    lowStockThreshold: 3,
+  },
+  Storage: {
+    trackQuantity: true,
+    trackSerialNumbers: false,
+    trackReorderPoint: false,
+    lowStockThreshold: 5,
+  },
+  Grip: {
+    trackQuantity: true,
+    trackSerialNumbers: false,
+    trackReorderPoint: false,
+    lowStockThreshold: 2,
+  },
+  Monitors: {
+    trackQuantity: false,
+    trackSerialNumbers: true,
+    trackReorderPoint: false,
+    lowStockThreshold: 0,
+  },
+  Power: {
+    trackQuantity: true,
+    trackSerialNumbers: false,
+    trackReorderPoint: false,
+    lowStockThreshold: 3,
+  },
+  Consumables: {
+    trackQuantity: true,
+    trackSerialNumbers: false,
+    trackReorderPoint: true,
+    lowStockThreshold: 5,
+  },
 };
 
 // Default settings for new categories
@@ -323,7 +457,7 @@ export const PROJECT_TYPES = [
   'Film',
   'Event',
   'Portrait',
-  'Other'
+  'Other',
 ];
 
 // Schedule view modes
@@ -341,11 +475,41 @@ export const SCHEDULE_PERIODS = {
 
 // Label format options
 export const LABEL_FORMATS = [
-  { id: 'small', name: 'Small - QR Only', width: 1, height: 1, description: '300x300px at 300dpi (square)' },
-  { id: 'medium', name: 'Medium - QR + Info', width: 2, height: 1, description: '600x300px at 300dpi' },
-  { id: 'large', name: 'Large - Full Details', width: 3, height: 2, description: '900x600px at 300dpi' },
-  { id: 'brandingText', name: 'With Branding - Text', width: 3, height: 2.5, description: '900x750px at 300dpi' },
-  { id: 'brandingLogo', name: 'With Branding - Logo', width: 3, height: 2.5, description: '900x750px at 300dpi' },
+  {
+    id: 'small',
+    name: 'Small - QR Only',
+    width: 1,
+    height: 1,
+    description: '300x300px at 300dpi (square)',
+  },
+  {
+    id: 'medium',
+    name: 'Medium - QR + Info',
+    width: 2,
+    height: 1,
+    description: '600x300px at 300dpi',
+  },
+  {
+    id: 'large',
+    name: 'Large - Full Details',
+    width: 3,
+    height: 2,
+    description: '900x600px at 300dpi',
+  },
+  {
+    id: 'brandingText',
+    name: 'With Branding - Text',
+    width: 3,
+    height: 2.5,
+    description: '900x750px at 300dpi',
+  },
+  {
+    id: 'brandingLogo',
+    name: 'With Branding - Logo',
+    width: 3,
+    height: 2.5,
+    description: '900x750px at 300dpi',
+  },
 ];
 
 // Default specification fields per category
@@ -390,7 +554,7 @@ export const DEFAULT_SPECS = {
     { name: 'Dimensions', required: false },
     { name: 'Weight', required: false },
     { name: 'Battery Type', required: false },
-    { name: 'Battery Life', required: false }
+    { name: 'Battery Life', required: false },
   ],
   Lenses: [
     // Optical
@@ -423,7 +587,7 @@ export const DEFAULT_SPECS = {
     { name: 'Front Diameter', required: false },
     { name: 'Focus Rotation', required: false },
     { name: 'Iris Rotation', required: false },
-    { name: 'Focus Gear Position', required: false }
+    { name: 'Focus Gear Position', required: false },
   ],
   Lighting: [
     // Light Output
@@ -465,7 +629,7 @@ export const DEFAULT_SPECS = {
     { name: 'Build Material', required: false },
     { name: 'Mount Type', required: false },
     { name: 'Dimensions', required: false },
-    { name: 'Weight', required: false }
+    { name: 'Weight', required: false },
   ],
   Audio: [
     // Microphone Type
@@ -497,7 +661,7 @@ export const DEFAULT_SPECS = {
     // Physical
     { name: 'Dimensions', required: false },
     { name: 'Weight', required: false },
-    { name: 'Cable Length', required: false }
+    { name: 'Cable Length', required: false },
   ],
   Support: [
     // Type & Capacity
@@ -522,7 +686,7 @@ export const DEFAULT_SPECS = {
     { name: 'Material', required: false },
     { name: 'Weight', required: false },
     { name: 'Load Capacity', required: false },
-    { name: 'Center Column', required: false }
+    { name: 'Center Column', required: false },
   ],
   Grip: [
     // Based on Matthews Studio Equipment specifications
@@ -557,7 +721,7 @@ export const DEFAULT_SPECS = {
     // Flags/Frames/Diffusion
     { name: 'Frame Size', required: false },
     { name: 'Fabric Type', required: false },
-    { name: 'Diffusion Rating', required: false }
+    { name: 'Diffusion Rating', required: false },
   ],
   Accessories: [
     { name: 'Accessory Type', required: true },
@@ -567,7 +731,7 @@ export const DEFAULT_SPECS = {
     { name: 'Weight', required: false },
     { name: 'Color/Finish', required: false },
     { name: 'Mounting Type', required: false },
-    { name: 'Thread Size', required: false }
+    { name: 'Thread Size', required: false },
   ],
   Storage: [
     { name: 'Storage Type', required: true },
@@ -581,7 +745,7 @@ export const DEFAULT_SPECS = {
     { name: 'Form Factor', required: false },
     { name: 'Operating Temp', required: false },
     { name: 'Dimensions', required: false },
-    { name: 'Weight', required: false }
+    { name: 'Weight', required: false },
   ],
   Monitors: [
     // Display
@@ -616,7 +780,7 @@ export const DEFAULT_SPECS = {
     // Physical
     { name: 'Mounting Points', required: false },
     { name: 'Dimensions', required: false },
-    { name: 'Weight', required: false }
+    { name: 'Weight', required: false },
   ],
   Power: [
     // Battery Specs
@@ -644,7 +808,7 @@ export const DEFAULT_SPECS = {
     { name: 'Weight', required: false },
     // Safety
     { name: 'Protection Circuits', required: false },
-    { name: 'Airline Approved', required: false }
+    { name: 'Airline Approved', required: false },
   ],
   Consumables: [
     // Basic Info
@@ -658,8 +822,8 @@ export const DEFAULT_SPECS = {
     { name: 'Compatible With', required: false },
     { name: 'Expiration Date', required: false },
     // Storage
-    { name: 'Storage Requirements', required: false }
-  ]
+    { name: 'Storage Requirements', required: false },
+  ],
 };
 
 // Maintenance types
@@ -671,7 +835,7 @@ export const MAINTENANCE_TYPES = [
   'Parts Replacement',
   'Inspection',
   'Preventive Maintenance',
-  'Other'
+  'Other',
 ];
 
 // Maintenance status
@@ -712,16 +876,16 @@ export const EMPTY_RESERVATION_FORM = {
   notes: [],
   itemId: '',
   itemIds: [],
-  clientId: ''
+  clientId: '',
 };
 
 // ============================================================================
 // Kit / Container Types
 // ============================================================================
 export const KIT_TYPES = {
-  KIT: 'kit',           // A collection of items that go together (e.g., Camera Kit)
+  KIT: 'kit', // A collection of items that go together (e.g., Camera Kit)
   CONTAINER: 'container', // A physical container (e.g., Pelican Case)
-  BUNDLE: 'bundle',     // A logical grouping for checkout purposes
+  BUNDLE: 'bundle', // A logical grouping for checkout purposes
 };
 
 // ============================================================================
@@ -734,13 +898,18 @@ export const DEFAULT_LOCATIONS = [
     name: 'Studio A',
     type: 'building',
     children: [
-      { id: 'loc-studio-a-main', name: 'Main Floor', type: 'room', children: [
-        { id: 'loc-studio-a-shelf-1', name: 'Shelf 1', type: 'shelf', children: [] },
-        { id: 'loc-studio-a-shelf-2', name: 'Shelf 2', type: 'shelf', children: [] },
-        { id: 'loc-studio-a-shelf-3', name: 'Shelf 3', type: 'shelf', children: [] },
-      ]},
+      {
+        id: 'loc-studio-a-main',
+        name: 'Main Floor',
+        type: 'room',
+        children: [
+          { id: 'loc-studio-a-shelf-1', name: 'Shelf 1', type: 'shelf', children: [] },
+          { id: 'loc-studio-a-shelf-2', name: 'Shelf 2', type: 'shelf', children: [] },
+          { id: 'loc-studio-a-shelf-3', name: 'Shelf 3', type: 'shelf', children: [] },
+        ],
+      },
       { id: 'loc-studio-a-lens', name: 'Lens Cabinet', type: 'cabinet', children: [] },
-    ]
+    ],
   },
   {
     id: 'loc-studio-b',
@@ -749,7 +918,7 @@ export const DEFAULT_LOCATIONS = [
     children: [
       { id: 'loc-studio-b-camera', name: 'Camera Cage', type: 'room', children: [] },
       { id: 'loc-studio-b-gimbal', name: 'Gimbal Area', type: 'room', children: [] },
-    ]
+    ],
   },
   {
     id: 'loc-warehouse',
@@ -758,19 +927,19 @@ export const DEFAULT_LOCATIONS = [
     children: [
       { id: 'loc-warehouse-storage', name: 'Long-term Storage', type: 'room', children: [] },
       { id: 'loc-warehouse-staging', name: 'Staging Area', type: 'room', children: [] },
-    ]
+    ],
   },
   {
     id: 'loc-accessories',
     name: 'Accessories Cabinet',
     type: 'cabinet',
-    children: []
+    children: [],
   },
   {
     id: 'loc-repair',
     name: 'Repair Shop',
     type: 'external',
-    children: []
+    children: [],
   },
 ];
 

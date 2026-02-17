@@ -6,8 +6,8 @@ import { spacing } from '../../theme.js';
 // Flex - Flexbox container
 // ============================================================================
 
-export const Flex = memo(function Flex({ 
-  children, 
+export const Flex = memo(function Flex({
+  children,
   direction = 'row',
   align = 'center',
   justify = 'flex-start',

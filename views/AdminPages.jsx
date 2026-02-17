@@ -5,7 +5,7 @@
 import { memo, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Plus, Save, Trash2, GripVertical, Search } from 'lucide-react';
 import { CONDITION, DEFAULT_NEW_CATEGORY_SETTINGS } from '../constants.js';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Card, Badge, Button, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
@@ -16,18 +16,18 @@ import { SmartPasteModal } from '../modals/smartPaste/SmartPasteModal.jsx';
 // Add/Edit Item Page
 // ============================================================================
 
-export const ItemFormPage = memo(function ItemFormPage({ 
-  isEdit, 
-  itemForm, 
-  setItemForm, 
-  specs, 
-  categories, 
-  categorySettings, 
-  locations, 
-  inventory, 
-  onSave, 
+export const ItemFormPage = memo(function ItemFormPage({
+  isEdit,
+  itemForm,
+  setItemForm,
+  specs,
+  categories,
+  categorySettings,
+  locations,
+  inventory,
+  onSave,
   onBack,
-  editingItemId
+  editingItemId,
 }) {
   const [showSmartPaste, setShowSmartPaste] = useState(false);
 
@@ -53,22 +53,24 @@ export const ItemFormPage = memo(function ItemFormPage({
   });
 
   const handleSmartPasteApply = (parsed) => {
-    setItemForm(prev => ({
+    setItemForm((prev) => ({
       ...prev,
       name: parsed.name || prev.name,
       brand: parsed.brand || prev.brand,
       category: parsed.category || prev.category,
       purchasePrice: parsed.purchasePrice || prev.purchasePrice,
       currentValue: parsed.purchasePrice || prev.currentValue,
-      specs: { ...prev.specs, ...parsed.specs }
+      specs: { ...prev.specs, ...parsed.specs },
     }));
   };
 
   return (
     <>
-      <PageHeader 
+      <PageHeader
         title={isEdit ? 'Edit Item' : 'Add New Item'}
-        subtitle={isEdit ? `Editing ${itemForm.name || 'item'}` : 'Add a new item to your inventory'}
+        subtitle={
+          isEdit ? `Editing ${itemForm.name || 'item'}` : 'Add a new item to your inventory'
+        }
         onBack={onBack}
         backLabel="Back to Gear List"
       />
@@ -79,49 +81,77 @@ export const ItemFormPage = memo(function ItemFormPage({
           <div style={{ padding: spacing[5] }}>
             {/* Smart Paste Button */}
             <div style={{ marginBottom: spacing[5] }}>
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 onClick={() => setShowSmartPaste(true)}
                 style={{ width: '100%', justifyContent: 'center' }}
               >
                 📋 Smart Paste - {isEdit ? 'Update from Product Page' : 'Import from Product Page'}
               </Button>
             </div>
-            
+
             {/* Preview Code Badge */}
             {!isEdit && previewCode && (
-              <div style={{ marginBottom: spacing[5], padding: spacing[3], background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.md, display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+              <div
+                style={{
+                  marginBottom: spacing[5],
+                  padding: spacing[3],
+                  background: `${withOpacity(colors.primary, 10)}`,
+                  borderRadius: borderRadius.md,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: spacing[2],
+                }}
+              >
                 <Badge text={previewCode} color={colors.primary} />
-                <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>Auto-generated ID</span>
+                <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>
+                  Auto-generated ID
+                </span>
               </div>
             )}
 
-            <h3 style={{ margin: `0 0 ${spacing[4]}px`, color: colors.textPrimary, fontSize: typography.fontSize.lg }}>
+            <h3
+              style={{
+                margin: `0 0 ${spacing[4]}px`,
+                color: colors.textPrimary,
+                fontSize: typography.fontSize.lg,
+              }}
+            >
               Basic Information
             </h3>
-            
+
             {/* Name and Brand */}
             <div className="responsive-form-grid" style={{ marginBottom: spacing[4] }}>
               <div>
-                <label style={{ ...styles.label, color: !itemForm.name ? colors.danger : undefined }}>
+                <label
+                  style={{ ...styles.label, color: !itemForm.name ? colors.danger : undefined }}
+                >
                   Name <span style={{ color: colors.danger }}>*</span>
                 </label>
-                <input 
-                  value={itemForm.name} 
-                  onChange={e => handleChange('name', e.target.value)} 
-                  placeholder="e.g., Alpha a7 IV" 
-                  style={{ ...styles.input, borderColor: !itemForm.name ? colors.danger : colors.border }} 
+                <input
+                  value={itemForm.name}
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  placeholder="e.g., Alpha a7 IV"
+                  style={{
+                    ...styles.input,
+                    borderColor: !itemForm.name ? colors.danger : colors.border,
+                  }}
                 />
               </div>
               <div>
-                <label style={{ ...styles.label, color: !itemForm.brand ? colors.danger : undefined }}>
+                <label
+                  style={{ ...styles.label, color: !itemForm.brand ? colors.danger : undefined }}
+                >
                   Brand <span style={{ color: colors.danger }}>*</span>
                 </label>
-                <input 
-                  value={itemForm.brand} 
-                  onChange={e => handleChange('brand', e.target.value)} 
-                  placeholder="e.g., Sony" 
-                  style={{ ...styles.input, borderColor: !itemForm.brand ? colors.danger : colors.border }} 
+                <input
+                  value={itemForm.brand}
+                  onChange={(e) => handleChange('brand', e.target.value)}
+                  placeholder="e.g., Sony"
+                  style={{
+                    ...styles.input,
+                    borderColor: !itemForm.brand ? colors.danger : colors.border,
+                  }}
                 />
               </div>
             </div>
@@ -130,81 +160,119 @@ export const ItemFormPage = memo(function ItemFormPage({
             <div className="responsive-form-grid" style={{ marginBottom: spacing[4] }}>
               <div>
                 <label style={styles.label}>Category</label>
-                <Select 
-                  value={itemForm.category} 
-                  onChange={e => handleChange('category', e.target.value)} 
-                  options={categories.map(c => ({ value: c, label: c }))}
+                <Select
+                  value={itemForm.category}
+                  onChange={(e) => handleChange('category', e.target.value)}
+                  options={categories.map((c) => ({ value: c, label: c }))}
                   aria-label="Category"
                 />
               </div>
               <div>
                 <label style={styles.label}>Condition</label>
-                <Select 
-                  value={itemForm.condition} 
-                  onChange={e => handleChange('condition', e.target.value)} 
-                  options={Object.values(CONDITION).map(c => ({ value: c, label: c }))}
+                <Select
+                  value={itemForm.condition}
+                  onChange={(e) => handleChange('condition', e.target.value)}
+                  options={Object.values(CONDITION).map((c) => ({ value: c, label: c }))}
                   aria-label="Condition"
                 />
               </div>
             </div>
-            
+
             {/* Quantity fields - only if category tracks quantity */}
             {currentCategorySettings.trackQuantity && (
-              <div style={{ 
-                padding: spacing[4],
-                marginBottom: spacing[4],
-                background: `${withOpacity(colors.accent2, 10)}`,
-                borderRadius: borderRadius.md,
-                border: `1px solid ${withOpacity(colors.accent2, 30)}`,
-              }}>
+              <div
+                style={{
+                  padding: spacing[4],
+                  marginBottom: spacing[4],
+                  background: `${withOpacity(colors.accent2, 10)}`,
+                  borderRadius: borderRadius.md,
+                  border: `1px solid ${withOpacity(colors.accent2, 30)}`,
+                }}
+              >
                 <div className="responsive-form-grid">
                   <div>
                     <label style={styles.label}>
                       Quantity
-                      <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.normal, marginLeft: spacing[1] }}>
+                      <span
+                        style={{
+                          fontSize: typography.fontSize.xs,
+                          color: colors.textMuted,
+                          fontWeight: typography.fontWeight.normal,
+                          marginLeft: spacing[1],
+                        }}
+                      >
                         (this category tracks quantities)
                       </span>
                     </label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       min="0"
-                      value={itemForm.quantity || 1} 
-                      onChange={e => handleChange('quantity', Math.max(0, parseInt(e.target.value) || 0))} 
-                      style={styles.input} 
+                      value={itemForm.quantity || 1}
+                      onChange={(e) =>
+                        handleChange('quantity', Math.max(0, parseInt(e.target.value) || 0))
+                      }
+                      style={styles.input}
                     />
                   </div>
                   <div>
                     <label style={styles.label}>
                       Reorder Point
-                      <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.normal, marginLeft: spacing[1] }}>
+                      <span
+                        style={{
+                          fontSize: typography.fontSize.xs,
+                          color: colors.textMuted,
+                          fontWeight: typography.fontWeight.normal,
+                          marginLeft: spacing[1],
+                        }}
+                      >
                         (alert when below)
                       </span>
                     </label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       min="0"
-                      value={itemForm.reorderPoint || 0} 
-                      onChange={e => handleChange('reorderPoint', Math.max(0, parseInt(e.target.value) || 0))} 
-                      style={styles.input} 
+                      value={itemForm.reorderPoint || 0}
+                      onChange={(e) =>
+                        handleChange('reorderPoint', Math.max(0, parseInt(e.target.value) || 0))
+                      }
+                      style={styles.input}
                     />
                   </div>
                 </div>
               </div>
             )}
 
-            <h3 style={{ margin: `${spacing[5]}px 0 ${spacing[4]}px`, color: colors.textPrimary, fontSize: typography.fontSize.lg }}>
+            <h3
+              style={{
+                margin: `${spacing[5]}px 0 ${spacing[4]}px`,
+                color: colors.textPrimary,
+                fontSize: typography.fontSize.lg,
+              }}
+            >
               Value & Location
             </h3>
-            
+
             {/* Purchase Price and Current Value */}
             <div className="responsive-form-grid" style={{ marginBottom: spacing[4] }}>
               <div>
                 <label style={styles.label}>Purchase Price</label>
-                <input type="number" value={itemForm.purchasePrice} onChange={e => handleChange('purchasePrice', e.target.value)} placeholder="0.00" style={styles.input} />
+                <input
+                  type="number"
+                  value={itemForm.purchasePrice}
+                  onChange={(e) => handleChange('purchasePrice', e.target.value)}
+                  placeholder="0.00"
+                  style={styles.input}
+                />
               </div>
               <div>
                 <label style={styles.label}>Current Value</label>
-                <input type="number" value={itemForm.currentValue} onChange={e => handleChange('currentValue', e.target.value)} placeholder="0.00" style={styles.input} />
+                <input
+                  type="number"
+                  value={itemForm.currentValue}
+                  onChange={(e) => handleChange('currentValue', e.target.value)}
+                  placeholder="0.00"
+                  style={styles.input}
+                />
               </div>
             </div>
 
@@ -213,39 +281,67 @@ export const ItemFormPage = memo(function ItemFormPage({
               <div>
                 <label style={styles.label}>Location</label>
                 {flattenedLocations.length > 0 ? (
-                  <Select 
-                    value={itemForm.location || ''} 
-                    onChange={e => handleChange('location', e.target.value)} 
+                  <Select
+                    value={itemForm.location || ''}
+                    onChange={(e) => handleChange('location', e.target.value)}
                     options={[
                       { value: '', label: 'Select location...' },
-                      ...flattenedLocations.map(loc => ({ value: loc.fullPath, label: loc.fullPath }))
+                      ...flattenedLocations.map((loc) => ({
+                        value: loc.fullPath,
+                        label: loc.fullPath,
+                      })),
                     ]}
                     aria-label="Location"
                   />
                 ) : (
-                  <input value={itemForm.location} onChange={e => handleChange('location', e.target.value)} placeholder="e.g., Shelf A-1" style={styles.input} />
+                  <input
+                    value={itemForm.location}
+                    onChange={(e) => handleChange('location', e.target.value)}
+                    placeholder="e.g., Shelf A-1"
+                    style={styles.input}
+                  />
                 )}
               </div>
               <div>
-                <label style={{ 
-                  ...styles.label, 
-                  color: (currentCategorySettings.trackSerialNumbers && !itemForm.serialNumber) || duplicateSerialNumber ? colors.danger : undefined 
-                }}>
+                <label
+                  style={{
+                    ...styles.label,
+                    color:
+                      (currentCategorySettings.trackSerialNumbers && !itemForm.serialNumber) ||
+                      duplicateSerialNumber
+                        ? colors.danger
+                        : undefined,
+                  }}
+                >
                   Serial Number
-                  {currentCategorySettings.trackSerialNumbers && <span style={{ color: colors.danger, marginLeft: spacing[1] }}>*</span>}
+                  {currentCategorySettings.trackSerialNumbers && (
+                    <span style={{ color: colors.danger, marginLeft: spacing[1] }}>*</span>
+                  )}
                 </label>
-                <input 
-                  value={itemForm.serialNumber} 
-                  onChange={e => handleChange('serialNumber', e.target.value)} 
-                  placeholder={currentCategorySettings.trackSerialNumbers ? "Required" : "Optional"} 
-                  style={{ 
-                    ...styles.input, 
-                    borderColor: (currentCategorySettings.trackSerialNumbers && !itemForm.serialNumber) || duplicateSerialNumber ? colors.danger : colors.border 
-                  }} 
+                <input
+                  value={itemForm.serialNumber}
+                  onChange={(e) => handleChange('serialNumber', e.target.value)}
+                  placeholder={currentCategorySettings.trackSerialNumbers ? 'Required' : 'Optional'}
+                  style={{
+                    ...styles.input,
+                    borderColor:
+                      (currentCategorySettings.trackSerialNumbers && !itemForm.serialNumber) ||
+                      duplicateSerialNumber
+                        ? colors.danger
+                        : colors.border,
+                  }}
                 />
                 {duplicateSerialNumber && (
-                  <span style={{ color: colors.danger, fontSize: typography.fontSize.xs, display: 'block', marginTop: spacing[1] }}>
-                    Serial number already exists on &quot;{duplicateSerialNumber.name}&quot; ({duplicateSerialNumber.id})
+                  <span
+                    style={{
+                      color: colors.danger,
+                      fontSize: typography.fontSize.xs,
+                      display: 'block',
+                      marginTop: spacing[1],
+                    }}
+                  >
+                    Serial number already exists on &quot;{duplicateSerialNumber.name}&quot; (
+                    {duplicateSerialNumber.id})
                   </span>
                 )}
               </div>
@@ -254,17 +350,28 @@ export const ItemFormPage = memo(function ItemFormPage({
             {/* Purchase Date */}
             <div style={{ marginBottom: spacing[4] }}>
               <label style={styles.label}>Purchase Date</label>
-              <DatePicker 
-                value={itemForm.purchaseDate} 
-                onChange={e => handleChange('purchaseDate', e.target.value)} 
+              <DatePicker
+                value={itemForm.purchaseDate}
+                onChange={(e) => handleChange('purchaseDate', e.target.value)}
                 placeholder="Select purchase date"
                 aria-label="Purchase date"
               />
             </div>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end', marginTop: spacing[6], paddingTop: spacing[4], borderTop: `1px solid ${colors.borderLight}` }}>
-              <Button variant="secondary" onClick={onBack}>Cancel</Button>
+            <div
+              style={{
+                display: 'flex',
+                gap: spacing[3],
+                justifyContent: 'flex-end',
+                marginTop: spacing[6],
+                paddingTop: spacing[4],
+                borderTop: `1px solid ${colors.borderLight}`,
+              }}
+            >
+              <Button variant="secondary" onClick={onBack}>
+                Cancel
+              </Button>
               <Button onClick={onSave} disabled={!isValid} icon={isEdit ? Save : Plus}>
                 {isEdit ? 'Save Changes' : 'Add Item'}
               </Button>
@@ -277,55 +384,94 @@ export const ItemFormPage = memo(function ItemFormPage({
           {categorySpecs.length > 0 && (
             <Card>
               <div style={{ padding: spacing[5] }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[4] }}>
-                  <h3 style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: spacing[4],
+                  }}
+                >
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: typography.fontSize.lg,
+                      color: colors.textPrimary,
+                    }}
+                  >
                     Specifications
                   </h3>
                   <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                    {categorySpecs.filter(s => s.required).length} required / {categorySpecs.length} total
+                    {categorySpecs.filter((s) => s.required).length} required /{' '}
+                    {categorySpecs.length} total
                   </span>
                 </div>
-                
+
                 {/* Required fields first */}
-                {categorySpecs.filter(s => s.required).length > 0 && (
+                {categorySpecs.filter((s) => s.required).length > 0 && (
                   <div style={{ marginBottom: spacing[4] }}>
-                    <div style={{ fontSize: typography.fontSize.xs, color: colors.primary, marginBottom: spacing[2], fontWeight: typography.fontWeight.medium }}>
+                    <div
+                      style={{
+                        fontSize: typography.fontSize.xs,
+                        color: colors.primary,
+                        marginBottom: spacing[2],
+                        fontWeight: typography.fontWeight.medium,
+                      }}
+                    >
                       Required Fields
                     </div>
-                    {categorySpecs.filter(s => s.required).map(spec => {
-                      const isEmpty = !itemForm.specs[spec.name];
-                      return (
-                        <div key={spec.name} style={{ marginBottom: spacing[3] }}>
-                          <label style={{ ...styles.label, color: isEmpty ? colors.danger : undefined }}>
-                            {spec.name} <span style={{ color: colors.danger }}>*</span>
-                          </label>
-                          <input 
-                            value={itemForm.specs[spec.name] || ''} 
-                            onChange={e => handleSpecChange(spec.name, e.target.value)} 
-                            style={{ ...styles.input, borderColor: isEmpty ? colors.danger : colors.border }} 
-                          />
-                        </div>
-                      );
-                    })}
+                    {categorySpecs
+                      .filter((s) => s.required)
+                      .map((spec) => {
+                        const isEmpty = !itemForm.specs[spec.name];
+                        return (
+                          <div key={spec.name} style={{ marginBottom: spacing[3] }}>
+                            <label
+                              style={{
+                                ...styles.label,
+                                color: isEmpty ? colors.danger : undefined,
+                              }}
+                            >
+                              {spec.name} <span style={{ color: colors.danger }}>*</span>
+                            </label>
+                            <input
+                              value={itemForm.specs[spec.name] || ''}
+                              onChange={(e) => handleSpecChange(spec.name, e.target.value)}
+                              style={{
+                                ...styles.input,
+                                borderColor: isEmpty ? colors.danger : colors.border,
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
                   </div>
                 )}
-                
+
                 {/* Optional fields */}
-                {categorySpecs.filter(s => !s.required).length > 0 && (
+                {categorySpecs.filter((s) => !s.required).length > 0 && (
                   <div>
-                    <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginBottom: spacing[2] }}>
+                    <div
+                      style={{
+                        fontSize: typography.fontSize.xs,
+                        color: colors.textMuted,
+                        marginBottom: spacing[2],
+                      }}
+                    >
                       Optional Fields
                     </div>
-                    {categorySpecs.filter(s => !s.required).map(spec => (
-                      <div key={spec.name} style={{ marginBottom: spacing[3] }}>
-                        <label style={styles.label}>{spec.name}</label>
-                        <input 
-                          value={itemForm.specs[spec.name] || ''} 
-                          onChange={e => handleSpecChange(spec.name, e.target.value)} 
-                          style={styles.input} 
-                        />
-                      </div>
-                    ))}
+                    {categorySpecs
+                      .filter((s) => !s.required)
+                      .map((spec) => (
+                        <div key={spec.name} style={{ marginBottom: spacing[3] }}>
+                          <label style={styles.label}>{spec.name}</label>
+                          <input
+                            value={itemForm.specs[spec.name] || ''}
+                            onChange={(e) => handleSpecChange(spec.name, e.target.value)}
+                            style={styles.input}
+                          />
+                        </div>
+                      ))}
                   </div>
                 )}
               </div>
@@ -391,52 +537,55 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
     if (key === 'name') {
       const oldName = editSpecs[selectedCategory]?.[index]?.name;
       if (oldName && oldName !== value) {
-        setFieldRenames(prev => {
+        setFieldRenames((prev) => {
           const catRenames = { ...(prev[selectedCategory] || {}) };
           // Find original name (handle chained renames)
-          const originalName = Object.keys(catRenames).find(k => catRenames[k] === oldName);
+          const originalName = Object.keys(catRenames).find((k) => catRenames[k] === oldName);
           const origSpecs = specs[selectedCategory] || [];
           if (originalName) {
             catRenames[originalName] = value;
-          } else if (origSpecs.some(f => f.name === oldName)) {
+          } else if (origSpecs.some((f) => f.name === oldName)) {
             catRenames[oldName] = value;
           }
           return { ...prev, [selectedCategory]: catRenames };
         });
       }
     }
-    setEditSpecs(prev => ({
+    setEditSpecs((prev) => ({
       ...prev,
       [selectedCategory]: prev[selectedCategory].map((field, i) =>
-        i === index ? { ...field, [key]: value } : field
-      )
+        i === index ? { ...field, [key]: value } : field,
+      ),
     }));
   };
 
   const [duplicateError, setDuplicateError] = useState('');
 
-  const isDuplicateFieldName = useCallback((name, excludeIndex = -1) => {
-    const trimmed = name.trim().toLowerCase();
-    if (!trimmed) return false;
-    return (editSpecs[selectedCategory] || []).some((field, i) => 
-      i !== excludeIndex && field.name.trim().toLowerCase() === trimmed
-    );
-  }, [editSpecs, selectedCategory]);
+  const isDuplicateFieldName = useCallback(
+    (name, excludeIndex = -1) => {
+      const trimmed = name.trim().toLowerCase();
+      if (!trimmed) return false;
+      return (editSpecs[selectedCategory] || []).some(
+        (field, i) => i !== excludeIndex && field.name.trim().toLowerCase() === trimmed,
+      );
+    },
+    [editSpecs, selectedCategory],
+  );
 
   const handleAddField = () => {
     const name = newFieldName.trim();
     if (!name) return;
-    
+
     if (isDuplicateFieldName(name)) {
       setDuplicateError(`"${name}" already exists in this category`);
       return;
     }
-    
+
     setDuplicateError('');
     const newIndex = (editSpecs[selectedCategory] || []).length;
-    setEditSpecs(prev => ({
+    setEditSpecs((prev) => ({
       ...prev,
-      [selectedCategory]: [...(prev[selectedCategory] || []), { name, required: false }]
+      [selectedCategory]: [...(prev[selectedCategory] || []), { name, required: false }],
     }));
     setNewFieldName('');
     setShowAddForm(false);
@@ -452,9 +601,9 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
   };
 
   const removeField = (index) => {
-    setEditSpecs(prev => ({
+    setEditSpecs((prev) => ({
       ...prev,
-      [selectedCategory]: prev[selectedCategory].filter((_, i) => i !== index)
+      [selectedCategory]: prev[selectedCategory].filter((_, i) => i !== index),
     }));
     if (newlyAddedIndex === index) setNewlyAddedIndex(null);
   };
@@ -493,7 +642,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
       return;
     }
 
-    setEditSpecs(prev => {
+    setEditSpecs((prev) => {
       const arr = [...prev[selectedCategory]];
       const [draggedItem] = arr.splice(draggedIndex, 1);
       arr.splice(targetIndex, 0, draggedItem);
@@ -503,29 +652,30 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
   };
 
   const toggleAllRequired = (value) => {
-    setEditSpecs(prev => ({
+    setEditSpecs((prev) => ({
       ...prev,
-      [selectedCategory]: prev[selectedCategory].map(field => ({ ...field, required: value }))
+      [selectedCategory]: prev[selectedCategory].map((field) => ({ ...field, required: value })),
     }));
   };
 
   const currentSpecs = editSpecs[selectedCategory] || [];
-  
+
   const filteredSpecs = currentSpecs
     .map((field, index) => ({ ...field, originalIndex: index }))
-    .filter(field => {
-      if (searchFilter && !field.name.toLowerCase().includes(searchFilter.toLowerCase())) return false;
+    .filter((field) => {
+      if (searchFilter && !field.name.toLowerCase().includes(searchFilter.toLowerCase()))
+        return false;
       if (showOnlyRequired && !field.required) return false;
       return true;
     });
 
-  const requiredCount = currentSpecs.filter(f => f.required).length;
+  const requiredCount = currentSpecs.filter((f) => f.required).length;
   const canDrag = !searchFilter && !showOnlyRequired;
 
   // Check for any duplicate field names across all categories
   const hasDuplicates = useMemo(() => {
-    return Object.values(editSpecs).some(fields => {
-      const names = fields.map(f => f.name.trim().toLowerCase()).filter(Boolean);
+    return Object.values(editSpecs).some((fields) => {
+      const names = fields.map((f) => f.name.trim().toLowerCase()).filter(Boolean);
       return names.length !== new Set(names).size;
     });
   }, [editSpecs]);
@@ -538,7 +688,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
 
   return (
     <>
-      <PageHeader 
+      <PageHeader
         title="Edit Specifications"
         subtitle="Define the specification fields for each equipment category"
         onBack={onBack}
@@ -555,21 +705,39 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
         <Card>
           <div style={{ padding: spacing[5] }}>
             {/* Category selector */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: spacing[3], marginBottom: spacing[4] }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr auto',
+                gap: spacing[3],
+                marginBottom: spacing[4],
+              }}
+            >
               <div>
                 <label style={styles.label}>Category</label>
-                <Select 
-                  value={selectedCategory} 
-                  onChange={e => { setSelectedCategory(e.target.value); setSearchFilter(''); }}
-                  options={Object.keys(editSpecs).map(cat => ({ 
-                    value: cat, 
-                    label: `${cat} (${editSpecs[cat]?.length || 0} fields)` 
+                <Select
+                  value={selectedCategory}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value);
+                    setSearchFilter('');
+                  }}
+                  options={Object.keys(editSpecs).map((cat) => ({
+                    value: cat,
+                    label: `${cat} (${editSpecs[cat]?.length || 0} fields)`,
                   }))}
                   aria-label="Category"
                 />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                <div style={{ padding: `${spacing[2]}px ${spacing[3]}px`, background: colors.bgLight, borderRadius: borderRadius.md, fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
+                <div
+                  style={{
+                    padding: `${spacing[2]}px ${spacing[3]}px`,
+                    background: colors.bgLight,
+                    borderRadius: borderRadius.md,
+                    fontSize: typography.fontSize.sm,
+                    color: colors.textSecondary,
+                  }}
+                >
                   {requiredCount} required / {currentSpecs.length} total
                 </div>
               </div>
@@ -578,30 +746,59 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
             {/* Add New Field */}
             <div style={{ marginBottom: spacing[4] }}>
               {!showAddForm ? (
-                <Button variant="secondary" onClick={() => setShowAddForm(true)} icon={Plus} style={{ width: '100%', justifyContent: 'center' }}>
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowAddForm(true)}
+                  icon={Plus}
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
                   New Specification Field
                 </Button>
               ) : (
-                <div style={{ padding: spacing[3], background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.md, border: `1px solid ${withOpacity(colors.primary, 30)}` }}>
+                <div
+                  style={{
+                    padding: spacing[3],
+                    background: `${withOpacity(colors.primary, 10)}`,
+                    borderRadius: borderRadius.md,
+                    border: `1px solid ${withOpacity(colors.primary, 30)}`,
+                  }}
+                >
                   <label style={styles.label}>New Field Name</label>
                   <div style={{ display: 'flex', gap: spacing[2] }}>
                     <input
                       ref={addInputRef}
                       type="text"
                       value={newFieldName}
-                      onChange={e => { setNewFieldName(e.target.value); setDuplicateError(''); }}
-                      onKeyDown={e => {
+                      onChange={(e) => {
+                        setNewFieldName(e.target.value);
+                        setDuplicateError('');
+                      }}
+                      onKeyDown={(e) => {
                         if (e.key === 'Enter') handleAddField();
                         if (e.key === 'Escape') handleCancelAdd();
                       }}
                       placeholder="Enter field name..."
-                      style={{ ...styles.input, flex: 1, borderColor: duplicateError ? colors.danger : undefined }}
+                      style={{
+                        ...styles.input,
+                        flex: 1,
+                        borderColor: duplicateError ? colors.danger : undefined,
+                      }}
                     />
-                    <Button onClick={handleAddField} icon={Plus}>Add</Button>
-                    <Button variant="secondary" onClick={handleCancelAdd}>Cancel</Button>
+                    <Button onClick={handleAddField} icon={Plus}>
+                      Add
+                    </Button>
+                    <Button variant="secondary" onClick={handleCancelAdd}>
+                      Cancel
+                    </Button>
                   </div>
                   {duplicateError && (
-                    <div style={{ fontSize: typography.fontSize.xs, color: colors.danger, marginTop: spacing[1] }}>
+                    <div
+                      style={{
+                        fontSize: typography.fontSize.xs,
+                        color: colors.danger,
+                        marginTop: spacing[1],
+                      }}
+                    >
                       {duplicateError}
                     </div>
                   )}
@@ -610,18 +807,48 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
             </div>
 
             {/* Search & Filters */}
-            <div style={{ display: 'flex', gap: spacing[3], marginBottom: spacing[4], alignItems: 'center' }}>
+            <div
+              style={{
+                display: 'flex',
+                gap: spacing[3],
+                marginBottom: spacing[4],
+                alignItems: 'center',
+              }}
+            >
               <div style={{ flex: 1, position: 'relative' }}>
-                <Search size={16} style={{ position: 'absolute', left: spacing[3], top: '50%', transform: 'translateY(-50%)', color: colors.textMuted }} />
+                <Search
+                  size={16}
+                  style={{
+                    position: 'absolute',
+                    left: spacing[3],
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: colors.textMuted,
+                  }}
+                />
                 <input
                   value={searchFilter}
-                  onChange={e => setSearchFilter(e.target.value)}
+                  onChange={(e) => setSearchFilter(e.target.value)}
                   placeholder="Filter fields..."
                   style={{ ...styles.input, paddingLeft: spacing[8] }}
                 />
               </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: spacing[2], cursor: 'pointer', fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
-                <input type="checkbox" checked={showOnlyRequired} onChange={e => setShowOnlyRequired(e.target.checked)} />
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: spacing[2],
+                  cursor: 'pointer',
+                  fontSize: typography.fontSize.sm,
+                  color: colors.textSecondary,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={showOnlyRequired}
+                  onChange={(e) => setShowOnlyRequired(e.target.checked)}
+                  style={{ accentColor: colors.primary }}
+                />
                 Required only
               </label>
             </div>
@@ -630,38 +857,52 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
             <div ref={listRef} style={{ maxHeight: '50vh', overflowY: 'auto' }}>
               {filteredSpecs.length === 0 ? (
                 <div style={{ textAlign: 'center', color: colors.textMuted, padding: spacing[6] }}>
-                  {searchFilter || showOnlyRequired ? 'No fields match your filter' : 'No specification fields defined'}
+                  {searchFilter || showOnlyRequired
+                    ? 'No fields match your filter'
+                    : 'No specification fields defined'}
                 </div>
               ) : (
                 filteredSpecs.map((field) => {
                   const isNew = field.originalIndex === newlyAddedIndex;
                   const isDragOver = dragOverIndex === field.originalIndex;
-                  
+
                   return (
                     <div
                       key={field.originalIndex}
                       ref={isNew ? newItemRef : null}
                       draggable={canDrag}
-                      onDragStart={e => canDrag && handleDragStart(e, field.originalIndex)}
+                      onDragStart={(e) => canDrag && handleDragStart(e, field.originalIndex)}
                       onDragEnd={handleDragEnd}
-                      onDragOver={e => canDrag && handleDragOver(e, field.originalIndex)}
+                      onDragOver={(e) => canDrag && handleDragOver(e, field.originalIndex)}
                       onDragLeave={handleDragLeave}
-                      onDrop={e => canDrag && handleDrop(e, field.originalIndex)}
+                      onDrop={(e) => canDrag && handleDrop(e, field.originalIndex)}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: spacing[3],
                         padding: spacing[3],
-                        background: isNew ? `${withOpacity(colors.success, 15)}` : isDragOver ? `${withOpacity(colors.primary, 15)}` : colors.bgLight,
+                        background: isNew
+                          ? `${withOpacity(colors.success, 15)}`
+                          : isDragOver
+                            ? `${withOpacity(colors.primary, 15)}`
+                            : colors.bgLight,
                         borderRadius: borderRadius.md,
                         marginBottom: spacing[2],
-                        border: isDragOver ? `2px dashed ${colors.primary}` : isNew ? `1px solid ${withOpacity(colors.success, 50)}` : `1px solid transparent`,
+                        border: isDragOver
+                          ? `2px dashed ${colors.primary}`
+                          : isNew
+                            ? `1px solid ${withOpacity(colors.success, 50)}`
+                            : `1px solid transparent`,
                         cursor: canDrag ? 'grab' : 'default',
-                        transition: 'all 150ms ease'
+                        transition: 'all 150ms ease',
                       }}
                     >
                       {canDrag && (
-                        <GripVertical size={16} color={colors.textMuted} style={{ flexShrink: 0, cursor: 'grab' }} />
+                        <GripVertical
+                          size={16}
+                          color={colors.textMuted}
+                          style={{ flexShrink: 0, cursor: 'grab' }}
+                        />
                       )}
                       {(() => {
                         const isDup = isDuplicateFieldName(field.name, field.originalIndex);
@@ -670,28 +911,62 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
                             <input
                               type="text"
                               value={field.name}
-                              onChange={e => handleFieldChange(field.originalIndex, 'name', e.target.value)}
-                              style={{ ...styles.input, width: '100%', borderColor: isDup ? colors.danger : undefined }}
+                              onChange={(e) =>
+                                handleFieldChange(field.originalIndex, 'name', e.target.value)
+                              }
+                              style={{
+                                ...styles.input,
+                                width: '100%',
+                                borderColor: isDup ? colors.danger : undefined,
+                              }}
                             />
                             {isDup && (
-                              <div style={{ fontSize: typography.fontSize.xs, color: colors.danger, marginTop: 2 }}>
+                              <div
+                                style={{
+                                  fontSize: typography.fontSize.xs,
+                                  color: colors.danger,
+                                  marginTop: 2,
+                                }}
+                              >
                                 Duplicate field name
                               </div>
                             )}
                           </div>
                         );
                       })()}
-                      <label style={{ display: 'flex', alignItems: 'center', gap: spacing[1], cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: spacing[1],
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
                         <input
                           type="checkbox"
                           checked={field.required}
-                          onChange={e => handleFieldChange(field.originalIndex, 'required', e.target.checked)}
+                          onChange={(e) =>
+                            handleFieldChange(field.originalIndex, 'required', e.target.checked)
+                          }
+                          style={{ accentColor: colors.primary }}
                         />
-                        <span style={{ fontSize: typography.fontSize.xs, color: colors.textSecondary }}>Required</span>
+                        <span
+                          style={{ fontSize: typography.fontSize.xs, color: colors.textSecondary }}
+                        >
+                          Required
+                        </span>
                       </label>
                       <button
                         onClick={() => removeField(field.originalIndex)}
-                        style={{ background: 'none', border: 'none', padding: spacing[1], cursor: 'pointer', color: colors.danger, display: 'flex' }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: spacing[1],
+                          cursor: 'pointer',
+                          color: colors.danger,
+                          display: 'flex',
+                        }}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -707,21 +982,49 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
         <div>
           <Card>
             <div style={{ padding: spacing[5] }}>
-              <h3 style={{ margin: `0 0 ${spacing[4]}px`, fontSize: typography.fontSize.lg, color: colors.textPrimary }}>
+              <h3
+                style={{
+                  margin: `0 0 ${spacing[4]}px`,
+                  fontSize: typography.fontSize.lg,
+                  color: colors.textPrimary,
+                }}
+              >
                 Quick Actions
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-                <Button variant="secondary" onClick={() => toggleAllRequired(true)} style={{ justifyContent: 'center' }}>
+                <Button
+                  variant="secondary"
+                  onClick={() => toggleAllRequired(true)}
+                  style={{ justifyContent: 'center' }}
+                >
                   Mark All Required
                 </Button>
-                <Button variant="secondary" onClick={() => toggleAllRequired(false)} style={{ justifyContent: 'center' }}>
+                <Button
+                  variant="secondary"
+                  onClick={() => toggleAllRequired(false)}
+                  style={{ justifyContent: 'center' }}
+                >
                   Mark All Optional
                 </Button>
               </div>
-              
-              <div style={{ marginTop: spacing[5], padding: spacing[3], background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.md }}>
-                <p style={{ margin: 0, fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
-                  <strong style={{ color: colors.textPrimary }}>Tip:</strong> Drag fields to reorder them. Required fields appear first when adding items.
+
+              <div
+                style={{
+                  marginTop: spacing[5],
+                  padding: spacing[3],
+                  background: `${withOpacity(colors.primary, 10)}`,
+                  borderRadius: borderRadius.md,
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: typography.fontSize.sm,
+                    color: colors.textSecondary,
+                  }}
+                >
+                  <strong style={{ color: colors.textPrimary }}>Tip:</strong> Drag fields to reorder
+                  them. Required fields appear first when adding items.
                 </p>
               </div>
             </div>
@@ -736,13 +1039,13 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
 // Edit Categories Page
 // ============================================================================
 
-export const CategoriesPage = memo(function CategoriesPage({ 
-  categories, 
-  inventory, 
-  specs, 
-  categorySettings, 
-  onSave, 
-  onBack 
+export const CategoriesPage = memo(function CategoriesPage({
+  categories,
+  inventory,
+  specs,
+  categorySettings,
+  onSave,
+  onBack,
 }) {
   const [editCategories, setEditCategories] = useState([...categories]);
   const [editSettings, setEditSettings] = useState(structuredClone(categorySettings || {}));
@@ -763,20 +1066,20 @@ export const CategoriesPage = memo(function CategoriesPage({
     }
   }, [showAddForm]);
 
-  const getCategoryCount = (category) => inventory.filter(i => i.category === category).length;
+  const getCategoryCount = (category) => inventory.filter((i) => i.category === category).length;
 
   const handleAddCategory = () => {
     const name = newCategoryName.trim();
     if (!name) return;
-    if (editCategories.some(c => c.toLowerCase() === name.toLowerCase())) {
+    if (editCategories.some((c) => c.toLowerCase() === name.toLowerCase())) {
       setCategoryError(`"${name}" already exists`);
       return;
     }
-    
+
     setCategoryError('');
-    setEditCategories(prev => [...prev, name]);
-    setEditSpecs(prev => ({ ...prev, [name]: [] }));
-    setEditSettings(prev => ({ ...prev, [name]: { ...DEFAULT_NEW_CATEGORY_SETTINGS } }));
+    setEditCategories((prev) => [...prev, name]);
+    setEditSpecs((prev) => ({ ...prev, [name]: [] }));
+    setEditSettings((prev) => ({ ...prev, [name]: { ...DEFAULT_NEW_CATEGORY_SETTINGS } }));
     setNewCategoryName('');
     setShowAddForm(false);
   };
@@ -784,16 +1087,18 @@ export const CategoriesPage = memo(function CategoriesPage({
   const handleRemoveCategory = (category) => {
     const count = getCategoryCount(category);
     if (count > 0) {
-      setCategoryError(`Cannot delete "${category}" — it has ${count} item(s). Reassign items first.`);
+      setCategoryError(
+        `Cannot delete "${category}" — it has ${count} item(s). Reassign items first.`,
+      );
       return;
     }
-    setEditCategories(prev => prev.filter(c => c !== category));
-    setEditSpecs(prev => {
+    setEditCategories((prev) => prev.filter((c) => c !== category));
+    setEditSpecs((prev) => {
       const copy = { ...prev };
       delete copy[category];
       return copy;
     });
-    setEditSettings(prev => {
+    setEditSettings((prev) => {
       const copy = { ...prev };
       delete copy[category];
       return copy;
@@ -803,8 +1108,8 @@ export const CategoriesPage = memo(function CategoriesPage({
   const handleRenameCategory = (oldName, newName) => {
     if (!newName.trim()) return;
     // Allow typing — duplicate check is visual only (blocks save)
-    setEditCategories(prev => prev.map(c => c === oldName ? newName : c));
-    setEditSpecs(prev => {
+    setEditCategories((prev) => prev.map((c) => (c === oldName ? newName : c)));
+    setEditSpecs((prev) => {
       const copy = { ...prev };
       if (oldName !== newName) {
         copy[newName] = copy[oldName] || [];
@@ -812,7 +1117,7 @@ export const CategoriesPage = memo(function CategoriesPage({
       }
       return copy;
     });
-    setEditSettings(prev => {
+    setEditSettings((prev) => {
       const copy = { ...prev };
       if (oldName !== newName) {
         copy[newName] = copy[oldName] || { ...DEFAULT_NEW_CATEGORY_SETTINGS };
@@ -822,10 +1127,10 @@ export const CategoriesPage = memo(function CategoriesPage({
     });
     // Track rename: find the original name that maps to oldName
     if (oldName !== newName) {
-      setCategoryRenames(prev => {
+      setCategoryRenames((prev) => {
         const updated = { ...prev };
         // Check if oldName is itself a rename target (chained renames)
-        const originalName = Object.keys(updated).find(k => updated[k] === oldName);
+        const originalName = Object.keys(updated).find((k) => updated[k] === oldName);
         if (originalName) {
           // Update the existing chain: original → newName
           updated[originalName] = newName;
@@ -839,7 +1144,7 @@ export const CategoriesPage = memo(function CategoriesPage({
   };
 
   const hasDuplicateCategories = useMemo(() => {
-    const names = editCategories.map(c => c.trim().toLowerCase()).filter(Boolean);
+    const names = editCategories.map((c) => c.trim().toLowerCase()).filter(Boolean);
     return names.length !== new Set(names).size;
   }, [editCategories]);
 
@@ -850,9 +1155,9 @@ export const CategoriesPage = memo(function CategoriesPage({
   };
 
   const handleSettingChange = (category, setting, value) => {
-    setEditSettings(prev => ({
+    setEditSettings((prev) => ({
       ...prev,
-      [category]: { ...(prev[category] || {}), [setting]: value }
+      [category]: { ...(prev[category] || {}), [setting]: value },
     }));
   };
 
@@ -890,7 +1195,7 @@ export const CategoriesPage = memo(function CategoriesPage({
       return;
     }
 
-    setEditCategories(prev => {
+    setEditCategories((prev) => {
       const arr = [...prev];
       const [draggedItem] = arr.splice(draggedIndex, 1);
       arr.splice(targetIndex, 0, draggedItem);
@@ -920,34 +1225,82 @@ export const CategoriesPage = memo(function CategoriesPage({
       />
 
       <Card style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-        <div style={{ padding: spacing[5], flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <div
+          style={{
+            padding: spacing[5],
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+          }}
+        >
           {/* Add New Category */}
           <div style={{ marginBottom: spacing[5], flexShrink: 0 }}>
             {!showAddForm ? (
-              <Button variant="secondary" onClick={() => setShowAddForm(true)} icon={Plus} style={{ width: '100%', justifyContent: 'center' }}>
+              <Button
+                variant="secondary"
+                onClick={() => setShowAddForm(true)}
+                icon={Plus}
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
                 Add New Category
               </Button>
             ) : (
-              <div style={{ padding: spacing[3], background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.md, border: `1px solid ${withOpacity(colors.primary, 30)}` }}>
+              <div
+                style={{
+                  padding: spacing[3],
+                  background: `${withOpacity(colors.primary, 10)}`,
+                  borderRadius: borderRadius.md,
+                  border: `1px solid ${withOpacity(colors.primary, 30)}`,
+                }}
+              >
                 <label style={styles.label}>New Category Name</label>
                 <div style={{ display: 'flex', gap: spacing[2] }}>
                   <input
                     ref={addInputRef}
                     type="text"
                     value={newCategoryName}
-                    onChange={e => { setNewCategoryName(e.target.value); setCategoryError(''); }}
-                    onKeyDown={e => {
+                    onChange={(e) => {
+                      setNewCategoryName(e.target.value);
+                      setCategoryError('');
+                    }}
+                    onKeyDown={(e) => {
                       if (e.key === 'Enter') handleAddCategory();
-                      if (e.key === 'Escape') { setShowAddForm(false); setNewCategoryName(''); setCategoryError(''); }
+                      if (e.key === 'Escape') {
+                        setShowAddForm(false);
+                        setNewCategoryName('');
+                        setCategoryError('');
+                      }
                     }}
                     placeholder="Enter category name..."
-                    style={{ ...styles.input, flex: 1, borderColor: categoryError ? colors.danger : undefined }}
+                    style={{
+                      ...styles.input,
+                      flex: 1,
+                      borderColor: categoryError ? colors.danger : undefined,
+                    }}
                   />
-                  <Button onClick={handleAddCategory} icon={Plus}>Add</Button>
-                  <Button variant="secondary" onClick={() => { setShowAddForm(false); setNewCategoryName(''); setCategoryError(''); }}>Cancel</Button>
+                  <Button onClick={handleAddCategory} icon={Plus}>
+                    Add
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setShowAddForm(false);
+                      setNewCategoryName('');
+                      setCategoryError('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
                 </div>
                 {categoryError && (
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.danger, marginTop: spacing[1] }}>
+                  <div
+                    style={{
+                      fontSize: typography.fontSize.xs,
+                      color: colors.danger,
+                      marginTop: spacing[1],
+                    }}
+                  >
                     {categoryError}
                   </div>
                 )}
@@ -961,53 +1314,82 @@ export const CategoriesPage = memo(function CategoriesPage({
               const count = getCategoryCount(category);
               const settings = editSettings[category] || {};
               const isDragOver = dragOverIndex === index;
-              
+
               return (
                 <div
                   key={category}
                   draggable
-                  onDragStart={e => handleDragStart(e, index)}
+                  onDragStart={(e) => handleDragStart(e, index)}
                   onDragEnd={handleDragEnd}
-                  onDragOver={e => handleDragOver(e, index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
                   onDragLeave={handleDragLeave}
-                  onDrop={e => handleDrop(e, index)}
+                  onDrop={(e) => handleDrop(e, index)}
                   style={{
                     padding: spacing[4],
                     background: isDragOver ? `${withOpacity(colors.primary, 15)}` : colors.bgLight,
                     borderRadius: borderRadius.md,
                     marginBottom: spacing[3],
-                    border: isDragOver ? `2px dashed ${colors.primary}` : `1px solid ${colors.borderLight}`,
+                    border: isDragOver
+                      ? `2px dashed ${colors.primary}`
+                      : `1px solid ${colors.borderLight}`,
                     cursor: 'grab',
-                    transition: 'all 150ms ease'
+                    transition: 'all 150ms ease',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3], marginBottom: spacing[3] }}>
-                    <GripVertical size={16} color={colors.textMuted} style={{ flexShrink: 0, cursor: 'grab' }} />
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: spacing[3],
+                      marginBottom: spacing[3],
+                    }}
+                  >
+                    <GripVertical
+                      size={16}
+                      color={colors.textMuted}
+                      style={{ flexShrink: 0, cursor: 'grab' }}
+                    />
                     <div style={{ flex: 1 }}>
                       <input
                         type="text"
                         value={category}
-                        onChange={e => handleRenameCategory(category, e.target.value)}
-                        style={{ ...styles.input, width: '100%', fontWeight: typography.fontWeight.medium, borderColor: isDuplicateCategory(category, index) ? colors.danger : undefined }}
+                        onChange={(e) => handleRenameCategory(category, e.target.value)}
+                        style={{
+                          ...styles.input,
+                          width: '100%',
+                          fontWeight: typography.fontWeight.medium,
+                          borderColor: isDuplicateCategory(category, index)
+                            ? colors.danger
+                            : undefined,
+                        }}
                       />
                       {isDuplicateCategory(category, index) && (
-                        <div style={{ fontSize: typography.fontSize.xs, color: colors.danger, marginTop: 2 }}>
+                        <div
+                          style={{
+                            fontSize: typography.fontSize.xs,
+                            color: colors.danger,
+                            marginTop: 2,
+                          }}
+                        >
                           Duplicate category name
                         </div>
                       )}
                     </div>
-                    <Badge text={`${count} items`} color={count > 0 ? colors.primary : colors.textMuted} />
+                    <Badge
+                      text={`${count} items`}
+                      color={count > 0 ? colors.primary : colors.textMuted}
+                    />
                     <button
                       onClick={() => handleRemoveCategory(category)}
                       disabled={count > 0}
-                      style={{ 
-                        background: 'none', 
-                        border: 'none', 
-                        padding: spacing[1], 
-                        cursor: count > 0 ? 'not-allowed' : 'pointer', 
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: spacing[1],
+                        cursor: count > 0 ? 'not-allowed' : 'pointer',
                         color: count > 0 ? colors.textMuted : colors.danger,
                         opacity: count > 0 ? 0.5 : 1,
-                        display: 'flex'
+                        display: 'flex',
                       }}
                       title={count > 0 ? `Cannot delete - has ${count} item(s)` : 'Delete category'}
                     >
@@ -1016,32 +1398,78 @@ export const CategoriesPage = memo(function CategoriesPage({
                   </div>
 
                   {/* Category Settings */}
-                  <div style={{ display: 'flex', gap: spacing[4], flexWrap: 'wrap', paddingLeft: spacing[7] }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: spacing[2], cursor: 'pointer', fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: spacing[4],
+                      flexWrap: 'wrap',
+                      paddingLeft: spacing[7],
+                    }}
+                  >
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: spacing[2],
+                        cursor: 'pointer',
+                        fontSize: typography.fontSize.sm,
+                        color: colors.textSecondary,
+                      }}
+                    >
                       <input
                         type="checkbox"
                         checked={settings.trackQuantity || false}
-                        onChange={e => handleSettingChange(category, 'trackQuantity', e.target.checked)}
+                        onChange={(e) =>
+                          handleSettingChange(category, 'trackQuantity', e.target.checked)
+                        }
+                        style={{ accentColor: colors.primary }}
                       />
                       Track Quantity
                     </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: spacing[2], cursor: 'pointer', fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: spacing[2],
+                        cursor: 'pointer',
+                        fontSize: typography.fontSize.sm,
+                        color: colors.textSecondary,
+                      }}
+                    >
                       <input
                         type="checkbox"
                         checked={settings.trackSerialNumbers !== false}
-                        onChange={e => handleSettingChange(category, 'trackSerialNumbers', e.target.checked)}
+                        onChange={(e) =>
+                          handleSettingChange(category, 'trackSerialNumbers', e.target.checked)
+                        }
+                        style={{ accentColor: colors.primary }}
                       />
                       Require Serial #
                     </label>
                     {settings.trackQuantity && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-                        <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>Low stock alert:</span>
+                        <span
+                          style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}
+                        >
+                          Low stock alert:
+                        </span>
                         <input
                           type="number"
                           min="0"
                           value={settings.lowStockThreshold || 0}
-                          onChange={e => handleSettingChange(category, 'lowStockThreshold', parseInt(e.target.value) || 0)}
-                          style={{ ...styles.input, width: 60, padding: spacing[1], textAlign: 'center' }}
+                          onChange={(e) =>
+                            handleSettingChange(
+                              category,
+                              'lowStockThreshold',
+                              parseInt(e.target.value) || 0,
+                            )
+                          }
+                          style={{
+                            ...styles.input,
+                            width: 60,
+                            padding: spacing[1],
+                            textAlign: 'center',
+                          }}
                         />
                       </div>
                     )}

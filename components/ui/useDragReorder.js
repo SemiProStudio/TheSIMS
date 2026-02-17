@@ -33,50 +33,62 @@ export function useDragReorder(items, onReorder) {
     dragNodeRef.current = null;
   }, []);
 
-  const handleDragOver = useCallback((e, index) => {
-    e.preventDefault();
-    if (draggedIndex !== null && index !== draggedIndex) {
-      setDragOverIndex(index);
-    }
-  }, [draggedIndex]);
+  const handleDragOver = useCallback(
+    (e, index) => {
+      e.preventDefault();
+      if (draggedIndex !== null && index !== draggedIndex) {
+        setDragOverIndex(index);
+      }
+    },
+    [draggedIndex],
+  );
 
   const handleDragLeave = useCallback(() => {
     setDragOverIndex(null);
   }, []);
 
-  const handleDrop = useCallback((e, targetIndex) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === targetIndex) {
+  const handleDrop = useCallback(
+    (e, targetIndex) => {
+      e.preventDefault();
+      if (draggedIndex === null || draggedIndex === targetIndex) {
+        setDragOverIndex(null);
+        return;
+      }
+
+      const newItems = [...items];
+      const [draggedItem] = newItems.splice(draggedIndex, 1);
+      newItems.splice(targetIndex, 0, draggedItem);
+      onReorder(newItems);
       setDragOverIndex(null);
-      return;
-    }
+    },
+    [draggedIndex, items, onReorder],
+  );
 
-    const newItems = [...items];
-    const [draggedItem] = newItems.splice(draggedIndex, 1);
-    newItems.splice(targetIndex, 0, draggedItem);
-    onReorder(newItems);
-    setDragOverIndex(null);
-  }, [draggedIndex, items, onReorder]);
+  const getDragProps = useCallback(
+    (index, canDrag = true) => {
+      if (!canDrag) return {};
+      return {
+        draggable: true,
+        onDragStart: (e) => handleDragStart(e, index),
+        onDragEnd: handleDragEnd,
+        onDragOver: (e) => handleDragOver(e, index),
+        onDragLeave: handleDragLeave,
+        onDrop: (e) => handleDrop(e, index),
+      };
+    },
+    [handleDragStart, handleDragEnd, handleDragOver, handleDragLeave, handleDrop],
+  );
 
-  const getDragProps = useCallback((index, canDrag = true) => {
-    if (!canDrag) return {};
-    return {
-      draggable: true,
-      onDragStart: (e) => handleDragStart(e, index),
-      onDragEnd: handleDragEnd,
-      onDragOver: (e) => handleDragOver(e, index),
-      onDragLeave: handleDragLeave,
-      onDrop: (e) => handleDrop(e, index),
-    };
-  }, [handleDragStart, handleDragEnd, handleDragOver, handleDragLeave, handleDrop]);
-
-  const getDragStyle = useCallback((index, canDrag = true) => ({
-    background: dragOverIndex === index ? `${withOpacity(colors.primary, 20)}` : undefined,
-    borderTop: dragOverIndex === index ? `2px solid ${colors.primary}` : '2px solid transparent',
-    cursor: canDrag ? 'grab' : 'default',
-    userSelect: 'none',
-    transition: 'background 150ms ease',
-  }), [dragOverIndex]);
+  const getDragStyle = useCallback(
+    (index, canDrag = true) => ({
+      background: dragOverIndex === index ? `${withOpacity(colors.primary, 20)}` : undefined,
+      borderTop: dragOverIndex === index ? `2px solid ${colors.primary}` : '2px solid transparent',
+      cursor: canDrag ? 'grab' : 'default',
+      userSelect: 'none',
+      transition: 'background 150ms ease',
+    }),
+    [dragOverIndex],
+  );
 
   return {
     draggedIndex,

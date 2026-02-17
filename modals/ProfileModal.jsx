@@ -33,8 +33,8 @@ function ProfileModal({ user, onSave, onClose }) {
       phone: true,
       email: true,
       address: false,
-      logo: true
-    }
+      logo: true,
+    },
   });
   const [errors, setErrors] = useState({});
   const [cropSrc, setCropSrc] = useState(null);
@@ -48,7 +48,9 @@ function ProfileModal({ user, onSave, onClose }) {
     phone: (v) => {
       if (!v) return null;
       const digits = v.replace(/\D/g, '');
-      return digits.length >= 7 && digits.length <= 15 ? null : 'Enter a valid phone number (7–15 digits)';
+      return digits.length >= 7 && digits.length <= 15
+        ? null
+        : 'Enter a valid phone number (7–15 digits)';
     },
   };
 
@@ -56,7 +58,7 @@ function ProfileModal({ user, onSave, onClose }) {
     const validator = validators[field];
     if (!validator) return null;
     const error = validator(value);
-    setErrors(prev => ({ ...prev, [field]: error }));
+    setErrors((prev) => ({ ...prev, [field]: error }));
     return error;
   };
 
@@ -71,14 +73,14 @@ function ProfileModal({ user, onSave, onClose }) {
   };
 
   const handleChange = (field, value) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
+    setProfile((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) validateField(field, value);
   };
 
   const handleShowFieldToggle = (field) => {
-    setProfile(prev => ({
+    setProfile((prev) => ({
       ...prev,
-      showFields: { ...prev.showFields, [field]: !prev.showFields[field] }
+      showFields: { ...prev.showFields, [field]: !prev.showFields[field] },
     }));
   };
 
@@ -86,14 +88,14 @@ function ProfileModal({ user, onSave, onClose }) {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, logo: 'Image must be smaller than 5MB' }));
+        setErrors((prev) => ({ ...prev, logo: 'Image must be smaller than 5MB' }));
         return;
       }
       if (!file.type.startsWith('image/')) {
-        setErrors(prev => ({ ...prev, logo: 'Please select an image file' }));
+        setErrors((prev) => ({ ...prev, logo: 'Please select an image file' }));
         return;
       }
-      setErrors(prev => ({ ...prev, logo: null }));
+      setErrors((prev) => ({ ...prev, logo: null }));
       const reader = new FileReader();
       reader.onload = (ev) => setCropSrc(ev.target.result);
       reader.readAsDataURL(file);
@@ -109,7 +111,8 @@ function ProfileModal({ user, onSave, onClose }) {
     if (user?.id) {
       setLogoUploading(true);
       try {
-        const { storageService, isStorageUrl, getStoragePathFromUrl } = await import('../lib/index.js');
+        const { storageService, isStorageUrl, getStoragePathFromUrl } =
+          await import('../lib/index.js');
 
         // Delete old logo from storage before uploading new one
         const oldLogo = profile.logo;
@@ -118,7 +121,10 @@ function ProfileModal({ user, onSave, onClose }) {
           if (oldPath) await storageService.deleteImage(oldPath).catch(() => {});
         }
 
-        const result = await storageService.uploadFromDataUrl(croppedDataUrl, `profiles/${user.id}`);
+        const result = await storageService.uploadFromDataUrl(
+          croppedDataUrl,
+          `profiles/${user.id}`,
+        );
         handleChange('logo', result.url);
       } catch (_err) {
         handleChange('logo', croppedDataUrl);
@@ -161,16 +167,25 @@ function ProfileModal({ user, onSave, onClose }) {
       <ModalBody>
         {/* Logo Upload / Crop Editor */}
         <div style={{ marginBottom: spacing[5] }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[2] }}>
-            <label style={{ ...styles.label, marginBottom: 0 }}>Logo / Photo</label>
-            <label style={{
+          <div
+            style={{
               display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
-              gap: spacing[2],
-              cursor: 'pointer',
-              fontSize: typography.fontSize.xs,
-              color: profile.showFields.logo ? colors.primary : colors.textMuted
-            }}>
+              marginBottom: spacing[2],
+            }}
+          >
+            <label style={{ ...styles.label, marginBottom: 0 }}>Logo / Photo</label>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[2],
+                cursor: 'pointer',
+                fontSize: typography.fontSize.xs,
+                color: profile.showFields.logo ? colors.primary : colors.textMuted,
+              }}
+            >
               <input
                 type="checkbox"
                 checked={profile.showFields.logo}
@@ -211,7 +226,11 @@ function ProfileModal({ user, onSave, onClose }) {
                 }}
               >
                 {profile.logo ? (
-                  <img src={profile.logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img
+                    src={profile.logo}
+                    alt=""
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
                 ) : (
                   <Upload size={24} color={colors.textMuted} />
                 )}
@@ -236,7 +255,7 @@ function ProfileModal({ user, onSave, onClose }) {
                         color: colors.primary,
                         cursor: 'pointer',
                         fontSize: typography.fontSize.sm,
-                        marginTop: spacing[2]
+                        marginTop: spacing[2],
                       }}
                     >
                       Resize / Crop
@@ -246,12 +265,15 @@ function ProfileModal({ user, onSave, onClose }) {
                         // Delete old logo from storage
                         if (profile.logo && user?.id) {
                           try {
-                            const { storageService, isStorageUrl, getStoragePathFromUrl } = await import('../lib/index.js');
+                            const { storageService, isStorageUrl, getStoragePathFromUrl } =
+                              await import('../lib/index.js');
                             if (isStorageUrl(profile.logo)) {
                               const path = getStoragePathFromUrl(profile.logo);
                               if (path) await storageService.deleteImage(path).catch(() => {});
                             }
-                          } catch (_e) { /* non-fatal */ }
+                          } catch (_e) {
+                            /* non-fatal */
+                          }
                         }
                         handleChange('logo', null);
                       }}
@@ -262,7 +284,7 @@ function ProfileModal({ user, onSave, onClose }) {
                         color: colors.danger,
                         cursor: 'pointer',
                         fontSize: typography.fontSize.sm,
-                        marginTop: spacing[1]
+                        marginTop: spacing[1],
                       }}
                     >
                       Remove
@@ -280,7 +302,13 @@ function ProfileModal({ user, onSave, onClose }) {
             </div>
           )}
           {errors.logo && (
-            <div style={{ color: colors.danger, fontSize: typography.fontSize.xs, marginTop: spacing[1] }}>
+            <div
+              style={{
+                color: colors.danger,
+                fontSize: typography.fontSize.xs,
+                marginTop: spacing[1],
+              }}
+            >
               {errors.logo}
             </div>
           )}
@@ -290,21 +318,25 @@ function ProfileModal({ user, onSave, onClose }) {
         <div style={{ display: 'grid', gap: spacing[4] }}>
           {PROFILE_FIELDS.map(([field, label, type, placeholder, maxLen]) => (
             <div key={field}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: spacing[2]
-              }}>
-                <label style={{ ...styles.label, marginBottom: 0 }}>{label}</label>
-                <label style={{
+              <div
+                style={{
                   display: 'flex',
+                  justifyContent: 'space-between',
                   alignItems: 'center',
-                  gap: spacing[2],
-                  cursor: 'pointer',
-                  fontSize: typography.fontSize.xs,
-                  color: profile.showFields[field] ? colors.primary : colors.textMuted
-                }}>
+                  marginBottom: spacing[2],
+                }}
+              >
+                <label style={{ ...styles.label, marginBottom: 0 }}>{label}</label>
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: spacing[2],
+                    cursor: 'pointer',
+                    fontSize: typography.fontSize.xs,
+                    color: profile.showFields[field] ? colors.primary : colors.textMuted,
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={profile.showFields[field]}
@@ -318,9 +350,10 @@ function ProfileModal({ user, onSave, onClose }) {
               <input
                 type={type}
                 value={profile[field]}
-                onChange={type === 'tel'
-                  ? e => handlePhoneInput(e, v => handleChange(field, v))
-                  : e => handleChange(field, e.target.value)
+                onChange={
+                  type === 'tel'
+                    ? (e) => handlePhoneInput(e, (v) => handleChange(field, v))
+                    : (e) => handleChange(field, e.target.value)
                 }
                 onBlur={() => validateField(field, profile[field])}
                 placeholder={placeholder}
@@ -331,7 +364,9 @@ function ProfileModal({ user, onSave, onClose }) {
                   ...(!profile.showFields[field] ? { opacity: 0.6 } : {}),
                 }}
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: spacing[1] }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', marginTop: spacing[1] }}
+              >
                 <div>
                   {errors[field] && (
                     <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>
@@ -340,10 +375,12 @@ function ProfileModal({ user, onSave, onClose }) {
                   )}
                 </div>
                 {profile[field]?.length > maxLen * 0.8 && (
-                  <span style={{
-                    fontSize: typography.fontSize.xs,
-                    color: profile[field].length >= maxLen ? colors.danger : colors.textMuted
-                  }}>
+                  <span
+                    style={{
+                      fontSize: typography.fontSize.xs,
+                      color: profile[field].length >= maxLen ? colors.danger : colors.textMuted,
+                    }}
+                  >
                     {profile[field].length}/{maxLen}
                   </span>
                 )}
@@ -354,52 +391,61 @@ function ProfileModal({ user, onSave, onClose }) {
 
         {/* Live Branding Preview */}
         <div style={{ marginTop: spacing[5] }}>
-          <label style={{ ...styles.label, marginBottom: spacing[2] }}>Label & Report Preview</label>
-          <div style={{
-            padding: spacing[3],
-            border: `1px solid ${colors.borderLight}`,
-            borderRadius: borderRadius.md,
-            background: colors.bgLight,
-            minHeight: 48,
-          }}>
+          <label style={{ ...styles.label, marginBottom: spacing[2] }}>
+            Label & Report Preview
+          </label>
+          <div
+            style={{
+              padding: spacing[3],
+              border: `1px solid ${colors.borderLight}`,
+              borderRadius: borderRadius.md,
+              background: colors.bgLight,
+              minHeight: 48,
+            }}
+          >
             {hasAnyVisible ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: spacing[3] }}>
                 {showLogo && (
                   <img
                     src={profile.logo}
                     alt=""
-                    style={{ height: 36, width: 36, objectFit: 'contain', borderRadius: borderRadius.sm }}
+                    style={{
+                      height: 36,
+                      width: 36,
+                      objectFit: 'contain',
+                      borderRadius: borderRadius.sm,
+                    }}
                   />
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {profile.showFields.businessName && profile.businessName && (
-                    <div style={{
-                      fontWeight: typography.fontWeight.semibold,
-                      fontSize: typography.fontSize.sm,
-                      color: colors.textPrimary,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}>
+                    <div
+                      style={{
+                        fontWeight: typography.fontWeight.semibold,
+                        fontSize: typography.fontSize.sm,
+                        color: colors.textPrimary,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {profile.businessName}
                     </div>
                   )}
-                  <div style={{
-                    fontSize: typography.fontSize.xs,
-                    color: colors.textMuted,
-                    display: 'flex',
-                    gap: spacing[2],
-                    flexWrap: 'wrap',
-                  }}>
+                  <div
+                    style={{
+                      fontSize: typography.fontSize.xs,
+                      color: colors.textMuted,
+                      display: 'flex',
+                      gap: spacing[2],
+                      flexWrap: 'wrap',
+                    }}
+                  >
                     {profile.showFields.displayName && profile.displayName && (
                       <span>{profile.displayName}</span>
                     )}
-                    {profile.showFields.phone && profile.phone && (
-                      <span>{profile.phone}</span>
-                    )}
-                    {profile.showFields.email && profile.email && (
-                      <span>{profile.email}</span>
-                    )}
+                    {profile.showFields.phone && profile.phone && <span>{profile.phone}</span>}
+                    {profile.showFields.email && profile.email && <span>{profile.email}</span>}
                     {profile.showFields.address && profile.address && (
                       <span>{profile.address}</span>
                     )}
@@ -407,13 +453,15 @@ function ProfileModal({ user, onSave, onClose }) {
                 </div>
               </div>
             ) : (
-              <div style={{
-                textAlign: 'center',
-                color: colors.textMuted,
-                fontSize: typography.fontSize.sm,
-                fontStyle: 'italic',
-                padding: spacing[2],
-              }}>
+              <div
+                style={{
+                  textAlign: 'center',
+                  color: colors.textMuted,
+                  fontSize: typography.fontSize.sm,
+                  fontStyle: 'italic',
+                  padding: spacing[2],
+                }}
+              >
                 No branding fields enabled — toggle visibility above to show on labels & reports
               </div>
             )}
@@ -421,8 +469,12 @@ function ProfileModal({ user, onSave, onClose }) {
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} icon={Save}>Save Profile</Button>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button onClick={handleSave} icon={Save}>
+          Save Profile
+        </Button>
       </ModalFooter>
     </Modal>
   );

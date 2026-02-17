@@ -136,10 +136,10 @@ describe('checkContrast', () => {
     // A ratio of 3.5 fails for normal text but passes for large text
     const normalResult = checkContrast('#666666', '#e0e0e0', false);
     const largeResult = checkContrast('#666666', '#e0e0e0', true);
-    
+
     // Both should have the same ratio
     expect(normalResult.ratio).toEqual(largeResult.ratio);
-    
+
     // Large text has lower threshold
     if (normalResult.ratio >= 3 && normalResult.ratio < 4.5) {
       expect(normalResult.passes).toBe(false);
@@ -203,7 +203,7 @@ describe('validateThemeContrast', () => {
 
   it('should include pair info and result for each check', () => {
     const results = validateThemeContrast(mockTheme);
-    results.forEach(result => {
+    results.forEach((result) => {
       expect(result).toHaveProperty('pair');
       expect(result).toHaveProperty('result');
       expect(result.pair).toHaveProperty('fg');
@@ -218,7 +218,7 @@ describe('validateThemeContrast', () => {
       '--text-secondary': 'rgba(226, 230, 234, 0.65)',
     };
     const results = validateThemeContrast(themeWithRgba);
-    const secondaryResult = results.find(r => r.pair.fg === '--text-secondary');
+    const secondaryResult = results.find((r) => r.pair.fg === '--text-secondary');
     expect(secondaryResult.result.skipped).toBe(true);
   });
 });
@@ -231,7 +231,7 @@ describe('getContrastSummary', () => {
       { pair: {}, result: { passes: false } },
       { pair: {}, result: { passes: false, skipped: true } },
     ];
-    
+
     const summary = getContrastSummary(mockResults);
     expect(summary.passing).toBe(2);
     expect(summary.failing).toBe(1);
@@ -251,7 +251,7 @@ describe('getContrastSummary', () => {
       { pair: {}, result: { passes: true } },
       { pair: {}, result: { passes: true } },
     ];
-    
+
     const summary = getContrastSummary(mockResults);
     expect(summary.score).toBe(100);
   });
@@ -263,23 +263,23 @@ describe('getContrastSummary', () => {
 
 describe('CONTRAST_PAIRS', () => {
   it('should have required color pairs', () => {
-    const fgColors = CONTRAST_PAIRS.map(p => p.fg);
-    const bgColors = CONTRAST_PAIRS.map(p => p.bg);
-    
+    const fgColors = CONTRAST_PAIRS.map((p) => p.fg);
+    const bgColors = CONTRAST_PAIRS.map((p) => p.bg);
+
     // Check essential text colors are tested
     expect(fgColors).toContain('--text-primary');
     expect(fgColors).toContain('--text-secondary');
     expect(fgColors).toContain('--text-muted');
-    
+
     // Check all test against background
     expect(bgColors).toContain('--bg-dark');
-    
+
     // Check focus ring is tested
     expect(fgColors).toContain('--focus-ring-color');
   });
 
   it('should have labels for all pairs', () => {
-    CONTRAST_PAIRS.forEach(pair => {
+    CONTRAST_PAIRS.forEach((pair) => {
       expect(pair.label).toBeDefined();
       expect(pair.label.length).toBeGreaterThan(0);
     });
@@ -298,7 +298,7 @@ describe('announce', () => {
   let rAF;
 
   beforeEach(() => {
-    rAF = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => cb());
+    rAF = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => cb());
   });
 
   afterEach(() => {
@@ -333,7 +333,7 @@ describe('announceAssertive', () => {
   let rAF;
 
   beforeEach(() => {
-    rAF = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => cb());
+    rAF = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => cb());
   });
 
   afterEach(() => {
@@ -356,7 +356,7 @@ describe('announcement helpers', () => {
   let rAF;
 
   beforeEach(() => {
-    rAF = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => cb());
+    rAF = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => cb());
   });
 
   afterEach(() => {
@@ -468,7 +468,7 @@ describe('focusAndAnnounce', () => {
   let rAF;
 
   beforeEach(() => {
-    rAF = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => cb());
+    rAF = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => cb());
   });
 
   afterEach(() => {

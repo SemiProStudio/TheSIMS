@@ -27,13 +27,13 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
   // Calculate dropdown position
   const updateDropdownPosition = useCallback(() => {
     if (!containerRef.current) return;
-    
+
     const rect = containerRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const dropdownHeight = Math.min(options.length * 40 + 8, 280);
-    
+
     const direction = spaceBelow < dropdownHeight ? 'up' : 'down';
-    
+
     setDropdownPosition({
       top: direction === 'down' ? rect.bottom + 4 : rect.top - dropdownHeight - 4,
       left: rect.left,
@@ -44,7 +44,7 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
   // Close on outside click
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         if (dropdownRef.current && dropdownRef.current.contains(e.target)) {
@@ -72,11 +72,11 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
   useEffect(() => {
     if (isOpen) {
       updateDropdownPosition();
-      
+
       const handleScrollOrResize = () => updateDropdownPosition();
       window.addEventListener('scroll', handleScrollOrResize, true);
       window.addEventListener('resize', handleScrollOrResize);
-      
+
       return () => {
         window.removeEventListener('scroll', handleScrollOrResize, true);
         window.removeEventListener('resize', handleScrollOrResize);
@@ -84,24 +84,31 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
     }
   }, [isOpen, updateDropdownPosition]);
 
-  const toggleOption = useCallback((value) => {
-    if (selectedValues.includes(value)) {
-      onChange(selectedValues.filter(v => v !== value));
-    } else {
-      onChange([...selectedValues, value]);
-    }
-  }, [selectedValues, onChange]);
+  const toggleOption = useCallback(
+    (value) => {
+      if (selectedValues.includes(value)) {
+        onChange(selectedValues.filter((v) => v !== value));
+      } else {
+        onChange([...selectedValues, value]);
+      }
+    },
+    [selectedValues, onChange],
+  );
 
-  const clearAll = useCallback((e) => {
-    e.stopPropagation();
-    onChange([]);
-  }, [onChange]);
+  const clearAll = useCallback(
+    (e) => {
+      e.stopPropagation();
+      onChange([]);
+    },
+    [onChange],
+  );
 
-  const displayText = selectedValues.length === 0 
-    ? placeholder 
-    : selectedValues.length === 1
-      ? options.find(o => o.value === selectedValues[0])?.label || selectedValues[0]
-      : `${selectedValues.length} selected`;
+  const displayText =
+    selectedValues.length === 0
+      ? placeholder
+      : selectedValues.length === 1
+        ? options.find((o) => o.value === selectedValues[0])?.label || selectedValues[0]
+        : `${selectedValues.length} selected`;
 
   const styles = {
     container: {
@@ -219,50 +226,50 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
   };
 
   // Render dropdown via portal to escape stacking context
-  const dropdown = isOpen && createPortal(
-    <div ref={dropdownRef} style={styles.dropdown}>
-      {options.map((option) => {
-        const isSelected = selectedValues.includes(option.value);
-        return (
-          <div
-            key={option.value}
-            onClick={() => toggleOption(option.value)}
-            style={styles.option}
-            onMouseEnter={(e) => e.currentTarget.style.background = `color-mix(in srgb, ${colors.primary} 15%, transparent)`}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-          >
-            <div style={{ ...styles.checkbox, ...(isSelected ? styles.checkboxChecked : {}) }}>
-              {isSelected && <Check size={12} color="#fff" />}
+  const dropdown =
+    isOpen &&
+    createPortal(
+      <div ref={dropdownRef} style={styles.dropdown}>
+        {options.map((option) => {
+          const isSelected = selectedValues.includes(option.value);
+          return (
+            <div
+              key={option.value}
+              onClick={() => toggleOption(option.value)}
+              style={styles.option}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = `color-mix(in srgb, ${colors.primary} 15%, transparent)`)
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              <div style={{ ...styles.checkbox, ...(isSelected ? styles.checkboxChecked : {}) }}>
+                {isSelected && <Check size={12} color="#fff" />}
+              </div>
+              {renderOption ? renderOption(option) : <span>{option.label}</span>}
             </div>
-            {renderOption ? renderOption(option) : (
-              <span>{option.label}</span>
-            )}
-          </div>
-        );
-      })}
-    </div>,
-    document.body
-  );
+          );
+        })}
+      </div>,
+      document.body,
+    );
 
   return (
     <div ref={containerRef} style={styles.container} className={className}>
       {label && <label style={styles.label}>{label}</label>}
-      
+
       <button
         type="button"
-        onClick={() => setIsOpen(prev => !prev)}
+        onClick={() => setIsOpen((prev) => !prev)}
         style={{ ...styles.trigger, ...(isOpen ? styles.triggerOpen : {}) }}
       >
-        <span style={styles.triggerContent}>
-          {displayText}
-        </span>
+        <span style={styles.triggerContent}>{displayText}</span>
         {selectedValues.length > 0 && (
           <button
             type="button"
             style={styles.clearButton}
             onClick={clearAll}
-            onMouseEnter={(e) => e.currentTarget.style.color = colors.danger}
-            onMouseLeave={(e) => e.currentTarget.style.color = colors.textMuted}
+            onMouseEnter={(e) => (e.currentTarget.style.color = colors.danger)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = colors.textMuted)}
             aria-label="Clear selection"
           >
             <X size={14} />
@@ -280,10 +287,12 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
 
 MultiSelectDropdown.propTypes = {
   label: PropTypes.string,
-  options: PropTypes.arrayOf(PropTypes.shape({
-    value: PropTypes.string.isRequired,
-    label: PropTypes.string.isRequired,
-  })).isRequired,
+  options: PropTypes.arrayOf(
+    PropTypes.shape({
+      value: PropTypes.string.isRequired,
+      label: PropTypes.string.isRequired,
+    }),
+  ).isRequired,
   selectedValues: PropTypes.arrayOf(PropTypes.string),
   onChange: PropTypes.func.isRequired,
   placeholder: PropTypes.string,

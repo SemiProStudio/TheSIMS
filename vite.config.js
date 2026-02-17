@@ -20,19 +20,19 @@ function swBuildHashPlugin() {
       } catch (e) {
         console.warn('[sw-build-hash] Could not patch sw.js:', e.message);
       }
-    }
+    },
   };
 }
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), swBuildHashPlugin()],
-  
+
   // Build optimization
   build: {
     // Generate sourcemaps for debugging
     sourcemap: true,
-    
+
     // Chunk splitting for better caching
     rollupOptions: {
       output: {
@@ -44,23 +44,23 @@ export default defineConfig({
         },
       },
     },
-    
+
     // Warn on large chunks
     chunkSizeWarningLimit: 500,
   },
-  
+
   // Dev server
   server: {
     port: 3000,
     open: true,
     cors: true,
   },
-  
+
   // Preview server (for testing production build)
   preview: {
     port: 4173,
   },
-  
+
   // Resolve aliases for cleaner imports
   resolve: {
     alias: {
@@ -69,10 +69,10 @@ export default defineConfig({
       '@lib': '/lib',
     },
   },
-  
+
   // Environment variables prefix
   envPrefix: 'VITE_',
-  
+
   // Optimize dependencies
   optimizeDeps: {
     include: ['react', 'react-dom', 'lucide-react'],

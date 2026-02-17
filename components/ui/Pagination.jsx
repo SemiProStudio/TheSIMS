@@ -23,17 +23,17 @@ export const Pagination = memo(function Pagination({
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
-    
+
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       // Always show first page
       pages.push(1);
-      
+
       // Calculate middle pages
       let start = Math.max(2, page - 1);
       let end = Math.min(totalPages - 1, page + 1);
-      
+
       // Adjust if at beginning
       if (page <= 3) {
         end = 4;
@@ -42,20 +42,20 @@ export const Pagination = memo(function Pagination({
       if (page >= totalPages - 2) {
         start = totalPages - 3;
       }
-      
+
       // Add ellipsis before middle pages if needed
       if (start > 2) pages.push('...');
-      
+
       // Add middle pages
       for (let i = start; i <= end; i++) pages.push(i);
-      
+
       // Add ellipsis after middle pages if needed
       if (end < totalPages - 1) pages.push('...');
-      
+
       // Always show last page
       pages.push(totalPages);
     }
-    
+
     return pages;
   };
 
@@ -72,20 +72,24 @@ export const Pagination = memo(function Pagination({
   });
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginTop: spacing[5],
-      paddingTop: spacing[4],
-      borderTop: `1px solid ${colors.borderLight}`,
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: spacing[5],
+        paddingTop: spacing[4],
+        borderTop: `1px solid ${colors.borderLight}`,
+      }}
+    >
       {/* Item count */}
       {showItemCount && (
-        <div style={{ 
-          fontSize: typography.fontSize.sm, 
-          color: colors.textMuted 
-        }}>
+        <div
+          style={{
+            fontSize: typography.fontSize.sm,
+            color: colors.textMuted,
+          }}
+        >
           Showing {startItem}-{endItem} of {totalItems} items
         </div>
       )}
@@ -107,12 +111,15 @@ export const Pagination = memo(function Pagination({
         </button>
 
         {/* Page numbers */}
-        {getPageNumbers().map((pageNum, idx) => (
+        {getPageNumbers().map((pageNum, idx) =>
           pageNum === '...' ? (
-            <span key={`ellipsis-${idx}`} style={{ 
-              padding: `0 ${spacing[2]}px`, 
-              color: colors.textMuted 
-            }}>
+            <span
+              key={`ellipsis-${idx}`}
+              style={{
+                padding: `0 ${spacing[2]}px`,
+                color: colors.textMuted,
+              }}
+            >
               …
             </span>
           ) : (
@@ -125,8 +132,8 @@ export const Pagination = memo(function Pagination({
             >
               {pageNum}
             </button>
-          )
-        ))}
+          ),
+        )}
 
         {/* Next button */}
         <button

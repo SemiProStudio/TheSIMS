@@ -6,57 +6,79 @@
 import { colors, spacing, borderRadius, typography, withOpacity } from '../../theme.js';
 import { Button } from '../../components/ui.jsx';
 
-export function BatchSelector({ batchResults, batchSelected, setBatchSelected, onBatchApply, onBatchSelectSingle }) {
+export function BatchSelector({
+  batchResults,
+  batchSelected,
+  setBatchSelected,
+  onBatchApply,
+  onBatchSelectSingle,
+}) {
   if (!batchResults) return null;
 
   return (
-    <div style={{
-      background: colors.bgLight,
-      borderRadius: borderRadius.lg,
-      border: `1px solid ${colors.border}`,
-      overflow: 'hidden',
-      marginBottom: spacing[3],
-    }}>
-      <div style={{
-        padding: `${spacing[2]}px ${spacing[3]}px`,
-        borderBottom: `1px solid ${colors.border}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
-        <div style={{
-          fontSize: typography.fontSize.xs,
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em',
-          color: colors.textMuted,
+    <div
+      style={{
+        background: colors.bgLight,
+        borderRadius: borderRadius.lg,
+        border: `1px solid ${colors.border}`,
+        overflow: 'hidden',
+        marginBottom: spacing[3],
+      }}
+    >
+      <div
+        style={{
+          padding: `${spacing[2]}px ${spacing[3]}px`,
+          borderBottom: `1px solid ${colors.border}`,
           display: 'flex',
           alignItems: 'center',
-          gap: spacing[1],
-        }}>
-          ⊞
-          Detected Products ({batchResults.length})
+          justifyContent: 'space-between',
+        }}
+      >
+        <div
+          style={{
+            fontSize: typography.fontSize.xs,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            color: colors.textMuted,
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[1],
+          }}
+        >
+          ⊞ Detected Products ({batchResults.length})
         </div>
         <div style={{ display: 'flex', gap: spacing[1] }}>
           <button
             onClick={() => setBatchSelected(new Set(batchResults.map((_, i) => i)))}
             style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: typography.fontSize.xs, color: colors.primary, fontWeight: 600,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: typography.fontSize.xs,
+              color: colors.primary,
+              fontWeight: 600,
             }}
-          >Select All</button>
+          >
+            Select All
+          </button>
           <button
             onClick={() => setBatchSelected(new Set())}
             style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: typography.fontSize.xs, color: colors.textMuted,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: typography.fontSize.xs,
+              color: colors.textMuted,
             }}
-          >Clear</button>
+          >
+            Clear
+          </button>
         </div>
       </div>
       {batchResults.map(({ segment, result }, i) => {
         const isSelected = batchSelected.has(i);
-        const fieldCount = [...result.fields.values()].filter(f => f.value).length;
+        const fieldCount = [...result.fields.values()].filter((f) => f.value).length;
         return (
           <div
             key={i}
@@ -74,20 +96,23 @@ export function BatchSelector({ batchResults, batchSelected, setBatchSelected, o
               checked={isSelected}
               onChange={() => {
                 const next = new Set(batchSelected);
-                if (isSelected) next.delete(i); else next.add(i);
+                if (isSelected) next.delete(i);
+                else next.add(i);
                 setBatchSelected(next);
               }}
-              style={{ cursor: 'pointer', flexShrink: 0 }}
+              style={{ cursor: 'pointer', flexShrink: 0, accentColor: colors.primary }}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontSize: typography.fontSize.sm,
-                fontWeight: 600,
-                color: colors.textPrimary,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}>
+              <div
+                style={{
+                  fontSize: typography.fontSize.sm,
+                  fontWeight: 600,
+                  color: colors.textPrimary,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {result.name || segment.name}
               </div>
               <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
@@ -118,15 +143,14 @@ export function BatchSelector({ batchResults, batchSelected, setBatchSelected, o
           </div>
         );
       })}
-      <div style={{
-        padding: `${spacing[2]}px ${spacing[3]}px`,
-        display: 'flex',
-        justifyContent: 'flex-end',
-      }}>
-        <Button
-          onClick={onBatchApply}
-          disabled={batchSelected.size === 0}
-        >
+      <div
+        style={{
+          padding: `${spacing[2]}px ${spacing[3]}px`,
+          display: 'flex',
+          justifyContent: 'flex-end',
+        }}
+      >
+        <Button onClick={onBatchApply} disabled={batchSelected.size === 0}>
           Import {batchSelected.size} Product{batchSelected.size !== 1 ? 's' : ''}
         </Button>
       </div>

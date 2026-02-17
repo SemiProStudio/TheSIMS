@@ -45,7 +45,7 @@ describe('Error Tracking Service', () => {
     it('should queue errors when Sentry is not available', () => {
       const error = new Error('Test error');
       captureException(error, { tags: { test: true } });
-      
+
       const queued = getQueuedErrors();
       expect(queued.length).toBe(1);
       expect(queued[0].error.message).toBe('Test error');
@@ -54,9 +54,9 @@ describe('Error Tracking Service', () => {
     it('should include error details in queue', () => {
       const error = new TypeError('Type error');
       error.stack = 'Error stack trace';
-      
+
       captureException(error);
-      
+
       const queued = getQueuedErrors();
       expect(queued[0].error.name).toBe('TypeError');
       expect(queued[0].error.stack).toBe('Error stack trace');
@@ -69,7 +69,7 @@ describe('Error Tracking Service', () => {
         tags: { component: 'test' },
         extra: { data: 'value' },
       });
-      
+
       const queued = getQueuedErrors();
       expect(queued[0].context.user).toEqual({ id: '123' });
       expect(queued[0].context.tags).toEqual({ component: 'test' });
@@ -78,7 +78,7 @@ describe('Error Tracking Service', () => {
     it('should add timestamp and url to context', () => {
       const error = new Error('Test');
       captureException(error);
-      
+
       const queued = getQueuedErrors();
       expect(queued[0].context.timestamp).toBeDefined();
       expect(queued[0].context.url).toBeDefined();
@@ -89,7 +89,7 @@ describe('Error Tracking Service', () => {
       for (let i = 0; i < 150; i++) {
         captureException(new Error(`Error ${i}`));
       }
-      
+
       const queued = getQueuedErrors();
       expect(queued.length).toBeLessThanOrEqual(100);
     });
@@ -102,7 +102,7 @@ describe('Error Tracking Service', () => {
   describe('captureMessage', () => {
     it('should queue messages when Sentry is not available', () => {
       captureMessage('Test message', ErrorSeverity.WARNING);
-      
+
       const queued = getQueuedErrors();
       expect(queued.length).toBe(1);
       expect(queued[0].error.message).toBe('Test message');
@@ -111,18 +111,18 @@ describe('Error Tracking Service', () => {
 
     it('should use default level if not provided', () => {
       captureMessage('Info message');
-      
+
       const queued = getQueuedErrors();
       expect(queued[0].context.level).toBe('info');
     });
 
     it('should accept all severity levels', () => {
       const levels = Object.values(ErrorSeverity);
-      
-      levels.forEach(level => {
+
+      levels.forEach((level) => {
         clearQueuedErrors();
         captureMessage(`Message at ${level}`, level);
-        
+
         const queued = getQueuedErrors();
         expect(queued[0].context.level).toBe(level);
       });
@@ -228,10 +228,10 @@ describe('Error Tracking Service', () => {
   describe('Error Queue', () => {
     it('should return copy of queued errors', () => {
       captureException(new Error('Test'));
-      
+
       const queued1 = getQueuedErrors();
       const queued2 = getQueuedErrors();
-      
+
       expect(queued1).not.toBe(queued2);
       expect(queued1).toEqual(queued2);
     });
@@ -239,11 +239,11 @@ describe('Error Tracking Service', () => {
     it('should clear queued errors', () => {
       captureException(new Error('Test 1'));
       captureException(new Error('Test 2'));
-      
+
       expect(getQueuedErrors().length).toBe(2);
-      
+
       clearQueuedErrors();
-      
+
       expect(getQueuedErrors().length).toBe(0);
     });
   });
@@ -277,7 +277,7 @@ describe('Error Tracking Service', () => {
       captureException(new Error('Network failed'), {
         category: ErrorCategory.NETWORK,
       });
-      
+
       const queued = getQueuedErrors();
       expect(queued[0].context.category).toBe('network');
     });
@@ -307,7 +307,7 @@ describe('Error Tracking Service', () => {
       for (let i = 0; i < 50; i++) {
         captureException(new Error(`Rapid error ${i}`));
       }
-      
+
       const queued = getQueuedErrors();
       expect(queued.length).toBe(50);
     });
@@ -315,7 +315,7 @@ describe('Error Tracking Service', () => {
     it('should capture errors with full context', () => {
       const error = new RangeError('Value out of range');
       error.stack = 'RangeError: Value out of range\n    at test.js:1:1';
-      
+
       captureException(error, {
         level: ErrorSeverity.ERROR,
         category: ErrorCategory.VALIDATION,
@@ -323,10 +323,10 @@ describe('Error Tracking Service', () => {
         tags: { component: 'form', action: 'submit' },
         extra: { value: 999, max: 100 },
       });
-      
+
       const queued = getQueuedErrors();
       expect(queued.length).toBe(1);
-      
+
       const captured = queued[0];
       expect(captured.error.name).toBe('RangeError');
       expect(captured.error.message).toBe('Value out of range');
@@ -346,7 +346,9 @@ describe('Error Tracking Service', () => {
     it('should return a copy of the config', () => {
       const config = getConfig();
       expect(config).toBeDefined();
-      expect(typeof config.dsn === 'string' || config.dsn === undefined || config.dsn === null).toBe(true);
+      expect(
+        typeof config.dsn === 'string' || config.dsn === undefined || config.dsn === null,
+      ).toBe(true);
       expect(config.maxBreadcrumbs).toBe(50);
     });
 
@@ -414,7 +416,7 @@ describe('Error Tracking Service', () => {
       await expect(
         measurePerformance('error-test', () => {
           throw new Error('Test error');
-        })
+        }),
       ).rejects.toThrow('Test error');
     });
   });

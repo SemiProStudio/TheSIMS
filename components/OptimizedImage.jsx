@@ -10,7 +10,7 @@ import { colors, borderRadius } from '../theme.js';
 
 /**
  * OptimizedImage - Displays images with thumbnail/full-size optimization
- * 
+ *
  * Features:
  * - Lazy loading with IntersectionObserver
  * - Thumbnail display for list views (fast loading)
@@ -56,7 +56,7 @@ export const OptimizedImage = memo(function OptimizedImage({
       {
         rootMargin: '200px', // Pre-load images before they scroll into view
         threshold: 0.01,
-      }
+      },
     );
 
     if (containerRef.current) {
@@ -80,7 +80,7 @@ export const OptimizedImage = memo(function OptimizedImage({
   const handleError = (e) => {
     setHasError(true);
     onError?.(e);
-    
+
     // If thumbnail failed, try full-size as fallback
     if (size === 'thumbnail' && imageUrl !== src) {
       const img = e.target;

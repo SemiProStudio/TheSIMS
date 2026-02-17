@@ -6,9 +6,35 @@
 // ============================================================================
 
 import { memo, useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { Plus, Grid, List, CheckSquare, Square, MinusSquare, X, Bookmark, BookmarkPlus, Trash2, ChevronDown } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity, zIndex } from '../theme.js';
-import { getStatusColor, filterBySearch, filterByCategory, filterByStatus, generateId } from '../utils';
+import {
+  Plus,
+  Grid,
+  List,
+  CheckSquare,
+  Square,
+  MinusSquare,
+  X,
+  Bookmark,
+  BookmarkPlus,
+  Trash2,
+  ChevronDown,
+} from 'lucide-react';
+import {
+  colors,
+  styles,
+  spacing,
+  borderRadius,
+  typography,
+  withOpacity,
+  zIndex,
+} from '../theme.js';
+import {
+  getStatusColor,
+  filterBySearch,
+  filterByCategory,
+  filterByStatus,
+  generateId,
+} from '../utils';
 import { Badge, Card, Button, SearchInput, Pagination, PageHeader } from '../components/ui.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import { Select } from '../components/Select.jsx';
@@ -110,32 +136,37 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
       </button>
 
       {isOpen && (
-        <div role="menu" style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          marginTop: spacing[1],
-          background: colors.bgLight,
-          border: `1px solid ${colors.border}`,
-          borderRadius: borderRadius.lg,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          minWidth: 250,
-          maxHeight: 350,
-          overflowY: 'auto',
-          zIndex: zIndex.dropdown,
-        }}>
+        <div
+          role="menu"
+          style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            marginTop: spacing[1],
+            background: colors.bgLight,
+            border: `1px solid ${colors.border}`,
+            borderRadius: borderRadius.lg,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            minWidth: 250,
+            maxHeight: 350,
+            overflowY: 'auto',
+            zIndex: zIndex.dropdown,
+          }}
+        >
           {/* Save Current View */}
           {hasActiveFilters && (
-            <div style={{ 
-              padding: spacing[2], 
-              borderBottom: `1px solid ${colors.border}`,
-            }}>
+            <div
+              style={{
+                padding: spacing[2],
+                borderBottom: `1px solid ${colors.border}`,
+              }}
+            >
               {showSaveDialog ? (
                 <div style={{ display: 'flex', gap: spacing[2] }}>
                   <input
                     type="text"
                     value={newViewName}
-                    onChange={e => setNewViewName(e.target.value)}
+                    onChange={(e) => setNewViewName(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="View name..."
                     autoFocus
@@ -190,7 +221,7 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
           {/* Saved Views List */}
           {savedViews.length > 0 ? (
             <div style={{ padding: spacing[1] }}>
-              {savedViews.map(view => (
+              {savedViews.map((view) => (
                 <div
                   key={view.id}
                   className="list-item-hover"
@@ -203,30 +234,36 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
                     cursor: 'pointer',
                   }}
                 >
-                  <div 
+                  <div
                     style={{ flex: 1 }}
                     onClick={() => {
                       onLoadView(view);
                       setIsOpen(false);
                     }}
                   >
-                    <div style={{ 
-                      fontWeight: typography.fontWeight.medium,
-                      color: colors.textPrimary,
-                      fontSize: typography.fontSize.sm,
-                    }}>
+                    <div
+                      style={{
+                        fontWeight: typography.fontWeight.medium,
+                        color: colors.textPrimary,
+                        fontSize: typography.fontSize.sm,
+                      }}
+                    >
                       {view.name}
                     </div>
-                    <div style={{ 
-                      fontSize: typography.fontSize.xs, 
-                      color: colors.textMuted,
-                      marginTop: 2,
-                    }}>
+                    <div
+                      style={{
+                        fontSize: typography.fontSize.xs,
+                        color: colors.textMuted,
+                        marginTop: 2,
+                      }}
+                    >
                       {[
                         view.filters.search && `"${view.filters.search}"`,
                         view.filters.category !== 'all' && view.filters.category,
                         view.filters.status !== 'all' && view.filters.status,
-                      ].filter(Boolean).join(' • ') || 'No filters'}
+                      ]
+                        .filter(Boolean)
+                        .join(' • ') || 'No filters'}
                     </div>
                   </div>
                   <button
@@ -253,16 +290,17 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
               ))}
             </div>
           ) : (
-            <div style={{ 
-              padding: spacing[4], 
-              textAlign: 'center',
-              color: colors.textMuted,
-              fontSize: typography.fontSize.sm,
-            }}>
-              {hasActiveFilters 
+            <div
+              style={{
+                padding: spacing[4],
+                textAlign: 'center',
+                color: colors.textMuted,
+                fontSize: typography.fontSize.sm,
+              }}
+            >
+              {hasActiveFilters
                 ? 'No saved views yet. Save your current filters above!'
-                : 'No saved views. Apply filters and save them for quick access.'
-              }
+                : 'No saved views. Apply filters and save them for quick access.'}
             </div>
           )}
         </div>
@@ -272,11 +310,17 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
 });
 
 // Memoized grid item component for performance
-const GridItem = memo(function GridItem({ item, onViewItem, selectionMode, isSelected, onToggleSelect }) {
+const GridItem = memo(function GridItem({
+  item,
+  onViewItem,
+  selectionMode,
+  isSelected,
+  onToggleSelect,
+}) {
   return (
     <Card
       aria-label={`${item.name} - ${item.status}${isSelected ? ', selected' : ''}`}
-      onClick={() => selectionMode ? onToggleSelect(item.id) : onViewItem(item.id)}
+      onClick={() => (selectionMode ? onToggleSelect(item.id) : onViewItem(item.id))}
       padding={false}
       style={{
         cursor: 'pointer',
@@ -291,11 +335,11 @@ const GridItem = memo(function GridItem({ item, onViewItem, selectionMode, isSel
       {/* Image area - 60% height */}
       <div style={{ flex: '0 0 60%', overflow: 'hidden', position: 'relative' }}>
         {selectionMode && (
-          <div 
-            style={{ 
-              position: 'absolute', 
-              top: spacing[2], 
-              left: spacing[2], 
+          <div
+            style={{
+              position: 'absolute',
+              top: spacing[2],
+              left: spacing[2],
               zIndex: zIndex.base + 1,
               background: colors.bgLight,
               borderRadius: borderRadius.sm,
@@ -315,59 +359,78 @@ const GridItem = memo(function GridItem({ item, onViewItem, selectionMode, isSel
             objectFit="cover"
           />
         ) : (
-          <div style={{
-            width: '100%',
-            height: '100%',
-            background: `${withOpacity(colors.primary, 10)}`,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: colors.textMuted
-          }}>
-            <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              background: `${withOpacity(colors.primary, 10)}`,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: colors.textMuted,
+            }}
+          >
+            <svg
+              width={28}
+              height={28}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
             </svg>
-            <span style={{ fontSize: typography.fontSize.xs, marginTop: spacing[1] }}>No Image</span>
+            <span style={{ fontSize: typography.fontSize.xs, marginTop: spacing[1] }}>
+              No Image
+            </span>
           </div>
         )}
       </div>
 
       {/* Info area - 40% height */}
-      <div style={{
-        flex: 1,
-        padding: spacing[3],
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between'
-      }}>
+      <div
+        style={{
+          flex: 1,
+          padding: spacing[3],
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+        }}
+      >
         <div>
-          <div style={{
-            display: 'flex',
-            gap: spacing[1],
-            marginBottom: spacing[1],
-            flexWrap: 'wrap'
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: spacing[1],
+              marginBottom: spacing[1],
+              flexWrap: 'wrap',
+            }}
+          >
             <Badge text={item.id} color={colors.primary} size="xs" />
             <Badge text={item.status} color={getStatusColor(item.status)} size="xs" />
           </div>
-          <h4 style={{
-            margin: 0,
-            fontSize: typography.fontSize.sm,
-            color: colors.textPrimary,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          }}>
+          <h4
+            style={{
+              margin: 0,
+              fontSize: typography.fontSize.sm,
+              color: colors.textPrimary,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {item.name}
           </h4>
         </div>
-        <div style={{
-          fontSize: typography.fontSize.xs,
-          color: colors.textMuted
-        }}>
+        <div
+          style={{
+            fontSize: typography.fontSize.xs,
+            color: colors.textMuted,
+          }}
+        >
           {item.brand}
         </div>
       </div>
@@ -376,11 +439,17 @@ const GridItem = memo(function GridItem({ item, onViewItem, selectionMode, isSel
 });
 
 // Memoized list item component for performance
-const ListItem = memo(function ListItem({ item, onViewItem, selectionMode, isSelected, onToggleSelect }) {
+const ListItem = memo(function ListItem({
+  item,
+  onViewItem,
+  selectionMode,
+  isSelected,
+  onToggleSelect,
+}) {
   return (
     <Card
       aria-label={`${item.name} - ${item.status}${isSelected ? ', selected' : ''}`}
-      onClick={() => selectionMode ? onToggleSelect(item.id) : onViewItem(item.id)}
+      onClick={() => (selectionMode ? onToggleSelect(item.id) : onViewItem(item.id))}
       style={{
         cursor: 'pointer',
         padding: spacing[3],
@@ -407,40 +476,48 @@ const ListItem = memo(function ListItem({ item, onViewItem, selectionMode, isSel
           objectFit="cover"
         />
       ) : (
-        <div style={{
-          width: 56,
-          height: 56,
-          borderRadius: borderRadius.md,
-          background: `${withOpacity(colors.primary, 10)}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: colors.textMuted,
-          fontSize: typography.fontSize.xs
-        }}>
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: borderRadius.md,
+            background: `${withOpacity(colors.primary, 10)}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: colors.textMuted,
+            fontSize: typography.fontSize.xs,
+          }}
+        >
           No img
         </div>
       )}
       <div style={{ flex: 1 }}>
-        <div style={{
-          display: 'flex',
-          gap: spacing[1],
-          marginBottom: spacing[1]
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: spacing[1],
+            marginBottom: spacing[1],
+          }}
+        >
           <Badge text={item.id} color={colors.primary} />
           <Badge text={item.status} color={getStatusColor(item.status)} />
           <Badge text={item.category} color={colors.accent2} />
         </div>
-        <div style={{
-          fontWeight: typography.fontWeight.medium,
-          color: colors.textPrimary
-        }}>
+        <div
+          style={{
+            fontWeight: typography.fontWeight.medium,
+            color: colors.textPrimary,
+          }}
+        >
           {item.name}
         </div>
-        <div style={{
-          fontSize: typography.fontSize.sm,
-          color: colors.textMuted
-        }}>
+        <div
+          style={{
+            fontSize: typography.fontSize.sm,
+            color: colors.textMuted,
+          }}
+        >
           {item.brand}
         </div>
       </div>
@@ -449,33 +526,35 @@ const ListItem = memo(function ListItem({ item, onViewItem, selectionMode, isSel
 });
 
 // Selection toolbar component
-const SelectionToolbar = memo(function SelectionToolbar({ 
-  selectedCount, 
-  totalCount, 
-  onSelectAll, 
-  onDeselectAll, 
+const SelectionToolbar = memo(function SelectionToolbar({
+  selectedCount,
+  totalCount,
+  onSelectAll,
+  onDeselectAll,
   onCancel,
   onBulkAction,
   allSelected,
   someSelected,
 }) {
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: spacing[3],
-      padding: spacing[3],
-      background: `${withOpacity(colors.primary, 15)}`,
-      borderRadius: borderRadius.lg,
-      marginBottom: spacing[4],
-      flexWrap: 'wrap',
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: spacing[3],
+        padding: spacing[3],
+        background: `${withOpacity(colors.primary, 15)}`,
+        borderRadius: borderRadius.lg,
+        marginBottom: spacing[4],
+        flexWrap: 'wrap',
+      }}
+    >
       {/* Select all checkbox */}
       <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-        <Checkbox 
-          checked={allSelected} 
+        <Checkbox
+          checked={allSelected}
           indeterminate={someSelected && !allSelected}
-          onChange={() => allSelected ? onDeselectAll() : onSelectAll()} 
+          onChange={() => (allSelected ? onDeselectAll() : onSelectAll())}
         />
         <span style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
           {selectedCount} of {totalCount} selected
@@ -484,7 +563,15 @@ const SelectionToolbar = memo(function SelectionToolbar({
 
       {/* Bulk action buttons */}
       {selectedCount > 0 && (
-        <div style={{ display: 'flex', gap: spacing[2], flex: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: spacing[2],
+            flex: 1,
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
           <Button size="sm" variant="secondary" onClick={() => onBulkAction('status')}>
             Change Status
           </Button>
@@ -557,33 +644,42 @@ function GearList({
   const hasActiveFilters = searchQuery || categoryFilter !== 'all' || statusFilter !== 'all';
 
   // Current filters object
-  const currentFilters = useMemo(() => ({
-    search: searchQuery,
-    category: categoryFilter,
-    status: statusFilter,
-  }), [searchQuery, categoryFilter, statusFilter]);
+  const currentFilters = useMemo(
+    () => ({
+      search: searchQuery,
+      category: categoryFilter,
+      status: statusFilter,
+    }),
+    [searchQuery, categoryFilter, statusFilter],
+  );
 
   // Save current filters as a new view
-  const saveCurrentView = useCallback((name) => {
-    const newView = {
-      id: generateId(),
-      name,
-      filters: { ...currentFilters },
-      createdAt: new Date().toISOString(),
-    };
-    setSavedViews(prev => [...prev, newView]);
-  }, [currentFilters]);
+  const saveCurrentView = useCallback(
+    (name) => {
+      const newView = {
+        id: generateId(),
+        name,
+        filters: { ...currentFilters },
+        createdAt: new Date().toISOString(),
+      };
+      setSavedViews((prev) => [...prev, newView]);
+    },
+    [currentFilters],
+  );
 
   // Load a saved view
-  const loadView = useCallback((view) => {
-    setSearchQuery(view.filters.search || '');
-    setCategoryFilter(view.filters.category || 'all');
-    setStatusFilter(view.filters.status || 'all');
-  }, [setSearchQuery, setCategoryFilter, setStatusFilter]);
+  const loadView = useCallback(
+    (view) => {
+      setSearchQuery(view.filters.search || '');
+      setCategoryFilter(view.filters.category || 'all');
+      setStatusFilter(view.filters.status || 'all');
+    },
+    [setSearchQuery, setCategoryFilter, setStatusFilter],
+  );
 
   // Delete a saved view
   const deleteView = useCallback((viewId) => {
-    setSavedViews(prev => prev.filter(v => v.id !== viewId));
+    setSavedViews((prev) => prev.filter((v) => v.id !== viewId));
   }, []);
 
   // Save page size to localStorage
@@ -597,20 +693,20 @@ function GearList({
   // Filter inventory with debounced search
   const filteredItems = useMemo(() => {
     // First, filter out kits - GearList only shows individual items
-    let result = inventory.filter(item => !item.isKit);
-    
+    let result = inventory.filter((item) => !item.isKit);
+
     result = filterBySearch(result, debouncedSearch, ['name', 'brand', 'id']);
     result = filterByCategory(result, categoryFilter);
-    
+
     // Handle low-stock filter specially - needs categorySettings
     if (statusFilter === 'low-stock') {
-      result = result.filter(item => {
+      result = result.filter((item) => {
         const settings = categorySettings?.[item.category];
         if (!settings?.trackQuantity) return false;
-        
+
         // Only consider items that have a quantity defined
         if (item.quantity === undefined || item.quantity === null) return false;
-        
+
         const quantity = item.quantity;
         const threshold = item.reorderPoint || settings.lowStockThreshold || 0;
         return threshold > 0 && quantity <= threshold;
@@ -618,12 +714,12 @@ function GearList({
     } else {
       result = filterByStatus(result, statusFilter);
     }
-    
+
     return result;
   }, [inventory, debouncedSearch, categoryFilter, statusFilter, categorySettings]);
 
   // Filtered item IDs for selection operations
-  const filteredIds = useMemo(() => new Set(filteredItems.map(i => i.id)), [filteredItems]);
+  const filteredIds = useMemo(() => new Set(filteredItems.map((i) => i.id)), [filteredItems]);
 
   // Clear selection when exiting selection mode or when filters change
   useEffect(() => {
@@ -634,15 +730,15 @@ function GearList({
 
   // Clear invalid selections when filters change
   useEffect(() => {
-    setSelectedIds(prev => {
-      const validIds = new Set([...prev].filter(id => filteredIds.has(id)));
+    setSelectedIds((prev) => {
+      const validIds = new Set([...prev].filter((id) => filteredIds.has(id)));
       return validIds.size !== prev.size ? validIds : prev;
     });
   }, [filteredIds]);
 
   // Selection helpers
   const toggleSelect = useCallback((id) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
         newSet.delete(id);
@@ -654,18 +750,21 @@ function GearList({
   }, []);
 
   const selectAll = useCallback(() => {
-    setSelectedIds(new Set(filteredItems.map(i => i.id)));
+    setSelectedIds(new Set(filteredItems.map((i) => i.id)));
   }, [filteredItems]);
 
   const deselectAll = useCallback(() => {
     setSelectedIds(new Set());
   }, []);
 
-  const handleBulkAction = useCallback((action) => {
-    if (onBulkAction && selectedIds.size > 0) {
-      onBulkAction(action, [...selectedIds]);
-    }
-  }, [onBulkAction, selectedIds]);
+  const handleBulkAction = useCallback(
+    (action) => {
+      if (onBulkAction && selectedIds.size > 0) {
+        onBulkAction(action, [...selectedIds]);
+      }
+    },
+    [onBulkAction, selectedIds],
+  );
 
   // Selection stats
   const selectedCount = selectedIds.size;
@@ -673,12 +772,7 @@ function GearList({
   const someSelected = selectedCount > 0;
 
   // Pagination
-  const {
-    page,
-    totalPages,
-    paginatedItems,
-    goToPage,
-  } = usePagination(filteredItems, pageSize);
+  const { page, totalPages, paginatedItems, goToPage } = usePagination(filteredItems, pageSize);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -737,14 +831,16 @@ function GearList({
       )}
 
       {/* Filters */}
-      <div style={{
-        display: 'flex',
-        gap: spacing[3],
-        marginBottom: spacing[5],
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: spacing[3],
+          marginBottom: spacing[5],
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         {/* Search - left side */}
         <div style={{ minWidth: 200, maxWidth: 400, flex: '1 1 200px' }}>
           <SearchInput
@@ -756,7 +852,15 @@ function GearList({
         </div>
 
         {/* Right side controls */}
-        <div style={{ display: 'flex', gap: spacing[3], alignItems: 'center', flexWrap: 'wrap', marginLeft: 'auto' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: spacing[3],
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            marginLeft: 'auto',
+          }}
+        >
           {/* Clear Filters Button */}
           {hasActiveFilters && (
             <button
@@ -784,10 +888,10 @@ function GearList({
           {/* Category Filter */}
           <Select
             value={categoryFilter}
-            onChange={e => setCategoryFilter(e.target.value)}
+            onChange={(e) => setCategoryFilter(e.target.value)}
             options={[
               { value: 'all', label: 'All Categories' },
-              ...categories.map(c => ({ value: c, label: c }))
+              ...categories.map((c) => ({ value: c, label: c })),
             ]}
             style={{ minWidth: 150 }}
             aria-label="Filter by category"
@@ -796,7 +900,7 @@ function GearList({
           {/* Status Filter */}
           <Select
             value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
+            onChange={(e) => setStatusFilter(e.target.value)}
             options={[
               { value: 'all', label: 'All Status' },
               { value: 'available', label: 'Available' },
@@ -812,11 +916,13 @@ function GearList({
           />
 
           {/* View Toggle */}
-          <div style={{
-            display: 'flex',
-            background: `${withOpacity(colors.primary, 15)}`,
-            borderRadius: borderRadius.lg
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              background: `${withOpacity(colors.primary, 15)}`,
+              borderRadius: borderRadius.lg,
+            }}
+          >
             <button
               onClick={() => setIsGridView(true)}
               aria-label="Grid view"
@@ -851,15 +957,17 @@ function GearList({
 
       {/* Grid View - Square Items */}
       {isGridView ? (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: spacing[4]
-        }}>
-          {paginatedItems.map(item => (
-            <GridItem 
-              key={item.id} 
-              item={item} 
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+            gap: spacing[4],
+          }}
+        >
+          {paginatedItems.map((item) => (
+            <GridItem
+              key={item.id}
+              item={item}
               onViewItem={onViewItem}
               selectionMode={selectionMode}
               isSelected={selectedIds.has(item.id)}
@@ -870,10 +978,10 @@ function GearList({
       ) : (
         /* List View */
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-          {paginatedItems.map(item => (
-            <ListItem 
-              key={item.id} 
-              item={item} 
+          {paginatedItems.map((item) => (
+            <ListItem
+              key={item.id}
+              item={item}
               onViewItem={onViewItem}
               selectionMode={selectionMode}
               isSelected={selectedIds.has(item.id)}
@@ -885,32 +993,36 @@ function GearList({
 
       {/* Empty State */}
       {filteredItems.length === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: spacing[10],
-          color: colors.textMuted
-        }}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: spacing[10],
+            color: colors.textMuted,
+          }}
+        >
           No items found matching your criteria
         </div>
       )}
 
       {/* Pagination */}
       {filteredItems.length > 0 && (
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: spacing[3],
-          marginTop: spacing[5],
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: spacing[3],
+            marginTop: spacing[5],
+          }}
+        >
           {/* Page size selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
             <span style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>Show:</span>
             <Select
               value={pageSize}
-              onChange={e => setPageSize(parseInt(e.target.value, 10))}
-              options={PAGE_SIZE_OPTIONS.map(size => ({ value: size, label: String(size) }))}
+              onChange={(e) => setPageSize(parseInt(e.target.value, 10))}
+              options={PAGE_SIZE_OPTIONS.map((size) => ({ value: size, label: String(size) }))}
               style={{ width: 80 }}
               aria-label="Items per page"
             />

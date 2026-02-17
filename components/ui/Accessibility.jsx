@@ -39,8 +39,8 @@ VisuallyHidden.propTypes = {
 // LiveRegion - Announce dynamic content to screen readers
 // ============================================================================
 
-export const LiveRegion = memo(function LiveRegion({ 
-  children, 
+export const LiveRegion = memo(function LiveRegion({
+  children,
   politeness = 'polite',
   atomic = true,
   relevant = 'additions text',
@@ -79,7 +79,10 @@ LiveRegion.propTypes = {
 // SkipLink - Skip to main content link for keyboard users
 // ============================================================================
 
-export const SkipLink = memo(function SkipLink({ targetId = 'main-content', children = 'Skip to main content' }) {
+export const SkipLink = memo(function SkipLink({
+  targetId = 'main-content',
+  children = 'Skip to main content',
+}) {
   return (
     <a
       href={`#${targetId}`}

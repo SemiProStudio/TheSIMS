@@ -5,18 +5,11 @@
 
 import { memo, useState, useCallback } from 'react';
 import { Plus, Reply, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate } from '../utils';
 
 // Single note component with replies
-const Note = memo(function Note({
-  note,
-  depth = 0,
-  onReply,
-  onDelete,
-  user,
-  panelColor
-}) {
+const Note = memo(function Note({ note, depth = 0, onReply, onDelete, user, panelColor }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
@@ -29,22 +22,27 @@ const Note = memo(function Note({
     }
   }, [note.id, replyText, onReply]);
 
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmitReply();
-    }
-  }, [handleSubmitReply]);
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmitReply();
+      }
+    },
+    [handleSubmitReply],
+  );
 
   if (note.deleted) {
     return (
-      <div style={{
-        padding: spacing[3],
-        marginLeft: depth * spacing[5],
-        color: colors.textMuted,
-        fontStyle: 'italic',
-        fontSize: typography.fontSize.sm
-      }}>
+      <div
+        style={{
+          padding: spacing[3],
+          marginLeft: depth * spacing[5],
+          color: colors.textMuted,
+          fontStyle: 'italic',
+          fontSize: typography.fontSize.sm,
+        }}
+      >
         [Note deleted]
       </div>
     );
@@ -55,21 +53,26 @@ const Note = memo(function Note({
 
   return (
     <div style={{ marginLeft: depth * spacing[5] }}>
-      <div style={{
-        padding: spacing[3],
-        background: `${withOpacity(itemColor, 20)}`,
-        border: `1px solid ${withOpacity(itemColor, 50)}`,
-        borderRadius: borderRadius.md,
-        borderLeft: depth > 0 ? `3px solid ${itemColor}` : `1px solid ${withOpacity(itemColor, 50)}`,
-        marginBottom: spacing[2]
-      }}>
+      <div
+        style={{
+          padding: spacing[3],
+          background: `${withOpacity(itemColor, 20)}`,
+          border: `1px solid ${withOpacity(itemColor, 50)}`,
+          borderRadius: borderRadius.md,
+          borderLeft:
+            depth > 0 ? `3px solid ${itemColor}` : `1px solid ${withOpacity(itemColor, 50)}`,
+          marginBottom: spacing[2],
+        }}
+      >
         {/* Note Header */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: spacing[2],
-          marginBottom: spacing[2]
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[2],
+            marginBottom: spacing[2],
+          }}
+        >
           {hasReplies && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
@@ -79,43 +82,51 @@ const Note = memo(function Note({
                 color: colors.textMuted,
                 cursor: 'pointer',
                 padding: 0,
-                display: 'flex'
+                display: 'flex',
               }}
             >
               {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </button>
           )}
-          <span style={{
-            fontWeight: typography.fontWeight.medium,
-            color: colors.textPrimary,
-            fontSize: typography.fontSize.sm
-          }}>
+          <span
+            style={{
+              fontWeight: typography.fontWeight.medium,
+              color: colors.textPrimary,
+              fontSize: typography.fontSize.sm,
+            }}
+          >
             {note.user}
           </span>
-          <span style={{
-            fontSize: typography.fontSize.xs,
-            color: colors.textMuted
-          }}>
+          <span
+            style={{
+              fontSize: typography.fontSize.xs,
+              color: colors.textMuted,
+            }}
+          >
             {formatDate(note.date)}
           </span>
         </div>
 
         {/* Note Content */}
-        <p style={{
-          margin: 0,
-          color: colors.textSecondary,
-          fontSize: typography.fontSize.sm,
-          lineHeight: 1.5
-        }}>
+        <p
+          style={{
+            margin: 0,
+            color: colors.textSecondary,
+            fontSize: typography.fontSize.sm,
+            lineHeight: 1.5,
+          }}
+        >
           {note.text}
         </p>
 
         {/* Note Actions */}
-        <div style={{
-          display: 'flex',
-          gap: spacing[2],
-          marginTop: spacing[2]
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: spacing[2],
+            marginTop: spacing[2],
+          }}
+        >
           <button
             onClick={() => setShowReplyInput(!showReplyInput)}
             style={{
@@ -127,7 +138,7 @@ const Note = memo(function Note({
               color: colors.textMuted,
               cursor: 'pointer',
               fontSize: typography.fontSize.xs,
-              padding: spacing[1]
+              padding: spacing[1],
             }}
           >
             <Reply size={12} />
@@ -144,7 +155,7 @@ const Note = memo(function Note({
               color: colors.textMuted,
               cursor: 'pointer',
               fontSize: typography.fontSize.xs,
-              padding: spacing[1]
+              padding: spacing[1],
             }}
           >
             <Trash2 size={12} />
@@ -154,21 +165,23 @@ const Note = memo(function Note({
 
         {/* Reply Input */}
         {showReplyInput && (
-          <div style={{
-            display: 'flex',
-            gap: spacing[2],
-            marginTop: spacing[3]
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: spacing[2],
+              marginTop: spacing[3],
+            }}
+          >
             <input
               value={replyText}
-              onChange={e => setReplyText(e.target.value)}
+              onChange={(e) => setReplyText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Write a reply..."
               style={{
                 ...styles.input,
                 flex: 1,
                 padding: spacing[2],
-                fontSize: typography.fontSize.sm
+                fontSize: typography.fontSize.sm,
               }}
               autoFocus
             />
@@ -178,7 +191,7 @@ const Note = memo(function Note({
               style={{
                 ...styles.btn,
                 padding: spacing[2],
-                opacity: replyText.trim() ? 1 : 0.5
+                opacity: replyText.trim() ? 1 : 0.5,
               }}
             >
               Reply
@@ -190,7 +203,7 @@ const Note = memo(function Note({
       {/* Nested Replies */}
       {hasReplies && isExpanded && (
         <div>
-          {note.replies.map(reply => (
+          {note.replies.map((reply) => (
             <Note
               key={reply.id}
               note={reply}
@@ -208,14 +221,7 @@ const Note = memo(function Note({
 });
 
 // Main Notes Section Component
-function NotesSection({
-  notes = [],
-  onAddNote,
-  onReply,
-  onDelete,
-  user,
-  panelColor
-}) {
+function NotesSection({ notes = [], onAddNote, onReply, onDelete, user, panelColor }) {
   const [newNoteText, setNewNoteText] = useState('');
 
   const handleSubmitNote = useCallback(() => {
@@ -225,32 +231,37 @@ function NotesSection({
     }
   }, [newNoteText, onAddNote]);
 
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmitNote();
-    }
-  }, [handleSubmitNote]);
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSubmitNote();
+      }
+    },
+    [handleSubmitNote],
+  );
 
   return (
     <>
       <div style={{ padding: spacing[4] }}>
         {/* Add Note Input */}
-        <div style={{
-          display: 'flex',
-          gap: spacing[2],
-          marginBottom: spacing[4]
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: spacing[2],
+            marginBottom: spacing[4],
+          }}
+        >
           <input
             value={newNoteText}
-            onChange={e => setNewNoteText(e.target.value)}
+            onChange={(e) => setNewNoteText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Add a note..."
             style={{
               ...styles.input,
               flex: 1,
               padding: spacing[2],
-              fontSize: typography.fontSize.sm
+              fontSize: typography.fontSize.sm,
             }}
           />
           <button
@@ -259,7 +270,7 @@ function NotesSection({
             style={{
               ...styles.btn,
               padding: spacing[2],
-              opacity: newNoteText.trim() ? 1 : 0.5
+              opacity: newNoteText.trim() ? 1 : 0.5,
             }}
           >
             <Plus size={16} />
@@ -269,16 +280,18 @@ function NotesSection({
         {/* Notes List */}
         <div style={{ maxHeight: 300, overflowY: 'auto' }}>
           {notes.length === 0 ? (
-            <p style={{
-              color: colors.textMuted,
-              textAlign: 'center',
-              fontSize: typography.fontSize.sm,
-              padding: spacing[4]
-            }}>
+            <p
+              style={{
+                color: colors.textMuted,
+                textAlign: 'center',
+                fontSize: typography.fontSize.sm,
+                padding: spacing[4],
+              }}
+            >
               No notes yet
             </p>
           ) : (
-            notes.map(note => (
+            notes.map((note) => (
               <Note
                 key={note.id}
                 note={note}

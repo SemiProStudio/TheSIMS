@@ -7,9 +7,9 @@ import { BackButton } from './BackButton.jsx';
 // PageHeader - Consistent page title with optional subtitle and actions
 // ============================================================================
 
-export const PageHeader = memo(function PageHeader({ 
-  title, 
-  subtitle, 
+export const PageHeader = memo(function PageHeader({
+  title,
+  subtitle,
   action,
   backButton,
   onBack,
@@ -17,23 +17,25 @@ export const PageHeader = memo(function PageHeader({
 }) {
   return (
     <>
-      {(backButton || onBack) && (
-        <BackButton onClick={onBack}>{backLabel}</BackButton>
-      )}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: spacing[5] 
-      }}>
+      {(backButton || onBack) && <BackButton onClick={onBack}>{backLabel}</BackButton>}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: spacing[5],
+        }}
+      >
         <div>
           <h2 style={{ margin: 0, color: colors.textPrimary }}>{title}</h2>
           {subtitle && (
-            <p style={{ 
-              margin: `${spacing[1]}px 0 0`, 
-              color: colors.textMuted, 
-              fontSize: typography.fontSize.sm 
-            }}>
+            <p
+              style={{
+                margin: `${spacing[1]}px 0 0`,
+                color: colors.textMuted,
+                fontSize: typography.fontSize.sm,
+              }}
+            >
               {subtitle}
             </p>
           )}

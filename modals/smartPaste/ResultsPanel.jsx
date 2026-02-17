@@ -20,8 +20,10 @@ export function ResultsPanel({
   normalizeMetric,
   normalizeUnits,
   coerceFieldValue,
-  brandOverride, setBrandOverride,
-  categoryOverride, setCategoryOverride,
+  brandOverride,
+  setBrandOverride,
+  categoryOverride,
+  setCategoryOverride,
   availableCategories,
   showSourceView,
 }) {
@@ -29,27 +31,33 @@ export function ResultsPanel({
   const detectedCategory = categoryOverride !== null ? categoryOverride : parseResult?.category;
 
   return (
-    <div style={{
-      background: colors.bgLight,
-      borderRadius: borderRadius.lg,
-      border: `1px solid ${colors.border}`,
-      overflow: 'hidden',
-      maxHeight: showSourceView ? 600 : 'none',
-      overflowY: showSourceView ? 'auto' : 'visible',
-    }}>
+    <div
+      style={{
+        background: colors.bgLight,
+        borderRadius: borderRadius.lg,
+        border: `1px solid ${colors.border}`,
+        overflow: 'hidden',
+        maxHeight: showSourceView ? 600 : 'none',
+        overflowY: showSourceView ? 'auto' : 'visible',
+      }}
+    >
       {/* Basic Info Section — editable brand/category */}
-      <div style={{
-        padding: `${spacing[3]}px ${spacing[3]}px ${spacing[2]}px`,
-        borderBottom: `1px solid ${colors.border}`,
-      }}>
-        <div style={{
-          fontSize: typography.fontSize.xs,
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em',
-          color: colors.textMuted,
-          marginBottom: spacing[2],
-        }}>
+      <div
+        style={{
+          padding: `${spacing[3]}px ${spacing[3]}px ${spacing[2]}px`,
+          borderBottom: `1px solid ${colors.border}`,
+        }}
+      >
+        <div
+          style={{
+            fontSize: typography.fontSize.xs,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            color: colors.textMuted,
+            marginBottom: spacing[2],
+          }}
+        >
           Basic Information
         </div>
 
@@ -57,20 +65,22 @@ export function ResultsPanel({
         <BasicInfoRow label="Name" value={parseResult.name} />
 
         {/* Brand — editable */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '80px 1fr',
-          gap: spacing[2],
-          padding: `${spacing[1]}px 0`,
-          fontSize: typography.fontSize.sm,
-          alignItems: 'center',
-        }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '80px 1fr',
+            gap: spacing[2],
+            padding: `${spacing[1]}px 0`,
+            fontSize: typography.fontSize.sm,
+            alignItems: 'center',
+          }}
+        >
           <span style={{ fontWeight: 600, color: colors.textPrimary }}>Brand</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
             <input
               type="text"
-              value={brandOverride !== null ? brandOverride : (parseResult.brand || '')}
-              onChange={e => setBrandOverride(e.target.value)}
+              value={brandOverride !== null ? brandOverride : parseResult.brand || ''}
+              onChange={(e) => setBrandOverride(e.target.value)}
               placeholder="Not detected — type to set"
               style={{
                 ...styles.input,
@@ -85,8 +95,12 @@ export function ResultsPanel({
                 onClick={() => setBrandOverride(null)}
                 title="Reset to detected"
                 style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: colors.textMuted, padding: 2, display: 'flex',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: colors.textMuted,
+                  padding: 2,
+                  display: 'flex',
                 }}
               >
                 <XIcon size={12} />
@@ -96,32 +110,40 @@ export function ResultsPanel({
         </div>
 
         {/* Category — editable dropdown */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '80px 1fr',
-          gap: spacing[2],
-          padding: `${spacing[1]}px 0`,
-          fontSize: typography.fontSize.sm,
-          alignItems: 'center',
-        }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '80px 1fr',
+            gap: spacing[2],
+            padding: `${spacing[1]}px 0`,
+            fontSize: typography.fontSize.sm,
+            alignItems: 'center',
+          }}
+        >
           <span style={{ fontWeight: 600, color: colors.textPrimary }}>Category</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
             <select
-              value={categoryOverride !== null ? categoryOverride : (parseResult.category || '')}
-              onChange={e => setCategoryOverride(e.target.value || null)}
+              value={categoryOverride !== null ? categoryOverride : parseResult.category || ''}
+              onChange={(e) => setCategoryOverride(e.target.value || null)}
               style={{
-                ...styles.input,
+                ...styles.select,
                 fontSize: typography.fontSize.sm,
                 padding: `2px ${spacing[2]}px`,
+                paddingRight: `${spacing[5]}px`,
+                minHeight: 'auto',
                 flex: 1,
                 minWidth: 0,
-                cursor: 'pointer',
-                color: (categoryOverride || parseResult.category) ? colors.textSecondary : withOpacity(colors.textMuted, 40),
+                color:
+                  categoryOverride || parseResult.category
+                    ? colors.textSecondary
+                    : withOpacity(colors.textMuted, 40),
               }}
             >
               <option value="">Not detected</option>
-              {availableCategories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+              {availableCategories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
               ))}
             </select>
             {categoryOverride !== null && categoryOverride !== parseResult.category && (
@@ -129,8 +151,12 @@ export function ResultsPanel({
                 onClick={() => setCategoryOverride(null)}
                 title="Reset to detected"
                 style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: colors.textMuted, padding: 2, display: 'flex',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: colors.textMuted,
+                  padding: 2,
+                  display: 'flex',
                 }}
               >
                 <XIcon size={12} />
@@ -142,33 +168,45 @@ export function ResultsPanel({
         {/* Price, Model, Serial — read only */}
         <BasicInfoRow
           label="Price"
-          value={parseResult.purchasePrice ? `$${parseResult.purchasePrice}${parseResult.priceNote ? ` (${parseResult.priceNote})` : ''}` : ''}
+          value={
+            parseResult.purchasePrice
+              ? `$${parseResult.purchasePrice}${parseResult.priceNote ? ` (${parseResult.priceNote})` : ''}`
+              : ''
+          }
         />
-        {parseResult.modelNumber && <BasicInfoRow label="Model #" value={parseResult.modelNumber} />}
-        {parseResult.serialNumber && <BasicInfoRow label="Serial #" value={parseResult.serialNumber} />}
+        {parseResult.modelNumber && (
+          <BasicInfoRow label="Model #" value={parseResult.modelNumber} />
+        )}
+        {parseResult.serialNumber && (
+          <BasicInfoRow label="Serial #" value={parseResult.serialNumber} />
+        )}
       </div>
 
       {/* Matched Specs Section */}
       {matchedFields.length > 0 && (
         <div style={{ padding: `${spacing[3]}px` }}>
-          <div style={{
-            fontSize: typography.fontSize.xs,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            color: colors.textMuted,
-            marginBottom: spacing[2],
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[2],
-          }}>
+          <div
+            style={{
+              fontSize: typography.fontSize.xs,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              color: colors.textMuted,
+              marginBottom: spacing[2],
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[2],
+            }}
+          >
             <span>Matched Specifications ({matchedFields.length})</span>
             <Check size={12} style={{ color: colors.available || '#4ade80' }} />
           </div>
 
           {matchedFields.map(({ specName, data, isRequired }) => {
-            const currentVal = selectedValues[specName] !== undefined ? selectedValues[specName] : data?.value;
-            const unitInfo = normalizeMetric && currentVal ? normalizeUnits(currentVal, normalizeMetric) : null;
+            const currentVal =
+              selectedValues[specName] !== undefined ? selectedValues[specName] : data?.value;
+            const unitInfo =
+              normalizeMetric && currentVal ? normalizeUnits(currentVal, normalizeMetric) : null;
             const coercionInfo = currentVal ? coerceFieldValue(specName, currentVal) : null;
             return (
               <FieldRow
@@ -190,10 +228,12 @@ export function ResultsPanel({
 
       {/* Empty fields section */}
       {emptyFields.length > 0 && (
-        <div style={{
-          padding: `${spacing[2]}px ${spacing[3]}px`,
-          borderTop: `1px solid ${colors.border}`,
-        }}>
+        <div
+          style={{
+            padding: `${spacing[2]}px ${spacing[3]}px`,
+            borderTop: `1px solid ${colors.border}`,
+          }}
+        >
           <button
             onClick={() => setShowEmptyFields(!showEmptyFields)}
             style={{
@@ -211,17 +251,21 @@ export function ResultsPanel({
           >
             {showEmptyFields ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             {emptyFields.length} fields with no match
-            {detectedCategory && <span style={{ fontWeight: 400, marginLeft: 4 }}>({detectedCategory})</span>}
+            {detectedCategory && (
+              <span style={{ fontWeight: 400, marginLeft: 4 }}>({detectedCategory})</span>
+            )}
           </button>
           {showEmptyFields && (
-            <div style={{
-              marginTop: spacing[1],
-              fontSize: typography.fontSize.xs,
-              color: withOpacity(colors.textMuted, 50),
-              lineHeight: 2,
-              columnCount: 2,
-              columnGap: spacing[4],
-            }}>
+            <div
+              style={{
+                marginTop: spacing[1],
+                fontSize: typography.fontSize.xs,
+                color: withOpacity(colors.textMuted, 50),
+                lineHeight: 2,
+                columnCount: 2,
+                columnGap: spacing[4],
+              }}
+            >
               {emptyFields.map(({ specName, isRequired }) => (
                 <div key={specName} style={{ breakInside: 'avoid', display: 'flex', gap: 4 }}>
                   <span style={{ opacity: 0.5 }}>—</span>

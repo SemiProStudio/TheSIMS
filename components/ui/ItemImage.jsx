@@ -7,9 +7,9 @@ import { colors, borderRadius, withOpacity } from '../../theme.js';
 // ItemImage - Image with placeholder
 // ============================================================================
 
-export const ItemImage = memo(function ItemImage({ 
-  src, 
-  alt = '', 
+export const ItemImage = memo(function ItemImage({
+  src,
+  alt = '',
   size = 56,
   borderRadius: radius = borderRadius.md,
   showPlaceholder = true,
@@ -45,10 +45,17 @@ export const ItemImage = memo(function ItemImage({
         color: colors.textMuted,
       }}
     >
-      <svg width={size * 0.4} height={size * 0.4} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <polyline points="21 15 16 10 5 21"/>
+      <svg
+        width={size * 0.4}
+        height={size * 0.4}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      >
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <polyline points="21 15 16 10 5 21" />
       </svg>
       {size >= 48 && (
         <span style={{ fontSize: Math.max(8, size * 0.15), marginTop: 2 }}>No Image</span>

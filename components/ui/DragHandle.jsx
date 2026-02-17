@@ -5,12 +5,14 @@ import { colors } from '../../theme.js';
 
 export const DragHandle = memo(function DragHandle({ canDrag = true, size = 16 }) {
   return (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center',
-      color: canDrag ? colors.textMuted : colors.borderLight,
-      cursor: canDrag ? 'grab' : 'default',
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        color: canDrag ? colors.textMuted : colors.borderLight,
+        cursor: canDrag ? 'grab' : 'default',
+      }}
+    >
       <GripVertical size={size} />
     </div>
   );

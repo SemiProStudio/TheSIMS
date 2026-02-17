@@ -10,12 +10,12 @@ import { colors, spacing } from './shared.js';
 // Grid - Simple grid layout
 // ============================================================================
 
-export const Grid = memo(function Grid({ 
-  children, 
-  columns = 2, 
+export const Grid = memo(function Grid({
+  children,
+  columns = 2,
   gap = 4,
   style: customStyle,
-  ...props 
+  ...props
 }) {
   return (
     <div
@@ -43,7 +43,7 @@ Grid.propTypes = {
 // Flex - Flexbox container
 // ============================================================================
 
-export const Flex = memo(function Flex({ 
+export const Flex = memo(function Flex({
   children,
   direction = 'row',
   align = 'stretch',
@@ -51,7 +51,7 @@ export const Flex = memo(function Flex({
   gap = 0,
   wrap = false,
   style: customStyle,
-  ...props 
+  ...props
 }) {
   return (
     <div
@@ -75,7 +75,14 @@ Flex.propTypes = {
   children: PropTypes.node,
   direction: PropTypes.oneOf(['row', 'column', 'row-reverse', 'column-reverse']),
   align: PropTypes.oneOf(['flex-start', 'flex-end', 'center', 'stretch', 'baseline']),
-  justify: PropTypes.oneOf(['flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly']),
+  justify: PropTypes.oneOf([
+    'flex-start',
+    'flex-end',
+    'center',
+    'space-between',
+    'space-around',
+    'space-evenly',
+  ]),
   gap: PropTypes.number,
   wrap: PropTypes.bool,
   style: PropTypes.object,

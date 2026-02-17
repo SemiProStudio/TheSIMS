@@ -10,14 +10,16 @@ export function SectionErrorBoundary({ children, name = 'This section' }) {
   return (
     <ErrorBoundary
       fallback={
-        <div style={{
-          padding: '40px',
-          textAlign: 'center',
-          color: '#94a3b8',
-          backgroundColor: '#16213e',
-          borderRadius: '8px',
-          margin: '20px',
-        }}>
+        <div
+          style={{
+            padding: '40px',
+            textAlign: 'center',
+            color: '#94a3b8',
+            backgroundColor: '#16213e',
+            borderRadius: '8px',
+            margin: '20px',
+          }}
+        >
           <p style={{ margin: '0 0 12px 0' }}>
             {name} encountered an error and couldn&apos;t load.
           </p>

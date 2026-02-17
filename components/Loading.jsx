@@ -71,11 +71,11 @@ export function ContentLoading({ message = 'Loading...', minHeight = '200px' }) 
 // =============================================================================
 // SKELETON LOADER
 // =============================================================================
-export function Skeleton({ 
-  width = '100%', 
-  height = '20px', 
+export function Skeleton({
+  width = '100%',
+  height = '20px',
   borderRadius = '4px',
-  className = '' 
+  className = '',
 }) {
   return (
     <div
@@ -129,7 +129,7 @@ export function SkeletonTable({ rows = 5 }) {
         <Skeleton width="15%" height="14px" />
         <Skeleton width="15%" height="14px" />
       </div>
-      
+
       {/* Rows */}
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} style={styles.skeletonTableRow}>
@@ -188,7 +188,7 @@ export function ButtonLoading({ size = 16, color = 'currentColor' }) {
 export function ProgressBar({ progress = 0, color = '#6366f1' }) {
   return (
     <div style={styles.progressContainer}>
-      <div 
+      <div
         style={{
           ...styles.progressBar,
           width: `${Math.min(100, Math.max(0, progress))}%`,
@@ -229,19 +229,11 @@ export function ViewLoading({ message = 'Loading view...' }) {
 // SUSPENSE WRAPPER - Helper component for consistent Suspense boundaries
 // =============================================================================
 export function SuspenseView({ children, fallback }) {
-  return (
-    <React.Suspense fallback={fallback || <ViewLoading />}>
-      {children}
-    </React.Suspense>
-  );
+  return <React.Suspense fallback={fallback || <ViewLoading />}>{children}</React.Suspense>;
 }
 
 export function SuspenseModal({ children }) {
-  return (
-    <React.Suspense fallback={<ModalLoading />}>
-      {children}
-    </React.Suspense>
-  );
+  return <React.Suspense fallback={<ModalLoading />}>{children}</React.Suspense>;
 }
 
 // =============================================================================

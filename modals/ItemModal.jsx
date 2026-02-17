@@ -19,11 +19,24 @@ import { SmartPasteModal } from './smartPaste/SmartPasteModal.jsx';
 // ============================================================================
 // Item Modal (Add/Edit)
 // ============================================================================
-export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, setItemForm, specs, categories, categorySettings, locations, inventory, onSave, onClose, onDelete }) {
+export const ItemModal = memo(function ItemModal({
+  isEdit,
+  itemId,
+  itemForm,
+  setItemForm,
+  specs,
+  categories,
+  categorySettings,
+  locations,
+  inventory,
+  onSave,
+  onClose,
+  onDelete,
+}) {
   const [showSmartPaste, setShowSmartPaste] = useState(false);
   const [cropSrc, setCropSrc] = useState(null);
   const [imageUploading, setImageUploading] = useState(false);
-  
+
   // Use the shared ItemForm hook for validation and computed values
   const {
     isValid,
@@ -48,36 +61,40 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
     inventory,
     categories,
   });
-  
+
   // Image crop handler — uploads to Supabase Storage when editing, stores base64 for new items
-  const handleCropComplete = useCallback(async (croppedDataUrl) => {
-    setCropSrc(null);
+  const handleCropComplete = useCallback(
+    async (croppedDataUrl) => {
+      setCropSrc(null);
 
-    if (isEdit && itemId) {
-      setImageUploading(true);
-      try {
-        const { storageService, isStorageUrl, getStoragePathFromUrl } = await import('../lib/index.js');
+      if (isEdit && itemId) {
+        setImageUploading(true);
+        try {
+          const { storageService, isStorageUrl, getStoragePathFromUrl } =
+            await import('../lib/index.js');
 
-        // Delete old image from storage before uploading new one
-        const oldImageUrl = itemForm.image;
-        if (oldImageUrl && isStorageUrl(oldImageUrl)) {
-          const oldPath = getStoragePathFromUrl(oldImageUrl);
-          if (oldPath) {
-            await storageService.deleteImage(oldPath).catch(() => {});
+          // Delete old image from storage before uploading new one
+          const oldImageUrl = itemForm.image;
+          if (oldImageUrl && isStorageUrl(oldImageUrl)) {
+            const oldPath = getStoragePathFromUrl(oldImageUrl);
+            if (oldPath) {
+              await storageService.deleteImage(oldPath).catch(() => {});
+            }
           }
-        }
 
-        const result = await storageService.uploadFromDataUrl(croppedDataUrl, itemId);
-        handleChange('image', result.url);
-      } catch (_err) {
+          const result = await storageService.uploadFromDataUrl(croppedDataUrl, itemId);
+          handleChange('image', result.url);
+        } catch (_err) {
+          handleChange('image', croppedDataUrl);
+        } finally {
+          setImageUploading(false);
+        }
+      } else {
         handleChange('image', croppedDataUrl);
-      } finally {
-        setImageUploading(false);
       }
-    } else {
-      handleChange('image', croppedDataUrl);
-    }
-  }, [isEdit, itemId, itemForm.image, handleChange]);
+    },
+    [isEdit, itemId, itemForm.image, handleChange],
+  );
 
   // Handle save with validation
   const handleSave = () => {
@@ -85,30 +102,32 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
       onSave();
     }
   };
-  
+
   const handleSmartPasteApply = (parsed) => {
-    setItemForm(prev => ({
+    setItemForm((prev) => ({
       ...prev,
       name: parsed.name || prev.name,
       brand: parsed.brand || prev.brand,
       category: parsed.category || prev.category,
       purchasePrice: parsed.purchasePrice || prev.purchasePrice,
       currentValue: parsed.purchasePrice || prev.currentValue,
-      specs: { ...prev.specs, ...parsed.specs }
+      specs: { ...prev.specs, ...parsed.specs },
     }));
   };
-  
+
   // Helper to render field error
   const FieldError = ({ field }) => {
     const error = getFieldError(field);
     if (!error) return null;
     return (
-      <span style={{ 
-        color: colors.danger, 
-        fontSize: typography.fontSize.xs, 
-        marginTop: spacing[1],
-        display: 'block'
-      }}>
+      <span
+        style={{
+          color: colors.danger,
+          fontSize: typography.fontSize.xs,
+          marginTop: spacing[1],
+          display: 'block',
+        }}
+      >
         {error}
       </span>
     );
@@ -121,37 +140,51 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
         <div style={{ padding: spacing[4], maxHeight: '60vh', overflowY: 'auto' }}>
           {/* Smart Paste Button */}
           <div style={{ marginBottom: spacing[4] }}>
-            <Button 
-              variant="secondary" 
+            <Button
+              variant="secondary"
               onClick={() => setShowSmartPaste(true)}
               style={{ width: '100%', justifyContent: 'center' }}
             >
               📋 Smart Paste - {isEdit ? 'Update from Product Page' : 'Import from Product Page'}
             </Button>
             {isEdit && (
-              <p style={{ 
-                color: colors.textMuted, 
-                fontSize: typography.fontSize.xs, 
-                margin: `${spacing[1]}px 0 0`, 
-                textAlign: 'center' 
-              }}>
+              <p
+                style={{
+                  color: colors.textMuted,
+                  fontSize: typography.fontSize.xs,
+                  margin: `${spacing[1]}px 0 0`,
+                  textAlign: 'center',
+                }}
+              >
                 Paste specs to fill in missing fields or update existing ones
               </p>
             )}
           </div>
-          
+
           {/* Preview Code Badge */}
           {!isEdit && previewCode && (
-            <div style={{ marginBottom: spacing[4], padding: spacing[3], background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.md, display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+            <div
+              style={{
+                marginBottom: spacing[4],
+                padding: spacing[3],
+                background: `${withOpacity(colors.primary, 10)}`,
+                borderRadius: borderRadius.md,
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[2],
+              }}
+            >
               <Badge text={previewCode} color={colors.primary} />
-              <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>Auto-generated ID</span>
+              <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>
+                Auto-generated ID
+              </span>
             </div>
           )}
-          
+
           {/* Image Upload Section */}
           <div style={{ marginBottom: spacing[4] }}>
             <label style={styles.label}>Image (Optional)</label>
-            
+
             {cropSrc ? (
               /* Crop editor mode */
               <ImageCropEditor
@@ -163,387 +196,549 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
                 title="Crop item image"
               />
             ) : (
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: spacing[3],
-              padding: spacing[3],
-              border: `1px dashed ${colors.border}`,
-              borderRadius: borderRadius.md,
-              background: colors.bgLight,
-              opacity: imageUploading ? 0.6 : 1,
-            }}>
-              {itemForm.image ? (
-                <>
-                  <img 
-                    src={itemForm.image} 
-                    alt="Item preview" 
-                    style={{ 
-                      width: 80, 
-                      height: 80, 
-                      objectFit: 'cover', 
-                      borderRadius: borderRadius.md 
-                    }} 
-                  />
-                  <div style={{ flex: 1 }}>
-                    <p style={{ margin: 0, fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
-                      {imageUploading ? 'Uploading...' : 'Image attached'}
-                    </p>
-                    <button
-                      onClick={() => setCropSrc(itemForm.image)}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: spacing[3],
+                  padding: spacing[3],
+                  border: `1px dashed ${colors.border}`,
+                  borderRadius: borderRadius.md,
+                  background: colors.bgLight,
+                  opacity: imageUploading ? 0.6 : 1,
+                }}
+              >
+                {itemForm.image ? (
+                  <>
+                    <img
+                      src={itemForm.image}
+                      alt="Item preview"
                       style={{
-                        background: 'none',
-                        border: 'none',
-                        color: colors.primary,
-                        fontSize: typography.fontSize.sm,
-                        cursor: 'pointer',
-                        padding: 0,
-                        marginTop: spacing[1],
-                      }}
-                    >
-                      Resize / Crop
-                    </button>
-                    <button
-                      onClick={async () => {
-                        // Delete from storage if it's a storage URL
-                        if (isEdit && itemForm.image) {
-                          try {
-                            const { storageService, isStorageUrl, getStoragePathFromUrl } = await import('../lib/index.js');
-                            if (isStorageUrl(itemForm.image)) {
-                              const path = getStoragePathFromUrl(itemForm.image);
-                              if (path) await storageService.deleteImage(path).catch(() => {});
-                            }
-                          } catch (_e) { /* non-fatal */ }
-                        }
-                        handleChange('image', null);
-                      }}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: colors.danger,
-                        fontSize: typography.fontSize.sm,
-                        cursor: 'pointer',
-                        padding: 0,
-                        marginTop: spacing[1],
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: spacing[1],
-                      }}
-                    >
-                      <X size={14} /> Remove image
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div style={{
-                    width: 80,
-                    height: 80,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: withOpacity(colors.primary, 10),
-                    borderRadius: borderRadius.md,
-                    color: colors.textMuted,
-                  }}>
-                    <Upload size={24} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      id="item-image-upload"
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          if (file.size > 5 * 1024 * 1024) return;
-                          if (!file.type.startsWith('image/')) return;
-                          const reader = new FileReader();
-                          reader.onload = (event) => {
-                            setCropSrc(event.target.result);
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                        if (e.target) e.target.value = '';
+                        width: 80,
+                        height: 80,
+                        objectFit: 'cover',
+                        borderRadius: borderRadius.md,
                       }}
                     />
-                    <label 
-                      htmlFor="item-image-upload"
+                    <div style={{ flex: 1 }}>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: typography.fontSize.sm,
+                          color: colors.textSecondary,
+                        }}
+                      >
+                        {imageUploading ? 'Uploading...' : 'Image attached'}
+                      </p>
+                      <button
+                        onClick={() => setCropSrc(itemForm.image)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: colors.primary,
+                          fontSize: typography.fontSize.sm,
+                          cursor: 'pointer',
+                          padding: 0,
+                          marginTop: spacing[1],
+                        }}
+                      >
+                        Resize / Crop
+                      </button>
+                      <button
+                        onClick={async () => {
+                          // Delete from storage if it's a storage URL
+                          if (isEdit && itemForm.image) {
+                            try {
+                              const { storageService, isStorageUrl, getStoragePathFromUrl } =
+                                await import('../lib/index.js');
+                              if (isStorageUrl(itemForm.image)) {
+                                const path = getStoragePathFromUrl(itemForm.image);
+                                if (path) await storageService.deleteImage(path).catch(() => {});
+                              }
+                            } catch (_e) {
+                              /* non-fatal */
+                            }
+                          }
+                          handleChange('image', null);
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: colors.danger,
+                          fontSize: typography.fontSize.sm,
+                          cursor: 'pointer',
+                          padding: 0,
+                          marginTop: spacing[1],
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: spacing[1],
+                        }}
+                      >
+                        <X size={14} /> Remove image
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div
                       style={{
-                        ...styles.btnSec,
-                        display: 'inline-flex',
-                        cursor: 'pointer',
-                        fontSize: typography.fontSize.sm,
+                        width: 80,
+                        height: 80,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: withOpacity(colors.primary, 10),
+                        borderRadius: borderRadius.md,
+                        color: colors.textMuted,
                       }}
                     >
-                      <Upload size={14} style={{ marginRight: spacing[1] }} />
-                      Choose Image
-                    </label>
-                    <p style={{ 
-                      margin: `${spacing[1]}px 0 0`, 
-                      fontSize: typography.fontSize.xs, 
-                      color: colors.textMuted 
-                    }}>
-                      JPG, PNG, or WebP (max 5MB)
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
+                      <Upload size={24} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        id="item-image-upload"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 5 * 1024 * 1024) return;
+                            if (!file.type.startsWith('image/')) return;
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              setCropSrc(event.target.result);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                          if (e.target) e.target.value = '';
+                        }}
+                      />
+                      <label
+                        htmlFor="item-image-upload"
+                        style={{
+                          ...styles.btnSec,
+                          display: 'inline-flex',
+                          cursor: 'pointer',
+                          fontSize: typography.fontSize.sm,
+                        }}
+                      >
+                        <Upload size={14} style={{ marginRight: spacing[1] }} />
+                        Choose Image
+                      </label>
+                      <p
+                        style={{
+                          margin: `${spacing[1]}px 0 0`,
+                          fontSize: typography.fontSize.xs,
+                          color: colors.textMuted,
+                        }}
+                      >
+                        JPG, PNG, or WebP (max 5MB)
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
-          
+
           {/* Name and Brand */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: spacing[3],
+              marginBottom: spacing[3],
+            }}
+          >
             <div>
-              <label style={{ ...styles.label, color: getFieldError('name') ? colors.danger : undefined }}>
+              <label
+                style={{
+                  ...styles.label,
+                  color: getFieldError('name') ? colors.danger : undefined,
+                }}
+              >
                 Name <span style={{ color: colors.danger }}>*</span>
               </label>
-              <input 
+              <input
                 name="name"
-                value={itemForm.name} 
-                onChange={e => handleChange('name', e.target.value)}
+                value={itemForm.name}
+                onChange={(e) => handleChange('name', e.target.value)}
                 onBlur={() => handleBlur('name')}
-                placeholder="e.g., Alpha a7 IV" 
-                style={{ ...styles.input, borderColor: getFieldError('name') ? colors.danger : colors.border }}
+                placeholder="e.g., Alpha a7 IV"
+                style={{
+                  ...styles.input,
+                  borderColor: getFieldError('name') ? colors.danger : colors.border,
+                }}
                 aria-invalid={getFieldError('name') ? 'true' : undefined}
                 aria-describedby={getFieldError('name') ? 'name-error' : undefined}
               />
               <FieldError field="name" />
             </div>
             <div>
-              <label style={{ ...styles.label, color: getFieldError('brand') ? colors.danger : undefined }}>
+              <label
+                style={{
+                  ...styles.label,
+                  color: getFieldError('brand') ? colors.danger : undefined,
+                }}
+              >
                 Brand <span style={{ color: colors.danger }}>*</span>
               </label>
-              <input 
+              <input
                 name="brand"
-                value={itemForm.brand} 
-                onChange={e => handleChange('brand', e.target.value)}
+                value={itemForm.brand}
+                onChange={(e) => handleChange('brand', e.target.value)}
                 onBlur={() => handleBlur('brand')}
-                placeholder="e.g., Sony" 
-                style={{ ...styles.input, borderColor: getFieldError('brand') ? colors.danger : colors.border }}
+                placeholder="e.g., Sony"
+                style={{
+                  ...styles.input,
+                  borderColor: getFieldError('brand') ? colors.danger : colors.border,
+                }}
                 aria-invalid={getFieldError('brand') ? 'true' : undefined}
                 aria-describedby={getFieldError('brand') ? 'brand-error' : undefined}
               />
               <FieldError field="brand" />
             </div>
           </div>
-          
+
           {/* Category and Condition */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: spacing[3],
+              marginBottom: spacing[3],
+            }}
+          >
             <div>
               <label style={styles.label}>Category</label>
-              <Select 
-                value={itemForm.category} 
-                onChange={e => handleChange('category', e.target.value)} 
-                options={categories.map(c => ({ value: c, label: c }))}
+              <Select
+                value={itemForm.category}
+                onChange={(e) => handleChange('category', e.target.value)}
+                options={categories.map((c) => ({ value: c, label: c }))}
                 aria-label="Category"
               />
             </div>
             <div>
               <label style={styles.label}>Condition</label>
-              <Select 
-                value={itemForm.condition} 
-                onChange={e => handleChange('condition', e.target.value)} 
-                options={Object.values(CONDITION).map(c => ({ value: c, label: c }))}
+              <Select
+                value={itemForm.condition}
+                onChange={(e) => handleChange('condition', e.target.value)}
+                options={Object.values(CONDITION).map((c) => ({ value: c, label: c }))}
                 aria-label="Condition"
               />
             </div>
           </div>
-          
+
           {/* Quantity field - only if category tracks quantity */}
           {currentCategorySettings.trackQuantity && (
             <div style={{ marginBottom: spacing[3] }}>
-              <label style={styles.label}>
-                Quantity
-              </label>
-              <input 
-                type="number" 
+              <label style={styles.label}>Quantity</label>
+              <input
+                type="number"
                 min="0"
-                value={itemForm.quantity || 1} 
-                onChange={e => handleChange('quantity', Math.max(0, parseInt(e.target.value) || 0))} 
+                value={itemForm.quantity || 1}
+                onChange={(e) =>
+                  handleChange('quantity', Math.max(0, parseInt(e.target.value) || 0))
+                }
                 style={{
                   ...styles.input,
-                  maxWidth: '150px'
-                }} 
+                  maxWidth: '150px',
+                }}
               />
             </div>
           )}
-          
+
           {/* Reorder Point field - only for Consumables category */}
           {currentCategorySettings.trackReorderPoint && (
             <div style={{ marginBottom: spacing[3] }}>
               <label style={styles.label}>
                 Reorder Point
-                <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.normal, marginLeft: spacing[2] }}>
+                <span
+                  style={{
+                    fontSize: typography.fontSize.xs,
+                    color: colors.textMuted,
+                    fontWeight: typography.fontWeight.normal,
+                    marginLeft: spacing[2],
+                  }}
+                >
                   (alert when quantity falls below this)
                 </span>
               </label>
-              <input 
-                type="number" 
+              <input
+                type="number"
                 min="0"
-                value={itemForm.reorderPoint || 0} 
-                onChange={e => handleChange('reorderPoint', Math.max(0, parseInt(e.target.value) || 0))} 
+                value={itemForm.reorderPoint || 0}
+                onChange={(e) =>
+                  handleChange('reorderPoint', Math.max(0, parseInt(e.target.value) || 0))
+                }
                 style={{
                   ...styles.input,
-                  maxWidth: '150px'
-                }} 
+                  maxWidth: '150px',
+                }}
               />
             </div>
           )}
-          
+
           {/* Purchase Price and Current Value */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: spacing[3],
+              marginBottom: spacing[3],
+            }}
+          >
             <div>
               <label style={styles.label}>Purchase Price</label>
-              <input type="number" value={itemForm.purchasePrice} onChange={e => handleChange('purchasePrice', e.target.value)} placeholder="0.00" style={styles.input} />
+              <input
+                type="number"
+                value={itemForm.purchasePrice}
+                onChange={(e) => handleChange('purchasePrice', e.target.value)}
+                placeholder="0.00"
+                style={styles.input}
+              />
             </div>
             <div>
               <label style={styles.label}>Current Value</label>
-              <input type="number" value={itemForm.currentValue} onChange={e => handleChange('currentValue', e.target.value)} placeholder="0.00" style={styles.input} />
+              <input
+                type="number"
+                value={itemForm.currentValue}
+                onChange={(e) => handleChange('currentValue', e.target.value)}
+                placeholder="0.00"
+                style={styles.input}
+              />
             </div>
           </div>
-          
+
           {/* Location and Serial Number */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: spacing[3],
+              marginBottom: spacing[3],
+            }}
+          >
             <div>
               <label style={styles.label}>Location</label>
               {flattenedLocations.length > 0 ? (
                 <Select
                   value={itemForm.location || ''}
-                  onChange={e => handleChange('location', e.target.value)}
+                  onChange={(e) => handleChange('location', e.target.value)}
                   options={[
                     { value: '', label: 'Select location...' },
-                    ...flattenedLocations.map(loc => ({ value: loc.fullPath, label: loc.fullPath }))
+                    ...flattenedLocations.map((loc) => ({
+                      value: loc.fullPath,
+                      label: loc.fullPath,
+                    })),
                   ]}
                   aria-label="Location"
                 />
               ) : (
-                <input value={itemForm.location} onChange={e => handleChange('location', e.target.value)} placeholder="e.g., Shelf A-1" style={styles.input} />
+                <input
+                  value={itemForm.location}
+                  onChange={(e) => handleChange('location', e.target.value)}
+                  placeholder="e.g., Shelf A-1"
+                  style={styles.input}
+                />
               )}
             </div>
             <div>
-              <label style={{ 
-                ...styles.label, 
-                color: (currentCategorySettings.trackSerialNumbers && !itemForm.serialNumber) || duplicateSerialNumber ? colors.danger : undefined 
-              }}>
+              <label
+                style={{
+                  ...styles.label,
+                  color:
+                    (currentCategorySettings.trackSerialNumbers && !itemForm.serialNumber) ||
+                    duplicateSerialNumber
+                      ? colors.danger
+                      : undefined,
+                }}
+              >
                 Serial Number
                 {currentCategorySettings.trackSerialNumbers && (
                   <span style={{ color: colors.danger, marginLeft: spacing[1] }}>*</span>
                 )}
               </label>
-              <input 
-                value={itemForm.serialNumber} 
-                onChange={e => handleChange('serialNumber', e.target.value)} 
-                placeholder={currentCategorySettings.trackSerialNumbers ? "Required" : "Optional"} 
+              <input
+                value={itemForm.serialNumber}
+                onChange={(e) => handleChange('serialNumber', e.target.value)}
+                placeholder={currentCategorySettings.trackSerialNumbers ? 'Required' : 'Optional'}
                 style={{
                   ...styles.input,
-                  borderColor: (currentCategorySettings.trackSerialNumbers && !itemForm.serialNumber) || duplicateSerialNumber ? colors.danger : colors.border
-                }} 
+                  borderColor:
+                    (currentCategorySettings.trackSerialNumbers && !itemForm.serialNumber) ||
+                    duplicateSerialNumber
+                      ? colors.danger
+                      : colors.border,
+                }}
               />
               {duplicateSerialNumber && (
-                <span style={{ color: colors.danger, fontSize: typography.fontSize.xs, display: 'block', marginTop: spacing[1] }}>
-                  Serial number already exists on &quot;{duplicateSerialNumber.name}&quot; ({duplicateSerialNumber.id})
+                <span
+                  style={{
+                    color: colors.danger,
+                    fontSize: typography.fontSize.xs,
+                    display: 'block',
+                    marginTop: spacing[1],
+                  }}
+                >
+                  Serial number already exists on &quot;{duplicateSerialNumber.name}&quot; (
+                  {duplicateSerialNumber.id})
                 </span>
               )}
             </div>
           </div>
-          
+
           {/* Purchase Date */}
           <div style={{ marginBottom: spacing[3] }}>
             <label style={styles.label}>Purchase Date</label>
-            <DatePicker 
-              value={itemForm.purchaseDate} 
-              onChange={e => handleChange('purchaseDate', e.target.value)} 
+            <DatePicker
+              value={itemForm.purchaseDate}
+              onChange={(e) => handleChange('purchaseDate', e.target.value)}
               placeholder="Select purchase date"
               aria-label="Purchase date"
             />
           </div>
-          
+
           {/* Specifications */}
           {categorySpecs.length > 0 && (
-            <div style={{ borderTop: `1px solid ${colors.borderLight}`, paddingTop: spacing[4], marginTop: spacing[4] }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[3] }}>
-                <h4 style={{ margin: 0, fontSize: typography.fontSize.sm, color: colors.textMuted }}>
+            <div
+              style={{
+                borderTop: `1px solid ${colors.borderLight}`,
+                paddingTop: spacing[4],
+                marginTop: spacing[4],
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: spacing[3],
+                }}
+              >
+                <h4
+                  style={{ margin: 0, fontSize: typography.fontSize.sm, color: colors.textMuted }}
+                >
                   Specifications ({categorySpecs.length} fields)
                 </h4>
                 <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                  {categorySpecs.filter(s => s.required).length} required
+                  {categorySpecs.filter((s) => s.required).length} required
                 </span>
               </div>
-              
+
               {/* Required fields first */}
-              {categorySpecs.filter(s => s.required).length > 0 && (
+              {categorySpecs.filter((s) => s.required).length > 0 && (
                 <div style={{ marginBottom: spacing[4] }}>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.primary, marginBottom: spacing[2], fontWeight: typography.fontWeight.medium }}>
+                  <div
+                    style={{
+                      fontSize: typography.fontSize.xs,
+                      color: colors.primary,
+                      marginBottom: spacing[2],
+                      fontWeight: typography.fontWeight.medium,
+                    }}
+                  >
                     Required Fields
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3] }}>
-                    {categorySpecs.filter(s => s.required).map(spec => {
-                      const isEmpty = !itemForm.specs[spec.name];
-                      return (
-                        <div key={spec.name}>
-                          <label style={{ ...styles.label, color: isEmpty ? colors.danger : undefined }}>
-                            {spec.name} <span style={{ color: colors.danger }}>*</span>
-                          </label>
-                          <input 
-                            value={itemForm.specs[spec.name] || ''} 
-                            onChange={e => handleSpecChange(spec.name, e.target.value)} 
-                            style={{ ...styles.input, borderColor: isEmpty ? colors.danger : colors.border }} 
-                          />
-                        </div>
-                      );
-                    })}
+                    {categorySpecs
+                      .filter((s) => s.required)
+                      .map((spec) => {
+                        const isEmpty = !itemForm.specs[spec.name];
+                        return (
+                          <div key={spec.name}>
+                            <label
+                              style={{
+                                ...styles.label,
+                                color: isEmpty ? colors.danger : undefined,
+                              }}
+                            >
+                              {spec.name} <span style={{ color: colors.danger }}>*</span>
+                            </label>
+                            <input
+                              value={itemForm.specs[spec.name] || ''}
+                              onChange={(e) => handleSpecChange(spec.name, e.target.value)}
+                              style={{
+                                ...styles.input,
+                                borderColor: isEmpty ? colors.danger : colors.border,
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               )}
-              
+
               {/* Optional fields */}
-              {categorySpecs.filter(s => !s.required).length > 0 && (
+              {categorySpecs.filter((s) => !s.required).length > 0 && (
                 <div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginBottom: spacing[2] }}>
+                  <div
+                    style={{
+                      fontSize: typography.fontSize.xs,
+                      color: colors.textMuted,
+                      marginBottom: spacing[2],
+                    }}
+                  >
                     Optional Fields
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3] }}>
-                    {categorySpecs.filter(s => !s.required).map(spec => (
-                      <div key={spec.name}>
-                        <label style={styles.label}>{spec.name}</label>
-                        <input 
-                          value={itemForm.specs[spec.name] || ''} 
-                          onChange={e => handleSpecChange(spec.name, e.target.value)} 
-                          style={styles.input} 
-                        />
-                      </div>
-                    ))}
+                    {categorySpecs
+                      .filter((s) => !s.required)
+                      .map((spec) => (
+                        <div key={spec.name}>
+                          <label style={styles.label}>{spec.name}</label>
+                          <input
+                            value={itemForm.specs[spec.name] || ''}
+                            onChange={(e) => handleSpecChange(spec.name, e.target.value)}
+                            style={styles.input}
+                          />
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
             </div>
           )}
         </div>
-        
+
         {/* Action Buttons in fixed footer */}
-        <div style={{ 
-          padding: spacing[4], 
-          borderTop: `1px solid ${colors.borderLight}`,
-          display: 'flex', 
-          gap: spacing[3], 
-          justifyContent: 'space-between',
-          background: colors.bgMedium,
-        }}>
+        <div
+          style={{
+            padding: spacing[4],
+            borderTop: `1px solid ${colors.borderLight}`,
+            display: 'flex',
+            gap: spacing[3],
+            justifyContent: 'space-between',
+            background: colors.bgMedium,
+          }}
+        >
           {isEdit && onDelete && itemId ? (
-            <Button variant="secondary" danger onClick={() => { onClose(); onDelete(itemId); }} icon={Trash2}>Delete Item</Button>
+            <Button
+              variant="secondary"
+              danger
+              onClick={() => {
+                onClose();
+                onDelete(itemId);
+              }}
+              icon={Trash2}
+            >
+              Delete Item
+            </Button>
           ) : (
             <div />
           )}
           <div style={{ display: 'flex', gap: spacing[3] }}>
-            <Button variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button onClick={handleSave} disabled={!isValid} icon={isEdit ? Save : Plus}>{isEdit ? 'Save Changes' : 'Add Item'}</Button>
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={!isValid} icon={isEdit ? Save : Plus}>
+              {isEdit ? 'Save Changes' : 'Add Item'}
+            </Button>
           </div>
         </div>
       </Modal>
-      
+
       {showSmartPaste && (
         <SmartPasteModal
           specs={specs}
@@ -577,17 +772,21 @@ const itemFormShape = PropTypes.shape({
 
 /** Shape for spec configuration */
 const specConfigShape = PropTypes.objectOf(
-  PropTypes.arrayOf(PropTypes.shape({
-    name: PropTypes.string.isRequired,
-    required: PropTypes.bool,
-  }))
+  PropTypes.arrayOf(
+    PropTypes.shape({
+      name: PropTypes.string.isRequired,
+      required: PropTypes.bool,
+    }),
+  ),
 );
 
 /** Shape for category settings */
-const categorySettingsShape = PropTypes.objectOf(PropTypes.shape({
-  trackSerialNumbers: PropTypes.bool,
-  trackQuantity: PropTypes.bool,
-}));
+const categorySettingsShape = PropTypes.objectOf(
+  PropTypes.shape({
+    trackSerialNumbers: PropTypes.bool,
+    trackQuantity: PropTypes.bool,
+  }),
+);
 
 /** Shape for location */
 const locationShape = PropTypes.shape({

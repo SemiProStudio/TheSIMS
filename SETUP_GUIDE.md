@@ -71,6 +71,7 @@ Verify: Go to **Table Editor** — you should see tables like `inventory`, `pack
 ### Step 1.5: (Optional) Deploy Edge Functions for Email
 
 **Files:**
+
 - `supabase/functions/send-email/index.ts`
 - `supabase/functions/due-date-reminder/index.ts`
 - `supabase/functions/_shared/utils.ts`
@@ -169,10 +170,10 @@ Before deploying, add your Supabase credentials:
 1. Expand **Environment Variables**
 2. Add each variable:
 
-| Name | Value |
-|------|-------|
-| `VITE_SUPABASE_URL` | `https://xxxxx.supabase.co` (from Step 1.7) |
-| `VITE_SUPABASE_ANON_KEY` | `eyJ...` (from Step 1.7) |
+| Name                     | Value                                       |
+| ------------------------ | ------------------------------------------- |
+| `VITE_SUPABASE_URL`      | `https://xxxxx.supabase.co` (from Step 1.7) |
+| `VITE_SUPABASE_ANON_KEY` | `eyJ...` (from Step 1.7)                    |
 
 3. Click **Deploy**
 
@@ -199,9 +200,7 @@ Before deploying, add your Supabase credentials:
 
 ```json
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
 ```
 
@@ -212,6 +211,7 @@ This ensures client-side routing works correctly.
 **Purpose:** Build configuration for Vite
 
 Key settings:
+
 - React plugin for JSX
 - Build output to `dist/`
 - Development server port
@@ -221,6 +221,7 @@ Key settings:
 **Purpose:** Supabase client initialization
 
 This file:
+
 - Reads `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from environment
 - Creates Supabase client
 - Enables demo mode if credentials are missing
@@ -267,6 +268,7 @@ Defines app name, icons, and colors for "Add to Home Screen" functionality.
 **Cause:** Environment variables not set correctly
 
 **Fix:**
+
 1. Verify variables in Vercel dashboard
 2. Variable names must start with `VITE_`
 3. Redeploy after changing variables
@@ -276,6 +278,7 @@ Defines app name, icons, and colors for "Add to Home Screen" functionality.
 **Cause:** Schema not run
 
 **Fix:**
+
 1. Run `supabase/schema.sql` in SQL Editor
 2. Verify tables exist in Table Editor
 
@@ -284,6 +287,7 @@ Defines app name, icons, and colors for "Add to Home Screen" functionality.
 **Cause:** Build issue
 
 **Fix:**
+
 1. Check build logs in Vercel
 2. Verify `index.css` is imported in `main.jsx`
 
@@ -292,6 +296,7 @@ Defines app name, icons, and colors for "Add to Home Screen" functionality.
 **Cause:** Functions not deployed or secrets missing
 
 **Fix:**
+
 1. Verify functions deployed: `supabase functions list`
 2. Verify secrets set: `supabase secrets list`
 3. Check function logs in Supabase dashboard
@@ -300,20 +305,20 @@ Defines app name, icons, and colors for "Add to Home Screen" functionality.
 
 ## File Reference Summary
 
-| Setup Step | File(s) Required |
-|------------|------------------|
-| Database tables | `supabase/schema.sql` |
-| Notification tables | `notifications-schema.sql` |
-| Database functions | `supabase/functions.sql` |
-| Sample data | `supabase/seed.sql` |
-| Image storage | `supabase/storage.sql` |
-| Email function | `supabase/functions/send-email/index.ts` |
-| Reminder function | `supabase/functions/due-date-reminder/index.ts` |
-| Shared utilities | `supabase/functions/_shared/utils.ts` |
-| Vercel config | `vercel.json` |
-| Build config | `vite.config.js` |
-| PWA manifest | `public/manifest.json` |
-| Supabase client | `lib/supabase.js` |
+| Setup Step          | File(s) Required                                |
+| ------------------- | ----------------------------------------------- |
+| Database tables     | `supabase/schema.sql`                           |
+| Notification tables | `notifications-schema.sql`                      |
+| Database functions  | `supabase/functions.sql`                        |
+| Sample data         | `supabase/seed.sql`                             |
+| Image storage       | `supabase/storage.sql`                          |
+| Email function      | `supabase/functions/send-email/index.ts`        |
+| Reminder function   | `supabase/functions/due-date-reminder/index.ts` |
+| Shared utilities    | `supabase/functions/_shared/utils.ts`           |
+| Vercel config       | `vercel.json`                                   |
+| Build config        | `vite.config.js`                                |
+| PWA manifest        | `public/manifest.json`                          |
+| Supabase client     | `lib/supabase.js`                               |
 
 ---
 

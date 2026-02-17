@@ -6,7 +6,7 @@ import { memo, useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Printer, Download, Check, Package, Layers } from 'lucide-react';
 import QRCode from 'qrcode';
 import { LABEL_FORMATS } from '../constants.js';
-import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Card, CardHeader, Button, SearchInput, Badge, PageHeader } from '../components/ui.jsx';
 
 import { error as logError } from '../lib/logger.js';
@@ -39,20 +39,25 @@ const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
 
     setError(false);
 
-    QRCode.toCanvas(canvas, String(data), {
-      width: size,
-      margin: 1,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
+    QRCode.toCanvas(
+      canvas,
+      String(data),
+      {
+        width: size,
+        margin: 1,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF',
+        },
+        errorCorrectionLevel: 'M',
       },
-      errorCorrectionLevel: 'M'
-    }, (err) => {
-      if (err) {
-        logError('QR Code generation error:', err);
-        setError(true);
-      }
-    });
+      (err) => {
+        if (err) {
+          logError('QR Code generation error:', err);
+          setError(true);
+        }
+      },
+    );
   }, [data, size]);
 
   if (!data) return null;
@@ -87,14 +92,21 @@ const QRCodeCanvas = memo(function QRCodeCanvas({ data, size = 100 }) {
       style={{
         borderRadius: borderRadius.sm,
         display: 'block',
-        backgroundColor: '#FFFFFF'
+        backgroundColor: '#FFFFFF',
       }}
     />
   );
 });
 
 // Label Preview Component
-const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isPackage: _isPackage, containedItems }) {
+const LabelPreview = memo(function LabelPreview({
+  item,
+  format,
+  user,
+  isKit,
+  isPackage: _isPackage,
+  containedItems,
+}) {
   if (!item) return null;
 
   const scale = 0.5;
@@ -153,9 +165,11 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
 
     // Add custom specs from item
     if (item.specs && typeof item.specs === 'object') {
-      Object.entries(item.specs).slice(0, 3).forEach(([key, value]) => {
-        if (value) specs.push({ label: key, value: String(value) });
-      });
+      Object.entries(item.specs)
+        .slice(0, 3)
+        .forEach(([key, value]) => {
+          if (value) specs.push({ label: key, value: String(value) });
+        });
     }
 
     return specs.slice(0, 6); // Limit to 6 specs
@@ -167,17 +181,19 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   // Small format - QR only (square)
   if (isSmall) {
     return (
-      <div style={{
-        width: labelWidth,
-        height: labelHeight,
-        background: '#fff',
-        borderRadius: borderRadius.md,
-        padding: spacing[2],
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
+      <div
+        style={{
+          width: labelWidth,
+          height: labelHeight,
+          background: '#fff',
+          borderRadius: borderRadius.md,
+          padding: spacing[2],
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        }}
+      >
         <QRCodeCanvas data={item.id} size={qrSize} />
       </div>
     );
@@ -186,21 +202,51 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   // Medium format - QR + Info with better text sizing
   if (isMedium) {
     return (
-      <div style={{
-        width: labelWidth,
-        height: labelHeight,
-        background: '#fff',
-        borderRadius: borderRadius.md,
-        padding: spacing[3],
-        display: 'flex',
-        gap: spacing[3],
-        alignItems: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
+      <div
+        style={{
+          width: labelWidth,
+          height: labelHeight,
+          background: '#fff',
+          borderRadius: borderRadius.md,
+          padding: spacing[3],
+          display: 'flex',
+          gap: spacing[3],
+          alignItems: 'center',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        }}
+      >
         <QRCodeCanvas data={item.id} size={qrSize} />
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ fontSize: typography.fontSize.base, fontWeight: 'bold', color: '#000', marginBottom: 4 }}>{item.id}</div>
-          <div style={{ fontSize: typography.fontSize.base, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>{item.name}</div>
+        <div
+          style={{
+            flex: 1,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              fontSize: typography.fontSize.base,
+              fontWeight: 'bold',
+              color: '#000',
+              marginBottom: 4,
+            }}
+          >
+            {item.id}
+          </div>
+          <div
+            style={{
+              fontSize: typography.fontSize.base,
+              color: '#333',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              marginBottom: 2,
+            }}
+          >
+            {item.name}
+          </div>
           <div style={{ fontSize: typography.fontSize.sm, color: '#666' }}>{item.brand}</div>
         </div>
       </div>
@@ -210,37 +256,61 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   // Large format - Full Details
   if (isLarge) {
     return (
-      <div style={{
-        width: labelWidth,
-        height: labelHeight,
-        background: '#fff',
-        borderRadius: borderRadius.md,
-        padding: spacing[3],
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
+      <div
+        style={{
+          width: labelWidth,
+          height: labelHeight,
+          background: '#fff',
+          borderRadius: borderRadius.md,
+          padding: spacing[3],
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        }}
+      >
         {/* Top section: QR + Basic Info */}
         <div style={{ display: 'flex', gap: spacing[3], marginBottom: spacing[2] }}>
           <QRCodeCanvas data={item.id} size={qrSize} />
           <div style={{ flex: 1, overflow: 'hidden' }}>
-            <div style={{ fontSize: typography.fontSize.lg, fontWeight: 'bold', color: '#000', marginBottom: 2 }}>{item.id}</div>
-            <div style={{ fontSize: typography.fontSize.base, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>{item.name}</div>
+            <div
+              style={{
+                fontSize: typography.fontSize.lg,
+                fontWeight: 'bold',
+                color: '#000',
+                marginBottom: 2,
+              }}
+            >
+              {item.id}
+            </div>
+            <div
+              style={{
+                fontSize: typography.fontSize.base,
+                color: '#333',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                marginBottom: 2,
+              }}
+            >
+              {item.name}
+            </div>
             <div style={{ fontSize: typography.fontSize.sm, color: '#666' }}>{item.brand}</div>
           </div>
         </div>
 
         {/* Specs Grid */}
         {itemSpecs.length > 0 && (
-          <div style={{
-            flex: 1,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '4px 12px',
-            fontSize: typography.fontSize.xs,
-            borderTop: '1px solid #eee',
-            paddingTop: spacing[2],
-          }}>
+          <div
+            style={{
+              flex: 1,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '4px 12px',
+              fontSize: typography.fontSize.xs,
+              borderTop: '1px solid #eee',
+              paddingTop: spacing[2],
+            }}
+          >
             {itemSpecs.map((spec, idx) => (
               <div key={idx} style={{ overflow: 'hidden' }}>
                 <span style={{ color: '#999' }}>{spec.label}: </span>
@@ -257,44 +327,83 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   if (isKitOrPackageLabel) {
     const itemsList = containedItems || [];
     return (
-      <div style={{
-        width: labelWidth,
-        height: labelHeight,
-        background: '#fff',
-        borderRadius: borderRadius.md,
-        padding: spacing[3],
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
+      <div
+        style={{
+          width: labelWidth,
+          height: labelHeight,
+          background: '#fff',
+          borderRadius: borderRadius.md,
+          padding: spacing[3],
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        }}
+      >
         {/* Header: QR + Kit/Package Info */}
         <div style={{ display: 'flex', gap: spacing[3], marginBottom: spacing[2] }}>
           <QRCodeCanvas data={item.id} size={qrSize} />
           <div style={{ flex: 1, overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
               {isKit ? <Layers size={12} color="#666" /> : <Package size={12} color="#666" />}
-              <span style={{ fontSize: typography.fontSize.xs, color: '#666', textTransform: 'uppercase' }}>
+              <span
+                style={{
+                  fontSize: typography.fontSize.xs,
+                  color: '#666',
+                  textTransform: 'uppercase',
+                }}
+              >
                 {isKit ? 'Kit' : 'Package'}
               </span>
             </div>
-            <div style={{ fontSize: typography.fontSize.base, fontWeight: 'bold', color: '#000', marginBottom: 2 }}>{item.id}</div>
-            <div style={{ fontSize: typography.fontSize.sm, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+            <div
+              style={{
+                fontSize: typography.fontSize.base,
+                fontWeight: 'bold',
+                color: '#000',
+                marginBottom: 2,
+              }}
+            >
+              {item.id}
+            </div>
+            <div
+              style={{
+                fontSize: typography.fontSize.sm,
+                color: '#333',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {item.name}
+            </div>
           </div>
         </div>
 
         {/* Items List */}
-        <div style={{
-          flex: 1,
-          borderTop: '1px solid #eee',
-          paddingTop: spacing[2],
-          overflow: 'hidden',
-        }}>
-          <div style={{ fontSize: typography.fontSize.xs, color: '#999', marginBottom: 4, textTransform: 'uppercase' }}>
+        <div
+          style={{
+            flex: 1,
+            borderTop: '1px solid #eee',
+            paddingTop: spacing[2],
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              fontSize: typography.fontSize.xs,
+              color: '#999',
+              marginBottom: 4,
+              textTransform: 'uppercase',
+            }}
+          >
             Contains ({itemsList.length} items):
           </div>
           <div style={{ fontSize: typography.fontSize.xs, color: '#333', lineHeight: 1.4 }}>
             {itemsList.slice(0, 8).map((i, idx) => (
-              <div key={idx} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div
+                key={idx}
+                style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+              >
                 • {i.id} - {i.name}
               </div>
             ))}
@@ -312,35 +421,59 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
   // Branding formats
   if (isBranding) {
     return (
-      <div style={{
-        width: labelWidth,
-        height: labelHeight,
-        background: '#fff',
-        borderRadius: borderRadius.md,
-        padding: spacing[3],
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
+      <div
+        style={{
+          width: labelWidth,
+          height: labelHeight,
+          background: '#fff',
+          borderRadius: borderRadius.md,
+          padding: spacing[3],
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        }}
+      >
         {/* Top section: QR + Basic Info */}
         <div style={{ display: 'flex', gap: spacing[3], marginBottom: spacing[2] }}>
           <QRCodeCanvas data={item.id} size={qrSize} />
           <div style={{ flex: 1, overflow: 'hidden' }}>
-            <div style={{ fontSize: typography.fontSize.base, fontWeight: 'bold', color: '#000', marginBottom: 2 }}>{item.id}</div>
-            <div style={{ fontSize: typography.fontSize.sm, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>{item.name}</div>
+            <div
+              style={{
+                fontSize: typography.fontSize.base,
+                fontWeight: 'bold',
+                color: '#000',
+                marginBottom: 2,
+              }}
+            >
+              {item.id}
+            </div>
+            <div
+              style={{
+                fontSize: typography.fontSize.sm,
+                color: '#333',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                marginBottom: 2,
+              }}
+            >
+              {item.name}
+            </div>
             <div style={{ fontSize: typography.fontSize.sm, color: '#666' }}>{item.brand}</div>
           </div>
         </div>
 
         {/* Specs section */}
         {itemSpecs.length > 0 && (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '4px 12px',
-            fontSize: typography.fontSize.xs,
-            marginBottom: spacing[2],
-          }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: '4px 12px',
+              fontSize: typography.fontSize.xs,
+              marginBottom: spacing[2],
+            }}
+          >
             {itemSpecs.slice(0, 4).map((spec, idx) => (
               <div key={idx} style={{ overflow: 'hidden' }}>
                 <span style={{ color: '#999' }}>{spec.label}: </span>
@@ -351,14 +484,16 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
         )}
 
         {/* Branding Footer */}
-        <div style={{
-          marginTop: 'auto',
-          borderTop: '1px solid #eee',
-          paddingTop: spacing[2],
-          display: 'flex',
-          alignItems: 'center',
-          gap: spacing[2],
-        }}>
+        <div
+          style={{
+            marginTop: 'auto',
+            borderTop: '1px solid #eee',
+            paddingTop: spacing[2],
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[2],
+          }}
+        >
           {showLogo && user?.profile?.logo && user?.profile?.showFields?.logo ? (
             <img src={user.profile.logo} alt="" style={{ height: 28, objectFit: 'contain' }} />
           ) : null}
@@ -367,7 +502,10 @@ const LabelPreview = memo(function LabelPreview({ item, format, user, isKit, isP
             {profileFields.length > 0 ? (
               <div style={{ fontSize: typography.fontSize.xs, color: '#666', lineHeight: 1.4 }}>
                 {profileFields.map((field, idx) => (
-                  <div key={idx} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div
+                    key={idx}
+                    style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                  >
                     {field.value}
                   </div>
                 ))}
@@ -394,44 +532,41 @@ function LabelsView({ inventory, packages = [], user }) {
 
   // Get kits from inventory (items that are containers with kit items)
   const kits = useMemo(() => {
-    return inventory.filter(item => item.isKit && item.kitItems && item.kitItems.length > 0);
+    return inventory.filter((item) => item.isKit && item.kitItems && item.kitItems.length > 0);
   }, [inventory]);
 
   // Get regular items (non-kits)
   const regularItems = useMemo(() => {
-    return inventory.filter(item => !item.isKit);
+    return inventory.filter((item) => !item.isKit);
   }, [inventory]);
 
   const filteredItems = useMemo(() => {
     const q = search.toLowerCase();
     if (selectionTab === 'items') {
       if (!search.trim()) return regularItems;
-      return regularItems.filter(i =>
-        i.name.toLowerCase().includes(q) ||
-        i.id.toLowerCase().includes(q) ||
-        (i.brand && i.brand.toLowerCase().includes(q))
+      return regularItems.filter(
+        (i) =>
+          i.name.toLowerCase().includes(q) ||
+          i.id.toLowerCase().includes(q) ||
+          (i.brand && i.brand.toLowerCase().includes(q)),
       );
     } else if (selectionTab === 'kits') {
       if (!search.trim()) return kits;
-      return kits.filter(i =>
-        i.name.toLowerCase().includes(q) ||
-        i.id.toLowerCase().includes(q)
-      );
+      return kits.filter((i) => i.name.toLowerCase().includes(q) || i.id.toLowerCase().includes(q));
     } else {
       if (!search.trim()) return packages;
-      return packages.filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        p.id.toLowerCase().includes(q)
+      return packages.filter(
+        (p) => p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q),
       );
     }
   }, [regularItems, kits, packages, search, selectionTab]);
 
   const toggleItem = useCallback((id) => {
-    setSelectedItems(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    setSelectedItems((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   }, []);
 
   const selectAll = useCallback(() => {
-    setSelectedItems(filteredItems.map(i => i.id));
+    setSelectedItems(filteredItems.map((i) => i.id));
   }, [filteredItems]);
 
   const clearSelection = useCallback(() => {
@@ -439,17 +574,22 @@ function LabelsView({ inventory, packages = [], user }) {
   }, []);
 
   // Get contained items for a kit or package
-  const getContainedItems = useCallback((item, isPackage = false) => {
-    if (isPackage) {
-      const pkg = packages.find(p => p.id === item.id);
-      if (!pkg || !pkg.items) return [];
-      return pkg.items.map(itemId => inventory.find(i => i.id === itemId)).filter(Boolean);
-    } else {
-      // Kit
-      if (!item.kitItems) return [];
-      return item.kitItems.map(itemId => inventory.find(i => i.id === itemId)).filter(Boolean);
-    }
-  }, [inventory, packages]);
+  const getContainedItems = useCallback(
+    (item, isPackage = false) => {
+      if (isPackage) {
+        const pkg = packages.find((p) => p.id === item.id);
+        if (!pkg || !pkg.items) return [];
+        return pkg.items.map((itemId) => inventory.find((i) => i.id === itemId)).filter(Boolean);
+      } else {
+        // Kit
+        if (!item.kitItems) return [];
+        return item.kitItems
+          .map((itemId) => inventory.find((i) => i.id === itemId))
+          .filter(Boolean);
+      }
+    },
+    [inventory, packages],
+  );
 
   // Get the first selected item for preview
   const previewItem = useMemo(() => {
@@ -457,9 +597,9 @@ function LabelsView({ inventory, packages = [], user }) {
     const id = selectedItems[0];
 
     if (selectionTab === 'packages') {
-      return packages.find(p => p.id === id);
+      return packages.find((p) => p.id === id);
     }
-    return inventory.find(i => i.id === id);
+    return inventory.find((i) => i.id === id);
   }, [selectedItems, selectionTab, inventory, packages]);
 
   // Available formats based on selection tab
@@ -473,8 +613,8 @@ function LabelsView({ inventory, packages = [], user }) {
           name: `${selectionTab === 'kits' ? 'Kit' : 'Package'} - With Contents`,
           width: 3,
           height: 2.5,
-          description: 'QR + item list'
-        }
+          description: 'QR + item list',
+        },
       ];
     }
     return LABEL_FORMATS;
@@ -488,9 +628,9 @@ function LabelsView({ inventory, packages = [], user }) {
         margin: 1,
         color: {
           dark: '#000000',
-          light: '#FFFFFF'
+          light: '#FFFFFF',
         },
-        errorCorrectionLevel: 'M'
+        errorCorrectionLevel: 'M',
       });
     } catch (err) {
       logError('QR Code toDataURL error:', err);
@@ -500,47 +640,48 @@ function LabelsView({ inventory, packages = [], user }) {
 
   // Generate label HTML that matches preview
   // Now accepts a pre-generated QR data URL (async generation happens before calling this)
-  const generateLabelHTML = useCallback((item, format, isKit = false, _isPackage = false, containedItems = [], qrDataURL = '') => {
-    const widthPx = format.width * 96; // 96 DPI for screen/PDF
-    const heightPx = format.height * 96;
-    const isBranding = format.id.startsWith('branding');
-    const showLogo = format.id === 'brandingLogo';
-    const isSmall = format.id === 'small';
-    const isMedium = format.id === 'medium';
-    const isLarge = format.id === 'large';
-    const isKitOrPackageLabel = format.id === 'kit' || format.id === 'package';
+  const generateLabelHTML = useCallback(
+    (item, format, isKit = false, _isPackage = false, containedItems = [], qrDataURL = '') => {
+      const widthPx = format.width * 96; // 96 DPI for screen/PDF
+      const heightPx = format.height * 96;
+      const isBranding = format.id.startsWith('branding');
+      const showLogo = format.id === 'brandingLogo';
+      const isSmall = format.id === 'small';
+      const isMedium = format.id === 'medium';
+      const isLarge = format.id === 'large';
+      const isKitOrPackageLabel = format.id === 'kit' || format.id === 'package';
 
-    const qrSize = isSmall ? 80 : isMedium ? 70 : 60;
+      const qrSize = isSmall ? 80 : isMedium ? 70 : 60;
 
-    // Sanitize all user-provided data
-    const safeId = escapeHtml(item.id);
-    const safeName = escapeHtml(item.name);
-    const safeBrand = escapeHtml(item.brand || '');
+      // Sanitize all user-provided data
+      const safeId = escapeHtml(item.id);
+      const safeName = escapeHtml(item.name);
+      const safeBrand = escapeHtml(item.brand || '');
 
-    // Get item specs for large/branding formats
-    const getItemSpecs = () => {
-      const specs = [];
-      if (item.brand) specs.push({ label: 'Brand', value: escapeHtml(item.brand) });
-      if (item.category) specs.push({ label: 'Category', value: escapeHtml(item.category) });
-      if (item.serialNumber) specs.push({ label: 'S/N', value: escapeHtml(item.serialNumber) });
-      if (item.location) specs.push({ label: 'Location', value: escapeHtml(item.location) });
-      return specs.slice(0, 6);
-    };
+      // Get item specs for large/branding formats
+      const getItemSpecs = () => {
+        const specs = [];
+        if (item.brand) specs.push({ label: 'Brand', value: escapeHtml(item.brand) });
+        if (item.category) specs.push({ label: 'Category', value: escapeHtml(item.category) });
+        if (item.serialNumber) specs.push({ label: 'S/N', value: escapeHtml(item.serialNumber) });
+        if (item.location) specs.push({ label: 'Location', value: escapeHtml(item.location) });
+        return specs.slice(0, 6);
+      };
 
-    const itemSpecs = getItemSpecs();
+      const itemSpecs = getItemSpecs();
 
-    // Small format - QR only
-    if (isSmall) {
-      return `
+      // Small format - QR only
+      if (isSmall) {
+        return `
         <div style="width:${widthPx}px;height:${widthPx}px;background:#fff;border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.1);box-sizing:border-box;">
           <img src="${qrDataURL}" width="${qrSize}" height="${qrSize}" style="display:block;"/>
         </div>
       `;
-    }
+      }
 
-    // Medium format - QR + Info
-    if (isMedium) {
-      return `
+      // Medium format - QR + Info
+      if (isMedium) {
+        return `
         <div style="width:${widthPx}px;height:${heightPx}px;background:#fff;border-radius:8px;padding:12px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.1);box-sizing:border-box;">
           <img src="${qrDataURL}" width="${qrSize}" height="${qrSize}" style="display:block;"/>
           <div style="flex:1;overflow:hidden;">
@@ -550,17 +691,20 @@ function LabelsView({ inventory, packages = [], user }) {
           </div>
         </div>
       `;
-    }
+      }
 
-    // Large format - Full Details
-    if (isLarge) {
-      const specsHTML = itemSpecs.length > 0 ? `
+      // Large format - Full Details
+      if (isLarge) {
+        const specsHTML =
+          itemSpecs.length > 0
+            ? `
         <div style="flex:1;display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;font-size:10px;border-top:1px solid #eee;padding-top:8px;">
-          ${itemSpecs.map(spec => `<div><span style="color:#999">${escapeHtml(spec.label)}: </span><span style="color:#333">${spec.value}</span></div>`).join('')}
+          ${itemSpecs.map((spec) => `<div><span style="color:#999">${escapeHtml(spec.label)}: </span><span style="color:#333">${spec.value}</span></div>`).join('')}
         </div>
-      ` : '';
+      `
+            : '';
 
-      return `
+        return `
         <div style="width:${widthPx}px;height:${heightPx}px;background:#fff;border-radius:8px;padding:12px;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(0,0,0,0.1);box-sizing:border-box;">
           <div style="display:flex;gap:12px;margin-bottom:8px;">
             <img src="${qrDataURL}" width="${qrSize}" height="${qrSize}" style="display:block;"/>
@@ -573,18 +717,25 @@ function LabelsView({ inventory, packages = [], user }) {
           ${specsHTML}
         </div>
       `;
-    }
+      }
 
-    // Kit/Package format - with item list
-    if (isKitOrPackageLabel) {
-      const itemsList = containedItems || [];
-      const typeLabel = isKit ? 'Kit' : 'Package';
-      const itemsListHTML = itemsList.slice(0, 8).map(i =>
-        `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">&bull; ${escapeHtml(i.id)} - ${escapeHtml(i.name)}</div>`
-      ).join('');
-      const moreItemsHTML = itemsList.length > 8 ? `<div style="color:#999;font-style:italic;">+${itemsList.length - 8} more items</div>` : '';
+      // Kit/Package format - with item list
+      if (isKitOrPackageLabel) {
+        const itemsList = containedItems || [];
+        const typeLabel = isKit ? 'Kit' : 'Package';
+        const itemsListHTML = itemsList
+          .slice(0, 8)
+          .map(
+            (i) =>
+              `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">&bull; ${escapeHtml(i.id)} - ${escapeHtml(i.name)}</div>`,
+          )
+          .join('');
+        const moreItemsHTML =
+          itemsList.length > 8
+            ? `<div style="color:#999;font-style:italic;">+${itemsList.length - 8} more items</div>`
+            : '';
 
-      return `
+        return `
         <div style="width:${widthPx}px;height:${heightPx}px;background:#fff;border-radius:8px;padding:12px;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(0,0,0,0.1);box-sizing:border-box;">
           <div style="display:flex;gap:12px;margin-bottom:8px;">
             <img src="${qrDataURL}" width="${qrSize}" height="${qrSize}" style="display:block;"/>
@@ -605,39 +756,55 @@ function LabelsView({ inventory, packages = [], user }) {
           </div>
         </div>
       `;
-    }
+      }
 
-    // Branding formats
-    if (isBranding) {
-      const specsHTML = itemSpecs.slice(0, 4).length > 0 ? `
+      // Branding formats
+      if (isBranding) {
+        const specsHTML =
+          itemSpecs.slice(0, 4).length > 0
+            ? `
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px 12px;font-size:9px;margin-bottom:8px;">
-          ${itemSpecs.slice(0, 4).map(spec => `<div><span style="color:#999">${escapeHtml(spec.label)}: </span><span style="color:#333">${spec.value}</span></div>`).join('')}
+          ${itemSpecs
+            .slice(0, 4)
+            .map(
+              (spec) =>
+                `<div><span style="color:#999">${escapeHtml(spec.label)}: </span><span style="color:#333">${spec.value}</span></div>`,
+            )
+            .join('')}
         </div>
-      ` : '';
+      `
+            : '';
 
-      const profileFields = [];
-      if (user?.profile?.showFields?.businessName && user?.profile?.businessName) {
-        profileFields.push(escapeHtml(user.profile.businessName));
-      }
-      if (user?.profile?.showFields?.displayName && user?.profile?.displayName) {
-        profileFields.push(escapeHtml(user.profile.displayName));
-      }
-      if (user?.profile?.showFields?.phone && user?.profile?.phone) {
-        profileFields.push(escapeHtml(user.profile.phone));
-      }
-      if (user?.profile?.showFields?.email && user?.profile?.email) {
-        profileFields.push(escapeHtml(user.profile.email));
-      }
+        const profileFields = [];
+        if (user?.profile?.showFields?.businessName && user?.profile?.businessName) {
+          profileFields.push(escapeHtml(user.profile.businessName));
+        }
+        if (user?.profile?.showFields?.displayName && user?.profile?.displayName) {
+          profileFields.push(escapeHtml(user.profile.displayName));
+        }
+        if (user?.profile?.showFields?.phone && user?.profile?.phone) {
+          profileFields.push(escapeHtml(user.profile.phone));
+        }
+        if (user?.profile?.showFields?.email && user?.profile?.email) {
+          profileFields.push(escapeHtml(user.profile.email));
+        }
 
-      const brandingHTML = profileFields.length > 0
-        ? profileFields.map(f => `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f}</div>`).join('')
-        : '<div style="color:#999;font-style:italic;">No branding info configured</div>';
+        const brandingHTML =
+          profileFields.length > 0
+            ? profileFields
+                .map(
+                  (f) =>
+                    `<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f}</div>`,
+                )
+                .join('')
+            : '<div style="color:#999;font-style:italic;">No branding info configured</div>';
 
-      const logoHTML = showLogo && user?.profile?.logo && user?.profile?.showFields?.logo
-        ? `<img src="${escapeHtml(user.profile.logo)}" style="height:28px;object-fit:contain;"/>`
-        : '';
+        const logoHTML =
+          showLogo && user?.profile?.logo && user?.profile?.showFields?.logo
+            ? `<img src="${escapeHtml(user.profile.logo)}" style="height:28px;object-fit:contain;"/>`
+            : '';
 
-      return `
+        return `
         <div style="width:${widthPx}px;height:${heightPx}px;background:#fff;border-radius:8px;padding:12px;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(0,0,0,0.1);box-sizing:border-box;">
           <div style="display:flex;gap:12px;margin-bottom:8px;">
             <img src="${qrDataURL}" width="${qrSize}" height="${qrSize}" style="display:block;"/>
@@ -656,10 +823,10 @@ function LabelsView({ inventory, packages = [], user }) {
           </div>
         </div>
       `;
-    }
+      }
 
-    // Fallback
-    return `
+      // Fallback
+      return `
       <div style="width:${widthPx}px;height:${heightPx}px;background:#fff;border-radius:8px;padding:12px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,0.1);box-sizing:border-box;">
         <img src="${qrDataURL}" width="60" height="60" style="display:block;"/>
         <div style="flex:1;overflow:hidden;">
@@ -668,26 +835,39 @@ function LabelsView({ inventory, packages = [], user }) {
         </div>
       </div>
     `;
-  }, [user]);
+    },
+    [user],
+  );
 
   // Build labels HTML with real QR codes (async)
-  const buildLabelsHTML = useCallback(async (items, format, isKitTab, isPackageTab) => {
-    // Pre-generate all QR data URLs in parallel
-    const qrSize = format.id === 'small' ? 80 : format.id === 'medium' ? 70 : 60;
-    const qrDataURLs = await Promise.all(
-      items.map(item => generateQRDataURL(item.id, qrSize))
-    );
+  const buildLabelsHTML = useCallback(
+    async (items, format, isKitTab, isPackageTab) => {
+      // Pre-generate all QR data URLs in parallel
+      const qrSize = format.id === 'small' ? 80 : format.id === 'medium' ? 70 : 60;
+      const qrDataURLs = await Promise.all(items.map((item) => generateQRDataURL(item.id, qrSize)));
 
-    return items.map((item, idx) => {
-      const contained = (isKitTab || isPackageTab) ? getContainedItems(item, isPackageTab) : [];
-      return generateLabelHTML(item, format, isKitTab, isPackageTab, contained, qrDataURLs[idx]);
-    }).join('');
-  }, [generateQRDataURL, generateLabelHTML, getContainedItems]);
+      return items
+        .map((item, idx) => {
+          const contained = isKitTab || isPackageTab ? getContainedItems(item, isPackageTab) : [];
+          return generateLabelHTML(
+            item,
+            format,
+            isKitTab,
+            isPackageTab,
+            contained,
+            qrDataURLs[idx],
+          );
+        })
+        .join('');
+    },
+    [generateQRDataURL, generateLabelHTML, getContainedItems],
+  );
 
   const handlePrint = useCallback(async () => {
-    const items = selectionTab === 'packages'
-      ? packages.filter(p => selectedItems.includes(p.id))
-      : inventory.filter(i => selectedItems.includes(i.id));
+    const items =
+      selectionTab === 'packages'
+        ? packages.filter((p) => selectedItems.includes(p.id))
+        : inventory.filter((i) => selectedItems.includes(i.id));
     if (items.length === 0) return;
 
     const isKitTab = selectionTab === 'kits';
@@ -716,9 +896,10 @@ function LabelsView({ inventory, packages = [], user }) {
   }, [inventory, packages, selectedItems, selectedFormat, selectionTab, buildLabelsHTML]);
 
   const handleDownload = useCallback(async () => {
-    const items = selectionTab === 'packages'
-      ? packages.filter(p => selectedItems.includes(p.id))
-      : inventory.filter(i => selectedItems.includes(i.id));
+    const items =
+      selectionTab === 'packages'
+        ? packages.filter((p) => selectedItems.includes(p.id))
+        : inventory.filter((i) => selectedItems.includes(i.id));
     if (items.length === 0) return;
 
     const isKitTab = selectionTab === 'kits';
@@ -774,8 +955,17 @@ function LabelsView({ inventory, packages = [], user }) {
         title="Labels"
         action={
           <div style={{ display: 'flex', gap: spacing[2] }}>
-            <Button variant="secondary" onClick={handlePrint} disabled={selectedItems.length === 0} icon={Printer}>Print ({selectedItems.length})</Button>
-            <Button onClick={handleDownload} disabled={selectedItems.length === 0} icon={Download}>Download</Button>
+            <Button
+              variant="secondary"
+              onClick={handlePrint}
+              disabled={selectedItems.length === 0}
+              icon={Printer}
+            >
+              Print ({selectedItems.length})
+            </Button>
+            <Button onClick={handleDownload} disabled={selectedItems.length === 0} icon={Download}>
+              Download
+            </Button>
           </div>
         }
       />
@@ -787,14 +977,54 @@ function LabelsView({ inventory, packages = [], user }) {
           <Card padding={false} style={{ overflow: 'hidden' }}>
             <CardHeader title="Label Format" />
             <div style={{ padding: spacing[4], maxHeight: 400, overflowY: 'auto' }}>
-              {availableFormats.map(format => (
-                <div key={format.id} onClick={() => setSelectedFormat(format)} style={{ display: 'flex', alignItems: 'center', gap: spacing[3], padding: spacing[3], borderRadius: borderRadius.md, cursor: 'pointer', marginBottom: spacing[2], background: selectedFormat.id === format.id ? `${withOpacity(colors.primary, 20)}` : 'transparent', border: selectedFormat.id === format.id ? `1px solid ${colors.primary}` : '1px solid transparent' }}>
-                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${selectedFormat.id === format.id ? colors.primary : colors.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {availableFormats.map((format) => (
+                <div
+                  key={format.id}
+                  onClick={() => setSelectedFormat(format)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: spacing[3],
+                    padding: spacing[3],
+                    borderRadius: borderRadius.md,
+                    cursor: 'pointer',
+                    marginBottom: spacing[2],
+                    background:
+                      selectedFormat.id === format.id
+                        ? `${withOpacity(colors.primary, 20)}`
+                        : 'transparent',
+                    border:
+                      selectedFormat.id === format.id
+                        ? `1px solid ${colors.primary}`
+                        : '1px solid transparent',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      border: `2px solid ${selectedFormat.id === format.id ? colors.primary : colors.border}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
                     {selectedFormat.id === format.id && <Check size={12} color={colors.primary} />}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{format.name}</div>
-                    <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>{format.description}</div>
+                    <div
+                      style={{
+                        fontSize: typography.fontSize.sm,
+                        fontWeight: typography.fontWeight.medium,
+                        color: colors.textPrimary,
+                      }}
+                    >
+                      {format.name}
+                    </div>
+                    <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                      {format.description}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -804,7 +1034,15 @@ function LabelsView({ inventory, packages = [], user }) {
           {/* Preview */}
           <Card padding={false}>
             <CardHeader title="Preview" />
-            <div style={{ padding: spacing[4], display: 'flex', justifyContent: 'center', background: colors.bgLight, minHeight: 150 }}>
+            <div
+              style={{
+                padding: spacing[4],
+                display: 'flex',
+                justifyContent: 'center',
+                background: colors.bgLight,
+                minHeight: 150,
+              }}
+            >
               {previewItem ? (
                 <LabelPreview
                   item={previewItem}
@@ -813,13 +1051,21 @@ function LabelsView({ inventory, packages = [], user }) {
                   isKit={selectionTab === 'kits'}
                   isPackage={selectionTab === 'packages'}
                   containedItems={
-                    (selectionTab === 'kits' || selectionTab === 'packages')
+                    selectionTab === 'kits' || selectionTab === 'packages'
                       ? getContainedItems(previewItem, selectionTab === 'packages')
                       : null
                   }
                 />
               ) : (
-                <p style={{ color: colors.textMuted, fontSize: typography.fontSize.sm, alignSelf: 'center' }}>Select an item to preview</p>
+                <p
+                  style={{
+                    color: colors.textMuted,
+                    fontSize: typography.fontSize.sm,
+                    alignSelf: 'center',
+                  }}
+                >
+                  Select an item to preview
+                </p>
               )}
             </div>
           </Card>
@@ -828,15 +1074,17 @@ function LabelsView({ inventory, packages = [], user }) {
         {/* Items Selection */}
         <Card padding={false} style={{ overflow: 'hidden', minWidth: 0 }}>
           {/* Tab Bar */}
-          <div style={{
-            display: 'flex',
-            borderBottom: `1px solid ${colors.borderLight}`,
-          }}>
+          <div
+            style={{
+              display: 'flex',
+              borderBottom: `1px solid ${colors.borderLight}`,
+            }}
+          >
             {[
               { id: 'items', label: 'Items', count: regularItems.length },
               { id: 'kits', label: 'Kits', count: kits.length },
               { id: 'packages', label: 'Packages', count: packages.length },
-            ].map(tab => (
+            ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setSelectionTab(tab.id)}
@@ -845,9 +1093,15 @@ function LabelsView({ inventory, packages = [], user }) {
                   padding: `${spacing[3]}px ${spacing[4]}px`,
                   background: 'transparent',
                   border: 'none',
-                  borderBottom: selectionTab === tab.id ? `2px solid ${colors.primary}` : '2px solid transparent',
+                  borderBottom:
+                    selectionTab === tab.id
+                      ? `2px solid ${colors.primary}`
+                      : '2px solid transparent',
                   color: selectionTab === tab.id ? colors.primary : colors.textSecondary,
-                  fontWeight: selectionTab === tab.id ? typography.fontWeight.medium : typography.fontWeight.normal,
+                  fontWeight:
+                    selectionTab === tab.id
+                      ? typography.fontWeight.medium
+                      : typography.fontWeight.normal,
                   cursor: 'pointer',
                   fontSize: typography.fontSize.sm,
                 }}
@@ -859,16 +1113,51 @@ function LabelsView({ inventory, packages = [], user }) {
 
           {/* Search and Select All */}
           <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[3] }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: spacing[3],
+              }}
+            >
               <strong style={{ color: colors.textPrimary }}>
-                Select {selectionTab === 'items' ? 'Items' : selectionTab === 'kits' ? 'Kits' : 'Packages'}
+                Select{' '}
+                {selectionTab === 'items' ? 'Items' : selectionTab === 'kits' ? 'Kits' : 'Packages'}
               </strong>
               <div style={{ display: 'flex', gap: spacing[2] }}>
-                <button onClick={selectAll} style={{ background: 'none', border: 'none', color: colors.primary, cursor: 'pointer', fontSize: typography.fontSize.sm }}>Select All</button>
-                <button onClick={clearSelection} style={{ background: 'none', border: 'none', color: colors.textMuted, cursor: 'pointer', fontSize: typography.fontSize.sm }}>Clear</button>
+                <button
+                  onClick={selectAll}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: colors.primary,
+                    cursor: 'pointer',
+                    fontSize: typography.fontSize.sm,
+                  }}
+                >
+                  Select All
+                </button>
+                <button
+                  onClick={clearSelection}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: colors.textMuted,
+                    cursor: 'pointer',
+                    fontSize: typography.fontSize.sm,
+                  }}
+                >
+                  Clear
+                </button>
               </div>
             </div>
-            <SearchInput value={search} onChange={setSearch} onClear={() => setSearch('')} placeholder={`Search ${selectionTab}...`} />
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              onClear={() => setSearch('')}
+              placeholder={`Search ${selectionTab}...`}
+            />
           </div>
 
           {/* Items List */}
@@ -878,7 +1167,7 @@ function LabelsView({ inventory, packages = [], user }) {
                 No {selectionTab} found
               </div>
             ) : (
-              filteredItems.map(item => (
+              filteredItems.map((item) => (
                 <label
                   key={item.id}
                   style={{
@@ -888,7 +1177,9 @@ function LabelsView({ inventory, packages = [], user }) {
                     padding: `${spacing[3]}px ${spacing[4]}px`,
                     borderBottom: `1px solid ${colors.borderLight}`,
                     cursor: 'pointer',
-                    background: selectedItems.includes(item.id) ? `${withOpacity(colors.primary, 8)}` : 'transparent'
+                    background: selectedItems.includes(item.id)
+                      ? `${withOpacity(colors.primary, 8)}`
+                      : 'transparent',
                   }}
                 >
                   <input
@@ -898,24 +1189,56 @@ function LabelsView({ inventory, packages = [], user }) {
                     style={{ accentColor: colors.primary }}
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[1], flexWrap: 'wrap' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: spacing[2],
+                        marginBottom: spacing[1],
+                        flexWrap: 'wrap',
+                      }}
+                    >
                       <Badge text={item.id} color={colors.primary} />
                       {selectionTab === 'items' && item.category && (
                         <Badge text={item.category} color={colors.accent2} />
                       )}
                       {selectionTab === 'kits' && (
-                        <Badge text={`${item.kitItems?.length || 0} items`} color={colors.accent1} />
+                        <Badge
+                          text={`${item.kitItems?.length || 0} items`}
+                          color={colors.accent1}
+                        />
                       )}
                       {selectionTab === 'packages' && (
                         <Badge text={`${item.items?.length || 0} items`} color={colors.accent1} />
                       )}
                     </div>
-                    <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+                    <div
+                      style={{
+                        fontWeight: typography.fontWeight.medium,
+                        color: colors.textPrimary,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {item.name}
+                    </div>
                     {selectionTab === 'items' && item.brand && (
-                      <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>{item.brand}</div>
+                      <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
+                        {item.brand}
+                      </div>
                     )}
                     {selectionTab === 'packages' && item.description && (
-                      <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.description}</div>
+                      <div
+                        style={{
+                          fontSize: typography.fontSize.sm,
+                          color: colors.textMuted,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {item.description}
+                      </div>
                     )}
                   </div>
                 </label>

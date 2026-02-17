@@ -1,0 +1,7 @@
+dist/
+node_modules/
+coverage/
+public/sw.js
+supabase/functions/
+*.min.js
+package-lock.json

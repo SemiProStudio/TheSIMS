@@ -21,12 +21,16 @@ import {
   rolesService,
   auditLogService,
   notificationPreferencesService,
-  emailService
+  emailService,
 } from '../lib/services.js';
 
 import { DEFAULT_ROLES } from '../constants.js';
 import { log, error as logError } from '../lib/logger.js';
-import { validateReservation, validateClient, validateMaintenanceRecord } from '../lib/validators.js';
+import {
+  validateReservation,
+  validateClient,
+  validateMaintenanceRecord,
+} from '../lib/validators.js';
 import { updateById, removeById } from '../utils';
 import DataContext from './DataContext.js';
 
@@ -65,7 +69,7 @@ export function DataProvider({ children }) {
   // Tier 2 (background): reservations, packages, pack lists, clients, audit log
   //   → Loaded after first paint, merged into state progressively
   // =============================================================================
-  
+
   const loadData = useCallback(async () => {
     log('[DataContext] Starting tiered data load...');
     setLoading(true);
@@ -74,21 +78,15 @@ export function DataProvider({ children }) {
 
     try {
       // --- Tier 1: Critical data (blocks rendering) ---
-      const [
-        inventoryData,
-        categoriesData,
-        usersData,
-        rolesData,
-        locationsData,
-        specsData,
-      ] = await Promise.all([
-        inventoryService.getAll(),
-        categoriesService.getAll(),
-        usersService.getAll(),
-        rolesService.getAll(),
-        locationsService.getAll(),
-        specsService.getAll(),
-      ]);
+      const [inventoryData, categoriesData, usersData, rolesData, locationsData, specsData] =
+        await Promise.all([
+          inventoryService.getAll(),
+          categoriesService.getAll(),
+          usersService.getAll(),
+          rolesService.getAll(),
+          locationsService.getAll(),
+          specsService.getAll(),
+        ]);
 
       log('[DataContext] Tier 1 loaded:', {
         inventory: inventoryData?.length || 0,
@@ -98,9 +96,9 @@ export function DataProvider({ children }) {
 
       setInventory(inventoryData || []);
       // Extract category names and settings from DB records
-      const catNames = (categoriesData || []).map(c => c.name);
+      const catNames = (categoriesData || []).map((c) => c.name);
       const catSettings = {};
-      (categoriesData || []).forEach(c => {
+      (categoriesData || []).forEach((c) => {
         catSettings[c.name] = {
           trackQuantity: c.track_quantity || false,
           trackSerialNumbers: c.track_serial_numbers !== false,
@@ -115,7 +113,6 @@ export function DataProvider({ children }) {
       setSpecs(specsData || {});
       setDataLoaded(true);
       setLastLoadedAt(new Date().toISOString());
-
     } catch (err) {
       logError('[DataContext] Tier 1 load failed:', err);
       setError(err);
@@ -125,19 +122,14 @@ export function DataProvider({ children }) {
 
     // --- Tier 2: Secondary data (non-blocking, after first paint) ---
     try {
-      const [
-        reservationsData,
-        packagesData,
-        packListsData,
-        clientsData,
-        auditLogData,
-      ] = await Promise.all([
-        reservationsService.getAll(),
-        packagesService.getAll(),
-        packListsService.getAll(),
-        clientsService.getAll(),
-        auditLogService.getAll({ limit: 100 }),
-      ]);
+      const [reservationsData, packagesData, packListsData, clientsData, auditLogData] =
+        await Promise.all([
+          reservationsService.getAll(),
+          packagesService.getAll(),
+          packListsService.getAll(),
+          clientsService.getAll(),
+          auditLogService.getAll({ limit: 100 }),
+        ]);
 
       log('[DataContext] Tier 2 loaded:', {
         reservations: reservationsData?.length || 0,
@@ -148,24 +140,25 @@ export function DataProvider({ children }) {
 
       // Merge reservations into inventory items
       const reservationsByItemId = {};
-      (reservationsData || []).forEach(res => {
+      (reservationsData || []).forEach((res) => {
         if (!reservationsByItemId[res.itemId]) {
           reservationsByItemId[res.itemId] = [];
         }
         reservationsByItemId[res.itemId].push(res);
       });
 
-      setInventory(prev => prev.map(item => ({
-        ...item,
-        reservations: reservationsByItemId[item.id] || item.reservations || []
-      })));
+      setInventory((prev) =>
+        prev.map((item) => ({
+          ...item,
+          reservations: reservationsByItemId[item.id] || item.reservations || [],
+        })),
+      );
 
       setPackages(packagesData || []);
       setPackLists(packListsData || []);
       setClients(clientsData || []);
       setAuditLog(auditLogData || []);
       setTier2Loaded(true);
-
     } catch (err) {
       logError('[DataContext] Tier 2 load failed (non-critical):', err);
       // Don't set error state — Tier 1 data is already available
@@ -216,29 +209,30 @@ export function DataProvider({ children }) {
       log('[DataContext] Stale tables detected:', staleTables);
 
       // Fetch changed rows in parallel
-      const [updatedItems, updatedReservations, updatedClients, updatedPackages, updatedPackLists] = await Promise.all([
-        staleTables.includes('inventory') ? inventoryService.getSince(lastLoadedAt) : null,
-        staleTables.includes('reservations') ? reservationsService.getSince(lastLoadedAt) : null,
-        staleTables.includes('clients') ? clientsService.getAll() : null,
-        staleTables.includes('packages') ? packagesService.getAll() : null,
-        staleTables.includes('pack_lists') ? packListsService.getAll() : null,
-      ]);
+      const [updatedItems, updatedReservations, updatedClients, updatedPackages, updatedPackLists] =
+        await Promise.all([
+          staleTables.includes('inventory') ? inventoryService.getSince(lastLoadedAt) : null,
+          staleTables.includes('reservations') ? reservationsService.getSince(lastLoadedAt) : null,
+          staleTables.includes('clients') ? clientsService.getAll() : null,
+          staleTables.includes('packages') ? packagesService.getAll() : null,
+          staleTables.includes('pack_lists') ? packListsService.getAll() : null,
+        ]);
 
       // Merge updated inventory items and detect deletions
       if (staleTables.includes('inventory')) {
         const currentIds = await inventoryService.getIds();
-        setInventory(prev => {
+        setInventory((prev) => {
           // Remove deleted items
-          let next = prev.filter(item => currentIds.has(item.id));
+          let next = prev.filter((item) => currentIds.has(item.id));
           // Merge updated items
           if (updatedItems && updatedItems.length > 0) {
-            const updatedMap = new Map(updatedItems.map(i => [i.id, i]));
-            next = next.map(item =>
-              updatedMap.has(item.id) ? { ...item, ...updatedMap.get(item.id) } : item
+            const updatedMap = new Map(updatedItems.map((i) => [i.id, i]));
+            next = next.map((item) =>
+              updatedMap.has(item.id) ? { ...item, ...updatedMap.get(item.id) } : item,
             );
             // Add any new items not already in state
-            const existingIds = new Set(next.map(i => i.id));
-            const newItems = updatedItems.filter(i => !existingIds.has(i.id));
+            const existingIds = new Set(next.map((i) => i.id));
+            const newItems = updatedItems.filter((i) => !existingIds.has(i.id));
             if (newItems.length > 0) next = [...next, ...newItems];
           }
           return next;
@@ -248,15 +242,17 @@ export function DataProvider({ children }) {
       // Re-merge reservations into inventory if reservations changed
       if (updatedReservations && updatedReservations.length > 0) {
         const reservationsByItemId = {};
-        updatedReservations.forEach(res => {
+        updatedReservations.forEach((res) => {
           if (!reservationsByItemId[res.itemId]) reservationsByItemId[res.itemId] = [];
           reservationsByItemId[res.itemId].push(res);
         });
-        setInventory(prev => prev.map(item =>
-          reservationsByItemId[item.id]
-            ? { ...item, reservations: reservationsByItemId[item.id] }
-            : item
-        ));
+        setInventory((prev) =>
+          prev.map((item) =>
+            reservationsByItemId[item.id]
+              ? { ...item, reservations: reservationsByItemId[item.id] }
+              : item,
+          ),
+        );
       }
 
       // Replace full arrays for other stale tables (these are small)
@@ -309,7 +305,7 @@ export function DataProvider({ children }) {
   const addAuditLog = useCallback(async (entry) => {
     const newEntry = {
       ...entry,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     try {
@@ -318,7 +314,7 @@ export function DataProvider({ children }) {
       logError('Failed to create audit log:', err);
     }
 
-    setAuditLog(prev => [newEntry, ...prev]);
+    setAuditLog((prev) => [newEntry, ...prev]);
   }, []);
 
   // =============================================================================
@@ -332,23 +328,21 @@ export function DataProvider({ children }) {
       logError('Failed to update item:', err);
       throw err;
     }
-    
-    setInventory(prev => prev.map(item => 
-      item.id === id ? { ...item, ...updates } : item
-    ));
+
+    setInventory((prev) => prev.map((item) => (item.id === id ? { ...item, ...updates } : item)));
   }, []);
 
   const createItem = useCallback(async (item) => {
     let newItem = item;
-    
+
     try {
       newItem = await inventoryService.create(item);
     } catch (err) {
       logError('Failed to create item:', err);
       throw err;
     }
-    
-    setInventory(prev => [...prev, newItem]);
+
+    setInventory((prev) => [...prev, newItem]);
     return newItem;
   }, []);
 
@@ -369,37 +363,44 @@ export function DataProvider({ children }) {
       throw err;
     }
 
-    setInventory(prev => prev.filter(item => item.id !== id));
+    setInventory((prev) => prev.filter((item) => item.id !== id));
 
     // Clean up stale item references in packages (DB cascades, but local state needs sync)
-    setPackages(prev => prev.map(pkg => {
-      if (!pkg.items?.includes(id)) return pkg;
-      return { ...pkg, items: pkg.items.filter(itemId => itemId !== id) };
-    }));
+    setPackages((prev) =>
+      prev.map((pkg) => {
+        if (!pkg.items?.includes(id)) return pkg;
+        return { ...pkg, items: pkg.items.filter((itemId) => itemId !== id) };
+      }),
+    );
 
     // Clean up stale item references in pack lists
-    setPackLists(prev => prev.map(pl => {
-      const hasItem = pl.items?.some(i => i.id === id);
-      const hasPacked = pl.packedItems?.includes(id);
-      if (!hasItem && !hasPacked) return pl;
-      return {
-        ...pl,
-        items: pl.items?.filter(i => i.id !== id) || [],
-        packedItems: pl.packedItems?.filter(itemId => itemId !== id) || [],
-      };
-    }));
+    setPackLists((prev) =>
+      prev.map((pl) => {
+        const hasItem = pl.items?.some((i) => i.id === id);
+        const hasPacked = pl.packedItems?.includes(id);
+        if (!hasItem && !hasPacked) return pl;
+        return {
+          ...pl,
+          items: pl.items?.filter((i) => i.id !== id) || [],
+          packedItems: pl.packedItems?.filter((itemId) => itemId !== id) || [],
+        };
+      }),
+    );
   }, []);
 
   // Fetch item with all related data (notes, reminders, reservations, maintenance)
-  const getItemWithDetails = useCallback(async (id) => {
-    try {
-      const itemWithDetails = await inventoryService.getByIdWithDetails(id);
-      return itemWithDetails;
-    } catch (err) {
-      logError('Failed to fetch item details:', err);
-      return inventory.find(item => item.id === id) || null;
-    }
-  }, [inventory]);
+  const getItemWithDetails = useCallback(
+    async (id) => {
+      try {
+        const itemWithDetails = await inventoryService.getByIdWithDetails(id);
+        return itemWithDetails;
+      } catch (err) {
+        logError('Failed to fetch item details:', err);
+        return inventory.find((item) => item.id === id) || null;
+      }
+    },
+    [inventory],
+  );
 
   // =============================================================================
   // ITEM NOTES OPERATIONS
@@ -413,7 +414,7 @@ export function DataProvider({ children }) {
         user_name: note.user,
         text: note.text,
         parent_id: note.parentId || null,
-        deleted: false
+        deleted: false,
       };
       const result = await itemNotesService.create(dbNote);
       return result; // Returns record with real UUID
@@ -445,7 +446,7 @@ export function DataProvider({ children }) {
         due_date: reminder.dueDate,
         recurrence: reminder.recurrence || 'none',
         completed: false,
-        created_by_name: reminder.createdBy || 'Unknown'
+        created_by_name: reminder.createdBy || 'Unknown',
       };
       const result = await itemRemindersService.create(dbReminder);
       return result; // Returns record with real UUID
@@ -462,7 +463,7 @@ export function DataProvider({ children }) {
       if (updates.completedDate !== undefined) dbUpdates.completed_at = updates.completedDate;
       if (updates.title !== undefined) dbUpdates.title = updates.title;
       if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
-      
+
       await itemRemindersService.update(reminderId, dbUpdates);
     } catch (err) {
       logError('Failed to update reminder:', err);
@@ -488,19 +489,21 @@ export function DataProvider({ children }) {
       if (!validation.isValid) {
         throw new Error('Validation failed: ' + Object.values(validation.errors).join(', '));
       }
-      
+
       const dbRecord = {
         // Don't pass id - let DB generate UUID
         item_id: itemId,
         type: record.type,
         description: record.description || '',
         vendor: record.vendor || null,
+        vendor_contact: record.vendorContact || null,
         cost: record.cost || 0,
         scheduled_date: record.date || record.scheduledDate || null,
         completed_date: record.completedDate || null,
         status: record.status || 'completed',
         notes: record.notes || '',
-        created_by_name: record.performedBy || 'Unknown'
+        warranty_work: record.warrantyWork || false,
+        created_by_name: record.performedBy || 'Unknown',
       };
       const result = await maintenanceService.create(dbRecord);
       return result; // Returns record with real UUID
@@ -537,7 +540,7 @@ export function DataProvider({ children }) {
       if (!validation.isValid) {
         throw new Error('Validation failed: ' + Object.values(validation.errors).join(', '));
       }
-      
+
       const dbReservation = {
         // Don't pass id - let DB generate UUID
         item_id: itemId,
@@ -551,7 +554,7 @@ export function DataProvider({ children }) {
         contact_phone: reservation.contactPhone || '',
         contact_email: reservation.contactEmail || '',
         location: reservation.location || '',
-        notes: reservation.notes || []  // Supabase handles JSONB directly
+        notes: reservation.notes || [], // Supabase handles JSONB directly
       };
       const result = await reservationsService.create(dbReservation);
       return result;
@@ -574,7 +577,7 @@ export function DataProvider({ children }) {
       if (updates.contactEmail !== undefined) dbUpdates.contact_email = updates.contactEmail;
       if (updates.location !== undefined) dbUpdates.location = updates.location;
       if (updates.clientId !== undefined) dbUpdates.client_id = updates.clientId;
-      
+
       await reservationsService.update(reservationId, dbUpdates);
     } catch (err) {
       logError('Failed to update reservation:', err);
@@ -598,21 +601,25 @@ export function DataProvider({ children }) {
   const checkOutItem = useCallback(async (itemId, checkoutData) => {
     try {
       const result = await inventoryService.checkOut(itemId, checkoutData);
-      
+
       // Update local state
-      setInventory(prev => prev.map(item => 
-        item.id === itemId ? { 
-          ...item, 
-          status: 'checked-out',
-          checkedOutTo: checkoutData.userName,
-          checkedOutToUserId: checkoutData.userId,
-          checkedOutDate: new Date().toISOString().split('T')[0],
-          dueBack: checkoutData.dueBack,
-          checkoutProject: checkoutData.project,
-          checkoutClientId: checkoutData.clientId
-        } : item
-      ));
-      
+      setInventory((prev) =>
+        prev.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                status: 'checked-out',
+                checkedOutTo: checkoutData.userName,
+                checkedOutToUserId: checkoutData.userId,
+                checkedOutDate: new Date().toISOString().split('T')[0],
+                dueBack: checkoutData.dueBack,
+                checkoutProject: checkoutData.project,
+                checkoutClientId: checkoutData.clientId,
+              }
+            : item,
+        ),
+      );
+
       return result;
     } catch (err) {
       logError('Failed to check out item:', err);
@@ -622,55 +629,60 @@ export function DataProvider({ children }) {
 
   const checkInItem = useCallback(async (itemId, checkinData) => {
     try {
-      const { 
-        returnedBy, 
+      const {
+        returnedBy,
         userId,
-        condition, 
-        conditionNotes, 
-        returnNotes, 
-        damageReported, 
-        damageDescription 
+        condition,
+        conditionNotes,
+        returnNotes,
+        damageReported,
+        damageDescription,
       } = checkinData;
-      
+
       // Use the dedicated checkIn service method
       const result = await inventoryService.checkIn(itemId, {
         userId: userId,
         userName: returnedBy,
         notes: returnNotes || conditionNotes,
-        condition: condition
+        condition: condition,
+        damageReported: !!damageReported,
       });
-      
+
       // Determine new status based on damage
       const newStatus = damageReported ? 'needs-attention' : 'available';
-      
+
       // Update local state
-      setInventory(prev => prev.map(item => 
-        item.id === itemId ? { 
-          ...item, 
-          status: newStatus,
-          condition: condition,
-          checkedOutTo: null,
-          checkedOutToUserId: null,
-          checkedOutDate: null,
-          dueBack: null,
-          checkoutProject: null,
-          checkoutClientId: null
-        } : item
-      ));
-      
+      setInventory((prev) =>
+        prev.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                status: newStatus,
+                condition: condition,
+                checkedOutTo: null,
+                checkedOutToUserId: null,
+                checkedOutDate: null,
+                dueBack: null,
+                checkoutProject: null,
+                checkoutClientId: null,
+              }
+            : item,
+        ),
+      );
+
       // If damage reported, add a note
       if (damageReported && damageDescription) {
         try {
           await itemNotesService.create({
             item_id: itemId,
             user_name: returnedBy || 'System',
-            text: `⚠️ Damage reported: ${damageDescription}`
+            text: `⚠️ Damage reported: ${damageDescription}`,
           });
         } catch (noteErr) {
           logError('Failed to add damage note:', noteErr);
         }
       }
-      
+
       return result;
     } catch (err) {
       logError('Failed to check in item:', err);
@@ -684,15 +696,15 @@ export function DataProvider({ children }) {
 
   const createPackage = useCallback(async (pkg) => {
     let newPackage = pkg;
-    
+
     try {
       newPackage = await packagesService.create(pkg);
     } catch (err) {
       logError('Failed to create package:', err);
       throw err;
     }
-    
-    setPackages(prev => [...prev, newPackage]);
+
+    setPackages((prev) => [...prev, newPackage]);
     return newPackage;
   }, []);
 
@@ -703,10 +715,8 @@ export function DataProvider({ children }) {
       logError('Failed to update package:', err);
       throw err;
     }
-    
-    setPackages(prev => prev.map(pkg => 
-      pkg.id === id ? { ...pkg, ...updates } : pkg
-    ));
+
+    setPackages((prev) => prev.map((pkg) => (pkg.id === id ? { ...pkg, ...updates } : pkg)));
   }, []);
 
   const deletePackage = useCallback(async (id) => {
@@ -717,13 +727,15 @@ export function DataProvider({ children }) {
       throw err;
     }
 
-    setPackages(prev => prev.filter(pkg => pkg.id !== id));
+    setPackages((prev) => prev.filter((pkg) => pkg.id !== id));
 
     // Clean up stale package references in pack lists
-    setPackLists(prev => prev.map(pl => {
-      if (!pl.packages?.includes(id)) return pl;
-      return { ...pl, packages: pl.packages.filter(pkgId => pkgId !== id) };
-    }));
+    setPackLists((prev) =>
+      prev.map((pl) => {
+        if (!pl.packages?.includes(id)) return pl;
+        return { ...pl, packages: pl.packages.filter((pkgId) => pkgId !== id) };
+      }),
+    );
   }, []);
 
   // =============================================================================
@@ -732,15 +744,15 @@ export function DataProvider({ children }) {
 
   const createPackList = useCallback(async (packList) => {
     let newPackList = packList;
-    
+
     try {
       newPackList = await packListsService.create(packList);
     } catch (err) {
       logError('Failed to create pack list:', err);
       throw err;
     }
-    
-    setPackLists(prev => [...prev, newPackList]);
+
+    setPackLists((prev) => [...prev, newPackList]);
     return newPackList;
   }, []);
 
@@ -751,10 +763,8 @@ export function DataProvider({ children }) {
       logError('Failed to update pack list:', err);
       throw err;
     }
-    
-    setPackLists(prev => prev.map(pl => 
-      pl.id === id ? { ...pl, ...updates } : pl
-    ));
+
+    setPackLists((prev) => prev.map((pl) => (pl.id === id ? { ...pl, ...updates } : pl)));
   }, []);
 
   const deletePackList = useCallback(async (id) => {
@@ -764,8 +774,8 @@ export function DataProvider({ children }) {
       logError('Failed to delete pack list:', err);
       throw err;
     }
-    
-    setPackLists(prev => prev.filter(pl => pl.id !== id));
+
+    setPackLists((prev) => prev.filter((pl) => pl.id !== id));
   }, []);
 
   // =============================================================================
@@ -778,17 +788,17 @@ export function DataProvider({ children }) {
     if (!validation.isValid) {
       throw new Error('Validation failed: ' + Object.values(validation.errors).join(', '));
     }
-    
+
     let newClient = client;
-    
+
     try {
       newClient = await clientsService.create(client);
     } catch (err) {
       logError('Failed to create client:', err);
       throw err;
     }
-    
-    setClients(prev => [...prev, newClient]);
+
+    setClients((prev) => [...prev, newClient]);
     return newClient;
   }, []);
 
@@ -799,10 +809,10 @@ export function DataProvider({ children }) {
       logError('Failed to update client:', err);
       throw err;
     }
-    
-    setClients(prev => prev.map(client => 
-      client.id === id ? { ...client, ...updates } : client
-    ));
+
+    setClients((prev) =>
+      prev.map((client) => (client.id === id ? { ...client, ...updates } : client)),
+    );
   }, []);
 
   const deleteClient = useCallback(async (id) => {
@@ -812,8 +822,8 @@ export function DataProvider({ children }) {
       logError('Failed to delete client:', err);
       throw err;
     }
-    
-    setClients(prev => prev.filter(client => client.id !== id));
+
+    setClients((prev) => prev.filter((client) => client.id !== id));
   }, []);
 
   // =============================================================================
@@ -839,7 +849,7 @@ export function DataProvider({ children }) {
     try {
       // Upsert specs for each category
       const promises = Object.entries(newSpecs).map(([categoryName, fields]) =>
-        specsService.upsert(categoryName, fields)
+        specsService.upsert(categoryName, fields),
       );
       await Promise.all(promises);
     } catch (err) {
@@ -858,7 +868,7 @@ export function DataProvider({ children }) {
       logError('Failed to save notification preferences:', err);
       throw err;
     }
-    
+
     return preferences;
   }, []);
 
@@ -871,35 +881,41 @@ export function DataProvider({ children }) {
     }
   }, []);
 
-  const sendCheckoutEmail = useCallback(async ({ borrowerEmail, borrowerName, item, checkoutDate, dueDate, project }) => {
-    try {
-      return await emailService.sendCheckoutConfirmation({
-        borrowerEmail,
-        borrowerName,
-        item,
-        checkoutDate,
-        dueDate,
-        project
-      });
-    } catch (err) {
-      logError('Failed to send checkout email:', err);
-      return { success: false, error: err.message };
-    }
-  }, []);
+  const sendCheckoutEmail = useCallback(
+    async ({ borrowerEmail, borrowerName, item, checkoutDate, dueDate, project }) => {
+      try {
+        return await emailService.sendCheckoutConfirmation({
+          borrowerEmail,
+          borrowerName,
+          item,
+          checkoutDate,
+          dueDate,
+          project,
+        });
+      } catch (err) {
+        logError('Failed to send checkout email:', err);
+        return { success: false, error: err.message };
+      }
+    },
+    [],
+  );
 
-  const sendCheckinEmail = useCallback(async ({ borrowerEmail, borrowerName, item, returnDate }) => {
-    try {
-      return await emailService.sendCheckinConfirmation({
-        borrowerEmail,
-        borrowerName,
-        item,
-        returnDate
-      });
-    } catch (err) {
-      logError('Failed to send checkin email:', err);
-      return { success: false, error: err.message };
-    }
-  }, []);
+  const sendCheckinEmail = useCallback(
+    async ({ borrowerEmail, borrowerName, item, returnDate }) => {
+      try {
+        return await emailService.sendCheckinConfirmation({
+          borrowerEmail,
+          borrowerName,
+          item,
+          returnDate,
+        });
+      } catch (err) {
+        logError('Failed to send checkin email:', err);
+        return { success: false, error: err.message };
+      }
+    },
+    [],
+  );
 
   const sendReservationEmail = useCallback(async ({ userEmail, userName, item, reservation }) => {
     try {
@@ -907,7 +923,7 @@ export function DataProvider({ children }) {
         userEmail,
         userName,
         item,
-        reservation
+        reservation,
       });
     } catch (err) {
       logError('Failed to send reservation email:', err);
@@ -923,78 +939,78 @@ export function DataProvider({ children }) {
 
   // -- Inventory --
   const patchInventoryItem = useCallback((id, updates) => {
-    setInventory(prev => updateById(prev, id, updates));
+    setInventory((prev) => updateById(prev, id, updates));
   }, []);
 
   const addInventoryItems = useCallback((items) => {
     const arr = Array.isArray(items) ? items : [items];
-    setInventory(prev => [...prev, ...arr]);
+    setInventory((prev) => [...prev, ...arr]);
   }, []);
 
   const removeInventoryItems = useCallback((ids) => {
     const idSet = new Set(Array.isArray(ids) ? ids : [ids]);
-    setInventory(prev => prev.filter(item => !idSet.has(item.id)));
+    setInventory((prev) => prev.filter((item) => !idSet.has(item.id)));
   }, []);
 
   const mapInventory = useCallback((mapFn) => {
-    setInventory(prev => prev.map(mapFn));
+    setInventory((prev) => prev.map(mapFn));
   }, []);
 
   // -- Packages --
   const patchPackage = useCallback((id, updates) => {
-    setPackages(prev => updateById(prev, id, updates));
+    setPackages((prev) => updateById(prev, id, updates));
   }, []);
 
   const addLocalPackage = useCallback((pkg) => {
-    setPackages(prev => [...prev, pkg]);
+    setPackages((prev) => [...prev, pkg]);
   }, []);
 
   const removeLocalPackage = useCallback((id) => {
-    setPackages(prev => removeById(prev, id));
+    setPackages((prev) => removeById(prev, id));
   }, []);
 
   // -- Pack Lists --
   const patchPackList = useCallback((id, updates) => {
-    setPackLists(prev => updateById(prev, id, updates));
+    setPackLists((prev) => updateById(prev, id, updates));
   }, []);
 
   const addLocalPackList = useCallback((list) => {
-    setPackLists(prev => [...prev, list]);
+    setPackLists((prev) => [...prev, list]);
   }, []);
 
   const removeLocalPackList = useCallback((id) => {
-    setPackLists(prev => removeById(prev, id));
+    setPackLists((prev) => removeById(prev, id));
   }, []);
 
   // -- Clients --
   const patchClient = useCallback((id, updates) => {
-    setClients(prev => updateById(prev, id, updates));
+    setClients((prev) => updateById(prev, id, updates));
   }, []);
 
   // -- Users --
   const patchUser = useCallback((id, updates) => {
-    setUsers(prev => updateById(prev, id, updates));
+    setUsers((prev) => updateById(prev, id, updates));
   }, []);
 
   const addLocalUser = useCallback((user) => {
-    setUsers(prev => [...prev, user]);
+    setUsers((prev) => [...prev, user]);
   }, []);
 
   const removeLocalUser = useCallback((id) => {
-    setUsers(prev => removeById(prev, id));
+    setUsers((prev) => removeById(prev, id));
   }, []);
 
   // -- Roles --
   const patchRole = useCallback((id, updates) => {
-    setRoles(prev => updateById(prev, id, updates));
+    setRoles((prev) => updateById(prev, id, updates));
   }, []);
 
   const addLocalRole = useCallback((role) => {
-    setRoles(prev => [...prev, role]);
+    setRoles((prev) => [...prev, role]);
   }, []);
 
   const removeLocalRole = useCallback((id) => {
-    setRoles(prev => removeById(prev, id));
+    setRoles((prev) => removeById(prev, id));
   }, []);
 
   // -- Locations --
@@ -1006,183 +1022,181 @@ export function DataProvider({ children }) {
   // CONTEXT VALUE
   // =============================================================================
 
-  const value = useMemo(() => ({
-    // State
-    loading,
-    error,
-    dataLoaded,
-    tier2Loaded,
-    lastLoadedAt,
+  const value = useMemo(
+    () => ({
+      // State
+      loading,
+      error,
+      dataLoaded,
+      tier2Loaded,
+      lastLoadedAt,
 
-    // Data
-    inventory,
-    packages,
-    packLists,
-    clients,
-    users,
-    roles,
-    locations,
-    categories,
-    categorySettings,
-    specs,
-    auditLog,
-    
-    // Refresh functions
-    refreshData: loadData,
-    refreshStaleData,
+      // Data
+      inventory,
+      packages,
+      packLists,
+      clients,
+      users,
+      roles,
+      locations,
+      categories,
+      categorySettings,
+      specs,
+      auditLog,
 
-    // Local State Patch Operations (optimistic UI updates)
-    patchInventoryItem,
-    addInventoryItems,
-    removeInventoryItems,
-    mapInventory,
-    patchPackage,
-    addLocalPackage,
-    removeLocalPackage,
-    patchPackList,
-    addLocalPackList,
-    removeLocalPackList,
-    patchClient,
-    patchUser,
-    addLocalUser,
-    removeLocalUser,
-    patchRole,
-    addLocalRole,
-    removeLocalRole,
-    replaceLocations,
-    
-    // Inventory Operations
-    updateItem,
-    createItem,
-    deleteItem,
-    getItemWithDetails,
-    
-    // Item Notes Operations
-    addItemNote,
-    deleteItemNote,
-    
-    // Item Reminders Operations
-    addItemReminder,
-    updateItemReminder,
-    deleteItemReminder,
-    
-    // Maintenance Operations
-    addMaintenance,
-    updateMaintenance,
-    deleteMaintenance,
-    
-    // Reservation Operations
-    createReservation,
-    updateReservation,
-    deleteReservation,
-    
-    // Check In/Out Operations
-    checkOutItem,
-    checkInItem,
-    
-    // Package Operations
-    createPackage,
-    updatePackage,
-    deletePackage,
-    
-    // Pack List Operations
-    createPackList,
-    updatePackList,
-    deletePackList,
-    
-    // Client Operations
-    createClient,
-    updateClient,
-    deleteClient,
-    
-    // Notification Operations
-    saveNotificationPreferences,
-    getNotificationPreferences,
-    sendCheckoutEmail,
-    sendCheckinEmail,
-    sendReservationEmail,
-    
-    // Other Operations
-    updateCategories,
-    updateSpecs,
-    addAuditLog
-  }), [
-    loading,
-    error,
-    dataLoaded,
-    tier2Loaded,
-    lastLoadedAt,
-    inventory,
-    packages,
-    packLists,
-    clients,
-    users,
-    roles,
-    locations,
-    categories,
-    categorySettings,
-    specs,
-    auditLog,
-    loadData,
-    refreshStaleData,
-    updateItem,
-    createItem,
-    deleteItem,
-    getItemWithDetails,
-    addItemNote,
-    deleteItemNote,
-    addItemReminder,
-    updateItemReminder,
-    deleteItemReminder,
-    addMaintenance,
-    updateMaintenance,
-    deleteMaintenance,
-    createReservation,
-    updateReservation,
-    deleteReservation,
-    checkOutItem,
-    checkInItem,
-    createPackage,
-    updatePackage,
-    deletePackage,
-    createPackList,
-    updatePackList,
-    deletePackList,
-    createClient,
-    updateClient,
-    deleteClient,
-    saveNotificationPreferences,
-    getNotificationPreferences,
-    sendCheckoutEmail,
-    sendCheckinEmail,
-    sendReservationEmail,
-    updateCategories,
-    updateSpecs,
-    addAuditLog,
-    patchInventoryItem,
-    addInventoryItems,
-    removeInventoryItems,
-    mapInventory,
-    patchPackage,
-    addLocalPackage,
-    removeLocalPackage,
-    patchPackList,
-    addLocalPackList,
-    removeLocalPackList,
-    patchClient,
-    patchUser,
-    addLocalUser,
-    removeLocalUser,
-    patchRole,
-    addLocalRole,
-    removeLocalRole,
-    replaceLocations,
-  ]);
+      // Refresh functions
+      refreshData: loadData,
+      refreshStaleData,
 
-  return (
-    <DataContext.Provider value={value}>
-      {children}
-    </DataContext.Provider>
+      // Local State Patch Operations (optimistic UI updates)
+      patchInventoryItem,
+      addInventoryItems,
+      removeInventoryItems,
+      mapInventory,
+      patchPackage,
+      addLocalPackage,
+      removeLocalPackage,
+      patchPackList,
+      addLocalPackList,
+      removeLocalPackList,
+      patchClient,
+      patchUser,
+      addLocalUser,
+      removeLocalUser,
+      patchRole,
+      addLocalRole,
+      removeLocalRole,
+      replaceLocations,
+
+      // Inventory Operations
+      updateItem,
+      createItem,
+      deleteItem,
+      getItemWithDetails,
+
+      // Item Notes Operations
+      addItemNote,
+      deleteItemNote,
+
+      // Item Reminders Operations
+      addItemReminder,
+      updateItemReminder,
+      deleteItemReminder,
+
+      // Maintenance Operations
+      addMaintenance,
+      updateMaintenance,
+      deleteMaintenance,
+
+      // Reservation Operations
+      createReservation,
+      updateReservation,
+      deleteReservation,
+
+      // Check In/Out Operations
+      checkOutItem,
+      checkInItem,
+
+      // Package Operations
+      createPackage,
+      updatePackage,
+      deletePackage,
+
+      // Pack List Operations
+      createPackList,
+      updatePackList,
+      deletePackList,
+
+      // Client Operations
+      createClient,
+      updateClient,
+      deleteClient,
+
+      // Notification Operations
+      saveNotificationPreferences,
+      getNotificationPreferences,
+      sendCheckoutEmail,
+      sendCheckinEmail,
+      sendReservationEmail,
+
+      // Other Operations
+      updateCategories,
+      updateSpecs,
+      addAuditLog,
+    }),
+    [
+      loading,
+      error,
+      dataLoaded,
+      tier2Loaded,
+      lastLoadedAt,
+      inventory,
+      packages,
+      packLists,
+      clients,
+      users,
+      roles,
+      locations,
+      categories,
+      categorySettings,
+      specs,
+      auditLog,
+      loadData,
+      refreshStaleData,
+      updateItem,
+      createItem,
+      deleteItem,
+      getItemWithDetails,
+      addItemNote,
+      deleteItemNote,
+      addItemReminder,
+      updateItemReminder,
+      deleteItemReminder,
+      addMaintenance,
+      updateMaintenance,
+      deleteMaintenance,
+      createReservation,
+      updateReservation,
+      deleteReservation,
+      checkOutItem,
+      checkInItem,
+      createPackage,
+      updatePackage,
+      deletePackage,
+      createPackList,
+      updatePackList,
+      deletePackList,
+      createClient,
+      updateClient,
+      deleteClient,
+      saveNotificationPreferences,
+      getNotificationPreferences,
+      sendCheckoutEmail,
+      sendCheckinEmail,
+      sendReservationEmail,
+      updateCategories,
+      updateSpecs,
+      addAuditLog,
+      patchInventoryItem,
+      addInventoryItems,
+      removeInventoryItems,
+      mapInventory,
+      patchPackage,
+      addLocalPackage,
+      removeLocalPackage,
+      patchPackList,
+      addLocalPackList,
+      removeLocalPackList,
+      patchClient,
+      patchUser,
+      addLocalUser,
+      removeLocalUser,
+      patchRole,
+      addLocalRole,
+      removeLocalRole,
+      replaceLocations,
+    ],
   );
-}
 
+  return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
+}

@@ -52,8 +52,10 @@ vi.mock('../theme.js', () => ({
 vi.mock('../components/Select.jsx', () => ({
   Select: ({ value, onChange, options, ...props }) => (
     <select value={value} onChange={onChange} {...props}>
-      {(options || []).map(o => (
-        <option key={o.value} value={o.value}>{o.label}</option>
+      {(options || []).map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
       ))}
     </select>
   ),
@@ -133,10 +135,10 @@ describe('NotificationSettings', () => {
     });
 
     it('should show disabled message when email_enabled is false', () => {
-      render(
-        <NotificationSettings {...defaultProps} preferences={{ email_enabled: false }} />
-      );
-      expect(screen.getByText(/All email notifications are currently disabled/)).toBeInTheDocument();
+      render(<NotificationSettings {...defaultProps} preferences={{ email_enabled: false }} />);
+      expect(
+        screen.getByText(/All email notifications are currently disabled/),
+      ).toBeInTheDocument();
     });
 
     it('should render with empty preferences object', () => {

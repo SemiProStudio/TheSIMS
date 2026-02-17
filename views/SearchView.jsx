@@ -5,7 +5,7 @@
 import { memo, useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { Search, Eye, X, Filter } from 'lucide-react';
 import { STATUS } from '../constants.js';
-import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { getStatusColor, filterBySearch } from '../utils';
 import { Badge, Card, Button, SearchInput, Pagination, PageHeader } from '../components/ui.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
@@ -26,7 +26,7 @@ function SearchView({
   setSelectedCategories,
   selectedStatuses,
   setSelectedStatuses,
-  onViewItem
+  onViewItem,
 }) {
   // Debounce search for performance on large inventories
   const debouncedSearch = useDebounce(searchQuery, 200);
@@ -45,23 +45,18 @@ function SearchView({
     let result = filterBySearch(inventory, debouncedSearch, SEARCH_FIELDS);
 
     if (selectedCategories.length > 0) {
-      result = result.filter(i => selectedCategories.includes(i.category));
+      result = result.filter((i) => selectedCategories.includes(i.category));
     }
 
     if (selectedStatuses.length > 0) {
-      result = result.filter(i => selectedStatuses.includes(i.status));
+      result = result.filter((i) => selectedStatuses.includes(i.status));
     }
 
     return result;
   }, [inventory, debouncedSearch, selectedCategories, selectedStatuses]);
 
   // Pagination
-  const {
-    page,
-    totalPages,
-    paginatedItems,
-    goToPage,
-  } = usePagination(filteredItems, pageSize);
+  const { page, totalPages, paginatedItems, goToPage } = usePagination(filteredItems, pageSize);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -74,23 +69,25 @@ function SearchView({
     setSelectedStatuses([]);
   }, [setSearchQuery, setSelectedCategories, setSelectedStatuses]);
 
-  const hasFilters = searchQuery.trim() || selectedCategories.length > 0 || selectedStatuses.length > 0;
+  const hasFilters =
+    searchQuery.trim() || selectedCategories.length > 0 || selectedStatuses.length > 0;
 
   // Prepare options for dropdowns
-  const categoryOptions = useMemo(() => 
-    categories.map(cat => ({ value: cat, label: cat })),
-    [categories]
+  const categoryOptions = useMemo(
+    () => categories.map((cat) => ({ value: cat, label: cat })),
+    [categories],
   );
 
-  const statusOptions = useMemo(() => 
-    ALL_STATUSES.map(status => ({ value: status, label: status })),
-    []
+  const statusOptions = useMemo(
+    () => ALL_STATUSES.map((status) => ({ value: status, label: status })),
+    [],
   );
 
   // Custom render for status options with badge
-  const renderStatusOption = useCallback((option) => (
-    <Badge text={option.label} color={getStatusColor(option.value)} size="sm" />
-  ), []);
+  const renderStatusOption = useCallback(
+    (option) => <Badge text={option.label} color={getStatusColor(option.value)} size="sm" />,
+    [],
+  );
 
   return (
     <>
@@ -101,13 +98,15 @@ function SearchView({
         <div style={{ display: 'flex', gap: spacing[3], alignItems: 'flex-end', flexWrap: 'wrap' }}>
           {/* Search Input */}
           <div style={{ flex: '1 1 250px', minWidth: '200px' }}>
-            <label style={{ 
-              display: 'block', 
-              marginBottom: spacing[1], 
-              fontSize: typography.fontSize.sm, 
-              fontWeight: typography.fontWeight.medium, 
-              color: colors.textSecondary 
-            }}>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: spacing[1],
+                fontSize: typography.fontSize.sm,
+                fontWeight: typography.fontWeight.medium,
+                color: colors.textSecondary,
+              }}
+            >
               Search
             </label>
             <SearchInput
@@ -144,9 +143,9 @@ function SearchView({
 
           {/* Clear Filters */}
           {hasFilters && (
-            <Button 
-              variant="secondary" 
-              onClick={clearAllFilters} 
+            <Button
+              variant="secondary"
+              onClick={clearAllFilters}
               icon={X}
               style={{ flexShrink: 0 }}
             >
@@ -157,44 +156,74 @@ function SearchView({
 
         {/* Active filter summary */}
         {hasFilters && (
-          <div style={{ 
-            marginTop: spacing[3], 
-            paddingTop: spacing[3], 
-            borderTop: `1px solid ${colors.borderLight}`,
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[2],
-            flexWrap: 'wrap',
-          }}>
+          <div
+            style={{
+              marginTop: spacing[3],
+              paddingTop: spacing[3],
+              borderTop: `1px solid ${colors.borderLight}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[2],
+              flexWrap: 'wrap',
+            }}
+          >
             <Filter size={14} color={colors.textMuted} />
             <span style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
               Showing {filteredItems.length} of {inventory.length} items
             </span>
             {selectedCategories.length > 0 && (
-              <Badge text={`${selectedCategories.length} categor${selectedCategories.length > 1 ? 'ies' : 'y'}`} color={colors.accent2} size="sm" />
+              <Badge
+                text={`${selectedCategories.length} categor${selectedCategories.length > 1 ? 'ies' : 'y'}`}
+                color={colors.accent2}
+                size="sm"
+              />
             )}
             {selectedStatuses.length > 0 && (
-              <Badge text={`${selectedStatuses.length} status${selectedStatuses.length > 1 ? 'es' : ''}`} color={colors.primary} size="sm" />
+              <Badge
+                text={`${selectedStatuses.length} status${selectedStatuses.length > 1 ? 'es' : ''}`}
+                color={colors.primary}
+                size="sm"
+              />
             )}
           </div>
         )}
       </Card>
 
       {/* Results header with count */}
-      <div style={{ marginBottom: spacing[3], color: colors.textMuted, fontSize: typography.fontSize.sm }}>
+      <div
+        style={{
+          marginBottom: spacing[3],
+          color: colors.textMuted,
+          fontSize: typography.fontSize.sm,
+        }}
+      >
         {filteredItems.length} result{filteredItems.length !== 1 ? 's' : ''}
         {totalPages > 1 && ` · Page ${page} of ${totalPages}`}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-        {paginatedItems.map(item => (
-          <Card key={item.id} style={{ padding: spacing[3], display: 'flex', alignItems: 'center', gap: spacing[3] }}>
+        {paginatedItems.map((item) => (
+          <Card
+            key={item.id}
+            style={{ padding: spacing[3], display: 'flex', alignItems: 'center', gap: spacing[3] }}
+          >
             <div
               role="button"
               tabIndex={0}
               onClick={() => onViewItem(item.id)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewItem(item.id); }}}
-              style={{ flex: 1, display: 'flex', alignItems: 'center', gap: spacing[3], cursor: 'pointer' }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onViewItem(item.id);
+                }
+              }}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[3],
+                cursor: 'pointer',
+              }}
             >
               {item.image ? (
                 <OptimizedImage
@@ -207,19 +236,51 @@ function SearchView({
                   objectFit="cover"
                 />
               ) : (
-                <div style={{ width: 48, height: 48, borderRadius: borderRadius.md, background: `${withOpacity(colors.primary, 10)}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.textMuted, fontSize: typography.fontSize.xs }}>No img</div>
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: borderRadius.md,
+                    background: `${withOpacity(colors.primary, 10)}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: colors.textMuted,
+                    fontSize: typography.fontSize.xs,
+                  }}
+                >
+                  No img
+                </div>
               )}
               <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', gap: spacing[1], marginBottom: spacing[1], flexWrap: 'wrap' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: spacing[1],
+                    marginBottom: spacing[1],
+                    flexWrap: 'wrap',
+                  }}
+                >
                   <Badge text={item.id} color={colors.primary} />
                   <Badge text={item.status} color={getStatusColor(item.status)} />
                   <Badge text={item.category} color={colors.accent2} />
                 </div>
-                <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{item.name}</div>
-                <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>{item.brand}</div>
+                <div
+                  style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}
+                >
+                  {item.name}
+                </div>
+                <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
+                  {item.brand}
+                </div>
               </div>
             </div>
-            <button onClick={() => onViewItem(item.id)} className="btn-secondary" aria-label={`View ${item.name}`} style={{ padding: spacing[2] }}>
+            <button
+              onClick={() => onViewItem(item.id)}
+              className="btn-secondary"
+              aria-label={`View ${item.name}`}
+              style={{ padding: spacing[2] }}
+            >
               <Eye size={16} />
             </button>
           </Card>
@@ -229,17 +290,17 @@ function SearchView({
       {/* Pagination */}
       {totalPages > 1 && (
         <div style={{ marginTop: spacing[4] }}>
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={goToPage}
-          />
+          <Pagination page={page} totalPages={totalPages} onPageChange={goToPage} />
         </div>
       )}
 
       {filteredItems.length === 0 && (
         <Card style={{ textAlign: 'center', padding: spacing[10] }}>
-          <Search size={48} color={colors.textMuted} style={{ marginBottom: spacing[3], opacity: 0.5 }} />
+          <Search
+            size={48}
+            color={colors.textMuted}
+            style={{ marginBottom: spacing[3], opacity: 0.5 }}
+          />
           <div style={{ color: colors.textMuted }}>
             {inventory.length === 0
               ? 'No items in your inventory yet'

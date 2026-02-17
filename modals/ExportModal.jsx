@@ -30,9 +30,8 @@ export const ExportModal = memo(function ExportModal({ onExport, onClose, user: 
     { id: 'notes', label: 'Notes' },
   ];
 
-  const toggleColumn = (col) => setColumns(prev => 
-    prev.includes(col) ? prev.filter(c => c !== col) : [...prev, col]
-  );
+  const toggleColumn = (col) =>
+    setColumns((prev) => (prev.includes(col) ? prev.filter((c) => c !== col) : [...prev, col]));
 
   return (
     <Modal onClose={onClose} maxWidth={500}>
@@ -41,16 +40,19 @@ export const ExportModal = memo(function ExportModal({ onExport, onClose, user: 
         <div style={{ marginBottom: spacing[4] }}>
           <label style={styles.label}>Format</label>
           <div style={{ display: 'flex', gap: spacing[2] }}>
-            {[['csv', 'CSV'], ['pdf', 'PDF']].map(([v, l]) => (
-              <button 
-                key={v} 
-                onClick={() => setFormat(v)} 
-                style={{ 
-                  ...styles.btnSec, 
-                  flex: 1, 
-                  justifyContent: 'center', 
-                  background: format === v ? `${withOpacity(colors.primary, 30)}` : 'transparent', 
-                  borderColor: format === v ? colors.primary : colors.border 
+            {[
+              ['csv', 'CSV'],
+              ['pdf', 'PDF'],
+            ].map(([v, l]) => (
+              <button
+                key={v}
+                onClick={() => setFormat(v)}
+                style={{
+                  ...styles.btnSec,
+                  flex: 1,
+                  justifyContent: 'center',
+                  background: format === v ? `${withOpacity(colors.primary, 30)}` : 'transparent',
+                  borderColor: format === v ? colors.primary : colors.border,
                 }}
               >
                 {l}
@@ -58,19 +60,21 @@ export const ExportModal = memo(function ExportModal({ onExport, onClose, user: 
             ))}
           </div>
         </div>
-        
+
         <div style={{ marginBottom: spacing[4] }}>
           <label style={styles.label}>Columns</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing[2] }}>
-            {allColumns.map(col => (
-              <button 
-                key={col.id} 
-                onClick={() => toggleColumn(col.id)} 
-                style={{ 
-                  ...styles.btnSec, 
-                  background: columns.includes(col.id) ? `${withOpacity(colors.primary, 20)}` : 'transparent', 
-                  borderColor: columns.includes(col.id) ? colors.primary : colors.border, 
-                  fontSize: typography.fontSize.sm 
+            {allColumns.map((col) => (
+              <button
+                key={col.id}
+                onClick={() => toggleColumn(col.id)}
+                style={{
+                  ...styles.btnSec,
+                  background: columns.includes(col.id)
+                    ? `${withOpacity(colors.primary, 20)}`
+                    : 'transparent',
+                  borderColor: columns.includes(col.id) ? colors.primary : colors.border,
+                  fontSize: typography.fontSize.sm,
                 }}
               >
                 {col.label}
@@ -78,18 +82,32 @@ export const ExportModal = memo(function ExportModal({ onExport, onClose, user: 
             ))}
           </div>
         </div>
-        
-        <label style={{ display: 'flex', alignItems: 'center', gap: spacing[2], marginBottom: spacing[4], cursor: 'pointer' }}>
-          <input 
-            type="checkbox" 
-            checked={includeBranding} 
-            onChange={e => setIncludeBranding(e.target.checked)} 
-            style={{ accentColor: colors.primary }} 
+
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[2],
+            marginBottom: spacing[4],
+            cursor: 'pointer',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={includeBranding}
+            onChange={(e) => setIncludeBranding(e.target.checked)}
+            style={{ accentColor: colors.primary }}
           />
-          <span style={{ color: colors.textPrimary, fontSize: typography.fontSize.sm }}>Include branding</span>
+          <span style={{ color: colors.textPrimary, fontSize: typography.fontSize.sm }}>
+            Include branding
+          </span>
         </label>
-        
-        <Button fullWidth onClick={() => onExport({ format, columns, includeBranding })} icon={Download}>
+
+        <Button
+          fullWidth
+          onClick={() => onExport({ format, columns, includeBranding })}
+          icon={Download}
+        >
           Export
         </Button>
       </div>

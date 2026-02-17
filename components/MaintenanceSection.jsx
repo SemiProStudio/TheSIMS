@@ -4,54 +4,85 @@
 // ============================================================================
 
 import { memo, useState } from 'react';
-import { Wrench, Plus, Check, Clock, AlertTriangle, DollarSign, Building2, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Wrench,
+  Plus,
+  Check,
+  Clock,
+  AlertTriangle,
+  DollarSign,
+  Building2,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import { MAINTENANCE_STATUS } from '../constants.js';
-import { colors, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, formatMoney } from '../utils';
 import { Badge, Button } from './ui.jsx';
 
 // Get status color for maintenance
 const getMaintenanceStatusColor = (status) => {
   switch (status) {
-    case MAINTENANCE_STATUS.COMPLETED: return colors.available;
-    case MAINTENANCE_STATUS.IN_PROGRESS: return colors.checkedOut;
-    case MAINTENANCE_STATUS.SCHEDULED: return colors.primary;
-    case MAINTENANCE_STATUS.CANCELLED: return colors.textMuted;
-    default: return colors.textMuted;
+    case MAINTENANCE_STATUS.COMPLETED:
+      return colors.available;
+    case MAINTENANCE_STATUS.IN_PROGRESS:
+      return colors.checkedOut;
+    case MAINTENANCE_STATUS.SCHEDULED:
+      return colors.primary;
+    case MAINTENANCE_STATUS.CANCELLED:
+      return colors.textMuted;
+    default:
+      return colors.textMuted;
   }
 };
 
 // Get status icon
 const getMaintenanceStatusIcon = (status) => {
   switch (status) {
-    case MAINTENANCE_STATUS.COMPLETED: return Check;
-    case MAINTENANCE_STATUS.IN_PROGRESS: return Clock;
-    case MAINTENANCE_STATUS.SCHEDULED: return Calendar;
-    case MAINTENANCE_STATUS.CANCELLED: return AlertTriangle;
-    default: return Wrench;
+    case MAINTENANCE_STATUS.COMPLETED:
+      return Check;
+    case MAINTENANCE_STATUS.IN_PROGRESS:
+      return Clock;
+    case MAINTENANCE_STATUS.SCHEDULED:
+      return Calendar;
+    case MAINTENANCE_STATUS.CANCELLED:
+      return AlertTriangle;
+    default:
+      return Wrench;
   }
 };
 
 // Format status for display
 const formatStatus = (status) => {
   switch (status) {
-    case MAINTENANCE_STATUS.COMPLETED: return 'Completed';
-    case MAINTENANCE_STATUS.IN_PROGRESS: return 'In Progress';
-    case MAINTENANCE_STATUS.SCHEDULED: return 'Scheduled';
-    case MAINTENANCE_STATUS.CANCELLED: return 'Cancelled';
-    default: return status;
+    case MAINTENANCE_STATUS.COMPLETED:
+      return 'Completed';
+    case MAINTENANCE_STATUS.IN_PROGRESS:
+      return 'In Progress';
+    case MAINTENANCE_STATUS.SCHEDULED:
+      return 'Scheduled';
+    case MAINTENANCE_STATUS.CANCELLED:
+      return 'Cancelled';
+    default:
+      return status;
   }
 };
 
 // Single maintenance entry component
-const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _onEdit, panelColor }) {
+const MaintenanceEntry = memo(function MaintenanceEntry({
+  entry,
+  onComplete,
+  _onEdit,
+  panelColor,
+}) {
   const [expanded, setExpanded] = useState(false);
   const StatusIcon = getMaintenanceStatusIcon(entry.status);
   const statusColor = getMaintenanceStatusColor(entry.status);
   const isCompleted = entry.status === MAINTENANCE_STATUS.COMPLETED;
   const isScheduled = entry.status === MAINTENANCE_STATUS.SCHEDULED;
   const isInProgress = entry.status === MAINTENANCE_STATUS.IN_PROGRESS;
-  
+
   // Ensure we have a valid hex color for opacity
   const effectivePanelColor = panelColor && panelColor.length > 0 ? panelColor : colors.primary;
 
@@ -91,14 +122,19 @@ const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _on
         >
           <StatusIcon size={18} />
         </div>
-        
+
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], marginBottom: spacing[1] }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[2],
+              marginBottom: spacing[1],
+            }}
+          >
             <Badge text={entry.type} color={statusColor} size="xs" />
             <Badge text={formatStatus(entry.status)} color={statusColor} size="xs" />
-            {entry.warrantyWork && (
-              <Badge text="Warranty" color={colors.available} size="xs" />
-            )}
+            {entry.warrantyWork && <Badge text="Warranty" color={colors.available} size="xs" />}
           </div>
           <div
             style={{
@@ -116,8 +152,8 @@ const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _on
             {isCompleted && entry.completedDate
               ? `Completed ${formatDate(entry.completedDate)}`
               : entry.scheduledDate
-              ? `Scheduled ${formatDate(entry.scheduledDate)}`
-              : formatDate(entry.createdAt)}
+                ? `Scheduled ${formatDate(entry.scheduledDate)}`
+                : formatDate(entry.createdAt)}
             {entry.cost > 0 && (
               <span style={{ color: colors.textSecondary }}> • {formatMoney(entry.cost)}</span>
             )}
@@ -141,7 +177,14 @@ const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _on
           <div style={{ paddingTop: spacing[3] }}>
             {/* Vendor info */}
             {entry.vendor && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], marginBottom: spacing[2] }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: spacing[2],
+                  marginBottom: spacing[2],
+                }}
+              >
                 <Building2 size={14} color={colors.textMuted} />
                 <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
                   {entry.vendor}
@@ -152,7 +195,14 @@ const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _on
 
             {/* Cost */}
             {entry.cost > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], marginBottom: spacing[2] }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: spacing[2],
+                  marginBottom: spacing[2],
+                }}
+              >
                 <DollarSign size={14} color={colors.textMuted} />
                 <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
                   {formatMoney(entry.cost)}
@@ -162,7 +212,14 @@ const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _on
             )}
 
             {/* Dates */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], marginBottom: spacing[2] }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[2],
+                marginBottom: spacing[2],
+              }}
+            >
               <Calendar size={14} color={colors.textMuted} />
               <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
                 {entry.scheduledDate && `Scheduled: ${formatDate(entry.scheduledDate)}`}
@@ -225,33 +282,35 @@ const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, _on
 });
 
 // Main component
-function MaintenanceSection({ 
-  maintenanceHistory = [], 
-  onAddMaintenance, 
+function MaintenanceSection({
+  maintenanceHistory = [],
+  onAddMaintenance,
   onUpdateMaintenance,
   onCompleteMaintenance,
-  panelColor
+  panelColor,
 }) {
   // Get computed color for use with opacity
   const effectivePanelColor = panelColor && panelColor.length > 0 ? panelColor : colors.primary;
-  
+
   // Calculate totals
   const totalCost = maintenanceHistory
-    .filter(m => m.status === MAINTENANCE_STATUS.COMPLETED && !m.warrantyWork)
+    .filter((m) => m.status === MAINTENANCE_STATUS.COMPLETED && !m.warrantyWork)
     .reduce((sum, m) => sum + (Number(m.cost) || 0), 0);
-  
+
   const pendingCount = maintenanceHistory.filter(
-    m => m.status === MAINTENANCE_STATUS.SCHEDULED || m.status === MAINTENANCE_STATUS.IN_PROGRESS
+    (m) => m.status === MAINTENANCE_STATUS.SCHEDULED || m.status === MAINTENANCE_STATUS.IN_PROGRESS,
   ).length;
 
   // Sort: pending first, then by date descending
   const sortedHistory = [...maintenanceHistory].sort((a, b) => {
     // Pending items first
-    const aIsPending = a.status === MAINTENANCE_STATUS.SCHEDULED || a.status === MAINTENANCE_STATUS.IN_PROGRESS;
-    const bIsPending = b.status === MAINTENANCE_STATUS.SCHEDULED || b.status === MAINTENANCE_STATUS.IN_PROGRESS;
+    const aIsPending =
+      a.status === MAINTENANCE_STATUS.SCHEDULED || a.status === MAINTENANCE_STATUS.IN_PROGRESS;
+    const bIsPending =
+      b.status === MAINTENANCE_STATUS.SCHEDULED || b.status === MAINTENANCE_STATUS.IN_PROGRESS;
     if (aIsPending && !bIsPending) return -1;
     if (!aIsPending && bIsPending) return 1;
-    
+
     // Then by date
     const aDate = a.completedDate || a.scheduledDate || a.createdAt;
     const bDate = b.completedDate || b.scheduledDate || b.createdAt;
@@ -323,7 +382,11 @@ function MaintenanceSection({
           variant="secondary"
           onClick={onAddMaintenance}
           icon={Plus}
-          style={{ width: '100%', justifyContent: 'center', marginBottom: sortedHistory.length > 0 ? spacing[3] : 0 }}
+          style={{
+            width: '100%',
+            justifyContent: 'center',
+            marginBottom: sortedHistory.length > 0 ? spacing[3] : 0,
+          }}
         >
           Add Record
         </Button>

@@ -19,9 +19,12 @@ export function usePagination(items, pageSize = 20) {
     return items.slice(start, start + pageSize);
   }, [items, page, pageSize]);
 
-  const goToPage = useCallback((newPage) => {
-    setPage(Math.max(1, Math.min(newPage, totalPages)));
-  }, [totalPages]);
+  const goToPage = useCallback(
+    (newPage) => {
+      setPage(Math.max(1, Math.min(newPage, totalPages)));
+    },
+    [totalPages],
+  );
 
   const nextPage = useCallback(() => {
     goToPage(page + 1);

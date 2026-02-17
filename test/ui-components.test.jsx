@@ -151,12 +151,20 @@ describe('CollapsibleSection', () => {
   });
 
   it('should render children when not collapsed', () => {
-    render(<CollapsibleSection title="Section" collapsed={false}>Content</CollapsibleSection>);
+    render(
+      <CollapsibleSection title="Section" collapsed={false}>
+        Content
+      </CollapsibleSection>,
+    );
     expect(screen.getByText('Content')).toBeInTheDocument();
   });
 
   it('should hide children when collapsed', () => {
-    render(<CollapsibleSection title="Section" collapsed={true}>Content</CollapsibleSection>);
+    render(
+      <CollapsibleSection title="Section" collapsed={true}>
+        Content
+      </CollapsibleSection>,
+    );
     expect(screen.queryByText('Content')).not.toBeInTheDocument();
   });
 
@@ -165,14 +173,18 @@ describe('CollapsibleSection', () => {
     render(
       <CollapsibleSection title="Section" onToggleCollapse={handleToggle}>
         Content
-      </CollapsibleSection>
+      </CollapsibleSection>,
     );
     fireEvent.click(screen.getByText('Section'));
     expect(handleToggle).toHaveBeenCalledTimes(1);
   });
 
   it('should render badge when provided', () => {
-    render(<CollapsibleSection title="Section" badge={5}>Content</CollapsibleSection>);
+    render(
+      <CollapsibleSection title="Section" badge={5}>
+        Content
+      </CollapsibleSection>,
+    );
     expect(screen.getByText('5')).toBeInTheDocument();
   });
 
@@ -180,7 +192,7 @@ describe('CollapsibleSection', () => {
     render(
       <CollapsibleSection title="Section" action={<button>Action</button>}>
         Content
-      </CollapsibleSection>
+      </CollapsibleSection>,
     );
     expect(screen.getByText('Action')).toBeInTheDocument();
   });
@@ -190,7 +202,7 @@ describe('CollapsibleSection', () => {
     render(
       <CollapsibleSection title="Section" onToggleCollapse={handleToggle}>
         Content
-      </CollapsibleSection>
+      </CollapsibleSection>,
     );
     const header = screen.getByRole('button');
     fireEvent.keyDown(header, { key: 'Enter' });
@@ -198,7 +210,11 @@ describe('CollapsibleSection', () => {
   });
 
   it('should have aria-expanded attribute', () => {
-    render(<CollapsibleSection title="Section" collapsed={false}>Content</CollapsibleSection>);
+    render(
+      <CollapsibleSection title="Section" collapsed={false}>
+        Content
+      </CollapsibleSection>,
+    );
     const header = screen.getByRole('button');
     expect(header).toHaveAttribute('aria-expanded', 'true');
   });
@@ -218,9 +234,7 @@ describe('Pagination', () => {
   };
 
   it('should not render when totalPages is 1', () => {
-    const { container } = render(
-      <Pagination {...defaultProps} totalPages={1} totalItems={10} />
-    );
+    const { container } = render(<Pagination {...defaultProps} totalPages={1} totalItems={10} />);
     expect(container.firstChild).toBeNull();
   });
 

@@ -34,8 +34,16 @@ describe('isDataUrl', () => {
 
 describe('isStorageUrl', () => {
   it('returns true for Supabase storage URLs', () => {
-    expect(isStorageUrl('https://abc.supabase.co/storage/v1/object/public/equipment-images/item1/123.jpg')).toBe(true);
-    expect(isStorageUrl('https://abc.supabase.in/storage/v1/object/public/equipment-images/item1/123.jpg')).toBe(true);
+    expect(
+      isStorageUrl(
+        'https://abc.supabase.co/storage/v1/object/public/equipment-images/item1/123.jpg',
+      ),
+    ).toBe(true);
+    expect(
+      isStorageUrl(
+        'https://abc.supabase.in/storage/v1/object/public/equipment-images/item1/123.jpg',
+      ),
+    ).toBe(true);
   });
 
   it('returns false for non-storage URLs', () => {
@@ -60,12 +68,14 @@ describe('isStorageUrl', () => {
 
 describe('getStoragePathFromUrl', () => {
   it('extracts path from Supabase storage URL', () => {
-    const url = 'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000.jpg';
+    const url =
+      'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000.jpg';
     expect(getStoragePathFromUrl(url)).toBe('ITEM001/1700000000.jpg');
   });
 
   it('extracts thumbnail path from Supabase storage URL', () => {
-    const url = 'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000_thumb.jpg';
+    const url =
+      'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000_thumb.jpg';
     expect(getStoragePathFromUrl(url)).toBe('ITEM001/1700000000_thumb.jpg');
   });
 
@@ -79,7 +89,8 @@ describe('getStoragePathFromUrl', () => {
   });
 
   it('handles URLs with query parameters', () => {
-    const url = 'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000.jpg?t=123';
+    const url =
+      'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000.jpg?t=123';
     expect(getStoragePathFromUrl(url)).toBe('ITEM001/1700000000.jpg');
   });
 });
@@ -90,13 +101,16 @@ describe('getStoragePathFromUrl', () => {
 
 describe('getThumbnailUrl', () => {
   it('converts full-size storage URL to thumbnail URL', () => {
-    const url = 'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000.jpg';
-    const expected = 'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000_thumb.jpg';
+    const url =
+      'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000.jpg';
+    const expected =
+      'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000_thumb.jpg';
     expect(getThumbnailUrl(url)).toBe(expected);
   });
 
   it('returns same URL if already a thumbnail', () => {
-    const url = 'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000_thumb.jpg';
+    const url =
+      'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000_thumb.jpg';
     expect(getThumbnailUrl(url)).toBe(url);
   });
 
@@ -116,20 +130,26 @@ describe('getThumbnailUrl', () => {
   });
 
   it('handles .png extension', () => {
-    const url = 'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000.png';
-    const expected = 'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000_thumb.jpg';
+    const url =
+      'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000.png';
+    const expected =
+      'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000_thumb.jpg';
     expect(getThumbnailUrl(url)).toBe(expected);
   });
 
   it('handles .webp extension', () => {
-    const url = 'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000.webp';
-    const expected = 'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000_thumb.jpg';
+    const url =
+      'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000.webp';
+    const expected =
+      'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000_thumb.jpg';
     expect(getThumbnailUrl(url)).toBe(expected);
   });
 
   it('preserves query parameters after conversion', () => {
-    const url = 'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000.jpg?t=abc';
-    const expected = 'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000_thumb.jpg?t=abc';
+    const url =
+      'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000.jpg?t=abc';
+    const expected =
+      'https://abc.supabase.co/storage/v1/object/public/equipment-images/ITEM001/1700000000_thumb.jpg?t=abc';
     expect(getThumbnailUrl(url)).toBe(expected);
   });
 });

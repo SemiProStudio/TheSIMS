@@ -6,59 +6,65 @@ import { colors, spacing, typography } from '../../theme.js';
 // Input - Form input field
 // ============================================================================
 
-export const Input = memo(forwardRef(function Input(
-  { 
-    label,
-    error,
-    icon: Icon,
-    style: customStyle,
-    containerStyle,
-    className: customClassName,
-    ...props 
-  },
-  ref
-) {
-  const inputClassNames = [
-    'input',
-    error && 'input-error',
-    customClassName,
-  ].filter(Boolean).join(' ');
+export const Input = memo(
+  forwardRef(function Input(
+    {
+      label,
+      error,
+      icon: Icon,
+      style: customStyle,
+      containerStyle,
+      className: customClassName,
+      ...props
+    },
+    ref,
+  ) {
+    const inputClassNames = ['input', error && 'input-error', customClassName]
+      .filter(Boolean)
+      .join(' ');
 
-  return (
-    <div style={containerStyle}>
-      {label && <label className={error ? 'label label-error' : 'label'}>{label}</label>}
-      <div style={{ position: 'relative' }}>
-        {Icon && (
-          <div
+    return (
+      <div style={containerStyle}>
+        {label && <label className={error ? 'label label-error' : 'label'}>{label}</label>}
+        <div style={{ position: 'relative' }}>
+          {Icon && (
+            <div
+              style={{
+                position: 'absolute',
+                left: spacing[3],
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: colors.textMuted,
+              }}
+            >
+              <Icon size={16} />
+            </div>
+          )}
+          <input
+            ref={ref}
+            className={inputClassNames}
             style={{
-              position: 'absolute',
-              left: spacing[3],
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: colors.textMuted,
+              ...(Icon && { paddingLeft: spacing[10] }),
+              ...customStyle,
+            }}
+            {...props}
+          />
+        </div>
+        {error && (
+          <span
+            style={{
+              color: colors.danger,
+              fontSize: typography.fontSize.xs,
+              marginTop: spacing[1],
             }}
           >
-            <Icon size={16} />
-          </div>
+            {error}
+          </span>
         )}
-        <input
-          ref={ref}
-          className={inputClassNames}
-          style={{
-            ...(Icon && { paddingLeft: spacing[10] }),
-            ...customStyle,
-          }}
-          {...props}
-        />
       </div>
-      {error && (
-        <span style={{ color: colors.danger, fontSize: typography.fontSize.xs, marginTop: spacing[1] }}>
-          {error}
-        </span>
-      )}
-    </div>
-  );
-}));
+    );
+  }),
+);
 
 Input.propTypes = {
   /** Label text */

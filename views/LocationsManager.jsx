@@ -4,13 +4,23 @@
 // ============================================================================
 
 import { memo, useState, useMemo, useCallback } from 'react';
-import { 
-  Building2, DoorOpen, Archive, Layers, Box, MapPin, 
-  Plus, Trash2, Edit, ChevronRight, ChevronDown, Save,
-  FolderTree
+import {
+  Building2,
+  DoorOpen,
+  Archive,
+  Layers,
+  Box,
+  MapPin,
+  Plus,
+  Trash2,
+  Edit,
+  ChevronRight,
+  ChevronDown,
+  Save,
+  FolderTree,
 } from 'lucide-react';
 import { LOCATION_TYPES } from '../constants.js';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { flattenLocations } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
@@ -18,22 +28,29 @@ import { Select } from '../components/Select.jsx';
 // Get icon for location type
 const getLocationIcon = (type) => {
   switch (type) {
-    case 'building': return Building2;
-    case 'room': return DoorOpen;
-    case 'cabinet': return Archive;
-    case 'shelf': return Layers;
-    case 'case': return Box;
-    case 'external': return MapPin;
-    default: return FolderTree;
+    case 'building':
+      return Building2;
+    case 'room':
+      return DoorOpen;
+    case 'cabinet':
+      return Archive;
+    case 'shelf':
+      return Layers;
+    case 'case':
+      return Box;
+    case 'external':
+      return MapPin;
+    default:
+      return FolderTree;
   }
 };
 
 // Recursive location tree item component
-const LocationTreeItem = memo(function LocationTreeItem({ 
-  location, 
-  level = 0, 
-  onEdit, 
-  onDelete, 
+const LocationTreeItem = memo(function LocationTreeItem({
+  location,
+  level = 0,
+  onEdit,
+  onDelete,
   onAddChild,
   expandedIds,
   toggleExpand,
@@ -43,7 +60,7 @@ const LocationTreeItem = memo(function LocationTreeItem({
   const hasChildren = location.children && location.children.length > 0;
   const isExpanded = expandedIds.has(location.id);
   const itemCount = itemCounts[location.id] || 0;
-  
+
   return (
     <div>
       <div
@@ -52,7 +69,7 @@ const LocationTreeItem = memo(function LocationTreeItem({
           alignItems: 'center',
           gap: spacing[2],
           padding: `${spacing[2]}px ${spacing[3]}px`,
-          paddingLeft: spacing[3] + (level * 24),
+          paddingLeft: spacing[3] + level * 24,
           background: level % 2 === 0 ? 'transparent' : `${withOpacity(colors.primary, 3)}`,
           borderBottom: `1px solid ${colors.borderLight}`,
         }}
@@ -93,20 +110,24 @@ const LocationTreeItem = memo(function LocationTreeItem({
 
         {/* Name and type */}
         <div style={{ flex: 1 }}>
-          <div style={{ 
-            fontSize: typography.fontSize.sm, 
-            color: colors.textPrimary,
-            fontWeight: typography.fontWeight.medium,
-          }}>
+          <div
+            style={{
+              fontSize: typography.fontSize.sm,
+              color: colors.textPrimary,
+              fontWeight: typography.fontWeight.medium,
+            }}
+          >
             {location.name}
           </div>
-          <div style={{ 
-            fontSize: typography.fontSize.xs, 
-            color: colors.textMuted,
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[2],
-          }}>
+          <div
+            style={{
+              fontSize: typography.fontSize.xs,
+              color: colors.textMuted,
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[2],
+            }}
+          >
             <span style={{ textTransform: 'capitalize' }}>{location.type}</span>
             {itemCount > 0 && (
               <Badge text={`${itemCount} items`} color={colors.primary} size="xs" />
@@ -158,7 +179,7 @@ const LocationTreeItem = memo(function LocationTreeItem({
       {/* Children */}
       {hasChildren && isExpanded && (
         <div>
-          {location.children.map(child => (
+          {location.children.map((child) => (
             <LocationTreeItem
               key={child.id}
               location={child}
@@ -178,12 +199,12 @@ const LocationTreeItem = memo(function LocationTreeItem({
 });
 
 // Location edit form component
-const LocationEditForm = memo(function LocationEditForm({ 
-  location, 
+const LocationEditForm = memo(function LocationEditForm({
+  location,
   parentLocation,
   isNew,
-  onSave, 
-  onCancel 
+  onSave,
+  onCancel,
 }) {
   const [name, setName] = useState(location?.name || '');
   const [type, setType] = useState(location?.type || 'room');
@@ -203,18 +224,31 @@ const LocationEditForm = memo(function LocationEditForm({
   };
 
   return (
-    <div style={{
-      padding: spacing[4],
-      background: `${withOpacity(colors.primary, 5)}`,
-      borderRadius: borderRadius.lg,
-      border: `1px solid ${withOpacity(colors.primary, 20)}`,
-      marginBottom: spacing[4],
-    }}>
+    <div
+      style={{
+        padding: spacing[4],
+        background: `${withOpacity(colors.primary, 5)}`,
+        borderRadius: borderRadius.lg,
+        border: `1px solid ${withOpacity(colors.primary, 20)}`,
+        marginBottom: spacing[4],
+      }}
+    >
       <h4 style={{ margin: `0 0 ${spacing[3]}px`, color: colors.textPrimary }}>
-        {isNew ? (parentLocation ? `Add Sub-location to "${parentLocation.name}"` : 'Add New Location') : 'Edit Location'}
+        {isNew
+          ? parentLocation
+            ? `Add Sub-location to "${parentLocation.name}"`
+            : 'Add New Location'
+          : 'Edit Location'}
       </h4>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '2fr 1fr',
+          gap: spacing[3],
+          marginBottom: spacing[3],
+        }}
+      >
         <div>
           <label style={{ ...styles.label, color: !name || error ? colors.danger : undefined }}>
             Name <span style={{ color: colors.danger }}>*</span>
@@ -222,18 +256,23 @@ const LocationEditForm = memo(function LocationEditForm({
           <input
             type="text"
             value={name}
-            onChange={e => { setName(e.target.value); setError(''); }}
+            onChange={(e) => {
+              setName(e.target.value);
+              setError('');
+            }}
             placeholder="e.g., Studio A, Main Floor, Shelf 1"
             style={{ ...styles.input, borderColor: !name || error ? colors.danger : colors.border }}
             autoFocus
           />
-          {error && <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>{error}</span>}
+          {error && (
+            <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>{error}</span>
+          )}
         </div>
         <div>
           <label style={styles.label}>Type</label>
           <Select
             value={type}
-            onChange={e => setType(e.target.value)}
+            onChange={(e) => setType(e.target.value)}
             options={LOCATION_TYPES}
             aria-label="Location type"
           />
@@ -241,7 +280,9 @@ const LocationEditForm = memo(function LocationEditForm({
       </div>
 
       <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
-        <Button variant="secondary" onClick={onCancel} size="sm">Cancel</Button>
+        <Button variant="secondary" onClick={onCancel} size="sm">
+          Cancel
+        </Button>
         <Button onClick={handleSave} icon={Save} size="sm">
           {isNew ? 'Add Location' : 'Save Changes'}
         </Button>
@@ -262,7 +303,7 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
   // Count items per location
   const itemCounts = useMemo(() => {
     const counts = {};
-    
+
     // Build a map of location name to ID for fuzzy matching
     const locationNameToId = {};
     const processLocation = (loc, parentPath = '') => {
@@ -271,13 +312,13 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
       locationNameToId[fullPath.toLowerCase()] = loc.id;
       counts[loc.id] = 0;
       if (loc.children) {
-        loc.children.forEach(child => processLocation(child, fullPath));
+        loc.children.forEach((child) => processLocation(child, fullPath));
       }
     };
-    editLocations.forEach(loc => processLocation(loc));
+    editLocations.forEach((loc) => processLocation(loc));
 
     // Count items by matching location strings
-    inventory.forEach(item => {
+    inventory.forEach((item) => {
       if (item.location) {
         const locLower = item.location.toLowerCase();
         // Try exact match first
@@ -285,7 +326,7 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
           counts[locationNameToId[locLower]]++;
         } else {
           // Try partial match
-          Object.keys(locationNameToId).forEach(key => {
+          Object.keys(locationNameToId).forEach((key) => {
             if (locLower.includes(key) || key.includes(locLower)) {
               counts[locationNameToId[key]]++;
             }
@@ -299,7 +340,7 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
 
   // Toggle expand/collapse
   const toggleExpand = useCallback((id) => {
-    setExpandedIds(prev => {
+    setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -348,7 +389,7 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
       }, []);
     };
 
-    setEditLocations(prev => deleteFromTree(prev));
+    setEditLocations((prev) => deleteFromTree(prev));
   };
 
   // Save location (add or edit)
@@ -358,7 +399,7 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
       if (parentForNew) {
         // Add as child
         const addToParent = (locations) => {
-          return locations.map(loc => {
+          return locations.map((loc) => {
             if (loc.id === parentForNew.id) {
               return {
                 ...loc,
@@ -371,17 +412,17 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
             return loc;
           });
         };
-        setEditLocations(prev => addToParent([...prev]));
+        setEditLocations((prev) => addToParent([...prev]));
         // Expand parent to show new child
-        setExpandedIds(prev => new Set([...prev, parentForNew.id]));
+        setExpandedIds((prev) => new Set([...prev, parentForNew.id]));
       } else {
         // Add as root
-        setEditLocations(prev => [...prev, updatedLocation]);
+        setEditLocations((prev) => [...prev, updatedLocation]);
       }
     } else {
       // Editing existing
       const updateInTree = (locations) => {
-        return locations.map(loc => {
+        return locations.map((loc) => {
           if (loc.id === updatedLocation.id) {
             return { ...updatedLocation, children: loc.children };
           }
@@ -391,7 +432,7 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
           return loc;
         });
       };
-      setEditLocations(prev => updateInTree([...prev]));
+      setEditLocations((prev) => updateInTree([...prev]));
     }
 
     setEditingLocation(null);
@@ -411,12 +452,12 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
     if (!searchQuery.trim()) return editLocations;
 
     const query = searchQuery.toLowerCase();
-    
+
     const filterTree = (locations) => {
       return locations.reduce((acc, loc) => {
         const nameMatches = loc.name.toLowerCase().includes(query);
         const filteredChildren = loc.children ? filterTree(loc.children) : [];
-        
+
         if (nameMatches || filteredChildren.length > 0) {
           acc.push({
             ...loc,
@@ -443,16 +484,27 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
 
   return (
     <>
-      <PageHeader 
-        title="Manage Locations" 
+      <PageHeader
+        title="Manage Locations"
         subtitle="Organize storage in a hierarchy"
         onBack={onClose}
         backLabel="Back to Admin"
-        action={<Button onClick={handleSaveAll} icon={Save}>Save Changes</Button>}
+        action={
+          <Button onClick={handleSaveAll} icon={Save}>
+            Save Changes
+          </Button>
+        }
       />
 
-      <p style={{ color: colors.textSecondary, marginBottom: spacing[4], fontSize: typography.fontSize.sm }}>
-        Organize your storage locations in a hierarchy (Building → Room → Shelf). Items can be assigned to any level.
+      <p
+        style={{
+          color: colors.textSecondary,
+          marginBottom: spacing[4],
+          fontSize: typography.fontSize.sm,
+        }}
+      >
+        Organize your storage locations in a hierarchy (Building → Room → Shelf). Items can be
+        assigned to any level.
       </p>
 
       {/* Edit form */}
@@ -469,13 +521,15 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[4] }}>
         {/* Main tree */}
         <Card padding={false}>
-          <div style={{ 
-            padding: spacing[3], 
-            borderBottom: `1px solid ${colors.borderLight}`,
-            display: 'flex',
-            gap: spacing[3],
-            alignItems: 'center',
-          }}>
+          <div
+            style={{
+              padding: spacing[3],
+              borderBottom: `1px solid ${colors.borderLight}`,
+              display: 'flex',
+              gap: spacing[3],
+              alignItems: 'center',
+            }}
+          >
             <SearchInput
               value={searchQuery}
               onChange={setSearchQuery}
@@ -495,13 +549,18 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
                   {searchQuery ? 'No locations match your search' : 'No locations defined yet'}
                 </p>
                 {!searchQuery && (
-                  <Button variant="secondary" onClick={handleAddRoot} icon={Plus} style={{ marginTop: spacing[3] }}>
+                  <Button
+                    variant="secondary"
+                    onClick={handleAddRoot}
+                    icon={Plus}
+                    style={{ marginTop: spacing[3] }}
+                  >
                     Add First Location
                   </Button>
                 )}
               </div>
             ) : (
-              filteredLocations.map(location => (
+              filteredLocations.map((location) => (
                 <LocationTreeItem
                   key={location.id}
                   location={location}
@@ -522,22 +581,40 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
           <Card padding={false}>
             <CardHeader title="Location Summary" icon={FolderTree} />
             <div style={{ padding: spacing[4] }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: spacing[2],
+                }}
+              >
                 <span style={{ color: colors.textSecondary }}>Total Locations</span>
-                <span style={{ color: colors.textPrimary, fontWeight: typography.fontWeight.medium }}>
+                <span
+                  style={{ color: colors.textPrimary, fontWeight: typography.fontWeight.medium }}
+                >
                   {flattenedLocations.length}
                 </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: spacing[2],
+                }}
+              >
                 <span style={{ color: colors.textSecondary }}>Root Locations</span>
-                <span style={{ color: colors.textPrimary, fontWeight: typography.fontWeight.medium }}>
+                <span
+                  style={{ color: colors.textPrimary, fontWeight: typography.fontWeight.medium }}
+                >
                   {editLocations.length}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: colors.textSecondary }}>Items Assigned</span>
-                <span style={{ color: colors.textPrimary, fontWeight: typography.fontWeight.medium }}>
-                  {inventory.filter(i => i.location).length}
+                <span
+                  style={{ color: colors.textPrimary, fontWeight: typography.fontWeight.medium }}
+                >
+                  {inventory.filter((i) => i.location).length}
                 </span>
               </div>
             </div>
@@ -546,18 +623,27 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
           <Card padding={false}>
             <CardHeader title="Location Types" />
             <div style={{ padding: spacing[4] }}>
-              {LOCATION_TYPES.map(type => {
-                const count = flattenedLocations.filter(l => l.type === type.value).length;
+              {LOCATION_TYPES.map((type) => {
+                const count = flattenedLocations.filter((l) => l.type === type.value).length;
                 const Icon = getLocationIcon(type.value);
                 return (
-                  <div key={type.value} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: spacing[2],
-                    marginBottom: spacing[2],
-                  }}>
+                  <div
+                    key={type.value}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: spacing[2],
+                      marginBottom: spacing[2],
+                    }}
+                  >
                     <Icon size={14} color={colors.textMuted} />
-                    <span style={{ flex: 1, color: colors.textSecondary, fontSize: typography.fontSize.sm }}>
+                    <span
+                      style={{
+                        flex: 1,
+                        color: colors.textSecondary,
+                        fontSize: typography.fontSize.sm,
+                      }}
+                    >
                       {type.label}
                     </span>
                     <span style={{ color: colors.textPrimary, fontSize: typography.fontSize.sm }}>

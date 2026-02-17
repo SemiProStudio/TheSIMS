@@ -14,7 +14,7 @@ export const Badge = memo(function Badge({ text, children, color = colors.primar
   };
 
   const content = text || children;
-  
+
   // Don't render if no content
   if (!content) return null;
 

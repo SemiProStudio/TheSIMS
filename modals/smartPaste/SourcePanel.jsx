@@ -21,32 +21,36 @@ export function SourcePanel({ sourceLines, fields, unmatchedPairs, highlightedLi
         overflowY: 'auto',
       }}
     >
-      <div style={{
-        padding: `${spacing[2]}px ${spacing[3]}px`,
-        borderBottom: `1px solid ${colors.border}`,
-        position: 'sticky',
-        top: 0,
-        background: colors.bgMedium,
-        zIndex: 1,
-      }}>
-        <div style={{
-          fontSize: typography.fontSize.xs,
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em',
-          color: colors.textMuted,
-          display: 'flex',
-          alignItems: 'center',
-          gap: spacing[1],
-        }}>
+      <div
+        style={{
+          padding: `${spacing[2]}px ${spacing[3]}px`,
+          borderBottom: `1px solid ${colors.border}`,
+          position: 'sticky',
+          top: 0,
+          background: colors.bgMedium,
+          zIndex: 1,
+        }}
+      >
+        <div
+          style={{
+            fontSize: typography.fontSize.xs,
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            color: colors.textMuted,
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[1],
+          }}
+        >
           <FileText size={11} />
           Source Text ({sourceLines.length} lines)
         </div>
       </div>
       <div style={{ padding: `${spacing[1]}px 0` }}>
         {sourceLines.map((line, i) => {
-          const isMatched = [...fields.values()].some(f => f.lineIndex === i);
-          const isUnmatched = unmatchedPairs.some(p => p.lineIndex === i);
+          const isMatched = [...fields.values()].some((f) => f.lineIndex === i);
+          const isUnmatched = unmatchedPairs.some((p) => p.lineIndex === i);
           const isHighlighted = highlightedLine === i;
           return (
             <div

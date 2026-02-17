@@ -5,10 +5,19 @@
 
 import { memo, useState, useMemo } from 'react';
 import {
-  Clock, CheckCircle, RefreshCw, Wrench, MessageSquare, Calendar,
-  Bell, AlertTriangle, DollarSign, ChevronDown, ChevronUp
+  Clock,
+  CheckCircle,
+  RefreshCw,
+  Wrench,
+  MessageSquare,
+  Calendar,
+  Bell,
+  AlertTriangle,
+  DollarSign,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, formatDateTime, formatMoney } from '../utils';
 import { Badge } from './ui.jsx';
 
@@ -18,67 +27,67 @@ const EVENT_TYPES = {
     icon: CheckCircle,
     color: colors.checkedOut,
     label: 'Checked Out',
-    category: 'checkout'
+    category: 'checkout',
   },
   checkin: {
     icon: RefreshCw,
     color: colors.available,
     label: 'Returned',
-    category: 'checkout'
+    category: 'checkout',
   },
   maintenance_scheduled: {
     icon: Wrench,
     color: colors.primary,
     label: 'Maintenance Scheduled',
-    category: 'maintenance'
+    category: 'maintenance',
   },
   maintenance_started: {
     icon: Wrench,
     color: colors.checkedOut,
     label: 'Maintenance Started',
-    category: 'maintenance'
+    category: 'maintenance',
   },
   maintenance_completed: {
     icon: Wrench,
     color: colors.available,
     label: 'Maintenance Completed',
-    category: 'maintenance'
+    category: 'maintenance',
   },
   note_added: {
     icon: MessageSquare,
     color: colors.accent1,
     label: 'Note Added',
-    category: 'notes'
+    category: 'notes',
   },
   reservation_created: {
     icon: Calendar,
     color: colors.primary,
     label: 'Reservation Created',
-    category: 'reservations'
+    category: 'reservations',
   },
   reminder_created: {
     icon: Bell,
     color: colors.accent2,
     label: 'Reminder Set',
-    category: 'reminders'
+    category: 'reminders',
   },
   reminder_completed: {
     icon: Bell,
     color: colors.available,
     label: 'Reminder Completed',
-    category: 'reminders'
+    category: 'reminders',
   },
   condition_changed: {
     icon: AlertTriangle,
     color: colors.danger,
     label: 'Condition Changed',
-    category: 'status'
+    category: 'status',
   },
   value_updated: {
     icon: DollarSign,
     color: colors.accent1,
     label: 'Value Updated',
-    category: 'value'
+    category: 'value',
   },
 };
 
@@ -89,7 +98,7 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
     icon: Clock,
     color: colors.textMuted,
     label: event.type,
-    category: 'other'
+    category: 'other',
   };
   const Icon = config.icon;
 
@@ -143,7 +152,14 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
           }}
         >
           {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing[1] }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              marginBottom: spacing[1],
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
               <Badge text={config.label} color={config.color} size="xs" />
               {event.important && (
@@ -169,7 +185,13 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
 
           {/* User */}
           {event.user && (
-            <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginTop: spacing[1] }}>
+            <div
+              style={{
+                fontSize: typography.fontSize.xs,
+                color: colors.textMuted,
+                marginTop: spacing[1],
+              }}
+            >
               By: {event.user}
             </div>
           )}
@@ -184,13 +206,26 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
               }}
             >
               {Object.entries(event.details).map(([key, value]) => (
-                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[1] }}>
-                  <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, textTransform: 'capitalize' }}>
+                <div
+                  key={key}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginBottom: spacing[1],
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: typography.fontSize.xs,
+                      color: colors.textMuted,
+                      textTransform: 'capitalize',
+                    }}
+                  >
                     {key.replace(/([A-Z])/g, ' $1').trim()}
                   </span>
                   <span style={{ fontSize: typography.fontSize.xs, color: colors.textSecondary }}>
-                    {typeof value === 'number' && key.toLowerCase().includes('cost') 
-                      ? formatMoney(value) 
+                    {typeof value === 'number' && key.toLowerCase().includes('cost')
+                      ? formatMoney(value)
                       : String(value)}
                   </span>
                 </div>
@@ -213,7 +248,7 @@ function ItemTimeline({ item }) {
 
     // Add checkout history events
     if (item.checkoutHistory) {
-      item.checkoutHistory.forEach(entry => {
+      item.checkoutHistory.forEach((entry) => {
         if (entry.type === 'checkout') {
           events.push({
             id: `checkout-${entry.id}`,
@@ -235,11 +270,13 @@ function ItemTimeline({ item }) {
             summary: `Returned by ${entry.returnedBy}${entry.conditionChanged ? ' - condition changed' : ''}`,
             user: entry.returnedBy,
             important: entry.damageReported,
-            details: entry.damageReported ? {
-              conditionAtReturn: entry.conditionAtReturn,
-              damageReported: 'Yes',
-              damageDescription: entry.damageDescription,
-            } : null,
+            details: entry.damageReported
+              ? {
+                  conditionAtReturn: entry.conditionAtReturn,
+                  damageReported: 'Yes',
+                  damageDescription: entry.damageDescription,
+                }
+              : null,
           });
         }
       });
@@ -247,7 +284,7 @@ function ItemTimeline({ item }) {
 
     // Add maintenance history events
     if (item.maintenanceHistory) {
-      (item.maintenanceHistory || []).forEach(record => {
+      (item.maintenanceHistory || []).forEach((record) => {
         // Add scheduled event
         if (record.scheduledDate) {
           events.push({
@@ -283,20 +320,22 @@ function ItemTimeline({ item }) {
 
     // Add notes events
     if (item.notes) {
-      (item.notes || []).filter(n => !n.deleted).forEach(note => {
-        events.push({
-          id: `note-${note.id}`,
-          type: 'note_added',
-          date: note.date,
-          summary: note.text.length > 100 ? note.text.substring(0, 100) + '...' : note.text,
-          user: note.user,
+      (item.notes || [])
+        .filter((n) => !n.deleted)
+        .forEach((note) => {
+          events.push({
+            id: `note-${note.id}`,
+            type: 'note_added',
+            date: note.date,
+            summary: note.text.length > 100 ? note.text.substring(0, 100) + '...' : note.text,
+            user: note.user,
+          });
         });
-      });
     }
 
     // Add reservation events
     if (item.reservations) {
-      (item.reservations || []).forEach(res => {
+      (item.reservations || []).forEach((res) => {
         events.push({
           id: `res-${res.id}`,
           type: 'reservation_created',
@@ -316,7 +355,7 @@ function ItemTimeline({ item }) {
 
     // Add reminder events
     if (item.reminders) {
-      (item.reminders || []).forEach(rem => {
+      (item.reminders || []).forEach((rem) => {
         events.push({
           id: `rem-${rem.id}`,
           type: rem.completed ? 'reminder_completed' : 'reminder_created',
@@ -346,9 +385,7 @@ function ItemTimeline({ item }) {
         {displayedEvents.length === 0 ? (
           <div style={{ textAlign: 'center', padding: spacing[6], color: colors.textMuted }}>
             <Clock size={32} style={{ marginBottom: spacing[2], opacity: 0.3 }} />
-            <p style={{ margin: 0, fontSize: typography.fontSize.sm }}>
-              No events recorded yet
-            </p>
+            <p style={{ margin: 0, fontSize: typography.fontSize.sm }}>No events recorded yet</p>
           </div>
         ) : (
           <>
@@ -359,7 +396,7 @@ function ItemTimeline({ item }) {
                 isLast={idx === displayedEvents.length - 1}
               />
             ))}
-            
+
             {allEvents.length > 5 && !showAll && (
               <button
                 onClick={() => setShowAll(true)}
@@ -377,7 +414,7 @@ function ItemTimeline({ item }) {
                 Show Full Timeline ({allEvents.length} events)
               </button>
             )}
-            
+
             {showAll && allEvents.length > 5 && (
               <button
                 onClick={() => setShowAll(false)}

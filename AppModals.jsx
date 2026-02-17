@@ -11,73 +11,130 @@ import { useNavigationContext } from './contexts/NavigationContext.js';
 import { useModalContext } from './contexts/ModalContext.js';
 import { useData } from './contexts/DataContext.js';
 import { useAuth } from './contexts/AuthContext.js';
+import { useToast } from './contexts/ToastContext.js';
 import { ModalLoading } from './components/Loading.jsx';
 import { ConfirmDialog } from './components/ui.jsx';
 
 // Lazy-loaded modals
-const ItemModal = lazy(() => import('./modals/ItemModal.jsx').then(m => ({ default: m.ItemModal })));
-const ReservationModal = lazy(() => import('./modals/ReservationModal.jsx').then(m => ({ default: m.ReservationModal })));
-const QRModal = lazy(() => import('./modals/QRModal.jsx').then(m => ({ default: m.QRModal })));
-const ExportModal = lazy(() => import('./modals/ExportModal.jsx').then(m => ({ default: m.ExportModal })));
+const ItemModal = lazy(() =>
+  import('./modals/ItemModal.jsx').then((m) => ({ default: m.ItemModal })),
+);
+const ReservationModal = lazy(() =>
+  import('./modals/ReservationModal.jsx').then((m) => ({ default: m.ReservationModal })),
+);
+const QRModal = lazy(() => import('./modals/QRModal.jsx').then((m) => ({ default: m.QRModal })));
+const ExportModal = lazy(() =>
+  import('./modals/ExportModal.jsx').then((m) => ({ default: m.ExportModal })),
+);
 const ProfileModal = lazy(() => import('./modals/ProfileModal.jsx'));
-const ImageSelectorModal = lazy(() => import('./modals/ImageSelectorModal.jsx').then(m => ({ default: m.ImageSelectorModal })));
-const QRScannerModal = lazy(() => import('./modals/QRScannerModal.jsx').then(m => ({ default: m.QRScannerModal })));
-const CSVImportModal = lazy(() => import('./modals/CSVImportModal.jsx').then(m => ({ default: m.CSVImportModal })));
-const DatabaseExportModal = lazy(() => import('./modals/DatabaseExportModal.jsx').then(m => ({ default: m.DatabaseExportModal })));
-const CheckOutModal = lazy(() => import('./modals/CheckOutModal.jsx').then(m => ({ default: m.CheckOutModal })));
-const CheckInModal = lazy(() => import('./modals/CheckInModal.jsx').then(m => ({ default: m.CheckInModal })));
-const MaintenanceModal = lazy(() => import('./modals/MaintenanceModal.jsx').then(m => ({ default: m.MaintenanceModal })));
-const BulkStatusModal = lazy(() => import('./modals/BulkModals.jsx').then(m => ({ default: m.BulkStatusModal })));
-const BulkLocationModal = lazy(() => import('./modals/BulkModals.jsx').then(m => ({ default: m.BulkLocationModal })));
-const BulkCategoryModal = lazy(() => import('./modals/BulkModals.jsx').then(m => ({ default: m.BulkCategoryModal })));
-const BulkDeleteModal = lazy(() => import('./modals/BulkModals.jsx').then(m => ({ default: m.BulkDeleteModal })));
-const AddUserModal = lazy(() => import('./modals/AddUserModal.jsx').then(m => ({ default: m.AddUserModal })));
+const ImageSelectorModal = lazy(() =>
+  import('./modals/ImageSelectorModal.jsx').then((m) => ({ default: m.ImageSelectorModal })),
+);
+const QRScannerModal = lazy(() =>
+  import('./modals/QRScannerModal.jsx').then((m) => ({ default: m.QRScannerModal })),
+);
+const CSVImportModal = lazy(() =>
+  import('./modals/CSVImportModal.jsx').then((m) => ({ default: m.CSVImportModal })),
+);
+const DatabaseExportModal = lazy(() =>
+  import('./modals/DatabaseExportModal.jsx').then((m) => ({ default: m.DatabaseExportModal })),
+);
+const CheckOutModal = lazy(() =>
+  import('./modals/CheckOutModal.jsx').then((m) => ({ default: m.CheckOutModal })),
+);
+const CheckInModal = lazy(() =>
+  import('./modals/CheckInModal.jsx').then((m) => ({ default: m.CheckInModal })),
+);
+const MaintenanceModal = lazy(() =>
+  import('./modals/MaintenanceModal.jsx').then((m) => ({ default: m.MaintenanceModal })),
+);
+const BulkStatusModal = lazy(() =>
+  import('./modals/BulkModals.jsx').then((m) => ({ default: m.BulkStatusModal })),
+);
+const BulkLocationModal = lazy(() =>
+  import('./modals/BulkModals.jsx').then((m) => ({ default: m.BulkLocationModal })),
+);
+const BulkCategoryModal = lazy(() =>
+  import('./modals/BulkModals.jsx').then((m) => ({ default: m.BulkCategoryModal })),
+);
+const BulkDeleteModal = lazy(() =>
+  import('./modals/BulkModals.jsx').then((m) => ({ default: m.BulkDeleteModal })),
+);
+const AddUserModal = lazy(() =>
+  import('./modals/AddUserModal.jsx').then((m) => ({ default: m.AddUserModal })),
+);
 const ImagePreviewModal = lazy(() => import('./modals/ImagePreviewModal.jsx'));
 
 export default memo(function AppModals({ handlers, currentUser }) {
   // Read state from contexts
-  const {
-    selectedItem, setSelectedItem,
-    selectedReservationItem,
-    setCurrentView,
-  } = useNavigationContext();
+  const { selectedItem, setSelectedItem, selectedReservationItem, setCurrentView } =
+    useNavigationContext();
 
   const {
     activeModal,
     editingItemId,
-    editingReservationId, setEditingReservationId,
-    itemForm, setItemForm,
-    reservationForm, setReservationForm,
+    editingReservationId,
+    setEditingReservationId,
+    itemForm,
+    setItemForm,
+    reservationForm,
+    setReservationForm,
     confirmDialog,
     handleConfirm,
     closeConfirm,
   } = useModalContext();
 
   const {
-    inventory, packages, users,
-    specs, locations, categories, categorySettings, auditLog, packLists, clients,
+    inventory,
+    packages,
+    users,
+    roles,
+    specs,
+    locations,
+    categories,
+    categorySettings,
+    auditLog,
+    packLists,
+    clients,
     refreshData,
-    addInventoryItems, addLocalUser,
+    addInventoryItems,
+    addLocalUser,
   } = useData();
 
   const auth = useAuth();
+  const { addToast } = useToast();
 
   // Destructure handlers
   const {
-    createItem, updateItem, deleteItem,
-    saveReservation, selectImage, exportData,
-    updateUserProfile, addAuditLog,
-    openModal, closeModal,
+    createItem,
+    updateItem,
+    deleteItem,
+    saveReservation,
+    selectImage,
+    exportData,
+    updateUserProfile,
+    addAuditLog,
+    openModal,
+    closeModal,
     // Checkout/checkin
-    checkoutItem, checkinItemData,
-    openCheckoutModal, openCheckinModal,
-    processCheckout, processCheckin,
+    checkoutItem,
+    checkinItemData,
+    openCheckoutModal,
+    openCheckinModal,
+    processCheckout,
+    processCheckin,
     // Maintenance
-    maintenanceItem, editingMaintenanceRecord, setEditingMaintenanceRecord,
+    maintenanceItem,
+    editingMaintenanceRecord,
+    setEditingMaintenanceRecord,
     saveMaintenance,
     // Bulk actions
-    bulkActionIds, setBulkActionIds,
-    applyBulkStatus, applyBulkLocation, applyBulkCategory, applyBulkDelete,
+    bulkActionIds,
+    setBulkActionIds,
+    applyBulkStatus,
+    applyBulkLocation,
+    applyBulkCategory,
+    applyBulkDelete,
   } = handlers;
 
   return (
@@ -123,10 +180,13 @@ export default memo(function AppModals({ handlers, currentUser }) {
             reservationForm={reservationForm}
             setReservationForm={setReservationForm}
             onSave={saveReservation}
-            onClose={() => { closeModal(); setEditingReservationId(null); }}
+            onClose={() => {
+              closeModal();
+              setEditingReservationId(null);
+            }}
             clients={clients}
             inventory={inventory}
-            item={editingReservationId ? (selectedItem || selectedReservationItem) : null}
+            item={editingReservationId ? selectedItem || selectedReservationItem : null}
             editingReservationId={editingReservationId}
           />
         )}
@@ -136,19 +196,11 @@ export default memo(function AppModals({ handlers, currentUser }) {
         )}
 
         {activeModal === MODALS.EXPORT && (
-          <ExportModal
-            onExport={exportData}
-            onClose={closeModal}
-            user={currentUser}
-          />
+          <ExportModal onExport={exportData} onClose={closeModal} user={currentUser} />
         )}
 
         {activeModal === MODALS.PROFILE && (
-          <ProfileModal
-            user={currentUser}
-            onSave={updateUserProfile}
-            onClose={closeModal}
-          />
+          <ProfileModal user={currentUser} onSave={updateUserProfile} onClose={closeModal} />
         )}
 
         {activeModal === MODALS.IMAGE_SELECT && (
@@ -206,16 +258,19 @@ export default memo(function AppModals({ handlers, currentUser }) {
             categories={categories}
             specs={specs}
             onImport={(items) => {
-              const newItems = items.map(item => ({
+              const newItems = items.map((item) => ({
                 ...item,
-                id: generateItemCode(item.category, inventory.map(i => i.id)),
+                id: generateItemCode(
+                  item.category,
+                  inventory.map((i) => i.id),
+                ),
                 image: null,
               }));
               addInventoryItems(newItems);
               addAuditLog({
                 type: 'csv_import',
                 description: `Imported ${newItems.length} items from CSV`,
-                user: currentUser?.name || 'Unknown'
+                user: currentUser?.name || 'Unknown',
               });
             }}
             onClose={closeModal}
@@ -260,33 +315,41 @@ export default memo(function AppModals({ handlers, currentUser }) {
             item={maintenanceItem}
             editingRecord={editingMaintenanceRecord}
             onSave={saveMaintenance}
-            onClose={() => { closeModal(); setEditingMaintenanceRecord(null); }}
+            onClose={() => {
+              closeModal();
+              setEditingMaintenanceRecord(null);
+            }}
           />
         )}
 
         {activeModal === MODALS.ADD_USER && (
           <AddUserModal
-            existingEmails={users.map(u => u.email.toLowerCase())}
+            existingEmails={users.map((u) => u.email.toLowerCase())}
+            roles={roles}
             onSave={async (newUser) => {
-              // Optimistic local update
-              addLocalUser(newUser);
-              addAuditLog({
-                type: 'user_created',
-                description: `New user created: ${newUser.name} (${newUser.role?.name || newUser.roleId || 'User'})`,
-                user: currentUser?.name || 'Unknown',
-                itemId: newUser.id
-              });
-              closeModal();
-
               // Persist via Supabase Auth signUp — the handle_new_user trigger
               // creates the public users row automatically
               if (auth?.signUp && newUser.password) {
                 try {
-                  await auth.signUp(newUser.email, newUser.password, newUser.name);
+                  await auth.signUp(newUser.email, newUser.password, newUser.name, newUser.roleId);
+
+                  // Optimistic local update (only after auth succeeds)
+                  addLocalUser(newUser);
+                  addAuditLog({
+                    type: 'user_created',
+                    description: `New user created: ${newUser.name} (${newUser.roleName || 'User'})`,
+                    user: currentUser?.name || 'Unknown',
+                    itemId: newUser.id,
+                  });
+
+                  closeModal();
+                  addToast(`User "${newUser.name}" created successfully`, 'success');
+
                   // Refresh users to get the DB-created record with real UUID
                   if (refreshData) await refreshData();
                 } catch (err) {
                   logError('Failed to create user in auth:', err);
+                  addToast(`Failed to create user: ${err.message || 'Unknown error'}`, 'error');
                 }
               }
             }}
@@ -300,7 +363,10 @@ export default memo(function AppModals({ handlers, currentUser }) {
             selectedIds={bulkActionIds}
             inventory={inventory}
             onApply={applyBulkStatus}
-            onClose={() => { closeModal(); setBulkActionIds([]); }}
+            onClose={() => {
+              closeModal();
+              setBulkActionIds([]);
+            }}
           />
         )}
 
@@ -309,7 +375,10 @@ export default memo(function AppModals({ handlers, currentUser }) {
             selectedIds={bulkActionIds}
             locations={locations}
             onApply={applyBulkLocation}
-            onClose={() => { closeModal(); setBulkActionIds([]); }}
+            onClose={() => {
+              closeModal();
+              setBulkActionIds([]);
+            }}
           />
         )}
 
@@ -318,7 +387,10 @@ export default memo(function AppModals({ handlers, currentUser }) {
             selectedIds={bulkActionIds}
             categories={categories}
             onApply={applyBulkCategory}
-            onClose={() => { closeModal(); setBulkActionIds([]); }}
+            onClose={() => {
+              closeModal();
+              setBulkActionIds([]);
+            }}
           />
         )}
 
@@ -327,7 +399,10 @@ export default memo(function AppModals({ handlers, currentUser }) {
             selectedIds={bulkActionIds}
             inventory={inventory}
             onConfirm={applyBulkDelete}
-            onClose={() => { closeModal(); setBulkActionIds([]); }}
+            onClose={() => {
+              closeModal();
+              setBulkActionIds([]);
+            }}
           />
         )}
       </Suspense>

@@ -280,7 +280,7 @@ describe('SuspenseView', () => {
     render(
       <SuspenseView>
         <div>Content Loaded</div>
-      </SuspenseView>
+      </SuspenseView>,
     );
     expect(screen.getByText('Content Loaded')).toBeInTheDocument();
   });
@@ -290,7 +290,7 @@ describe('SuspenseView', () => {
     const { container } = render(
       <SuspenseView fallback={<div data-testid="fallback">Loading...</div>}>
         <div>Content</div>
-      </SuspenseView>
+      </SuspenseView>,
     );
     expect(container).not.toBeNull();
   });
@@ -305,7 +305,7 @@ describe('SuspenseModal', () => {
     render(
       <SuspenseModal>
         <div>Modal Content</div>
-      </SuspenseModal>
+      </SuspenseModal>,
     );
     expect(screen.getByText('Modal Content')).toBeInTheDocument();
   });

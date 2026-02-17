@@ -6,10 +6,10 @@ import { colors, borderRadius, spacing, typography } from '../../theme.js';
 // StatCard - Dashboard statistic card
 // ============================================================================
 
-export const StatCard = memo(function StatCard({ 
-  icon: Icon, 
-  value, 
-  label, 
+export const StatCard = memo(function StatCard({
+  icon: Icon,
+  value,
+  label,
   color = colors.primary,
   onClick,
 }) {

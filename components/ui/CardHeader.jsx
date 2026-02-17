@@ -6,12 +6,7 @@ import { colors, spacing } from '../../theme.js';
 // CardHeader - Card header with title
 // ============================================================================
 
-export const CardHeader = memo(function CardHeader({ 
-  title, 
-  icon: Icon,
-  action,
-  children 
-}) {
+export const CardHeader = memo(function CardHeader({ title, icon: Icon, action, children }) {
   return (
     <div
       style={{

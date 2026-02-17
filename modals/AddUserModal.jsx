@@ -11,12 +11,26 @@ import { Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
-export const AddUserModal = memo(function AddUserModal({ onSave, onClose, existingEmails = [] }) {
+export const AddUserModal = memo(function AddUserModal({
+  onSave,
+  onClose,
+  existingEmails = [],
+  roles = [],
+}) {
+  // Build role options from dynamic roles prop, with sensible fallback
+  const roleOptions =
+    roles.length > 0
+      ? roles.map((r) => ({ value: r.id, label: r.name }))
+      : [
+          { value: 'role_user', label: 'Standard User' },
+          { value: 'role_admin', label: 'Administrator' },
+        ];
+
   const [form, setForm] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'user',
+    roleId: 'role_user',
   });
   const [errors, setErrors] = useState({});
 
@@ -24,13 +38,19 @@ export const AddUserModal = memo(function AddUserModal({ onSave, onClose, existi
     const newErrors = {};
     if (!form.name.trim()) newErrors.name = 'Name is required';
     if (!form.email.trim()) newErrors.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) newErrors.email = 'Invalid email format';
-    else if (existingEmails.includes(form.email.toLowerCase())) newErrors.email = 'Email already exists';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      newErrors.email = 'Invalid email format';
+    else if (existingEmails.includes(form.email.toLowerCase()))
+      newErrors.email = 'Email already exists';
     if (!form.password.trim()) newErrors.password = 'Password is required';
-    else if (form.password.length < 4) newErrors.password = 'Password must be at least 4 characters';
+    else if (form.password.length < 6)
+      newErrors.password = 'Password must be at least 6 characters';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  // Find the role name for the selected roleId (for audit log)
+  const selectedRole = roleOptions.find((r) => r.value === form.roleId);
 
   const handleSave = () => {
     if (validate()) {
@@ -39,8 +59,8 @@ export const AddUserModal = memo(function AddUserModal({ onSave, onClose, existi
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         password: form.password,
-        role: form.role,
-        roleId: form.role === 'admin' ? 'role_admin' : 'role_user',
+        roleId: form.roleId,
+        roleName: selectedRole?.label || 'User',
         avatar: form.name.trim().charAt(0).toUpperCase(),
       });
     }
@@ -51,62 +71,99 @@ export const AddUserModal = memo(function AddUserModal({ onSave, onClose, existi
       <ModalHeader title="Add User" onClose={onClose} />
       <div style={{ padding: spacing[4] }}>
         <div style={{ marginBottom: spacing[3] }}>
-          <label style={{ ...styles.label, color: !form.name || errors.name ? colors.danger : undefined }}>
+          <label
+            style={{
+              ...styles.label,
+              color: !form.name || errors.name ? colors.danger : undefined,
+            }}
+          >
             Name <span style={{ color: colors.danger }}>*</span>
           </label>
           <input
             value={form.name}
-            onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
+            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
             placeholder="Full name"
-            style={{ ...styles.input, borderColor: !form.name || errors.name ? colors.danger : colors.border }}
+            style={{
+              ...styles.input,
+              borderColor: !form.name || errors.name ? colors.danger : colors.border,
+            }}
           />
-          {errors.name && <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>{errors.name}</span>}
+          {errors.name && (
+            <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>
+              {errors.name}
+            </span>
+          )}
         </div>
-        
+
         <div style={{ marginBottom: spacing[3] }}>
-          <label style={{ ...styles.label, color: !form.email || errors.email ? colors.danger : undefined }}>
+          <label
+            style={{
+              ...styles.label,
+              color: !form.email || errors.email ? colors.danger : undefined,
+            }}
+          >
             Email <span style={{ color: colors.danger }}>*</span>
           </label>
           <input
             type="email"
             value={form.email}
-            onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
+            onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
             placeholder="user@example.com"
-            style={{ ...styles.input, borderColor: !form.email || errors.email ? colors.danger : colors.border }}
+            style={{
+              ...styles.input,
+              borderColor: !form.email || errors.email ? colors.danger : colors.border,
+            }}
           />
-          {errors.email && <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>{errors.email}</span>}
+          {errors.email && (
+            <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>
+              {errors.email}
+            </span>
+          )}
         </div>
-        
+
         <div style={{ marginBottom: spacing[3] }}>
-          <label style={{ ...styles.label, color: !form.password || errors.password ? colors.danger : undefined }}>
+          <label
+            style={{
+              ...styles.label,
+              color: !form.password || errors.password ? colors.danger : undefined,
+            }}
+          >
             Password <span style={{ color: colors.danger }}>*</span>
           </label>
           <input
             type="password"
             value={form.password}
-            onChange={e => setForm(prev => ({ ...prev, password: e.target.value }))}
-            placeholder="Minimum 4 characters"
-            style={{ ...styles.input, borderColor: !form.password || errors.password ? colors.danger : colors.border }}
+            onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+            placeholder="Minimum 6 characters"
+            style={{
+              ...styles.input,
+              borderColor: !form.password || errors.password ? colors.danger : colors.border,
+            }}
           />
-          {errors.password && <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>{errors.password}</span>}
+          {errors.password && (
+            <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>
+              {errors.password}
+            </span>
+          )}
         </div>
-        
+
         <div style={{ marginBottom: spacing[4] }}>
           <label style={styles.label}>Role</label>
           <Select
-            value={form.role}
-            onChange={e => setForm(prev => ({ ...prev, role: e.target.value }))}
-            options={[
-              { value: 'user', label: 'User' },
-              { value: 'admin', label: 'Admin' },
-            ]}
+            value={form.roleId}
+            onChange={(e) => setForm((prev) => ({ ...prev, roleId: e.target.value }))}
+            options={roleOptions}
             aria-label="Role"
           />
         </div>
-        
+
         <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} icon={Plus}>Add User</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} icon={Plus}>
+            Add User
+          </Button>
         </div>
       </div>
     </Modal>
@@ -123,4 +180,11 @@ AddUserModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   /** List of existing emails for duplicate validation */
   existingEmails: PropTypes.arrayOf(PropTypes.string),
+  /** Available roles from the system (from DataContext) */
+  roles: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+    }),
+  ),
 };

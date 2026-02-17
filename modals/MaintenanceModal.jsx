@@ -17,10 +17,10 @@ export const MaintenanceModal = memo(function MaintenanceModal({
   item,
   editingRecord,
   onSave,
-  onClose
+  onClose,
 }) {
   const isEdit = !!editingRecord;
-  
+
   // Helper to format date for input
   const formatDateForInput = (dateStr) => {
     if (!dateStr) return '';
@@ -35,10 +35,10 @@ export const MaintenanceModal = memo(function MaintenanceModal({
       return '';
     }
   };
-  
+
   const [formData, setFormData] = useState(() => {
     if (editingRecord) {
-      return { 
+      return {
         ...editingRecord,
         scheduledDate: formatDateForInput(editingRecord.scheduledDate),
         completedDate: formatDateForInput(editingRecord.completedDate),
@@ -61,9 +61,9 @@ export const MaintenanceModal = memo(function MaintenanceModal({
   const [errors, setErrors] = useState({});
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: null }));
+      setErrors((prev) => ({ ...prev, [field]: null }));
     }
   };
 
@@ -72,7 +72,7 @@ export const MaintenanceModal = memo(function MaintenanceModal({
     if (!formData.type) newErrors.type = 'Type is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
     if (formData.cost && isNaN(Number(formData.cost))) newErrors.cost = 'Cost must be a number';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -98,44 +98,48 @@ export const MaintenanceModal = memo(function MaintenanceModal({
 
   return (
     <Modal onClose={onClose} maxWidth={550}>
-      <ModalHeader 
-        title={isEdit ? 'Edit Maintenance Record' : 'Add Maintenance Record'} 
-        onClose={onClose} 
+      <ModalHeader
+        title={isEdit ? 'Edit Maintenance Record' : 'Add Maintenance Record'}
+        onClose={onClose}
       />
       <div style={{ padding: spacing[4] }}>
         {/* Item info banner */}
-        <div style={{
-          background: `${withOpacity(colors.primary, 10)}`,
-          borderRadius: borderRadius.lg,
-          padding: spacing[3],
-          marginBottom: spacing[4],
-          display: 'flex',
-          alignItems: 'center',
-          gap: spacing[3]
-        }}>
+        <div
+          style={{
+            background: `${withOpacity(colors.primary, 10)}`,
+            borderRadius: borderRadius.lg,
+            padding: spacing[3],
+            marginBottom: spacing[4],
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[3],
+          }}
+        >
           {item?.image ? (
-            <img 
-              src={item.image} 
-              alt="" 
-              style={{ 
-                width: 48, 
-                height: 48, 
-                objectFit: 'cover', 
-                borderRadius: borderRadius.md 
-              }} 
+            <img
+              src={item.image}
+              alt=""
+              style={{
+                width: 48,
+                height: 48,
+                objectFit: 'cover',
+                borderRadius: borderRadius.md,
+              }}
             />
           ) : (
-            <div style={{ 
-              width: 48, 
-              height: 48, 
-              background: `${withOpacity(colors.primary, 20)}`, 
-              borderRadius: borderRadius.md,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: colors.textMuted,
-              fontSize: typography.fontSize.xs
-            }}>
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                background: `${withOpacity(colors.primary, 20)}`,
+                borderRadius: borderRadius.md,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: colors.textMuted,
+                fontSize: typography.fontSize.xs,
+              }}
+            >
               No img
             </div>
           )}
@@ -150,15 +154,27 @@ export const MaintenanceModal = memo(function MaintenanceModal({
         </div>
 
         {/* Type and Status row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[4] }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: spacing[3],
+            marginBottom: spacing[4],
+          }}
+        >
           <div>
-            <label style={{ ...styles.label, color: !formData.type || errors.type ? colors.danger : undefined }}>
+            <label
+              style={{
+                ...styles.label,
+                color: !formData.type || errors.type ? colors.danger : undefined,
+              }}
+            >
               Maintenance Type <span style={{ color: colors.danger }}>*</span>
             </label>
             <Select
               value={formData.type}
-              onChange={e => handleChange('type', e.target.value)}
-              options={MAINTENANCE_TYPES.map(type => ({ value: type, label: type }))}
+              onChange={(e) => handleChange('type', e.target.value)}
+              options={MAINTENANCE_TYPES.map((type) => ({ value: type, label: type }))}
               aria-label="Maintenance type"
             />
             {errors.type && (
@@ -167,12 +183,12 @@ export const MaintenanceModal = memo(function MaintenanceModal({
               </span>
             )}
           </div>
-          
+
           <div>
             <label style={styles.label}>Status</label>
             <Select
               value={formData.status}
-              onChange={e => handleChange('status', e.target.value)}
+              onChange={(e) => handleChange('status', e.target.value)}
               options={[
                 { value: 'scheduled', label: 'Scheduled' },
                 { value: 'in-progress', label: 'In Progress' },
@@ -186,18 +202,24 @@ export const MaintenanceModal = memo(function MaintenanceModal({
 
         {/* Description */}
         <div style={{ marginBottom: spacing[4] }}>
-          <label style={{ ...styles.label, color: !formData.description || errors.description ? colors.danger : undefined }}>
+          <label
+            style={{
+              ...styles.label,
+              color: !formData.description || errors.description ? colors.danger : undefined,
+            }}
+          >
             Description <span style={{ color: colors.danger }}>*</span>
           </label>
           <textarea
             value={formData.description}
-            onChange={e => handleChange('description', e.target.value)}
+            onChange={(e) => handleChange('description', e.target.value)}
             placeholder="Describe the maintenance work..."
             rows={2}
-            style={{ 
-              ...styles.input, 
+            style={{
+              ...styles.input,
               resize: 'vertical',
-              borderColor: !formData.description || errors.description ? colors.danger : colors.border 
+              borderColor:
+                !formData.description || errors.description ? colors.danger : colors.border,
             }}
           />
           {errors.description && (
@@ -208,24 +230,31 @@ export const MaintenanceModal = memo(function MaintenanceModal({
         </div>
 
         {/* Vendor row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[4] }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: spacing[3],
+            marginBottom: spacing[4],
+          }}
+        >
           <div>
             <label style={styles.label}>Vendor / Service Provider</label>
             <input
               type="text"
               value={formData.vendor}
-              onChange={e => handleChange('vendor', e.target.value)}
+              onChange={(e) => handleChange('vendor', e.target.value)}
               placeholder="e.g., Canon Service Center"
               style={styles.input}
             />
           </div>
-          
+
           <div>
             <label style={styles.label}>Vendor Contact</label>
             <input
               type="text"
               value={formData.vendorContact}
-              onChange={e => handleChange('vendorContact', e.target.value)}
+              onChange={(e) => handleChange('vendorContact', e.target.value)}
               placeholder="Phone or email"
               style={styles.input}
             />
@@ -233,17 +262,24 @@ export const MaintenanceModal = memo(function MaintenanceModal({
         </div>
 
         {/* Cost and Warranty */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: spacing[3], marginBottom: spacing[4] }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto',
+            gap: spacing[3],
+            marginBottom: spacing[4],
+          }}
+        >
           <div>
             <label style={styles.label}>Cost ($)</label>
             <input
               type="text"
               value={formData.cost}
-              onChange={e => handleChange('cost', e.target.value)}
+              onChange={(e) => handleChange('cost', e.target.value)}
               placeholder="0.00"
-              style={{ 
-                ...styles.input, 
-                borderColor: errors.cost ? colors.danger : colors.border 
+              style={{
+                ...styles.input,
+                borderColor: errors.cost ? colors.danger : colors.border,
               }}
             />
             {errors.cost && (
@@ -252,21 +288,23 @@ export const MaintenanceModal = memo(function MaintenanceModal({
               </span>
             )}
           </div>
-          
+
           <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: spacing[2] }}>
-            <label style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: spacing[2], 
-              cursor: 'pointer',
-              fontSize: typography.fontSize.sm,
-              color: colors.textSecondary,
-            }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[2],
+                cursor: 'pointer',
+                fontSize: typography.fontSize.sm,
+                color: colors.textSecondary,
+              }}
+            >
               <input
                 type="checkbox"
                 checked={formData.warrantyWork}
-                onChange={e => handleChange('warrantyWork', e.target.checked)}
-                style={{ width: 18, height: 18 }}
+                onChange={(e) => handleChange('warrantyWork', e.target.checked)}
+                style={{ width: 18, height: 18, accentColor: colors.primary }}
               />
               Warranty Work
             </label>
@@ -274,22 +312,29 @@ export const MaintenanceModal = memo(function MaintenanceModal({
         </div>
 
         {/* Dates row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[4] }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: spacing[3],
+            marginBottom: spacing[4],
+          }}
+        >
           <div>
             <label style={styles.label}>Scheduled Date</label>
             <DatePicker
               value={formData.scheduledDate}
-              onChange={e => handleChange('scheduledDate', e.target.value)}
+              onChange={(e) => handleChange('scheduledDate', e.target.value)}
               placeholder="Select scheduled date"
               aria-label="Scheduled date"
             />
           </div>
-          
+
           <div>
             <label style={styles.label}>Completed Date</label>
             <DatePicker
               value={formData.completedDate}
-              onChange={e => handleChange('completedDate', e.target.value)}
+              onChange={(e) => handleChange('completedDate', e.target.value)}
               disabled={formData.status === 'scheduled'}
               placeholder="Select completed date"
               aria-label="Completed date"
@@ -302,7 +347,7 @@ export const MaintenanceModal = memo(function MaintenanceModal({
           <label style={styles.label}>Notes</label>
           <textarea
             value={formData.notes}
-            onChange={e => handleChange('notes', e.target.value)}
+            onChange={(e) => handleChange('notes', e.target.value)}
             placeholder="Additional notes about this maintenance..."
             rows={2}
             style={{ ...styles.input, resize: 'vertical' }}
@@ -311,7 +356,9 @@ export const MaintenanceModal = memo(function MaintenanceModal({
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
           <Button onClick={handleSubmit} icon={Save}>
             {isEdit ? 'Update Record' : 'Add Record'}
           </Button>

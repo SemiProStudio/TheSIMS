@@ -9,19 +9,19 @@ import { colors, styles, spacing } from '../../theme.js';
 
 export const BackButton = memo(function BackButton({ onClick, children = 'Back' }) {
   return (
-    <button 
-      onClick={onClick} 
+    <button
+      onClick={onClick}
       type="button"
       aria-label={`Go back: ${children}`}
-      style={{ 
-        ...styles.btnSec, 
-        marginBottom: spacing[4], 
-        border: 'none', 
-        background: 'none', 
-        padding: 0, 
-        color: colors.textSecondary, 
-        display: 'flex', 
-        alignItems: 'center', 
+      style={{
+        ...styles.btnSec,
+        marginBottom: spacing[4],
+        border: 'none',
+        background: 'none',
+        padding: 0,
+        color: colors.textSecondary,
+        display: 'flex',
+        alignItems: 'center',
         gap: spacing[2],
         cursor: 'pointer',
       }}

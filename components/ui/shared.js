@@ -21,7 +21,7 @@ export const sharedStyles = {
     zIndex: 1000,
     padding: spacing[4],
   },
-  
+
   // Modal box
   modalBox: {
     background: colors.bgMedium,
@@ -31,7 +31,7 @@ export const sharedStyles = {
     maxHeight: '90vh',
     overflow: 'auto',
   },
-  
+
   // Base input styles
   inputBase: {
     width: '100%',

@@ -24,11 +24,18 @@ const loadCustomTheme = () => {
         colors: {
           ...DEFAULT_CUSTOM_THEME,
           ...colors,
-          '--bg-card-solid': colors['--bg-card'] || colors['--bg-light'] || DEFAULT_CUSTOM_THEME['--bg-card-solid'],
+          '--bg-card-solid':
+            colors['--bg-card'] || colors['--bg-light'] || DEFAULT_CUSTOM_THEME['--bg-card-solid'],
           '--danger-bg': (colors['--danger'] || DEFAULT_CUSTOM_THEME['--danger']) + '20',
           // Ensure focus ring colors are set
-          '--focus-ring-color': colors['--focus-ring-color'] || colors['--primary-light'] || DEFAULT_CUSTOM_THEME['--primary-light'],
-          '--focus-ring-color-danger': colors['--focus-ring-color-danger'] || colors['--danger'] || DEFAULT_CUSTOM_THEME['--danger'],
+          '--focus-ring-color':
+            colors['--focus-ring-color'] ||
+            colors['--primary-light'] ||
+            DEFAULT_CUSTOM_THEME['--primary-light'],
+          '--focus-ring-color-danger':
+            colors['--focus-ring-color-danger'] ||
+            colors['--danger'] ||
+            DEFAULT_CUSTOM_THEME['--danger'],
         },
         isCustom: true,
       };
@@ -44,7 +51,7 @@ const getAvailableThemes = () => {
   const themeList = Object.values(themes);
   const customTheme = loadCustomTheme();
   if (customTheme) {
-    const customIndex = themeList.findIndex(t => t.id === 'custom');
+    const customIndex = themeList.findIndex((t) => t.id === 'custom');
     if (customIndex >= 0) themeList[customIndex] = customTheme;
   }
   return themeList;
@@ -63,7 +70,7 @@ export function ThemeProvider({ children }) {
   const applyTheme = useCallback((theme, generatedColors = null, shouldAnnounce = false) => {
     const root = document.documentElement;
     const body = document.body;
-    
+
     let colors;
     if (theme.isRandom) {
       colors = generatedColors || generateRandomTheme();
@@ -73,7 +80,7 @@ export function ThemeProvider({ children }) {
     } else {
       colors = theme.colors;
     }
-    
+
     // Ensure focus ring colors are set (derive from primary if not explicitly set)
     if (!colors['--focus-ring-color']) {
       colors['--focus-ring-color'] = colors['--primary-light'] || colors['--primary'];
@@ -81,26 +88,26 @@ export function ThemeProvider({ children }) {
     if (!colors['--focus-ring-color-danger']) {
       colors['--focus-ring-color-danger'] = colors['--danger'];
     }
-    
+
     // Apply all color variables
     Object.entries(colors).forEach(([property, value]) => {
       root.style.setProperty(property, value);
     });
-    
+
     // Apply background image
     if (theme.backgroundImage) {
       root.style.setProperty('--theme-bg-image', `url("${theme.backgroundImage}")`);
     } else {
       root.style.setProperty('--theme-bg-image', 'none');
     }
-    
+
     // Apply custom cursor
     if (theme.cursor) {
       root.style.setProperty('--theme-cursor', `url("${theme.cursor}") 2 2, auto`);
     } else {
       root.style.setProperty('--theme-cursor', 'default');
     }
-    
+
     // Apply custom font
     if (theme.fontFamily) {
       root.style.setProperty('--theme-font', theme.fontFamily);
@@ -109,20 +116,20 @@ export function ThemeProvider({ children }) {
       root.style.setProperty('--theme-font', '');
       body.style.fontFamily = '';
     }
-    
+
     localStorage.setItem('sims-theme', theme.id);
-    
+
     // Announce theme change to screen readers
     if (shouldAnnounce) {
       announce(`Theme changed to ${theme.name}`);
     }
-    
+
     return colors;
   }, []);
 
   useEffect(() => {
     let theme = themes[themeId] || themes.dark;
-    
+
     if (theme.isCustom) {
       const customTheme = loadCustomTheme();
       if (customTheme) {
@@ -130,7 +137,7 @@ export function ThemeProvider({ children }) {
         setCustomThemeColors(customTheme.colors);
       }
     }
-    
+
     if (theme.isRandom) {
       const newColors = generateRandomTheme();
       setRandomColors(newColors);
@@ -147,14 +154,17 @@ export function ThemeProvider({ children }) {
     }
   }, []);
 
-  const updateCustomTheme = useCallback((customThemeData) => {
-    if (customThemeData?.colors) {
-      setCustomThemeColors(customThemeData.colors);
-      if (themeId === 'custom') {
-        applyTheme(customThemeData);
+  const updateCustomTheme = useCallback(
+    (customThemeData) => {
+      if (customThemeData?.colors) {
+        setCustomThemeColors(customThemeData.colors);
+        if (themeId === 'custom') {
+          applyTheme(customThemeData);
+        }
       }
-    }
-  }, [themeId, applyTheme]);
+    },
+    [themeId, applyTheme],
+  );
 
   const currentTheme = useMemo(() => {
     const theme = themes[themeId] || themes.dark;
@@ -173,18 +183,16 @@ export function ThemeProvider({ children }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const availableThemes = useMemo(() => getAvailableThemes(), [customThemeColors]);
 
-  const value = useMemo(() => ({
-    themeId,
-    currentTheme,
-    setTheme,
-    updateCustomTheme,
-    availableThemes,
-  }), [themeId, currentTheme, setTheme, updateCustomTheme, availableThemes]);
-
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+  const value = useMemo(
+    () => ({
+      themeId,
+      currentTheme,
+      setTheme,
+      updateCustomTheme,
+      availableThemes,
+    }),
+    [themeId, currentTheme, setTheme, updateCustomTheme, availableThemes],
   );
-}
 
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}

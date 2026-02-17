@@ -118,10 +118,9 @@ describe('usePagination', () => {
 
   it('resets to page 1 when items shrink below current page', () => {
     let items = makeItems(100);
-    const { result, rerender } = renderHook(
-      ({ items: i }) => usePagination(i, 20),
-      { initialProps: { items } }
-    );
+    const { result, rerender } = renderHook(({ items: i }) => usePagination(i, 20), {
+      initialProps: { items },
+    });
     // Go to page 5
     act(() => result.current.goToPage(5));
     expect(result.current.page).toBe(5);
@@ -135,10 +134,9 @@ describe('usePagination', () => {
 
   it('updates paginatedItems when items change', () => {
     let items = makeItems(50);
-    const { result, rerender } = renderHook(
-      ({ items: i }) => usePagination(i, 20),
-      { initialProps: { items } }
-    );
+    const { result, rerender } = renderHook(({ items: i }) => usePagination(i, 20), {
+      initialProps: { items },
+    });
     expect(result.current.paginatedItems[0].id).toBe(1);
 
     // Replace with different items

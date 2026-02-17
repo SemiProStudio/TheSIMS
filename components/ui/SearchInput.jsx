@@ -20,7 +20,7 @@ export const SearchInput = memo(function SearchInput({
   const stableIdRef = useRef(id || `search-input-${Math.random().toString(36).substr(2, 9)}`);
   const inputId = id || stableIdRef.current;
   const [isFocused, setIsFocused] = useState(false);
-  
+
   return (
     <div
       role="search"
@@ -37,12 +37,12 @@ export const SearchInput = memo(function SearchInput({
         ...customStyle,
       }}
     >
-      <svg 
-        width={18} 
-        height={18} 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        stroke={colors.textMuted} 
+      <svg
+        width={18}
+        height={18}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={colors.textMuted}
         strokeWidth="2"
         aria-hidden="true"
       >
@@ -53,7 +53,7 @@ export const SearchInput = memo(function SearchInput({
         id={inputId}
         type="text"
         value={value}
-        onChange={e => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         aria-label={ariaLabel}
         onFocus={() => setIsFocused(true)}
@@ -88,12 +88,12 @@ export const SearchInput = memo(function SearchInput({
             padding: 2,
           }}
         >
-          <svg 
-            width={14} 
-            height={14} 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            width={14}
+            height={14}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
             strokeWidth="2"
             aria-hidden="true"
           >

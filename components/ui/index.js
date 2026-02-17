@@ -1,7 +1,7 @@
 // ============================================================================
 // UI Component Library Index
 // Re-exports all components for easy importing
-// 
+//
 // Usage:
 //   import { Button, Card, Modal } from './components/ui';
 //   // or
@@ -11,7 +11,15 @@
 // Core components
 export { BackButton } from './BackButton.jsx';
 export { Button, IconButton } from './Button.jsx';
-export { Card, CardHeader, CardBody, CardFooter, StatsCard, EmptyStateCard, CardGrid } from './Card.jsx';
+export {
+  Card,
+  CardHeader,
+  CardBody,
+  CardFooter,
+  StatsCard,
+  EmptyStateCard,
+  CardGrid,
+} from './Card.jsx';
 export { Badge } from './Badge.jsx';
 export { Input } from './Input.jsx';
 export { Modal, ModalHeader, ModalBody, ModalFooter, ConfirmDialog, ModalAlert } from './Modal.jsx';

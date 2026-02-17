@@ -18,21 +18,31 @@ vi.mock('../lib/supabase.js', () => ({
 // Mock the services
 vi.mock('../lib/services.js', () => ({
   inventoryService: {
-    getAll: vi.fn(() => Promise.resolve([
-      { id: 'CAM001', name: 'Test Camera', status: 'available', category_name: 'Cameras' },
-      { id: 'LENS001', name: 'Test Lens', status: 'available', category_name: 'Lenses' },
-    ])),
+    getAll: vi.fn(() =>
+      Promise.resolve([
+        { id: 'CAM001', name: 'Test Camera', status: 'available', category_name: 'Cameras' },
+        { id: 'LENS001', name: 'Test Lens', status: 'available', category_name: 'Lenses' },
+      ]),
+    ),
     create: vi.fn((item) => Promise.resolve(item)),
     update: vi.fn((id, updates) => Promise.resolve({ id, ...updates })),
     delete: vi.fn((id) => Promise.resolve({ id })),
     checkOut: vi.fn((id, data) => Promise.resolve({ id, status: 'checked-out', ...data })),
     checkIn: vi.fn((id, data) => Promise.resolve({ id, status: 'available', ...data })),
-    getByIdWithDetails: vi.fn((id) => Promise.resolve({ id, name: 'Test Camera', notes: [], reminders: [], reservations: [], maintenanceHistory: [], checkoutHistory: [] })),
+    getByIdWithDetails: vi.fn((id) =>
+      Promise.resolve({
+        id,
+        name: 'Test Camera',
+        notes: [],
+        reminders: [],
+        reservations: [],
+        maintenanceHistory: [],
+        checkoutHistory: [],
+      }),
+    ),
   },
   packagesService: {
-    getAll: vi.fn(() => Promise.resolve([
-      { id: 'pkg-1', name: 'Interview Kit' },
-    ])),
+    getAll: vi.fn(() => Promise.resolve([{ id: 'pkg-1', name: 'Interview Kit' }])),
     create: vi.fn((pkg) => Promise.resolve(pkg)),
     update: vi.fn((id, updates) => Promise.resolve({ id, ...updates })),
     delete: vi.fn((id) => Promise.resolve({ id })),
@@ -44,17 +54,13 @@ vi.mock('../lib/services.js', () => ({
     delete: vi.fn((id) => Promise.resolve({ id })),
   },
   clientsService: {
-    getAll: vi.fn(() => Promise.resolve([
-      { id: 'client-1', name: 'Test Client' },
-    ])),
+    getAll: vi.fn(() => Promise.resolve([{ id: 'client-1', name: 'Test Client' }])),
     create: vi.fn((client) => Promise.resolve(client)),
     update: vi.fn((id, updates) => Promise.resolve({ id, ...updates })),
     delete: vi.fn((id) => Promise.resolve({ id })),
   },
   usersService: {
-    getAll: vi.fn(() => Promise.resolve([
-      { id: 'user-1', name: 'Admin', role: 'admin' },
-    ])),
+    getAll: vi.fn(() => Promise.resolve([{ id: 'user-1', name: 'Admin', role: 'admin' }])),
   },
   rolesService: {
     getAll: vi.fn(() => Promise.resolve([])),
@@ -114,18 +120,18 @@ vi.mock('../constants.js', () => ({
 
 function TestConsumer({ onContextReady }) {
   const context = useData();
-  
+
   // Call the callback with context on mount
   React.useEffect(() => {
     if (context && !context.loading) {
       onContextReady(context);
     }
   }, [context, context?.loading, onContextReady]);
-  
+
   if (context?.loading) {
     return <div>Loading...</div>;
   }
-  
+
   return (
     <div>
       <div data-testid="inventory-count">{context?.inventory?.length || 0}</div>
@@ -152,9 +158,9 @@ describe('DataProvider', () => {
       render(
         <DataProvider>
           <div data-testid="child">Child Content</div>
-        </DataProvider>
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(screen.getByTestId('child')).toBeInTheDocument();
       });
@@ -162,13 +168,17 @@ describe('DataProvider', () => {
 
     it('should provide context to children', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext).not.toBeNull();
       });
@@ -178,9 +188,9 @@ describe('DataProvider', () => {
       render(
         <DataProvider>
           <TestConsumer onContextReady={() => {}} />
-        </DataProvider>
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         // After loading, inventory-count should be rendered (not "Loading...")
         expect(screen.getByTestId('inventory-count')).toBeInTheDocument();
@@ -191,9 +201,9 @@ describe('DataProvider', () => {
       render(
         <DataProvider>
           <TestConsumer onContextReady={() => {}} />
-        </DataProvider>
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(screen.getByTestId('inventory-count')).toHaveTextContent('2');
       });
@@ -207,13 +217,17 @@ describe('DataProvider', () => {
   describe('Context Value', () => {
     it('should provide inventory array', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.inventory).toBeInstanceOf(Array);
       });
@@ -221,13 +235,17 @@ describe('DataProvider', () => {
 
     it('should provide packages array', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.packages).toBeInstanceOf(Array);
       });
@@ -235,13 +253,17 @@ describe('DataProvider', () => {
 
     it('should provide clients array', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.clients).toBeInstanceOf(Array);
       });
@@ -249,13 +271,17 @@ describe('DataProvider', () => {
 
     it('should provide CRUD methods', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(typeof capturedContext?.createItem).toBe('function');
         expect(typeof capturedContext?.updateItem).toBe('function');
@@ -271,13 +297,17 @@ describe('DataProvider', () => {
 
     it('should provide notification methods', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(typeof capturedContext?.saveNotificationPreferences).toBe('function');
         expect(typeof capturedContext?.getNotificationPreferences).toBe('function');
@@ -289,13 +319,17 @@ describe('DataProvider', () => {
 
     it('should provide patch operations', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(typeof capturedContext?.patchInventoryItem).toBe('function');
         expect(typeof capturedContext?.addInventoryItems).toBe('function');
@@ -315,69 +349,81 @@ describe('DataProvider', () => {
   describe('Inventory CRUD Operations', () => {
     it('createItem should add item to inventory', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.createItem).toBeDefined();
       });
-      
+
       const newItem = { id: 'NEW001', name: 'New Camera', status: 'available' };
-      
+
       await act(async () => {
         await capturedContext.createItem(newItem);
       });
-      
+
       // Verify item was added
       expect(capturedContext.inventory).toContainEqual(expect.objectContaining({ id: 'NEW001' }));
     });
 
     it('updateItem should modify existing item', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.updateItem).toBeDefined();
       });
-      
+
       await act(async () => {
         await capturedContext.updateItem('CAM001', { name: 'Updated Camera' });
       });
-      
-      const updatedItem = capturedContext.inventory.find(i => i.id === 'CAM001');
+
+      const updatedItem = capturedContext.inventory.find((i) => i.id === 'CAM001');
       expect(updatedItem?.name).toBe('Updated Camera');
     });
 
     it('deleteItem should remove item from inventory', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.deleteItem).toBeDefined();
       });
-      
+
       const initialCount = capturedContext.inventory.length;
-      
+
       await act(async () => {
         await capturedContext.deleteItem('CAM001');
       });
-      
+
       expect(capturedContext.inventory.length).toBe(initialCount - 1);
-      expect(capturedContext.inventory.find(i => i.id === 'CAM001')).toBeUndefined();
+      expect(capturedContext.inventory.find((i) => i.id === 'CAM001')).toBeUndefined();
     });
   });
 
@@ -388,65 +434,77 @@ describe('DataProvider', () => {
   describe('Package CRUD Operations', () => {
     it('createPackage should add package', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.createPackage).toBeDefined();
       });
-      
+
       const newPackage = { id: 'pkg-new', name: 'New Package' };
-      
+
       await act(async () => {
         await capturedContext.createPackage(newPackage);
       });
-      
+
       expect(capturedContext.packages).toContainEqual(expect.objectContaining({ id: 'pkg-new' }));
     });
 
     it('updatePackage should modify existing package', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.updatePackage).toBeDefined();
       });
-      
+
       await act(async () => {
         await capturedContext.updatePackage('pkg-1', { name: 'Updated Kit' });
       });
-      
-      const updatedPkg = capturedContext.packages.find(p => p.id === 'pkg-1');
+
+      const updatedPkg = capturedContext.packages.find((p) => p.id === 'pkg-1');
       expect(updatedPkg?.name).toBe('Updated Kit');
     });
 
     it('deletePackage should remove package', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.deletePackage).toBeDefined();
       });
-      
+
       await act(async () => {
         await capturedContext.deletePackage('pkg-1');
       });
-      
-      expect(capturedContext.packages.find(p => p.id === 'pkg-1')).toBeUndefined();
+
+      expect(capturedContext.packages.find((p) => p.id === 'pkg-1')).toBeUndefined();
     });
   });
 
@@ -457,65 +515,77 @@ describe('DataProvider', () => {
   describe('Client CRUD Operations', () => {
     it('createClient should add client', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.createClient).toBeDefined();
       });
-      
+
       const newClient = { id: 'client-new', name: 'New Client' };
-      
+
       await act(async () => {
         await capturedContext.createClient(newClient);
       });
-      
+
       expect(capturedContext.clients).toContainEqual(expect.objectContaining({ id: 'client-new' }));
     });
 
     it('updateClient should modify existing client', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.updateClient).toBeDefined();
       });
-      
+
       await act(async () => {
         await capturedContext.updateClient('client-1', { name: 'Updated Client' });
       });
-      
-      const updatedClient = capturedContext.clients.find(c => c.id === 'client-1');
+
+      const updatedClient = capturedContext.clients.find((c) => c.id === 'client-1');
       expect(updatedClient?.name).toBe('Updated Client');
     });
 
     it('deleteClient should remove client', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.deleteClient).toBeDefined();
       });
-      
+
       await act(async () => {
         await capturedContext.deleteClient('client-1');
       });
-      
-      expect(capturedContext.clients.find(c => c.id === 'client-1')).toBeUndefined();
+
+      expect(capturedContext.clients.find((c) => c.id === 'client-1')).toBeUndefined();
     });
   });
 
@@ -526,40 +596,48 @@ describe('DataProvider', () => {
   describe('Notification Operations', () => {
     it('saveNotificationPreferences should call service upsert', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.saveNotificationPreferences).toBeDefined();
       });
-      
+
       const prefs = { email_enabled: true, due_date_reminders: true };
-      
+
       let result;
       await act(async () => {
         result = await capturedContext.saveNotificationPreferences('user-1', prefs);
       });
-      
+
       expect(result).toEqual(prefs);
     });
 
     it('sendCheckoutEmail should return success in demo mode', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.sendCheckoutEmail).toBeDefined();
       });
-      
+
       let result;
       await act(async () => {
         result = await capturedContext.sendCheckoutEmail({
@@ -571,23 +649,27 @@ describe('DataProvider', () => {
           project: 'Test Project',
         });
       });
-      
+
       expect(result).toEqual({ success: true, demo: true });
     });
 
     it('sendCheckinEmail should return success in demo mode', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.sendCheckinEmail).toBeDefined();
       });
-      
+
       let result;
       await act(async () => {
         result = await capturedContext.sendCheckinEmail({
@@ -597,23 +679,27 @@ describe('DataProvider', () => {
           returnDate: '2024-01-20',
         });
       });
-      
+
       expect(result).toEqual({ success: true, demo: true });
     });
 
     it('sendReservationEmail should return success in demo mode', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.sendReservationEmail).toBeDefined();
       });
-      
+
       let result;
       await act(async () => {
         result = await capturedContext.sendReservationEmail({
@@ -627,7 +713,7 @@ describe('DataProvider', () => {
           },
         });
       });
-      
+
       expect(result).toEqual({ success: true, demo: true });
     });
   });
@@ -639,38 +725,46 @@ describe('DataProvider', () => {
   describe('Error Handling', () => {
     it('should handle createItem errors gracefully', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.createItem).toBeDefined();
       });
-      
+
       // Create item with missing data should still work in demo mode
       await act(async () => {
         await capturedContext.createItem({ id: 'test' });
       });
-      
-      expect(capturedContext.inventory.find(i => i.id === 'test')).toBeDefined();
+
+      expect(capturedContext.inventory.find((i) => i.id === 'test')).toBeDefined();
     });
 
     it('should handle updateItem with non-existent id', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.updateItem).toBeDefined();
       });
-      
+
       // Should not throw
       await act(async () => {
         await capturedContext.updateItem('non-existent-id', { name: 'Test' });
@@ -679,24 +773,28 @@ describe('DataProvider', () => {
 
     it('should handle deleteItem with non-existent id', async () => {
       let capturedContext = null;
-      
+
       render(
         <DataProvider>
-          <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-        </DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
       );
-      
+
       await waitFor(() => {
         expect(capturedContext?.deleteItem).toBeDefined();
       });
-      
+
       const initialCount = capturedContext.inventory.length;
-      
+
       // Should not throw and inventory should remain unchanged
       await act(async () => {
         await capturedContext.deleteItem('non-existent-id');
       });
-      
+
       expect(capturedContext.inventory.length).toBe(initialCount);
     });
   });
@@ -712,8 +810,12 @@ describe('Check Out / Check In State Transitions', () => {
 
     render(
       <DataProvider>
-        <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-      </DataProvider>
+        <TestConsumer
+          onContextReady={(ctx) => {
+            capturedContext = ctx;
+          }}
+        />
+      </DataProvider>,
     );
 
     await waitFor(() => {
@@ -734,7 +836,7 @@ describe('Check Out / Check In State Transitions', () => {
     });
 
     // Verify state transition
-    const item = capturedContext.inventory.find(i => i.id === 'CAM001');
+    const item = capturedContext.inventory.find((i) => i.id === 'CAM001');
     expect(item.status).toBe('checked-out');
     expect(item.checkedOutTo).toBe('Alice');
     expect(item.checkedOutToUserId).toBe('user-alice');
@@ -749,8 +851,12 @@ describe('Check Out / Check In State Transitions', () => {
 
     render(
       <DataProvider>
-        <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-      </DataProvider>
+        <TestConsumer
+          onContextReady={(ctx) => {
+            capturedContext = ctx;
+          }}
+        />
+      </DataProvider>,
     );
 
     await waitFor(() => {
@@ -769,7 +875,7 @@ describe('Check Out / Check In State Transitions', () => {
       });
     });
 
-    expect(capturedContext.inventory.find(i => i.id === 'CAM001').status).toBe('checked-out');
+    expect(capturedContext.inventory.find((i) => i.id === 'CAM001').status).toBe('checked-out');
 
     // Then check in
     await act(async () => {
@@ -781,7 +887,7 @@ describe('Check Out / Check In State Transitions', () => {
       });
     });
 
-    const item = capturedContext.inventory.find(i => i.id === 'CAM001');
+    const item = capturedContext.inventory.find((i) => i.id === 'CAM001');
     expect(item.status).toBe('available');
     expect(item.condition).toBe('good');
     expect(item.checkedOutTo).toBeNull();
@@ -797,8 +903,12 @@ describe('Check Out / Check In State Transitions', () => {
 
     render(
       <DataProvider>
-        <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-      </DataProvider>
+        <TestConsumer
+          onContextReady={(ctx) => {
+            capturedContext = ctx;
+          }}
+        />
+      </DataProvider>,
     );
 
     await waitFor(() => {
@@ -826,7 +936,7 @@ describe('Check Out / Check In State Transitions', () => {
       });
     });
 
-    const item = capturedContext.inventory.find(i => i.id === 'CAM001');
+    const item = capturedContext.inventory.find((i) => i.id === 'CAM001');
     expect(item.status).toBe('needs-attention');
     expect(item.condition).toBe('poor');
     expect(item.checkedOutTo).toBeNull();
@@ -837,8 +947,12 @@ describe('Check Out / Check In State Transitions', () => {
 
     render(
       <DataProvider>
-        <TestConsumer onContextReady={(ctx) => { capturedContext = ctx; }} />
-      </DataProvider>
+        <TestConsumer
+          onContextReady={(ctx) => {
+            capturedContext = ctx;
+          }}
+        />
+      </DataProvider>,
     );
 
     await waitFor(() => {
@@ -855,9 +969,9 @@ describe('Check Out / Check In State Transitions', () => {
     });
 
     // CAM001 should be checked out
-    expect(capturedContext.inventory.find(i => i.id === 'CAM001').status).toBe('checked-out');
+    expect(capturedContext.inventory.find((i) => i.id === 'CAM001').status).toBe('checked-out');
     // LENS001 should remain available
-    expect(capturedContext.inventory.find(i => i.id === 'LENS001').status).toBe('available');
+    expect(capturedContext.inventory.find((i) => i.id === 'LENS001').status).toBe('available');
   });
 });
 
@@ -869,14 +983,14 @@ describe('useData Hook', () => {
   it('should throw when used outside provider', () => {
     // Suppress console.error for this test
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     function BadComponent() {
       const data = useData();
       return <div>{data?.inventory?.length}</div>;
     }
-    
+
     expect(() => render(<BadComponent />)).toThrow();
-    
+
     consoleSpy.mockRestore();
   });
 });

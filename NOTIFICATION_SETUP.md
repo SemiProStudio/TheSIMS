@@ -3,6 +3,7 @@
 ## Overview
 
 SIMS now has a complete email notification system that:
+
 - Sends checkout/checkin confirmation emails
 - Sends reservation confirmation emails
 - Sends automatic due date reminders (daily cron job)
@@ -57,6 +58,7 @@ Run the notification schema in your Supabase SQL Editor:
 ```
 
 This creates:
+
 - `notification_preferences` table
 - `notification_log` table
 - `email_templates` table (with 6 pre-built templates)
@@ -98,14 +100,15 @@ In your Supabase Dashboard:
 2. Click **Manage Secrets**
 3. Add these secrets:
 
-| Secret Name | Value |
-|-------------|-------|
-| `RESEND_API_KEY` | Your Resend API key (e.g., `re_123abc...`) |
-| `FROM_EMAIL` | Your from address (e.g., `SIMS <notifications@yourdomain.com>`) |
+| Secret Name      | Value                                                           |
+| ---------------- | --------------------------------------------------------------- |
+| `RESEND_API_KEY` | Your Resend API key (e.g., `re_123abc...`)                      |
+| `FROM_EMAIL`     | Your from address (e.g., `SIMS <notifications@yourdomain.com>`) |
 
 ### Step 5: Test the Integration
 
 1. **Test send-email function:**
+
 ```bash
 curl -X POST 'https://your-project.supabase.co/functions/v1/send-email' \
   -H 'Authorization: Bearer YOUR_ANON_KEY' \
@@ -125,6 +128,7 @@ curl -X POST 'https://your-project.supabase.co/functions/v1/send-email' \
 ```
 
 2. **Test due-date-reminder function:**
+
 ```bash
 curl -X POST 'https://your-project.supabase.co/functions/v1/due-date-reminder' \
   -H 'Authorization: Bearer YOUR_SERVICE_ROLE_KEY'
@@ -138,20 +142,21 @@ curl -X POST 'https://your-project.supabase.co/functions/v1/due-date-reminder' \
 
 Six templates are included:
 
-| Template Key | Trigger | Description |
-|--------------|---------|-------------|
-| `due_date_reminder` | Cron job | Sent 1-3 days before due date |
-| `overdue_notice` | Cron job | Sent when item is overdue |
-| `reservation_confirmation` | New reservation | Confirms booking |
-| `checkout_confirmation` | Item checkout | Confirms checkout with due date |
-| `checkin_confirmation` | Item return | Confirms successful return |
-| `maintenance_reminder` | Manual/scheduled | Maintenance task reminders |
+| Template Key               | Trigger          | Description                     |
+| -------------------------- | ---------------- | ------------------------------- |
+| `due_date_reminder`        | Cron job         | Sent 1-3 days before due date   |
+| `overdue_notice`           | Cron job         | Sent when item is overdue       |
+| `reservation_confirmation` | New reservation  | Confirms booking                |
+| `checkout_confirmation`    | Item checkout    | Confirms checkout with due date |
+| `checkin_confirmation`     | Item return      | Confirms successful return      |
+| `maintenance_reminder`     | Manual/scheduled | Maintenance task reminders      |
 
 ### Customizing Templates
 
 Edit templates in Supabase Dashboard → Table Editor → `email_templates`
 
 Template variables use `{{variable_name}}` syntax:
+
 - `{{borrower_name}}` - Name of the person
 - `{{item_name}}` - Equipment name
 - `{{due_date}}` - Due date formatted
@@ -163,17 +168,18 @@ Conditionals: `{{#if variable}}content{{/if}}`
 
 Users can control their notifications in Settings → Notifications:
 
-| Setting | Description |
-|---------|-------------|
-| `email_enabled` | Master toggle for all emails |
-| `due_date_reminders` | Reminder emails before due date |
-| `due_date_reminder_days` | Which days to remind (e.g., [1, 3]) |
-| `overdue_notifications` | Emails when items are overdue |
-| `reservation_confirmations` | Booking confirmation emails |
-| `checkout_confirmations` | Checkout confirmation emails |
-| `checkin_confirmations` | Return confirmation emails |
+| Setting                     | Description                         |
+| --------------------------- | ----------------------------------- |
+| `email_enabled`             | Master toggle for all emails        |
+| `due_date_reminders`        | Reminder emails before due date     |
+| `due_date_reminder_days`    | Which days to remind (e.g., [1, 3]) |
+| `overdue_notifications`     | Emails when items are overdue       |
+| `reservation_confirmations` | Booking confirmation emails         |
+| `checkout_confirmations`    | Checkout confirmation emails        |
+| `checkin_confirmations`     | Return confirmation emails          |
 
 Admin-only settings:
+
 - `admin_low_stock_alerts`
 - `admin_damage_reports`
 - `admin_overdue_summary`
@@ -185,8 +191,8 @@ Admin-only settings:
 All sent emails are logged in `notification_log` table:
 
 ```sql
-SELECT * FROM notification_log 
-ORDER BY created_at DESC 
+SELECT * FROM notification_log
+ORDER BY created_at DESC
 LIMIT 50;
 ```
 
@@ -204,21 +210,23 @@ View in Supabase Dashboard → Edge Functions → Logs
 
 ## Cost Considerations
 
-| Service | Free Tier | Notes |
-|---------|-----------|-------|
-| Resend | 100 emails/day | Upgrade for more |
-| Supabase Edge Functions | 500K invocations/month | Usually plenty |
-| Supabase Database | 500MB | Logs are small |
+| Service                 | Free Tier              | Notes            |
+| ----------------------- | ---------------------- | ---------------- |
+| Resend                  | 100 emails/day         | Upgrade for more |
+| Supabase Edge Functions | 500K invocations/month | Usually plenty   |
+| Supabase Database       | 500MB                  | Logs are small   |
 
 ## Files Modified/Created
 
 ### New Files
+
 - `supabase/functions/send-email/index.ts` - Email sending function
 - `supabase/functions/due-date-reminder/index.ts` - Cron job function
 - `supabase/functions/_shared/utils.ts` - Shared utilities
 - `supabase/config.toml` - Supabase configuration
 
 ### Modified Files
+
 - `lib/services.js` - Added notification services
 - `lib/DataContext.jsx` - Added email sending methods
 - `App.jsx` - Wired up email triggers

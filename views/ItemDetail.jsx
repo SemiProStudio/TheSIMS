@@ -4,8 +4,28 @@
 // ============================================================================
 
 import { memo, useMemo, useState, useEffect } from 'react';
-import { CheckCircle, RefreshCw, Edit, QrCode, Trash2, Calendar, Plus, Upload, Layout, DollarSign, Clock, Bell, Wrench, MessageSquare, History, Settings, Package, ChevronDown, ChevronUp } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import {
+  CheckCircle,
+  RefreshCw,
+  Edit,
+  QrCode,
+  Trash2,
+  Calendar,
+  Plus,
+  Upload,
+  Layout,
+  DollarSign,
+  Clock,
+  Bell,
+  Wrench,
+  MessageSquare,
+  History,
+  Settings,
+  Package,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
+import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, formatMoney, getStatusColor, getConditionColor } from '../utils';
 import { ITEM_DETAIL_SECTIONS } from '../constants.js';
 import { Badge, Card, Button, CollapsibleSection, BackButton } from '../components/ui.jsx';
@@ -40,50 +60,59 @@ const getItemStyle = (panelColor) => ({
 });
 
 // Add to Kit/Package Section Component - add item to packages
-const AddToKitSection = memo(function AddToKitSection({ item, packages, onAddToPackage, panelColor }) {
+const AddToKitSection = memo(function AddToKitSection({
+  item,
+  packages,
+  onAddToPackage,
+  panelColor,
+}) {
   const [selectedPackageId, setSelectedPackageId] = useState('');
   const effectivePanelColor = panelColor && panelColor.length > 0 ? panelColor : colors.primary;
   const itemStyle = getItemStyle(effectivePanelColor);
-  
+
   // Find packages that contain this item
   const containingPackages = useMemo(() => {
-    return (packages || []).filter(pkg => pkg.items && pkg.items.includes(item.id));
+    return (packages || []).filter((pkg) => pkg.items && pkg.items.includes(item.id));
   }, [packages, item.id]);
-  
+
   // Find packages that don't contain this item yet
   const availablePackages = useMemo(() => {
-    return (packages || []).filter(pkg => !pkg.items || !pkg.items.includes(item.id));
+    return (packages || []).filter((pkg) => !pkg.items || !pkg.items.includes(item.id));
   }, [packages, item.id]);
-  
+
   const handleAddToPackage = () => {
     if (selectedPackageId && onAddToPackage) {
       onAddToPackage(selectedPackageId, item.id);
       setSelectedPackageId('');
     }
   };
-  
+
   return (
     <div style={{ padding: spacing[3] }}>
       {/* Show packages this item is already in */}
       {containingPackages.length > 0 && (
         <div style={{ marginBottom: spacing[3] }}>
-          <div style={{ 
-            fontSize: typography.fontSize.sm, 
-            color: colors.textSecondary,
-            marginBottom: spacing[2]
-          }}>
+          <div
+            style={{
+              fontSize: typography.fontSize.sm,
+              color: colors.textSecondary,
+              marginBottom: spacing[2],
+            }}
+          >
             This item is included in:
           </div>
-          {containingPackages.map(pkg => (
+          {containingPackages.map((pkg) => (
             <div key={pkg.id} style={itemStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
                 <Package size={18} color={effectivePanelColor} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ 
-                    fontSize: typography.fontSize.sm, 
-                    fontWeight: typography.fontWeight.medium,
-                    color: colors.textPrimary 
-                  }}>
+                  <div
+                    style={{
+                      fontSize: typography.fontSize.sm,
+                      fontWeight: typography.fontWeight.medium,
+                      color: colors.textPrimary,
+                    }}
+                  >
                     {pkg.name}
                   </div>
                   <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
@@ -95,26 +124,30 @@ const AddToKitSection = memo(function AddToKitSection({ item, packages, onAddToP
           ))}
         </div>
       )}
-      
+
       {/* Add to package dropdown */}
       {availablePackages.length === 0 ? (
         containingPackages.length === 0 && (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: spacing[4],
-            color: colors.textMuted,
-            fontSize: typography.fontSize.sm 
-          }}>
+          <div
+            style={{
+              textAlign: 'center',
+              padding: spacing[4],
+              color: colors.textMuted,
+              fontSize: typography.fontSize.sm,
+            }}
+          >
             No kits or packages available.
           </div>
         )
       ) : (
         <div>
-          <div style={{ 
-            fontSize: typography.fontSize.sm, 
-            color: colors.textSecondary,
-            marginBottom: spacing[2]
-          }}>
+          <div
+            style={{
+              fontSize: typography.fontSize.sm,
+              color: colors.textSecondary,
+              marginBottom: spacing[2],
+            }}
+          >
             Add to a kit or package:
           </div>
           <div style={{ display: 'flex', gap: spacing[2], alignItems: 'flex-start' }}>
@@ -123,10 +156,10 @@ const AddToKitSection = memo(function AddToKitSection({ item, packages, onAddToP
               onChange={(e) => setSelectedPackageId(e.target.value)}
               options={[
                 { value: '', label: 'Select a kit/package...' },
-                ...availablePackages.map(pkg => ({ 
-                  value: pkg.id, 
-                  label: `${pkg.name} (${pkg.items?.length || 0} items)` 
-                }))
+                ...availablePackages.map((pkg) => ({
+                  value: pkg.id,
+                  label: `${pkg.name} (${pkg.items?.length || 0} items)`,
+                })),
               ]}
               style={{ flex: 1 }}
               aria-label="Select kit or package"
@@ -142,35 +175,33 @@ const AddToKitSection = memo(function AddToKitSection({ item, packages, onAddToP
 });
 
 // Required Accessories Section Component
-const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({ 
-  item, 
-  inventory, 
-  onAddAccessory, 
-  onRemoveAccessory, 
+const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
+  item,
+  inventory,
+  onAddAccessory,
+  onRemoveAccessory,
   onViewItem,
-  panelColor 
+  panelColor,
 }) {
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
-  
+
   const effectivePanelColor = panelColor && panelColor.length > 0 ? panelColor : colors.primary;
   const itemStyle = getItemStyle(effectivePanelColor);
-  
+
   // Get current required accessories
   const requiredAccessories = useMemo(() => {
     if (!item.requiredAccessories) return [];
-    return item.requiredAccessories
-      .map(id => inventory.find(i => i.id === id))
-      .filter(Boolean);
+    return item.requiredAccessories.map((id) => inventory.find((i) => i.id === id)).filter(Boolean);
   }, [item.requiredAccessories, inventory]);
-  
+
   // Get available items to add (exclude self and already added)
   const availableItems = useMemo(() => {
     const existingIds = new Set(item.requiredAccessories || []);
     existingIds.add(item.id);
-    
-    return inventory.filter(i => {
+
+    return inventory.filter((i) => {
       if (existingIds.has(i.id)) return false;
       if (i.isKit) return false; // Don't add kits as accessories
       if (searchQuery) {
@@ -180,13 +211,11 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
       return true;
     });
   }, [inventory, item.id, item.requiredAccessories, searchQuery]);
-  
+
   const handleToggleSelect = (id) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   };
-  
+
   const handleAddSelected = () => {
     if (selectedIds.length > 0 && onAddAccessory) {
       onAddAccessory(item.id, selectedIds);
@@ -195,24 +224,23 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
       setSearchQuery('');
     }
   };
-  
+
   return (
     <div style={{ padding: spacing[3] }}>
       {/* Current required accessories */}
       {requiredAccessories.length > 0 ? (
         <div style={{ marginBottom: spacing[3] }}>
-          {requiredAccessories.map(acc => (
+          {requiredAccessories.map((acc) => (
             <div key={acc.id} style={itemStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-                <div 
-                  style={{ flex: 1, cursor: 'pointer' }}
-                  onClick={() => onViewItem?.(acc.id)}
-                >
-                  <div style={{ 
-                    fontSize: typography.fontSize.sm, 
-                    fontWeight: typography.fontWeight.medium,
-                    color: colors.textPrimary 
-                  }}>
+                <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => onViewItem?.(acc.id)}>
+                  <div
+                    style={{
+                      fontSize: typography.fontSize.sm,
+                      fontWeight: typography.fontWeight.medium,
+                      color: colors.textPrimary,
+                    }}
+                  >
                     {acc.name}
                   </div>
                   <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
@@ -223,10 +251,10 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
                 {onRemoveAccessory && (
                   <button
                     onClick={() => onRemoveAccessory(item.id, acc.id)}
-                    style={{ 
-                      background: 'none', 
-                      border: 'none', 
-                      color: colors.textMuted, 
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: colors.textMuted,
                       cursor: 'pointer',
                       padding: spacing[1],
                     }}
@@ -239,56 +267,67 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
           ))}
         </div>
       ) : (
-        <p style={{ 
-          color: colors.textMuted, 
-          textAlign: 'center', 
-          fontSize: typography.fontSize.sm,
-          margin: `0 0 ${spacing[3]}px`,
-          padding: spacing[3],
-        }}>
+        <p
+          style={{
+            color: colors.textMuted,
+            textAlign: 'center',
+            fontSize: typography.fontSize.sm,
+            margin: `0 0 ${spacing[3]}px`,
+            padding: spacing[3],
+          }}
+        >
           No required accessories defined
         </p>
       )}
-      
+
       {/* Add accessories panel */}
       {showAddPanel ? (
-        <div style={{ 
-          background: withOpacity(effectivePanelColor, 10),
-          borderRadius: borderRadius.md,
-          padding: spacing[3],
-          border: `1px solid ${withOpacity(effectivePanelColor, 30)}`,
-        }}>
+        <div
+          style={{
+            background: withOpacity(effectivePanelColor, 10),
+            borderRadius: borderRadius.md,
+            padding: spacing[3],
+            border: `1px solid ${withOpacity(effectivePanelColor, 30)}`,
+          }}
+        >
           <div style={{ marginBottom: spacing[2] }}>
             <input
               type="text"
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search items..."
               style={{ ...styles.input, width: '100%' }}
             />
           </div>
           <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: spacing[2] }}>
-            {availableItems.slice(0, 50).map(i => (
-              <label 
+            {availableItems.slice(0, 50).map((i) => (
+              <label
                 key={i.id}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: spacing[2],
                   padding: spacing[2],
                   cursor: 'pointer',
                   borderRadius: borderRadius.sm,
-                  background: selectedIds.includes(i.id) ? withOpacity(effectivePanelColor, 20) : 'transparent',
+                  background: selectedIds.includes(i.id)
+                    ? withOpacity(effectivePanelColor, 20)
+                    : 'transparent',
                 }}
               >
                 <input
                   type="checkbox"
                   checked={selectedIds.includes(i.id)}
                   onChange={() => handleToggleSelect(i.id)}
+                  style={{ accentColor: colors.primary }}
                 />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>{i.name}</div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>{i.id}</div>
+                  <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
+                    {i.name}
+                  </div>
+                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                    {i.id}
+                  </div>
                 </div>
               </label>
             ))}
@@ -299,7 +338,14 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
             )}
           </div>
           <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
-            <Button variant="secondary" onClick={() => { setShowAddPanel(false); setSelectedIds([]); setSearchQuery(''); }}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowAddPanel(false);
+                setSelectedIds([]);
+                setSearchQuery('');
+              }}
+            >
               Cancel
             </Button>
             <Button onClick={handleAddSelected} disabled={selectedIds.length === 0} icon={Plus}>
@@ -316,20 +362,46 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
   );
 });
 
-function ItemDetail({ 
-  item, inventory, packages, specs, categorySettings, layoutPrefs, 
-  onBack, backLabel = 'Back to Gear List',
-  onCheckout, onCheckin, onEdit, onDelete: _onDelete, onShowQR,
-  onAddReservation, onDeleteReservation, 
-  onAddNote, onReplyNote, onDeleteNote, 
-  onSelectImage, onViewReservation, 
-  onAddReminder, onCompleteReminder, onUncompleteReminder, onDeleteReminder, 
-  onAddMaintenance, onUpdateMaintenance, onCompleteMaintenance, 
-  onUpdateValue, 
-  onAddAccessory, onRemoveAccessory,
-  onSetAsKit: _onSetAsKit, onAddToKit: _onAddToKit, onAddToPackage, onRemoveFromKit: _onRemoveFromKit, onClearKit: _onClearKit, onViewItem,
-  onCustomizeLayout, onToggleCollapse, 
-  user 
+function ItemDetail({
+  item,
+  inventory,
+  packages,
+  specs,
+  categorySettings,
+  layoutPrefs,
+  onBack,
+  backLabel = 'Back to Gear List',
+  onCheckout,
+  onCheckin,
+  onEdit,
+  onDelete: _onDelete,
+  onShowQR,
+  onAddReservation,
+  onDeleteReservation,
+  onAddNote,
+  onReplyNote,
+  onDeleteNote,
+  onSelectImage,
+  onViewReservation,
+  onAddReminder,
+  onCompleteReminder,
+  onUncompleteReminder,
+  onDeleteReminder,
+  onAddMaintenance,
+  onUpdateMaintenance,
+  onCompleteMaintenance,
+  onUpdateValue,
+  onAddAccessory,
+  onRemoveAccessory,
+  onSetAsKit: _onSetAsKit,
+  onAddToKit: _onAddToKit,
+  onAddToPackage,
+  onRemoveFromKit: _onRemoveFromKit,
+  onClearKit: _onClearKit,
+  onViewItem,
+  onCustomizeLayout,
+  onToggleCollapse,
+  user,
 }) {
   const { canEdit } = usePermissions();
   const canEditItems = canEdit('item_details');
@@ -340,7 +412,7 @@ function ItemDetail({
 
   const [collapsedSections, setCollapsedSections] = useState(() => {
     const initial = {};
-    Object.values(ITEM_DETAIL_SECTIONS).forEach(s => {
+    Object.values(ITEM_DETAIL_SECTIONS).forEach((s) => {
       initial[s.id] = layoutPrefs?.sections?.[s.id]?.collapsed || false;
     });
     return initial;
@@ -348,9 +420,9 @@ function ItemDetail({
 
   useEffect(() => {
     if (layoutPrefs?.sections) {
-      setCollapsedSections(prev => {
+      setCollapsedSections((prev) => {
         const updated = { ...prev };
-        Object.keys(layoutPrefs.sections).forEach(id => {
+        Object.keys(layoutPrefs.sections).forEach((id) => {
           if (layoutPrefs.sections[id]?.collapsed !== undefined) {
             updated[id] = layoutPrefs.sections[id].collapsed;
           }
@@ -361,9 +433,9 @@ function ItemDetail({
   }, [layoutPrefs]);
 
   const isCollapsed = (sectionId) => collapsedSections[sectionId] || false;
-  
+
   const toggleCollapse = (sectionId) => {
-    setCollapsedSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }));
+    setCollapsedSections((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }));
     if (onToggleCollapse) {
       onToggleCollapse('itemDetail', sectionId);
     }
@@ -372,10 +444,10 @@ function ItemDetail({
   const allSpecs = useMemo(() => {
     if (!item) return [];
 
-    const catSpecs = item ? (specs[item.category] || []) : [];
+    const catSpecs = item ? specs[item.category] || [] : [];
     const catSettings = (item && categorySettings?.[item.category]) || {
       trackQuantity: false,
-      trackSerialNumbers: true
+      trackSerialNumbers: true,
     };
 
     const baseSpecs = [
@@ -387,14 +459,14 @@ function ItemDetail({
     if (catSettings.trackQuantity) {
       baseSpecs.push(
         { name: 'Quantity', value: item.quantity ?? 1 },
-        { name: 'Reorder Point', value: item.reorderPoint ?? 0 }
+        { name: 'Reorder Point', value: item.reorderPoint ?? 0 },
       );
     }
 
     // Add category-specific specs
-    const specEntries = catSpecs.map(spec => ({
+    const specEntries = catSpecs.map((spec) => ({
       name: spec.name,
-      value: item.specs?.[spec.name] || '-'
+      value: item.specs?.[spec.name] || '-',
     }));
 
     return [...baseSpecs, ...specEntries];
@@ -402,19 +474,30 @@ function ItemDetail({
 
   const sortedSections = useMemo(() => {
     const getPref = (sectionId) => {
-      const defaultSection = Object.values(ITEM_DETAIL_SECTIONS).find(s => s.id === sectionId);
+      const defaultSection = Object.values(ITEM_DETAIL_SECTIONS).find((s) => s.id === sectionId);
       const pref = layoutPrefs?.sections?.[sectionId];
       return {
         visible: pref?.visible !== false,
         order: pref?.order ?? defaultSection?.order ?? 99,
       };
     };
-    const sectionIds = ['specifications', 'reservations', 'notes', 'reminders', 'addToKit', 'maintenance', 'timeline', 'checkoutHistory', 'value', 'depreciation'];
+    const sectionIds = [
+      'specifications',
+      'reservations',
+      'notes',
+      'reminders',
+      'addToKit',
+      'maintenance',
+      'timeline',
+      'checkoutHistory',
+      'value',
+      'depreciation',
+    ];
     return sectionIds
-      .filter(id => getPref(id).visible)
-      .map(id => ({ id, order: getPref(id).order }))
+      .filter((id) => getPref(id).visible)
+      .map((id) => ({ id, order: getPref(id).order }))
       .sort((a, b) => a.order - b.order)
-      .map(s => s.id);
+      .map((s) => s.id);
   }, [layoutPrefs]);
 
   if (!item) return null;
@@ -431,13 +514,29 @@ function ItemDetail({
             collapsed={isCollapsed('specifications')}
             onToggleCollapse={() => toggleCollapse('specifications')}
           >
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: spacing[3] }}>
+            <div
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: spacing[3] }}
+            >
               {(specsExpanded ? allSpecs : allSpecs.slice(0, 10)).map((spec) => (
                 <div key={spec.name} style={getItemStyle(SECTION_COLORS.specs)}>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: spacing[1] }}>
+                  <div
+                    style={{
+                      fontSize: typography.fontSize.xs,
+                      color: colors.textSecondary,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.03em',
+                      marginBottom: spacing[1],
+                    }}
+                  >
                     {spec.name}
                   </div>
-                  <div style={{ color: colors.textPrimary, fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.medium }}>
+                  <div
+                    style={{
+                      color: colors.textPrimary,
+                      fontSize: typography.fontSize.base,
+                      fontWeight: typography.fontWeight.medium,
+                    }}
+                  >
                     {spec.value}
                   </div>
                 </div>
@@ -462,7 +561,7 @@ function ItemDetail({
             )}
           </CollapsibleSection>
         );
-      
+
       case 'reservations':
         const reservationsColor = SECTION_COLORS.reservations;
         return (
@@ -475,53 +574,105 @@ function ItemDetail({
             headerColor={reservationsColor}
             collapsed={isCollapsed('reservations')}
             onToggleCollapse={() => toggleCollapse('reservations')}
-            action={canEditItems && (
-              <button
-                onClick={onAddReservation}
-                title="Add reservation"
-                aria-label="Add reservation"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: colors.textPrimary,
-                  cursor: 'pointer',
-                  padding: '2px 4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: borderRadius.sm,
-                  opacity: 0.8,
-                  transition: 'opacity 0.15s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-                onMouseLeave={e => e.currentTarget.style.opacity = '0.8'}
-              >
-                <Plus size={16} />
-              </button>
-            )}
+            action={
+              canEditItems && (
+                <button
+                  onClick={onAddReservation}
+                  title="Add reservation"
+                  aria-label="Add reservation"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: colors.textPrimary,
+                    cursor: 'pointer',
+                    padding: '2px 4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: borderRadius.sm,
+                    opacity: 0.8,
+                    transition: 'opacity 0.15s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.8')}
+                >
+                  <Plus size={16} />
+                </button>
+              )
+            }
           >
             <div style={{ maxHeight: 280, overflowY: 'auto' }}>
               {!item.reservations || item.reservations.length === 0 ? (
-                <p style={{ color: colors.textMuted, textAlign: 'center', fontSize: typography.fontSize.sm, margin: 0, padding: spacing[4] }}>No reservations</p>
-              ) : item.reservations.map(r => (
-                <div key={r.id} onClick={() => onViewReservation?.(r)} style={{ ...getItemStyle(reservationsColor), cursor: 'pointer' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{r.project}</div>
-                      <div style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary, marginTop: spacing[1] }}>{formatDate(r.start)} → {formatDate(r.end)}</div>
+                <p
+                  style={{
+                    color: colors.textMuted,
+                    textAlign: 'center',
+                    fontSize: typography.fontSize.sm,
+                    margin: 0,
+                    padding: spacing[4],
+                  }}
+                >
+                  No reservations
+                </p>
+              ) : (
+                item.reservations.map((r) => (
+                  <div
+                    key={r.id}
+                    onClick={() => onViewReservation?.(r)}
+                    style={{ ...getItemStyle(reservationsColor), cursor: 'pointer' }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <div>
+                        <div
+                          style={{
+                            fontSize: typography.fontSize.base,
+                            fontWeight: typography.fontWeight.medium,
+                            color: colors.textPrimary,
+                          }}
+                        >
+                          {r.project}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: typography.fontSize.sm,
+                            color: colors.textSecondary,
+                            marginTop: spacing[1],
+                          }}
+                        >
+                          {formatDate(r.start)} → {formatDate(r.end)}
+                        </div>
+                      </div>
+                      {canEditItems && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteReservation(item.id, r.id);
+                          }}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: colors.textMuted,
+                            cursor: 'pointer',
+                            padding: spacing[1],
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
-                    {canEditItems && (
-                      <button onClick={(e) => { e.stopPropagation(); onDeleteReservation(item.id, r.id); }} style={{ background: 'none', border: 'none', color: colors.textMuted, cursor: 'pointer', padding: spacing[1] }}>
-                        <Trash2 size={14} />
-                      </button>
-                    )}
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </CollapsibleSection>
         );
-      
+
       case 'notes':
         const notesColor = SECTION_COLORS.notes;
         return (
@@ -536,10 +687,17 @@ function ItemDetail({
             onToggleCollapse={() => toggleCollapse('notes')}
             padding={false}
           >
-            <NotesSection notes={item.notes || []} onAddNote={onAddNote} onReply={onReplyNote} onDelete={onDeleteNote} user={user} panelColor={notesColor} />
+            <NotesSection
+              notes={item.notes || []}
+              onAddNote={onAddNote}
+              onReply={onReplyNote}
+              onDelete={onDeleteNote}
+              user={user}
+              panelColor={notesColor}
+            />
           </CollapsibleSection>
         );
-      
+
       case 'reminders':
         const remindersColor = SECTION_COLORS.reminders;
         return (
@@ -557,7 +715,7 @@ function ItemDetail({
               <button
                 onClick={() => {
                   if (isCollapsed('reminders')) toggleCollapse('reminders');
-                  setShowAddReminderForm(prev => !prev);
+                  setShowAddReminderForm((prev) => !prev);
                 }}
                 title={showAddReminderForm ? 'Cancel adding reminder' : 'Add reminder'}
                 aria-label={showAddReminderForm ? 'Cancel adding reminder' : 'Add reminder'}
@@ -574,17 +732,26 @@ function ItemDetail({
                   opacity: 0.8,
                   transition: 'opacity 0.15s',
                 }}
-                onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-                onMouseLeave={e => e.currentTarget.style.opacity = '0.8'}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.8')}
               >
                 <Plus size={16} />
               </button>
             }
           >
-            <RemindersSection reminders={item.reminders || []} onAddReminder={onAddReminder} onCompleteReminder={onCompleteReminder} onUncompleteReminder={onUncompleteReminder} onDeleteReminder={onDeleteReminder} panelColor={remindersColor} showAddForm={showAddReminderForm} onToggleAddForm={setShowAddReminderForm} />
+            <RemindersSection
+              reminders={item.reminders || []}
+              onAddReminder={onAddReminder}
+              onCompleteReminder={onCompleteReminder}
+              onUncompleteReminder={onUncompleteReminder}
+              onDeleteReminder={onDeleteReminder}
+              panelColor={remindersColor}
+              showAddForm={showAddReminderForm}
+              onToggleAddForm={setShowAddReminderForm}
+            />
           </CollapsibleSection>
         );
-      
+
       case 'requiredAccessories':
         const accessoriesColor = SECTION_COLORS.addToKit;
         return (
@@ -599,20 +766,22 @@ function ItemDetail({
             onToggleCollapse={() => toggleCollapse('requiredAccessories')}
             padding={false}
           >
-            <RequiredAccessoriesSection 
-              item={item} 
-              inventory={inventory} 
-              onAddAccessory={onAddAccessory} 
+            <RequiredAccessoriesSection
+              item={item}
+              inventory={inventory}
+              onAddAccessory={onAddAccessory}
               onRemoveAccessory={onRemoveAccessory}
               onViewItem={onViewItem}
-              panelColor={accessoriesColor} 
+              panelColor={accessoriesColor}
             />
           </CollapsibleSection>
         );
-      
+
       case 'packages':
         const packagesColor = SECTION_COLORS.addToKit;
-        const packagesContainingItem = (packages || []).filter(pkg => pkg.items && pkg.items.includes(item.id)).length;
+        const packagesContainingItem = (packages || []).filter(
+          (pkg) => pkg.items && pkg.items.includes(item.id),
+        ).length;
         return (
           <CollapsibleSection
             key="packages"
@@ -625,10 +794,15 @@ function ItemDetail({
             onToggleCollapse={() => toggleCollapse('packages')}
             padding={false}
           >
-            <AddToKitSection item={item} packages={packages} onAddToPackage={onAddToPackage} panelColor={packagesColor} />
+            <AddToKitSection
+              item={item}
+              packages={packages}
+              onAddToPackage={onAddToPackage}
+              panelColor={packagesColor}
+            />
           </CollapsibleSection>
         );
-      
+
       case 'maintenance':
         const maintenanceColor = SECTION_COLORS.maintenance;
         return (
@@ -643,10 +817,16 @@ function ItemDetail({
             onToggleCollapse={() => toggleCollapse('maintenance')}
             padding={false}
           >
-            <MaintenanceSection maintenanceHistory={item.maintenanceHistory || []} onAddMaintenance={onAddMaintenance} onUpdateMaintenance={onUpdateMaintenance} onCompleteMaintenance={onCompleteMaintenance} panelColor={maintenanceColor} />
+            <MaintenanceSection
+              maintenanceHistory={item.maintenanceHistory || []}
+              onAddMaintenance={onAddMaintenance}
+              onUpdateMaintenance={onUpdateMaintenance}
+              onCompleteMaintenance={onCompleteMaintenance}
+              panelColor={maintenanceColor}
+            />
           </CollapsibleSection>
         );
-      
+
       case 'timeline':
         return (
           <CollapsibleSection
@@ -661,7 +841,7 @@ function ItemDetail({
             <ItemTimeline item={item} />
           </CollapsibleSection>
         );
-      
+
       case 'checkoutHistory':
         if (!item.checkoutHistory || item.checkoutHistory.length === 0) return null;
         const checkoutColor = SECTION_COLORS.timeline;
@@ -677,21 +857,43 @@ function ItemDetail({
             onToggleCollapse={() => toggleCollapse('checkoutHistory')}
           >
             <div style={{ maxHeight: 280, overflowY: 'auto' }}>
-              {[...item.checkoutHistory].reverse().slice(0, 8).map((entry, idx) => (
-                <div key={entry.id || idx} style={getItemStyle(checkoutColor)}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[1] }}>
-                    <Badge text={entry.type === 'checkout' ? 'Out' : 'In'} color={entry.type === 'checkout' ? colors.checkedOut : colors.available} size="xs" />
-                    <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>{formatDate(entry.type === 'checkout' ? entry.checkedOutDate : entry.returnDate)}</span>
+              {[...item.checkoutHistory]
+                .reverse()
+                .slice(0, 8)
+                .map((entry, idx) => (
+                  <div key={entry.id || idx} style={getItemStyle(checkoutColor)}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: spacing[1],
+                      }}
+                    >
+                      <Badge
+                        text={entry.type === 'checkout' ? 'Out' : 'In'}
+                        color={entry.type === 'checkout' ? colors.checkedOut : colors.available}
+                        size="xs"
+                      />
+                      <span
+                        style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}
+                      >
+                        {formatDate(
+                          entry.type === 'checkout' ? entry.checkedOutDate : entry.returnDate,
+                        )}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: typography.fontSize.base, color: colors.textPrimary }}>
+                      {entry.type === 'checkout'
+                        ? entry.borrowerName || 'Unknown'
+                        : `Returned by ${entry.returnedBy || 'Unknown'}`}
+                    </div>
                   </div>
-                  <div style={{ fontSize: typography.fontSize.base, color: colors.textPrimary }}>
-                    {entry.type === 'checkout' ? (entry.borrowerName || 'Unknown') : `Returned by ${entry.returnedBy || 'Unknown'}`}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </CollapsibleSection>
         );
-      
+
       case 'value':
         const valueColor = SECTION_COLORS.depreciation;
         return (
@@ -707,27 +909,63 @@ function ItemDetail({
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
               <div style={getItemStyle(valueColor)}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>Purchase Price</span>
-                  <span style={{ color: colors.textPrimary, fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.medium }}>{formatMoney(item.purchasePrice)}</span>
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <span style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>
+                    Purchase Price
+                  </span>
+                  <span
+                    style={{
+                      color: colors.textPrimary,
+                      fontSize: typography.fontSize.base,
+                      fontWeight: typography.fontWeight.medium,
+                    }}
+                  >
+                    {formatMoney(item.purchasePrice)}
+                  </span>
                 </div>
               </div>
               <div style={getItemStyle(valueColor)}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>Current Value</span>
-                  <span style={{ color: colors.available, fontWeight: typography.fontWeight.semibold, fontSize: typography.fontSize.base }}>{formatMoney(item.currentValue)}</span>
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <span style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>
+                    Current Value
+                  </span>
+                  <span
+                    style={{
+                      color: colors.available,
+                      fontWeight: typography.fontWeight.semibold,
+                      fontSize: typography.fontSize.base,
+                    }}
+                  >
+                    {formatMoney(item.currentValue)}
+                  </span>
                 </div>
               </div>
               <div style={getItemStyle(valueColor)}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>Purchase Date</span>
-                  <span style={{ color: colors.textPrimary, fontSize: typography.fontSize.base, fontWeight: typography.fontWeight.medium }}>{formatDate(item.purchaseDate)}</span>
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <span style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>
+                    Purchase Date
+                  </span>
+                  <span
+                    style={{
+                      color: colors.textPrimary,
+                      fontSize: typography.fontSize.base,
+                      fontWeight: typography.fontWeight.medium,
+                    }}
+                  >
+                    {formatDate(item.purchaseDate)}
+                  </span>
                 </div>
               </div>
             </div>
           </CollapsibleSection>
         );
-      
+
       case 'depreciation':
         return (
           <CollapsibleSection
@@ -741,7 +979,7 @@ function ItemDetail({
             <DepreciationCalculator item={item} onUpdateValue={onUpdateValue} />
           </CollapsibleSection>
         );
-      
+
       default:
         return null;
     }
@@ -753,7 +991,14 @@ function ItemDetail({
   return (
     <>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[5] }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: spacing[5],
+        }}
+      >
         <BackButton onClick={onBack}>{backLabel}</BackButton>
         {onCustomizeLayout && (
           <Button variant="secondary" size="sm" onClick={onCustomizeLayout} icon={Layout}>
@@ -766,77 +1011,151 @@ function ItemDetail({
       <Card padding={false} style={{ marginBottom: spacing[5], overflow: 'hidden' }}>
         <div className="item-detail-header" style={{ display: 'flex', minHeight: 280 }}>
           {/* Image */}
-          <div 
-            className="item-detail-image" 
-            onClick={onSelectImage} 
-            style={{ 
+          <div
+            className="item-detail-image"
+            onClick={onSelectImage}
+            style={{
               width: 320,
               minWidth: 320,
-              background: `${withOpacity(colors.primary, 10)}`, 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              cursor: 'pointer' 
+              background: `${withOpacity(colors.primary, 10)}`,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
             }}
           >
             {item.image ? (
-              <OptimizedImage 
-                src={item.image} 
-                alt={item.name} 
+              <OptimizedImage
+                src={item.image}
+                alt={item.name}
                 size="full"
-                style={{ width: '100%', height: '100%' }} 
+                style={{ width: '100%', height: '100%' }}
                 objectFit="cover"
                 lazy={false}
               />
             ) : (
               <>
                 <Upload size={48} color={colors.textMuted} />
-                <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm, marginTop: spacing[2] }}>Click to add image</span>
+                <span
+                  style={{
+                    color: colors.textMuted,
+                    fontSize: typography.fontSize.sm,
+                    marginTop: spacing[2],
+                  }}
+                >
+                  Click to add image
+                </span>
               </>
             )}
           </div>
 
           {/* Info */}
-          <div className="item-detail-info" style={{ flex: 1, padding: spacing[6], display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[4], flexWrap: 'wrap' }}>
+          <div
+            className="item-detail-info"
+            style={{
+              flex: 1,
+              padding: spacing[6],
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                gap: spacing[2],
+                marginBottom: spacing[4],
+                flexWrap: 'wrap',
+              }}
+            >
               <Badge text={item.id} color={colors.primary} />
               <Badge text={item.status} color={getStatusColor(item.status)} />
               <Badge text={item.condition} color={getConditionColor(item.condition)} />
               <Badge text={item.category} color={colors.accent2} />
             </div>
-            
-            <h1 style={{ margin: `0 0 ${spacing[2]}px`, fontSize: typography.fontSize['3xl'], color: colors.textPrimary }}>
+
+            <h1
+              style={{
+                margin: `0 0 ${spacing[2]}px`,
+                fontSize: typography.fontSize['3xl'],
+                color: colors.textPrimary,
+              }}
+            >
               {item.name}
             </h1>
-            <p style={{ color: colors.textSecondary, margin: `0 0 ${spacing[5]}px`, fontSize: typography.fontSize.lg }}>
+            <p
+              style={{
+                color: colors.textSecondary,
+                margin: `0 0 ${spacing[5]}px`,
+                fontSize: typography.fontSize.lg,
+              }}
+            >
               {item.brand}
             </p>
-            
+
             <div style={{ display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
-              {canEditItems && (
-                isCheckedOut ? (
-                  <Button onClick={() => onCheckin(item.id)} icon={RefreshCw}>Check In</Button>
+              {canEditItems &&
+                (isCheckedOut ? (
+                  <Button onClick={() => onCheckin(item.id)} icon={RefreshCw}>
+                    Check In
+                  </Button>
                 ) : (
-                  <Button onClick={() => onCheckout(item.id)} icon={CheckCircle}>Check Out</Button>
-                )
+                  <Button onClick={() => onCheckout(item.id)} icon={CheckCircle}>
+                    Check Out
+                  </Button>
+                ))}
+              {canEditItems && (
+                <Button variant="secondary" onClick={() => onEdit(item)} icon={Edit}>
+                  Edit
+                </Button>
               )}
-              {canEditItems && <Button variant="secondary" onClick={() => onEdit(item)} icon={Edit}>Edit</Button>}
-              <Button variant="secondary" onClick={onShowQR} icon={QrCode}>QR Code</Button>
+              <Button variant="secondary" onClick={onShowQR} icon={QrCode}>
+                QR Code
+              </Button>
             </div>
-            
+
             {!canEditItems && (
-              <div style={{ marginTop: spacing[4], padding: spacing[3], background: `${withOpacity(colors.primary, 10)}`, borderRadius: borderRadius.md, fontSize: typography.fontSize.sm, color: colors.primary }}>
+              <div
+                style={{
+                  marginTop: spacing[4],
+                  padding: spacing[3],
+                  background: `${withOpacity(colors.primary, 10)}`,
+                  borderRadius: borderRadius.md,
+                  fontSize: typography.fontSize.sm,
+                  color: colors.primary,
+                }}
+              >
                 You have view-only access to this item.
               </div>
             )}
-            
+
             {isCheckedOut && item.checkedOutTo && (
-              <div style={{ marginTop: spacing[4], padding: spacing[3], background: `${withOpacity(colors.checkedOut, 15)}`, borderRadius: borderRadius.md, fontSize: typography.fontSize.sm }}>
+              <div
+                style={{
+                  marginTop: spacing[4],
+                  padding: spacing[3],
+                  background: `${withOpacity(colors.checkedOut, 15)}`,
+                  borderRadius: borderRadius.md,
+                  fontSize: typography.fontSize.sm,
+                }}
+              >
                 <span style={{ color: colors.textMuted }}>Checked out to </span>
-                <span style={{ color: colors.textPrimary, fontWeight: typography.fontWeight.medium }}>{item.checkedOutTo}</span>
-                <span style={{ color: colors.textMuted }}> on {formatDate(item.checkedOutDate)}</span>
-                {item.dueBack && (<><span style={{ color: colors.textMuted }}> • Due </span><span style={{ color: colors.danger }}>{formatDate(item.dueBack)}</span></>)}
+                <span
+                  style={{ color: colors.textPrimary, fontWeight: typography.fontWeight.medium }}
+                >
+                  {item.checkedOutTo}
+                </span>
+                <span style={{ color: colors.textMuted }}>
+                  {' '}
+                  on {formatDate(item.checkedOutDate)}
+                </span>
+                {item.dueBack && (
+                  <>
+                    <span style={{ color: colors.textMuted }}> • Due </span>
+                    <span style={{ color: colors.danger }}>{formatDate(item.dueBack)}</span>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -846,10 +1165,10 @@ function ItemDetail({
       {/* Two-column layout for sections */}
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-          {leftColumnSections.map(sectionId => renderSection(sectionId))}
+          {leftColumnSections.map((sectionId) => renderSection(sectionId))}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-          {rightColumnSections.map(sectionId => renderSection(sectionId))}
+          {rightColumnSections.map((sectionId) => renderSection(sectionId))}
         </div>
       </div>
     </>

@@ -11,12 +11,12 @@ test.describe('Visual Regression - Error States', () => {
     test('error boundary fallback UI should match baseline', async ({ page }) => {
       // We can't easily trigger a React error, so we'll test the error UI component directly
       // by navigating to a page and injecting the error state
-      
+
       const loginPage = new LoginPage(page);
       await page.goto('/');
       await loginPage.loginAsAdmin();
       await page.waitForTimeout(1000);
-      
+
       // Inject error boundary fallback UI
       await page.evaluate(() => {
         const errorHTML = `
@@ -74,9 +74,9 @@ test.describe('Visual Regression - Error States', () => {
         `;
         document.body.innerHTML = errorHTML;
       });
-      
+
       await page.waitForTimeout(300);
-      
+
       await expect(page).toHaveScreenshot('error-boundary-fallback.png', {
         maxDiffPixels: 100,
       });
@@ -87,7 +87,7 @@ test.describe('Visual Regression - Error States', () => {
       await page.goto('/');
       await loginPage.loginAsAdmin();
       await page.waitForTimeout(1000);
-      
+
       // Inject section error UI
       await page.evaluate(() => {
         const main = document.querySelector('main') || document.body;
@@ -113,9 +113,9 @@ test.describe('Visual Regression - Error States', () => {
           </div>
         `;
       });
-      
+
       await page.waitForTimeout(300);
-      
+
       const errorSection = page.locator('div').filter({ hasText: 'encountered an error' });
       if (await errorSection.isVisible()) {
         await expect(errorSection).toHaveScreenshot('section-error-boundary.png', {
@@ -130,7 +130,7 @@ test.describe('Visual Regression - Error States', () => {
       const loginPage = new LoginPage(page);
       await page.goto('/');
       await loginPage.loginAsAdmin();
-      
+
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();
       await page.waitForTimeout(500);
@@ -140,18 +140,20 @@ test.describe('Visual Regression - Error States', () => {
       // Navigate to gear list and open add form
       await page.locator('button:has-text("Gear List")').click();
       await page.waitForTimeout(1000);
-      
+
       const addButton = page.locator('button:has-text("Add Item"), button:has-text("Add")');
       if (await addButton.isVisible()) {
         await addButton.click();
         await page.waitForTimeout(500);
-        
+
         // Try to submit empty form
-        const submitButton = page.locator('[role="dialog"] button:has-text("Save"), [role="dialog"] button[type="submit"]');
+        const submitButton = page.locator(
+          '[role="dialog"] button:has-text("Save"), [role="dialog"] button[type="submit"]',
+        );
         if (await submitButton.isVisible()) {
           await submitButton.click();
           await page.waitForTimeout(500);
-          
+
           const modal = page.locator('[role="dialog"]');
           if (await modal.isVisible()) {
             await expect(modal).toHaveScreenshot('form-multiple-errors.png', {
@@ -165,19 +167,19 @@ test.describe('Visual Regression - Error States', () => {
     test('inline field error should match baseline', async ({ page }) => {
       await page.locator('button:has-text("Gear List")').click();
       await page.waitForTimeout(1000);
-      
+
       const addButton = page.locator('button:has-text("Add Item"), button:has-text("Add")');
       if (await addButton.isVisible()) {
         await addButton.click();
         await page.waitForTimeout(500);
-        
+
         // Focus and blur name field to trigger error
         const nameInput = page.locator('input[id*="name"], input[placeholder*="Name"]').first();
         if (await nameInput.isVisible()) {
           await nameInput.focus();
           await nameInput.blur();
           await page.waitForTimeout(300);
-          
+
           // Screenshot the field with error
           const fieldContainer = nameInput.locator('..');
           await expect(fieldContainer).toHaveScreenshot('field-error-state.png', {
@@ -193,7 +195,7 @@ test.describe('Visual Regression - Error States', () => {
       const loginPage = new LoginPage(page);
       await page.goto('/');
       await loginPage.loginAsAdmin();
-      
+
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();
       await page.waitForTimeout(500);
@@ -202,12 +204,12 @@ test.describe('Visual Regression - Error States', () => {
     test('no search results should match baseline', async ({ page }) => {
       await page.locator('button:has-text("Gear List")').click();
       await page.waitForTimeout(1000);
-      
+
       const searchInput = page.locator('input[placeholder*="Search"]');
       if (await searchInput.isVisible()) {
         await searchInput.fill('zzzznonexistentitem12345');
         await page.waitForTimeout(500);
-        
+
         await expect(page).toHaveScreenshot('empty-state-no-results.png', {
           maxDiffPixels: 200,
         });
@@ -218,7 +220,7 @@ test.describe('Visual Regression - Error States', () => {
       // Navigate to a view that might be empty
       await page.locator('button:has-text("Pack Lists")').click();
       await page.waitForTimeout(1000);
-      
+
       // Check if there's an empty state
       const emptyState = page.locator('text=/No pack lists|empty|get started/i');
       if (await emptyState.isVisible()) {
@@ -233,7 +235,7 @@ test.describe('Visual Regression - Error States', () => {
     test('full page loading should match baseline', async ({ page }) => {
       // Create a loading state
       await page.goto('/');
-      
+
       await page.evaluate(() => {
         document.body.innerHTML = `
           <div style="
@@ -262,9 +264,9 @@ test.describe('Visual Regression - Error States', () => {
           </div>
         `;
       });
-      
+
       await page.waitForTimeout(100);
-      
+
       await expect(page).toHaveScreenshot('loading-full-page.png', {
         maxDiffPixels: 200,
         animations: 'disabled',
@@ -273,7 +275,7 @@ test.describe('Visual Regression - Error States', () => {
 
     test('content loading skeleton should match baseline', async ({ page }) => {
       await page.goto('/');
-      
+
       await page.evaluate(() => {
         document.body.innerHTML = `
           <div style="
@@ -322,9 +324,9 @@ test.describe('Visual Regression - Error States', () => {
           </div>
         `;
       });
-      
+
       await page.waitForTimeout(100);
-      
+
       await expect(page).toHaveScreenshot('loading-skeleton.png', {
         maxDiffPixels: 200,
         animations: 'disabled',
@@ -335,7 +337,7 @@ test.describe('Visual Regression - Error States', () => {
   test.describe('Network Error States', () => {
     test('offline banner should match baseline', async ({ page }) => {
       await page.goto('/');
-      
+
       await page.evaluate(() => {
         const banner = document.createElement('div');
         banner.innerHTML = `
@@ -370,9 +372,9 @@ test.describe('Visual Regression - Error States', () => {
         `;
         document.body.prepend(banner);
       });
-      
+
       await page.waitForTimeout(300);
-      
+
       const banner = page.locator('text=offline').locator('..');
       await expect(banner).toHaveScreenshot('offline-banner.png', {
         maxDiffPixels: 100,
@@ -381,7 +383,7 @@ test.describe('Visual Regression - Error States', () => {
 
     test('connection error message should match baseline', async ({ page }) => {
       await page.goto('/');
-      
+
       await page.evaluate(() => {
         document.body.innerHTML = `
           <div style="
@@ -415,9 +417,9 @@ test.describe('Visual Regression - Error States', () => {
           </div>
         `;
       });
-      
+
       await page.waitForTimeout(300);
-      
+
       await expect(page).toHaveScreenshot('connection-error.png', {
         maxDiffPixels: 100,
       });
@@ -427,7 +429,7 @@ test.describe('Visual Regression - Error States', () => {
   test.describe('Permission Denied States', () => {
     test('access denied message should match baseline', async ({ page }) => {
       await page.goto('/');
-      
+
       await page.evaluate(() => {
         document.body.innerHTML = `
           <div style="
@@ -460,9 +462,9 @@ test.describe('Visual Regression - Error States', () => {
           </div>
         `;
       });
-      
+
       await page.waitForTimeout(300);
-      
+
       await expect(page).toHaveScreenshot('access-denied.png', {
         maxDiffPixels: 100,
       });
@@ -475,7 +477,7 @@ test.describe('Visual Regression - Error States', () => {
       await page.goto('/');
       await loginPage.loginAsAdmin();
       await page.waitForTimeout(1000);
-      
+
       // Inject error toast
       await page.evaluate(() => {
         const toast = document.createElement('div');
@@ -517,9 +519,9 @@ test.describe('Visual Regression - Error States', () => {
         `;
         document.body.appendChild(toast);
       });
-      
+
       await page.waitForTimeout(300);
-      
+
       const toast = page.locator('text=Failed to save').locator('..').locator('..');
       await expect(toast).toHaveScreenshot('toast-error.png', {
         maxDiffPixels: 100,
@@ -531,7 +533,7 @@ test.describe('Visual Regression - Error States', () => {
       await page.goto('/');
       await loginPage.loginAsAdmin();
       await page.waitForTimeout(1000);
-      
+
       await page.evaluate(() => {
         const toast = document.createElement('div');
         toast.innerHTML = `
@@ -571,9 +573,9 @@ test.describe('Visual Regression - Error States', () => {
         `;
         document.body.appendChild(toast);
       });
-      
+
       await page.waitForTimeout(300);
-      
+
       const toast = page.locator('text=saved successfully').locator('..').locator('..');
       await expect(toast).toHaveScreenshot('toast-success.png', {
         maxDiffPixels: 100,
@@ -585,7 +587,7 @@ test.describe('Visual Regression - Error States', () => {
       await page.goto('/');
       await loginPage.loginAsAdmin();
       await page.waitForTimeout(1000);
-      
+
       await page.evaluate(() => {
         const toast = document.createElement('div');
         toast.innerHTML = `
@@ -626,9 +628,9 @@ test.describe('Visual Regression - Error States', () => {
         `;
         document.body.appendChild(toast);
       });
-      
+
       await page.waitForTimeout(300);
-      
+
       const toast = page.locator('text=overdue').locator('..').locator('..');
       await expect(toast).toHaveScreenshot('toast-warning.png', {
         maxDiffPixels: 100,

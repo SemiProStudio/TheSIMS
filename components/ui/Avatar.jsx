@@ -6,12 +6,7 @@ import { colors, borderRadius, typography } from '../../theme.js';
 // Avatar - User avatar
 // ============================================================================
 
-export const Avatar = memo(function Avatar({ 
-  name, 
-  src, 
-  size = 40,
-  style: customStyle,
-}) {
+export const Avatar = memo(function Avatar({ name, src, size = 40, style: customStyle }) {
   const initial = name?.charAt(0)?.toUpperCase() || '?';
 
   if (src) {

@@ -15,7 +15,7 @@ export { useDebounce } from './useDebounce.js';
 export { usePWA, InstallStatus } from './usePWA.js';
 
 // Screen Reader Announcements
-export { 
+export {
   useAnnounce,
   useAnnounceViewChange,
   useAnnounceLoading,

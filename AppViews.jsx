@@ -37,82 +37,152 @@ const ClientsView = lazy(() => import('./views/ClientsView.jsx'));
 const RolesManager = lazy(() => import('./views/RolesManager.jsx'));
 const ChangeLog = lazy(() => import('./views/ChangeLog.jsx'));
 
-const AdminPanel = lazy(() => import('./views/AdminView.jsx').then(m => ({ default: m.AdminPanel })));
-const UsersPanel = lazy(() => import('./views/UsersView.jsx').then(m => ({ default: m.UsersPanel })));
-const ReportsPanel = lazy(() => import('./views/ReportsView.jsx').then(m => ({ default: m.ReportsPanel })));
-const AuditLogPanel = lazy(() => import('./views/AuditLogView.jsx').then(m => ({ default: m.AuditLogPanel })));
-const InventoryReportPanel = lazy(() => import('./views/InventoryReportView.jsx').then(m => ({ default: m.InventoryReportPanel })));
-const ActivityReportPanel = lazy(() => import('./views/ActivityReportView.jsx').then(m => ({ default: m.ActivityReportPanel })));
-const AlertsReportPanel = lazy(() => import('./views/AlertsReportView.jsx').then(m => ({ default: m.AlertsReportPanel })));
-const MaintenanceReportPanel = lazy(() => import('./views/MaintenanceReportView.jsx').then(m => ({ default: m.MaintenanceReportPanel })));
-const InsuranceReportPanel = lazy(() => import('./views/InsuranceReportView.jsx').then(m => ({ default: m.InsuranceReportPanel })));
-const ClientReportPanel = lazy(() => import('./views/ClientReportView.jsx').then(m => ({ default: m.ClientReportPanel })));
+const AdminPanel = lazy(() =>
+  import('./views/AdminView.jsx').then((m) => ({ default: m.AdminPanel })),
+);
+const UsersPanel = lazy(() =>
+  import('./views/UsersView.jsx').then((m) => ({ default: m.UsersPanel })),
+);
+const ReportsPanel = lazy(() =>
+  import('./views/ReportsView.jsx').then((m) => ({ default: m.ReportsPanel })),
+);
+const AuditLogPanel = lazy(() =>
+  import('./views/AuditLogView.jsx').then((m) => ({ default: m.AuditLogPanel })),
+);
+const InventoryReportPanel = lazy(() =>
+  import('./views/InventoryReportView.jsx').then((m) => ({ default: m.InventoryReportPanel })),
+);
+const ActivityReportPanel = lazy(() =>
+  import('./views/ActivityReportView.jsx').then((m) => ({ default: m.ActivityReportPanel })),
+);
+const AlertsReportPanel = lazy(() =>
+  import('./views/AlertsReportView.jsx').then((m) => ({ default: m.AlertsReportPanel })),
+);
+const MaintenanceReportPanel = lazy(() =>
+  import('./views/MaintenanceReportView.jsx').then((m) => ({ default: m.MaintenanceReportPanel })),
+);
+const InsuranceReportPanel = lazy(() =>
+  import('./views/InsuranceReportView.jsx').then((m) => ({ default: m.InsuranceReportPanel })),
+);
+const ClientReportPanel = lazy(() =>
+  import('./views/ClientReportView.jsx').then((m) => ({ default: m.ClientReportPanel })),
+);
 
-const ItemFormPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ default: m.ItemFormPage })));
-const SpecsPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ default: m.SpecsPage })));
-const CategoriesPage = lazy(() => import('./views/AdminPages.jsx').then(m => ({ default: m.CategoriesPage })));
+const ItemFormPage = lazy(() =>
+  import('./views/AdminPages.jsx').then((m) => ({ default: m.ItemFormPage })),
+);
+const SpecsPage = lazy(() =>
+  import('./views/AdminPages.jsx').then((m) => ({ default: m.SpecsPage })),
+);
+const CategoriesPage = lazy(() =>
+  import('./views/AdminPages.jsx').then((m) => ({ default: m.CategoriesPage })),
+);
 
 export default memo(function AppViews({ handlers, currentUser, changeLog }) {
   const { addToast } = useToast();
   // Read state from contexts
   const {
-    currentView, setCurrentView,
-    selectedItem, setSelectedItem,
-    selectedPackage, setSelectedPackage,
-    selectedPackList, setSelectedPackList,
+    currentView,
+    setCurrentView,
+    selectedItem,
+    setSelectedItem,
+    selectedPackage,
+    setSelectedPackage,
+    selectedPackList,
+    setSelectedPackList,
     selectedReservation,
     selectedReservationItem,
-    itemBackContext, setItemBackContext,
-    reservationBackView, setReservationBackView,
+    itemBackContext,
+    setItemBackContext,
+    reservationBackView,
+    setReservationBackView,
   } = useNavigationContext();
 
   const {
-    searchQuery, setSearchQuery,
-    categoryFilter, setCategoryFilter,
-    statusFilter, setStatusFilter,
-    selectedCategories, setSelectedCategories,
-    selectedStatuses, setSelectedStatuses,
-    isGridView, setIsGridView,
-    scheduleView, setScheduleView,
-    scheduleMode, setScheduleMode,
-    scheduleDate, setScheduleDate,
+    searchQuery,
+    setSearchQuery,
+    categoryFilter,
+    setCategoryFilter,
+    statusFilter,
+    setStatusFilter,
+    selectedCategories,
+    setSelectedCategories,
+    selectedStatuses,
+    setSelectedStatuses,
+    isGridView,
+    setIsGridView,
+    scheduleView,
+    setScheduleView,
+    scheduleMode,
+    setScheduleMode,
+    scheduleDate,
+    setScheduleDate,
   } = useFilterContext();
 
-  const {
-    setEditingReservationId,
-    itemForm, setItemForm,
-    showConfirm,
-  } = useModalContext();
+  const { setEditingReservationId, itemForm, setItemForm, showConfirm } = useModalContext();
 
   const dataContext = useData();
   const {
-    inventory, packages, users,
-    roles, specs, locations,
-    categories, categorySettings,
-    auditLog, clients,
+    inventory,
+    packages,
+    users,
+    roles,
+    specs,
+    locations,
+    categories,
+    categorySettings,
+    auditLog,
+    clients,
     packLists,
-    updateCategories, updateSpecs,
-    patchInventoryItem, patchUser, removeLocalUser,
-    patchRole, addLocalRole, removeLocalRole,
+    updateCategories,
+    updateSpecs,
+    patchInventoryItem,
+    patchUser,
+    removeLocalUser,
+    patchRole,
+    addLocalRole,
+    removeLocalRole,
     replaceLocations,
   } = dataContext;
 
   // Destructure handlers
   const {
-    navigateToItem, navigateToReservation,
-    navigateToFilteredSearch, navigateToAlerts,
-    navigateToLowStock, navigateToReservations,
-    handleToggleCollapse, handleSaveLayoutPrefs,
-    createItem, deleteItem, openEditItem, handleBulkAction,
-    openCheckoutModal, openCheckinModal, openMaintenanceModal,
+    navigateToItem,
+    navigateToReservation,
+    navigateToFilteredSearch,
+    navigateToAlerts,
+    navigateToLowStock,
+    navigateToReservations,
+    handleToggleCollapse,
+    handleSaveLayoutPrefs,
+    createItem,
+    deleteItem,
+    openEditItem,
+    handleBulkAction,
+    openCheckoutModal,
+    openCheckinModal,
+    openMaintenanceModal,
     openMaintenanceEditModal,
-    itemNoteHandlers, clientNoteHandlers, reservationNoteHandlers,
-    addReminder, completeReminder, uncompleteReminder, deleteReminder,
-    openEditReservation, deleteReservation,
-    setItemAsKit, addItemsToKit, removeItemFromKit, clearKitItems,
-    addRequiredAccessories, removeRequiredAccessory,
-    addItemToPackage, updateMaintenanceStatus,
-    addAuditLog, resetItemForm, resetReservationForm,
+    itemNoteHandlers,
+    clientNoteHandlers,
+    reservationNoteHandlers,
+    addReminder,
+    completeReminder,
+    uncompleteReminder,
+    deleteReminder,
+    openEditReservation,
+    deleteReservation,
+    setItemAsKit,
+    addItemsToKit,
+    removeItemFromKit,
+    clearKitItems,
+    addRequiredAccessories,
+    removeRequiredAccessory,
+    addItemToPackage,
+    updateMaintenanceStatus,
+    addAuditLog,
+    resetItemForm,
+    resetReservationForm,
     openModal,
   } = handlers;
 
@@ -149,7 +219,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           isGridView={isGridView}
           setIsGridView={setIsGridView}
           onViewItem={navigateToItem}
-          onAddItem={() => { resetItemForm(); setCurrentView(VIEWS.ADD_ITEM); }}
+          onAddItem={() => {
+            resetItemForm();
+            setCurrentView(VIEWS.ADD_ITEM);
+          }}
           onBulkAction={handleBulkAction}
         />
       )}
@@ -164,13 +237,13 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           layoutPrefs={currentUser?.layoutPrefs?.itemDetail}
           onBack={() => {
             if (itemBackContext?.returnTo === 'package' && itemBackContext.packageId) {
-              const pkg = packages.find(p => p.id === itemBackContext.packageId);
+              const pkg = packages.find((p) => p.id === itemBackContext.packageId);
               if (pkg) {
                 setSelectedPackage(pkg);
                 setCurrentView(VIEWS.PACKAGES);
               }
             } else if (itemBackContext?.returnTo === 'packList' && itemBackContext.packListId) {
-              const list = packLists.find(pl => pl.id === itemBackContext.packListId);
+              const list = packLists.find((pl) => pl.id === itemBackContext.packListId);
               if (list) {
                 setSelectedPackList(list);
                 setCurrentView(VIEWS.PACK_LISTS);
@@ -186,7 +259,11 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onEdit={openEditItem}
           onDelete={deleteItem}
           onShowQR={() => openModal(MODALS.QR_CODE)}
-          onAddReservation={() => { resetReservationForm(); setEditingReservationId(null); openModal(MODALS.ADD_RESERVATION); }}
+          onAddReservation={() => {
+            resetReservationForm();
+            setEditingReservationId(null);
+            openModal(MODALS.ADD_RESERVATION);
+          }}
           onDeleteReservation={deleteReservation}
           onAddNote={itemNoteHandlers.add}
           onReplyNote={itemNoteHandlers.reply}
@@ -200,7 +277,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onCompleteMaintenance={updateMaintenanceStatus}
           onUpdateValue={(newValue) => {
             patchInventoryItem(selectedItem.id, { currentValue: newValue });
-            setSelectedItem(prev => ({ ...prev, currentValue: newValue }));
+            setSelectedItem((prev) => ({ ...prev, currentValue: newValue }));
           }}
           onSetAsKit={setItemAsKit}
           onAddToKit={addItemsToKit}
@@ -210,7 +287,9 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onAddAccessory={addRequiredAccessories}
           onRemoveAccessory={removeRequiredAccessory}
           onViewItem={navigateToItem}
-          onSelectImage={() => selectedItem?.image ? openModal(MODALS.IMAGE_PREVIEW) : openModal(MODALS.IMAGE_SELECT)}
+          onSelectImage={() =>
+            selectedItem?.image ? openModal(MODALS.IMAGE_PREVIEW) : openModal(MODALS.IMAGE_SELECT)
+          }
           onViewReservation={(r) => navigateToReservation(r, selectedItem)}
           onCustomizeLayout={() => setCurrentView(VIEWS.CUSTOMIZE_ITEM_DETAIL)}
           onToggleCollapse={handleToggleCollapse}
@@ -265,7 +344,11 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             setScheduleMode={setScheduleMode}
             onViewItem={navigateToItem}
             onViewReservation={navigateToReservation}
-            onAddReservation={() => { resetReservationForm(); setEditingReservationId(null); openModal(MODALS.ADD_RESERVATION); }}
+            onAddReservation={() => {
+              resetReservationForm();
+              setEditingReservationId(null);
+              openModal(MODALS.ADD_RESERVATION);
+            }}
           />
         </Suspense>
       )}
@@ -312,20 +395,25 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             reservation={selectedReservation}
             item={selectedReservationItem}
             onBack={() => {
-              const backView = selectedItem ? VIEWS.GEAR_DETAIL : (reservationBackView?.view || VIEWS.SCHEDULE);
+              const backView = selectedItem
+                ? VIEWS.GEAR_DETAIL
+                : reservationBackView?.view || VIEWS.SCHEDULE;
               setCurrentView(backView);
               // Don't clear reservationBackView here — let the target view
               // read the context (e.g., clientId) before clearing it
             }}
             onEdit={() => openEditReservation(selectedReservation)}
             onDelete={() => {
-              const itemId = selectedReservationItem?.id || selectedItem?.id || selectedReservation?.itemId;
+              const itemId =
+                selectedReservationItem?.id || selectedItem?.id || selectedReservation?.itemId;
               const resId = selectedReservation?.id;
               if (itemId && resId) {
                 deleteReservation(itemId, resId);
               } else {
                 logError('Cannot delete: missing item or reservation ID', { itemId, resId });
-                alert('Unable to cancel reservation — missing reference. Please go back and try again.');
+                alert(
+                  'Unable to cancel reservation — missing reference. Please go back and try again.',
+                );
               }
             }}
             onAddNote={reservationNoteHandlers.add}
@@ -379,8 +467,11 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                 // Update inventory items whose spec field names were renamed
                 for (const [category, renames] of Object.entries(fieldRenames)) {
                   if (!renames || Object.keys(renames).length === 0) continue;
-                  const affectedItems = inventory.filter(i =>
-                    i.category === category && i.specs && Object.keys(renames).some(oldKey => oldKey in i.specs)
+                  const affectedItems = inventory.filter(
+                    (i) =>
+                      i.category === category &&
+                      i.specs &&
+                      Object.keys(renames).some((oldKey) => oldKey in i.specs),
                   );
                   for (const item of affectedItems) {
                     const updatedSpecs = { ...item.specs };
@@ -397,7 +488,9 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                     }
                   }
                   if (affectedItems.length > 0) {
-                    const renameDesc = Object.entries(renames).map(([o, n]) => `"${o}" → "${n}"`).join(', ');
+                    const renameDesc = Object.entries(renames)
+                      .map(([o, n]) => `"${o}" → "${n}"`)
+                      .join(', ');
                     addAuditLog({
                       type: 'spec_fields_renamed',
                       description: `Spec fields renamed in ${category}: ${renameDesc} (${affectedItems.length} items updated)`,
@@ -431,12 +524,15 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                 // Update inventory items whose category was renamed
                 for (const [oldName, newName] of Object.entries(categoryRenames)) {
                   if (oldName === newName) continue;
-                  const affectedItems = inventory.filter(i => i.category === oldName);
+                  const affectedItems = inventory.filter((i) => i.category === oldName);
                   for (const item of affectedItems) {
                     try {
                       await dataContext.updateItem(item.id, { category: newName });
                     } catch (err) {
-                      logError(`Failed to update item ${item.id} category from "${oldName}" to "${newName}":`, err);
+                      logError(
+                        `Failed to update item ${item.id} category from "${oldName}" to "${newName}":`,
+                        err,
+                      );
                     }
                   }
                   if (affectedItems.length > 0) {
@@ -490,10 +586,11 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               currentUserId={currentUser?.id}
               onAddUser={() => openModal(MODALS.ADD_USER)}
               onDeleteUser={(userId) => {
-                const userToDelete = users.find(u => u.id === userId);
+                const userToDelete = users.find((u) => u.id === userId);
                 showConfirm({
                   title: 'Delete User',
-                  message: 'Are you sure you want to delete this user? This action cannot be undone.',
+                  message:
+                    'Are you sure you want to delete this user? This action cannot be undone.',
                   confirmText: 'Delete',
                   variant: 'danger',
                   onConfirm: async () => {
@@ -502,7 +599,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                       type: 'user_deleted',
                       description: `User deleted: ${userToDelete?.name || userId}`,
                       user: currentUser?.name || 'Unknown',
-                      itemId: userId
+                      itemId: userId,
                     });
                     try {
                       await usersService.delete(userId);
@@ -510,7 +607,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                       logError('Failed to delete user:', err);
                       addToast('Failed to delete user', 'error');
                     }
-                  }
+                  },
                 });
               }}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
@@ -536,10 +633,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
       <PermissionGate permission="admin_audit">
         {currentView === VIEWS.AUDIT_LOG && (
           <Suspense fallback={<ViewLoading message="Loading Audit Log..." />}>
-            <AuditLogPanel 
-              auditLog={auditLog} 
-              onBack={() => setCurrentView(VIEWS.ADMIN)}
-            />
+            <AuditLogPanel auditLog={auditLog} onBack={() => setCurrentView(VIEWS.ADMIN)} />
           </Suspense>
         )}
       </PermissionGate>
@@ -620,7 +714,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               currentUser={currentUser}
               onViewClient={(client) => {
                 if (client?.id) {
-                  setReservationBackView({ view: VIEWS.CLIENT_REPORT, context: { clientId: client.id } });
+                  setReservationBackView({
+                    view: VIEWS.CLIENT_REPORT,
+                    context: { clientId: client.id },
+                  });
                 }
                 setCurrentView(VIEWS.CLIENTS);
               }}
@@ -678,7 +775,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               users={users}
               showConfirm={showConfirm}
               onSaveRole={async (roleData) => {
-                const existing = roles.find(r => r.id === roleData.id);
+                const existing = roles.find((r) => r.id === roleData.id);
                 if (existing) {
                   // Update existing role
                   patchRole(roleData.id, roleData);
@@ -721,12 +818,16 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                 }
               }}
               onDeleteRole={async (roleId) => {
-                const deletedRole = roles.find(r => r.id === roleId);
+                const deletedRole = roles.find((r) => r.id === roleId);
                 removeLocalRole(roleId);
-                users.filter(u => u.roleId === roleId).forEach(u => patchUser(u.id, { roleId: 'role_user' }));
+                users
+                  .filter((u) => u.roleId === roleId)
+                  .forEach((u) => patchUser(u.id, { roleId: 'role_user' }));
                 try {
                   await rolesService.delete(roleId);
-                  const affectedUsers = users.filter(u => u.roleId === roleId || u.role_id === roleId);
+                  const affectedUsers = users.filter(
+                    (u) => u.roleId === roleId || u.role_id === roleId,
+                  );
                   for (const u of affectedUsers) {
                     await usersService.updateRole(u.id, 'role_user');
                   }
@@ -743,13 +844,15 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               onAssignUsers={async (roleId, userIds) => {
                 const selectedSet = new Set(userIds);
                 // Find users previously assigned to this role who were deselected
-                const previouslyAssigned = (users || []).filter(u => u.roleId === roleId || u.role_id === roleId);
-                const unassignedUsers = previouslyAssigned.filter(u => !selectedSet.has(u.id));
+                const previouslyAssigned = (users || []).filter(
+                  (u) => u.roleId === roleId || u.role_id === roleId,
+                );
+                const unassignedUsers = previouslyAssigned.filter((u) => !selectedSet.has(u.id));
 
                 // Assign selected users to this role
-                userIds.forEach(userId => patchUser(userId, { roleId }));
+                userIds.forEach((userId) => patchUser(userId, { roleId }));
                 // Unassign removed users (reset to default user role)
-                unassignedUsers.forEach(u => patchUser(u.id, { roleId: 'role_user' }));
+                unassignedUsers.forEach((u) => patchUser(u.id, { roleId: 'role_user' }));
 
                 try {
                   for (const userId of userIds) {

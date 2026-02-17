@@ -14,25 +14,25 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
   inventory,
   currentUser,
   onViewItem,
-  onBack
+  onBack,
 }) {
   // Compile checkout activity across all items
   const activityData = useMemo(() => {
     const totalCheckouts = inventory.reduce((sum, i) => sum + (i.checkoutCount || 0), 0);
-    const currentlyOut = inventory.filter(i => i.status === 'checked-out');
+    const currentlyOut = inventory.filter((i) => i.status === 'checked-out');
 
     // Most checked-out items (top 15)
     const topItems = [...inventory]
-      .filter(i => (i.checkoutCount || 0) > 0)
+      .filter((i) => (i.checkoutCount || 0) > 0)
       .sort((a, b) => (b.checkoutCount || 0) - (a.checkoutCount || 0))
       .slice(0, 15);
 
     // Never checked out
-    const neverCheckedOut = inventory.filter(i => !i.checkoutCount || i.checkoutCount === 0);
+    const neverCheckedOut = inventory.filter((i) => !i.checkoutCount || i.checkoutCount === 0);
 
     // Items by checkout frequency
-    const frequencyBuckets = { '0': 0, '1-5': 0, '6-10': 0, '11-25': 0, '26-50': 0, '50+': 0 };
-    inventory.forEach(i => {
+    const frequencyBuckets = { 0: 0, '1-5': 0, '6-10': 0, '11-25': 0, '26-50': 0, '50+': 0 };
+    inventory.forEach((i) => {
       const count = i.checkoutCount || 0;
       if (count === 0) frequencyBuckets['0']++;
       else if (count <= 5) frequencyBuckets['1-5']++;
@@ -44,7 +44,7 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
 
     // Checkout activity by category
     const byCategory = {};
-    inventory.forEach(item => {
+    inventory.forEach((item) => {
       const cat = item.category || 'Uncategorized';
       if (!byCategory[cat]) {
         byCategory[cat] = { checkouts: 0, items: 0 };
@@ -56,7 +56,7 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
     // Currently checked out details
     const checkedOutDetails = currentlyOut
       .sort((a, b) => new Date(a.dueBack || '9999') - new Date(b.dueBack || '9999'))
-      .map(item => ({
+      .map((item) => ({
         id: item.id,
         name: item.name,
         brand: item.brand,
@@ -68,8 +68,9 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
       }));
 
     // Utilization rate: items that have been checked out at least once
-    const utilizedCount = inventory.filter(i => (i.checkoutCount || 0) > 0).length;
-    const utilizationRate = inventory.length > 0 ? Math.round((utilizedCount / inventory.length) * 100) : 0;
+    const utilizedCount = inventory.filter((i) => (i.checkoutCount || 0) > 0).length;
+    const utilizationRate =
+      inventory.length > 0 ? Math.round((utilizedCount / inventory.length) * 100) : 0;
 
     return {
       totalCheckouts,
@@ -85,10 +86,21 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
 
   // Export CSV
   const handleExport = () => {
-    const headers = ['Item ID', 'Name', 'Brand', 'Category', 'Status', 'Checkout Count', 'Currently Checked Out To', 'Checked Out Date', 'Due Back', 'Project'];
+    const headers = [
+      'Item ID',
+      'Name',
+      'Brand',
+      'Category',
+      'Status',
+      'Checkout Count',
+      'Currently Checked Out To',
+      'Checked Out Date',
+      'Due Back',
+      'Project',
+    ];
     const rows = [...inventory]
       .sort((a, b) => (b.checkoutCount || 0) - (a.checkoutCount || 0))
-      .map(item => [
+      .map((item) => [
         item.id,
         item.name,
         item.brand || '',
@@ -102,8 +114,8 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
       ]);
 
     const csvContent = [
-      headers.map(h => sanitizeCSVCell(h)).join(','),
-      ...rows.map(row => row.map(cell => sanitizeCSVCell(cell)).join(','))
+      headers.map((h) => sanitizeCSVCell(h)).join(','),
+      ...rows.map((row) => row.map((cell) => sanitizeCSVCell(cell)).join(',')),
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -122,43 +134,106 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
         subtitle="Checkout activity and usage statistics"
         onBack={onBack}
         backLabel="Back to Reports"
-        action={<Button onClick={handleExport} icon={Download}>Export CSV</Button>}
+        action={
+          <Button onClick={handleExport} icon={Download}>
+            Export CSV
+          </Button>
+        }
       />
 
       {/* Profile branding for print/export */}
-      {currentUser?.profile && (() => {
-        const p = currentUser.profile;
-        const sf = p.showFields || {};
-        const hasContent = Object.entries(sf).some(([k, v]) => v && p[k]);
-        if (!hasContent) return null;
-        return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4], padding: spacing[3], marginBottom: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
-            {sf.logo && p.logo && <img src={p.logo} alt="" style={{ height: 36, objectFit: 'contain' }} />}
-            <div>
-              {sf.businessName && p.businessName && <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.textPrimary }}>{p.businessName}</div>}
-              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
-                {sf.displayName && p.displayName && <span>{p.displayName}</span>}
-                {sf.phone && p.phone && <span>{p.phone}</span>}
-                {sf.email && p.email && <span>{p.email}</span>}
+      {currentUser?.profile &&
+        (() => {
+          const p = currentUser.profile;
+          const sf = p.showFields || {};
+          const hasContent = Object.entries(sf).some(([k, v]) => v && p[k]);
+          if (!hasContent) return null;
+          return (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[4],
+                padding: spacing[3],
+                marginBottom: spacing[4],
+                borderBottom: `1px solid ${colors.borderLight}`,
+              }}
+            >
+              {sf.logo && p.logo && (
+                <img src={p.logo} alt="" style={{ height: 36, objectFit: 'contain' }} />
+              )}
+              <div>
+                {sf.businessName && p.businessName && (
+                  <div
+                    style={{
+                      fontWeight: typography.fontWeight.semibold,
+                      color: colors.textPrimary,
+                    }}
+                  >
+                    {p.businessName}
+                  </div>
+                )}
+                <div
+                  style={{
+                    fontSize: typography.fontSize.xs,
+                    color: colors.textMuted,
+                    display: 'flex',
+                    gap: spacing[3],
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  {sf.displayName && p.displayName && <span>{p.displayName}</span>}
+                  {sf.phone && p.phone && <span>{p.phone}</span>}
+                  {sf.email && p.email && <span>{p.email}</span>}
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* Summary Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: spacing[4], marginBottom: spacing[6] }}>
-        <StatCard icon={BarChart3} label="Total Checkouts" value={activityData.totalCheckouts} color={colors.primary} />
-        <StatCard icon={LogOut} label="Currently Out" value={activityData.currentlyOut} color={activityData.currentlyOut > 0 ? colors.checkedOut : colors.textMuted} />
-        <StatCard icon={TrendingUp} label="Utilization Rate" value={`${activityData.utilizationRate}%`} color={colors.available} />
-        <StatCard icon={Package} label="Never Used" value={activityData.neverCheckedOut} color={activityData.neverCheckedOut > 0 ? colors.warning : colors.textMuted} />
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+          gap: spacing[4],
+          marginBottom: spacing[6],
+        }}
+      >
+        <StatCard
+          icon={BarChart3}
+          label="Total Checkouts"
+          value={activityData.totalCheckouts}
+          color={colors.primary}
+        />
+        <StatCard
+          icon={LogOut}
+          label="Currently Out"
+          value={activityData.currentlyOut}
+          color={activityData.currentlyOut > 0 ? colors.checkedOut : colors.textMuted}
+        />
+        <StatCard
+          icon={TrendingUp}
+          label="Utilization Rate"
+          value={`${activityData.utilizationRate}%`}
+          color={colors.available}
+        />
+        <StatCard
+          icon={Package}
+          label="Never Used"
+          value={activityData.neverCheckedOut}
+          color={activityData.neverCheckedOut > 0 ? colors.warning : colors.textMuted}
+        />
       </div>
 
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Main content */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
           {/* Most Checked Out */}
-          <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 380px)' }}>
+          <Card
+            padding={false}
+            style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 380px)' }}
+          >
             <CardHeader title="Most Checked Out Items" icon={TrendingUp} />
             <div style={{ flex: 1, overflowY: 'auto', minHeight: 200 }}>
               {activityData.topItems.length === 0 ? (
@@ -170,10 +245,51 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: colors.bgDark, position: 'sticky', top: 0 }}>
-                      <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium, width: 36 }}>#</th>
-                      <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Item</th>
-                      <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Status</th>
-                      <th style={{ padding: spacing[3], textAlign: 'right', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Checkouts</th>
+                      <th
+                        style={{
+                          padding: spacing[3],
+                          textAlign: 'left',
+                          fontSize: typography.fontSize.xs,
+                          color: colors.textMuted,
+                          fontWeight: typography.fontWeight.medium,
+                          width: 36,
+                        }}
+                      >
+                        #
+                      </th>
+                      <th
+                        style={{
+                          padding: spacing[3],
+                          textAlign: 'left',
+                          fontSize: typography.fontSize.xs,
+                          color: colors.textMuted,
+                          fontWeight: typography.fontWeight.medium,
+                        }}
+                      >
+                        Item
+                      </th>
+                      <th
+                        style={{
+                          padding: spacing[3],
+                          textAlign: 'left',
+                          fontSize: typography.fontSize.xs,
+                          color: colors.textMuted,
+                          fontWeight: typography.fontWeight.medium,
+                        }}
+                      >
+                        Status
+                      </th>
+                      <th
+                        style={{
+                          padding: spacing[3],
+                          textAlign: 'right',
+                          fontSize: typography.fontSize.xs,
+                          color: colors.textMuted,
+                          fontWeight: typography.fontWeight.medium,
+                        }}
+                      >
+                        Checkouts
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -187,42 +303,68 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
                         }}
                       >
                         <td style={{ padding: spacing[3] }}>
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: 24,
-                            height: 24,
-                            borderRadius: borderRadius.full,
-                            background: idx < 3 ? `${withOpacity(colors.primary, 20)}` : colors.bgLight,
-                            color: idx < 3 ? colors.primary : colors.textMuted,
-                            fontSize: typography.fontSize.xs,
-                            fontWeight: typography.fontWeight.semibold,
-                          }}>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: 24,
+                              height: 24,
+                              borderRadius: borderRadius.full,
+                              background:
+                                idx < 3 ? `${withOpacity(colors.primary, 20)}` : colors.bgLight,
+                              color: idx < 3 ? colors.primary : colors.textMuted,
+                              fontSize: typography.fontSize.xs,
+                              fontWeight: typography.fontWeight.semibold,
+                            }}
+                          >
                             {idx + 1}
                           </span>
                         </td>
                         <td style={{ padding: spacing[3] }}>
-                          <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, fontSize: typography.fontSize.sm }}>
+                          <div
+                            style={{
+                              fontWeight: typography.fontWeight.medium,
+                              color: colors.textPrimary,
+                              fontSize: typography.fontSize.sm,
+                            }}
+                          >
                             {item.name}
                           </div>
-                          <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                            {item.id}{item.brand ? ` \u2022 ${item.brand}` : ''}
+                          <div
+                            style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}
+                          >
+                            {item.id}
+                            {item.brand ? ` \u2022 ${item.brand}` : ''}
                           </div>
                         </td>
                         <td style={{ padding: spacing[3] }}>
                           <Badge
-                            text={item.status === 'checked-out' ? 'Checked Out' : item.status === 'available' ? 'Available' : item.status}
-                            color={item.status === 'checked-out' ? colors.checkedOut : item.status === 'available' ? colors.available : colors.textMuted}
+                            text={
+                              item.status === 'checked-out'
+                                ? 'Checked Out'
+                                : item.status === 'available'
+                                  ? 'Available'
+                                  : item.status
+                            }
+                            color={
+                              item.status === 'checked-out'
+                                ? colors.checkedOut
+                                : item.status === 'available'
+                                  ? colors.available
+                                  : colors.textMuted
+                            }
                             size="xs"
                           />
                         </td>
                         <td style={{ padding: spacing[3], textAlign: 'right' }}>
-                          <span style={{
-                            fontSize: typography.fontSize.sm,
-                            fontWeight: typography.fontWeight.semibold,
-                            color: colors.primary,
-                          }}>
+                          <span
+                            style={{
+                              fontSize: typography.fontSize.sm,
+                              fontWeight: typography.fontWeight.semibold,
+                              color: colors.primary,
+                            }}
+                          >
                             {item.checkoutCount}
                           </span>
                         </td>
@@ -253,20 +395,29 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
+                      <div
+                        style={{
+                          fontSize: typography.fontSize.sm,
+                          fontWeight: typography.fontWeight.medium,
+                          color: colors.textPrimary,
+                        }}
+                      >
                         {item.name}
                       </div>
                       <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                        {item.borrower}{item.project ? ` \u2022 ${item.project}` : ''}
+                        {item.borrower}
+                        {item.project ? ` \u2022 ${item.project}` : ''}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       {item.dueBack && (
-                        <div style={{
-                          fontSize: typography.fontSize.xs,
-                          fontWeight: typography.fontWeight.medium,
-                          color: item.isOverdue ? colors.danger : colors.textSecondary,
-                        }}>
+                        <div
+                          style={{
+                            fontSize: typography.fontSize.xs,
+                            fontWeight: typography.fontWeight.medium,
+                            color: item.isOverdue ? colors.danger : colors.textSecondary,
+                          }}
+                        >
                           {item.isOverdue ? 'OVERDUE' : `Due ${formatDate(item.dueBack)}`}
                         </div>
                       )}
@@ -293,21 +444,44 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
                 const maxCount = Math.max(...Object.values(activityData.frequencyBuckets));
                 return (
                   <div key={range} style={{ marginBottom: spacing[3] }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[1] }}>
-                      <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: spacing[1],
+                      }}
+                    >
+                      <span
+                        style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}
+                      >
                         {range === '0' ? 'Never' : `${range} times`}
                       </span>
-                      <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
+                      <span
+                        style={{
+                          fontSize: typography.fontSize.sm,
+                          fontWeight: typography.fontWeight.medium,
+                          color: colors.textPrimary,
+                        }}
+                      >
                         {count} items
                       </span>
                     </div>
-                    <div style={{ height: 6, background: colors.borderLight, borderRadius: borderRadius.full, overflow: 'hidden' }}>
-                      <div style={{
-                        height: '100%',
-                        width: maxCount > 0 ? `${(count / maxCount) * 100}%` : '0%',
-                        background: range === '0' ? colors.textMuted : colors.primary,
+                    <div
+                      style={{
+                        height: 6,
+                        background: colors.borderLight,
                         borderRadius: borderRadius.full,
-                      }} />
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: '100%',
+                          width: maxCount > 0 ? `${(count / maxCount) * 100}%` : '0%',
+                          background: range === '0' ? colors.textMuted : colors.primary,
+                          borderRadius: borderRadius.full,
+                        }}
+                      />
                     </div>
                   </div>
                 );
@@ -322,11 +496,45 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
               {Object.entries(activityData.byCategory)
                 .sort((a, b) => b[1].checkouts - a[1].checkouts)
                 .map(([category, data]) => (
-                  <div key={category} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
-                    <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{category}</span>
+                  <div
+                    key={category}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: spacing[2],
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: typography.fontSize.sm,
+                        color: colors.textSecondary,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: 150,
+                      }}
+                    >
+                      {category}
+                    </span>
                     <div style={{ textAlign: 'right' }}>
-                      <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{data.checkouts}</span>
-                      <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, marginLeft: spacing[1] }}>({data.items} items)</span>
+                      <span
+                        style={{
+                          fontSize: typography.fontSize.sm,
+                          fontWeight: typography.fontWeight.medium,
+                          color: colors.textPrimary,
+                        }}
+                      >
+                        {data.checkouts}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: typography.fontSize.xs,
+                          color: colors.textMuted,
+                          marginLeft: spacing[1],
+                        }}
+                      >
+                        ({data.items} items)
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -343,18 +551,20 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
 // ============================================================================
 ActivityReportPanel.propTypes = {
   /** Full inventory array */
-  inventory: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    brand: PropTypes.string,
-    category: PropTypes.string,
-    status: PropTypes.string,
-    checkoutCount: PropTypes.number,
-    checkedOutTo: PropTypes.string,
-    checkedOutDate: PropTypes.string,
-    dueBack: PropTypes.string,
-    checkoutProject: PropTypes.string,
-  })).isRequired,
+  inventory: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      brand: PropTypes.string,
+      category: PropTypes.string,
+      status: PropTypes.string,
+      checkoutCount: PropTypes.number,
+      checkedOutTo: PropTypes.string,
+      checkedOutDate: PropTypes.string,
+      dueBack: PropTypes.string,
+      checkoutProject: PropTypes.string,
+    }),
+  ).isRequired,
   /** Currently logged in user */
   currentUser: PropTypes.shape({
     profile: PropTypes.object,

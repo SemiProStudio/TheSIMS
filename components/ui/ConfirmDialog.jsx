@@ -6,46 +6,49 @@ import { colors, styles, borderRadius, spacing, typography } from '../../theme.j
 // ConfirmDialog - Styled confirmation modal
 // ============================================================================
 
-export const ConfirmDialog = memo(function ConfirmDialog({ 
-  isOpen, 
-  title = 'Confirm', 
-  message, 
-  confirmText = 'Delete', 
+export const ConfirmDialog = memo(function ConfirmDialog({
+  isOpen,
+  title = 'Confirm',
+  message,
+  confirmText = 'Delete',
   cancelText = 'Cancel',
-  onConfirm, 
+  onConfirm,
   onCancel,
-  danger = true 
+  danger = true,
 }) {
   const dialogRef = useRef(null);
   const cancelButtonRef = useRef(null);
-  
+
   // Focus management and keyboard handling
   useEffect(() => {
     if (isOpen) {
       // Focus the cancel button when dialog opens
       cancelButtonRef.current?.focus();
-      
+
       // Prevent body scroll
       document.body.style.overflow = 'hidden';
-      
+
       return () => {
         document.body.style.overflow = '';
       };
     }
   }, [isOpen]);
-  
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      onCancel();
-    }
-  }, [onCancel]);
-  
+
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onCancel();
+      }
+    },
+    [onCancel],
+  );
+
   if (!isOpen) return null;
-  
+
   return (
-    <div 
-      className="modal-backdrop" 
+    <div
+      className="modal-backdrop"
       style={{
         position: 'fixed',
         inset: 0,
@@ -53,14 +56,14 @@ export const ConfirmDialog = memo(function ConfirmDialog({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000
-      }} 
+        zIndex: 1000,
+      }}
       onClick={onCancel}
       role="presentation"
     >
-      <div 
+      <div
         ref={dialogRef}
-        onClick={e => e.stopPropagation()} 
+        onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
         role="alertdialog"
         aria-modal="true"
@@ -73,46 +76,48 @@ export const ConfirmDialog = memo(function ConfirmDialog({
           width: '100%',
           maxWidth: 400,
           overflow: 'hidden',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.4)'
+          boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
         }}
       >
         <div style={{ padding: spacing[5] }}>
-          <h3 
+          <h3
             id="confirm-dialog-title"
-            style={{ 
-              margin: `0 0 ${spacing[3]}px`, 
-              fontSize: typography.fontSize.lg, 
-              color: colors.textPrimary 
+            style={{
+              margin: `0 0 ${spacing[3]}px`,
+              fontSize: typography.fontSize.lg,
+              color: colors.textPrimary,
             }}
           >
             {title}
           </h3>
-          <p 
+          <p
             id="confirm-dialog-message"
-            style={{ 
-              margin: 0, 
+            style={{
+              margin: 0,
               color: colors.textSecondary,
               fontSize: typography.fontSize.sm,
-              lineHeight: 1.5
+              lineHeight: 1.5,
             }}
           >
             {message}
           </p>
         </div>
-        <div style={{ 
-          padding: spacing[4], 
-          borderTop: `1px solid ${colors.borderLight}`,
-          display: 'flex',
-          gap: spacing[3],
-          justifyContent: 'flex-end'
-        }}>
+        <div
+          style={{
+            padding: spacing[4],
+            borderTop: `1px solid ${colors.borderLight}`,
+            display: 'flex',
+            gap: spacing[3],
+            justifyContent: 'flex-end',
+          }}
+        >
           <button
             ref={cancelButtonRef}
             onClick={onCancel}
             type="button"
             style={{
               ...styles.btnSec,
-              padding: `${spacing[2]}px ${spacing[4]}px`
+              padding: `${spacing[2]}px ${spacing[4]}px`,
             }}
           >
             {cancelText}
@@ -123,7 +128,7 @@ export const ConfirmDialog = memo(function ConfirmDialog({
             style={{
               ...styles.btn,
               padding: `${spacing[2]}px ${spacing[4]}px`,
-              background: danger ? colors.danger : colors.primary
+              background: danger ? colors.danger : colors.primary,
             }}
           >
             {confirmText}

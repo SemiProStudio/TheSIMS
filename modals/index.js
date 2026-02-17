@@ -29,9 +29,9 @@ export { MaintenanceModal } from './MaintenanceModal.jsx';
 export { AddUserModal } from './AddUserModal.jsx';
 
 // Bulk operation modals
-export { 
-  BulkStatusModal, 
-  BulkLocationModal, 
-  BulkCategoryModal, 
-  BulkDeleteModal 
+export {
+  BulkStatusModal,
+  BulkLocationModal,
+  BulkCategoryModal,
+  BulkDeleteModal,
 } from './BulkModals.jsx';

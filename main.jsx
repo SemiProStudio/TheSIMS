@@ -1,19 +1,19 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { SpeedInsights } from '@vercel/speed-insights/react'
-import App from './App.jsx'
-import { ThemeProvider } from './contexts/ThemeContext.jsx'
-import { AuthProvider } from './contexts/AuthContext.jsx'
-import { DataProvider } from './contexts/DataContext.jsx'
-import { PWAProvider } from './contexts/PWAContext.jsx'
-import UpdateBanner from './components/UpdateBanner.jsx'
-import { ErrorBoundary } from './components/ErrorBoundary.jsx'
-import { ToastProvider } from './contexts/ToastContext.jsx'
-import { SidebarProvider } from './contexts/SidebarContext.jsx'
-import { ModalProvider } from './contexts/ModalContext.jsx'
-import { FilterProvider } from './contexts/FilterContext.jsx'
-import { NavigationProviderWithData } from './contexts/NavigationContext.jsx'
-import './index.css'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { SpeedInsights } from '@vercel/speed-insights/react';
+import App from './App.jsx';
+import { ThemeProvider } from './contexts/ThemeContext.jsx';
+import { AuthProvider } from './contexts/AuthContext.jsx';
+import { DataProvider } from './contexts/DataContext.jsx';
+import { PWAProvider } from './contexts/PWAContext.jsx';
+import UpdateBanner from './components/UpdateBanner.jsx';
+import { ErrorBoundary } from './components/ErrorBoundary.jsx';
+import { ToastProvider } from './contexts/ToastContext.jsx';
+import { SidebarProvider } from './contexts/SidebarContext.jsx';
+import { ModalProvider } from './contexts/ModalContext.jsx';
+import { FilterProvider } from './contexts/FilterContext.jsx';
+import { NavigationProviderWithData } from './contexts/NavigationContext.jsx';
+import './index.css';
 
 // Handle stale chunk errors after deployments — force one reload to get fresh assets
 window.addEventListener('error', (event) => {
@@ -36,26 +36,26 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <ToastProvider>
-      <ThemeProvider>
-        <PWAProvider>
-          <UpdateBanner />
-          <AuthProvider>
-            <DataProvider>
-              <SidebarProvider>
-                <ModalProvider>
-                  <FilterProvider>
-                    <NavigationProviderWithData>
-                      <App />
-                      <SpeedInsights />
-                    </NavigationProviderWithData>
-                  </FilterProvider>
-                </ModalProvider>
-              </SidebarProvider>
-            </DataProvider>
-          </AuthProvider>
-        </PWAProvider>
-      </ThemeProvider>
+        <ThemeProvider>
+          <PWAProvider>
+            <UpdateBanner />
+            <AuthProvider>
+              <DataProvider>
+                <SidebarProvider>
+                  <ModalProvider>
+                    <FilterProvider>
+                      <NavigationProviderWithData>
+                        <App />
+                        <SpeedInsights />
+                      </NavigationProviderWithData>
+                    </FilterProvider>
+                  </ModalProvider>
+                </SidebarProvider>
+              </DataProvider>
+            </AuthProvider>
+          </PWAProvider>
+        </ThemeProvider>
       </ToastProvider>
     </ErrorBoundary>
   </React.StrictMode>,
-)
+);

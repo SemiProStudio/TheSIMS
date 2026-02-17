@@ -69,27 +69,28 @@ npm run test:e2e:report
 
 ### Functional Tests
 
-| File | Tests | Description |
-|------|-------|-------------|
-| auth.spec.js | 11 | Login, logout, session management, role-based access |
-| navigation.spec.js | 17 | Sidebar navigation, browser history, responsive behavior |
-| inventory.spec.js | 17 | CRUD operations, search/filter, bulk actions |
-| checkout.spec.js | 14 | Check-out/check-in workflows, damage reporting |
-| accessibility.spec.js | 22 | Keyboard navigation, ARIA, screen reader support |
+| File                  | Tests | Description                                              |
+| --------------------- | ----- | -------------------------------------------------------- |
+| auth.spec.js          | 11    | Login, logout, session management, role-based access     |
+| navigation.spec.js    | 17    | Sidebar navigation, browser history, responsive behavior |
+| inventory.spec.js     | 17    | CRUD operations, search/filter, bulk actions             |
+| checkout.spec.js      | 14    | Check-out/check-in workflows, damage reporting           |
+| accessibility.spec.js | 22    | Keyboard navigation, ARIA, screen reader support         |
 
 ### Visual Regression Tests
 
-| File | Tests | Description |
-|------|-------|-------------|
-| visual-pages.spec.js | 15 | Full page screenshots |
-| visual-components.spec.js | 20 | Component-level screenshots |
-| visual-themes.spec.js | 20 | Theme variation screenshots |
+| File                      | Tests | Description                 |
+| ------------------------- | ----- | --------------------------- |
+| visual-pages.spec.js      | 15    | Full page screenshots       |
+| visual-components.spec.js | 20    | Component-level screenshots |
+| visual-themes.spec.js     | 20    | Theme variation screenshots |
 
 ## Page Object Models
 
 The tests use Page Object Models for cleaner, more maintainable code:
 
 ### LoginPage
+
 ```javascript
 const loginPage = new LoginPage(page);
 await loginPage.goto();
@@ -97,6 +98,7 @@ await loginPage.loginAsAdmin();
 ```
 
 ### DashboardPage
+
 ```javascript
 const dashboard = new DashboardPage(page);
 await dashboard.expectDashboard();
@@ -104,6 +106,7 @@ await dashboard.navigateTo('Gear List');
 ```
 
 ### GearListPage
+
 ```javascript
 const gearList = new GearListPage(page);
 await gearList.search('Camera');
@@ -136,8 +139,8 @@ Visual test settings in `visual-utils.js`:
 
 ```javascript
 export const visualConfig = {
-  threshold: 0.2,        // Pixel difference threshold (0-1)
-  maxDiffPixels: 100,    // Maximum allowed different pixels
+  threshold: 0.2, // Pixel difference threshold (0-1)
+  maxDiffPixels: 100, // Maximum allowed different pixels
   screenshotOptions: {
     fullPage: false,
     animations: 'disabled',
@@ -152,10 +155,7 @@ Dynamic content (timestamps, random IDs) is masked to prevent false failures:
 
 ```javascript
 await expect(page).toHaveScreenshot('dashboard.png', {
-  mask: [
-    page.locator('time'),
-    page.locator('.timestamp'),
-  ],
+  mask: [page.locator('time'), page.locator('.timestamp')],
 });
 ```
 
@@ -249,7 +249,7 @@ import { test, expect } from './visual-utils.js';
 
 test('component should match baseline', async ({ page }) => {
   // Setup...
-  
+
   const component = page.locator('[data-testid="my-component"]');
   await expect(component).toHaveScreenshot('my-component.png', {
     maxDiffPixels: 100,

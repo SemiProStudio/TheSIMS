@@ -17,7 +17,7 @@ const ImagePreviewModal = memo(function ImagePreviewModal({
   onClose,
 }) {
   return (
-    <div 
+    <div
       onClick={onClose}
       style={{
         position: 'fixed',
@@ -54,8 +54,8 @@ const ImagePreviewModal = memo(function ImagePreviewModal({
       </button>
 
       {/* Full size image */}
-      <div 
-        onClick={e => e.stopPropagation()}
+      <div
+        onClick={(e) => e.stopPropagation()}
         style={{
           maxWidth: '90vw',
           maxHeight: '75vh',
@@ -77,8 +77,8 @@ const ImagePreviewModal = memo(function ImagePreviewModal({
       </div>
 
       {/* Action buttons */}
-      <div 
-        onClick={e => e.stopPropagation()}
+      <div
+        onClick={(e) => e.stopPropagation()}
         style={{
           display: 'flex',
           gap: spacing[3],

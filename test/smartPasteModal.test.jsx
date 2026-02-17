@@ -14,7 +14,6 @@ import { UnmatchedPairs } from '../modals/smartPaste/UnmatchedPairs.jsx';
 import { BatchSelector } from '../modals/smartPaste/BatchSelector.jsx';
 import { SourcePanel } from '../modals/smartPaste/SourcePanel.jsx';
 
-
 // =============================================================================
 // ConfidenceBadge
 // =============================================================================
@@ -51,7 +50,6 @@ describe('ConfidenceBadge', () => {
   });
 });
 
-
 // =============================================================================
 // BasicInfoRow
 // =============================================================================
@@ -74,7 +72,6 @@ describe('BasicInfoRow', () => {
     expect(screen.getByText('Not detected')).toBeInTheDocument();
   });
 });
-
 
 // =============================================================================
 // ImportStatus
@@ -123,7 +120,6 @@ describe('ImportStatus', () => {
     expect(screen.getByText('Custom status message')).toBeInTheDocument();
   });
 });
-
 
 // =============================================================================
 // ControlBar
@@ -191,7 +187,6 @@ describe('ControlBar', () => {
   });
 });
 
-
 // =============================================================================
 // DiffView
 // =============================================================================
@@ -249,14 +244,11 @@ describe('DiffView', () => {
   });
 
   it('should show "—" for empty new values', () => {
-    const diffResults = [
-      { specName: 'Removed', status: 'removed', oldValue: 'old', newValue: '' },
-    ];
+    const diffResults = [{ specName: 'Removed', status: 'removed', oldValue: 'old', newValue: '' }];
     render(<DiffView diffResults={diffResults} onHideDiff={vi.fn()} />);
     expect(screen.getByText('—')).toBeInTheDocument();
   });
 });
-
 
 // =============================================================================
 // UnmatchedPairs
@@ -338,7 +330,6 @@ describe('UnmatchedPairs', () => {
   });
 });
 
-
 // =============================================================================
 // BatchSelector
 // =============================================================================
@@ -347,11 +338,23 @@ describe('BatchSelector', () => {
   const mockBatchResults = [
     {
       segment: { name: 'Sony A7 IV' },
-      result: { name: 'Sony A7 IV', brand: 'Sony', category: 'Cameras', purchasePrice: '2499', fields: new Map([['Sensor Type', { value: 'CMOS' }]]) },
+      result: {
+        name: 'Sony A7 IV',
+        brand: 'Sony',
+        category: 'Cameras',
+        purchasePrice: '2499',
+        fields: new Map([['Sensor Type', { value: 'CMOS' }]]),
+      },
     },
     {
       segment: { name: 'Canon R6 II' },
-      result: { name: 'Canon R6 II', brand: 'Canon', category: 'Cameras', purchasePrice: '2299', fields: new Map([['Sensor Type', { value: 'CMOS' }]]) },
+      result: {
+        name: 'Canon R6 II',
+        brand: 'Canon',
+        category: 'Cameras',
+        purchasePrice: '2299',
+        fields: new Map([['Sensor Type', { value: 'CMOS' }]]),
+      },
     },
   ];
 
@@ -450,7 +453,6 @@ describe('BatchSelector', () => {
   });
 });
 
-
 // =============================================================================
 // SourcePanel
 // =============================================================================
@@ -458,14 +460,26 @@ describe('BatchSelector', () => {
 describe('SourcePanel', () => {
   it('should return null when sourceLines is null', () => {
     const { container } = render(
-      <SourcePanel sourceLines={null} fields={new Map()} unmatchedPairs={[]} highlightedLine={null} sourceRef={null} />
+      <SourcePanel
+        sourceLines={null}
+        fields={new Map()}
+        unmatchedPairs={[]}
+        highlightedLine={null}
+        sourceRef={null}
+      />,
     );
     expect(container.firstChild).toBeNull();
   });
 
   it('should display source line count', () => {
     render(
-      <SourcePanel sourceLines={['Line 1', 'Line 2', 'Line 3']} fields={new Map()} unmatchedPairs={[]} highlightedLine={null} sourceRef={null} />
+      <SourcePanel
+        sourceLines={['Line 1', 'Line 2', 'Line 3']}
+        fields={new Map()}
+        unmatchedPairs={[]}
+        highlightedLine={null}
+        sourceRef={null}
+      />,
     );
     expect(screen.getByText(/Source Text \(3 lines\)/)).toBeInTheDocument();
   });
@@ -473,7 +487,13 @@ describe('SourcePanel', () => {
   it('should display all source lines', () => {
     const lines = ['First line', 'Second line', 'Third line'];
     render(
-      <SourcePanel sourceLines={lines} fields={new Map()} unmatchedPairs={[]} highlightedLine={null} sourceRef={null} />
+      <SourcePanel
+        sourceLines={lines}
+        fields={new Map()}
+        unmatchedPairs={[]}
+        highlightedLine={null}
+        sourceRef={null}
+      />,
     );
     expect(screen.getByText('First line')).toBeInTheDocument();
     expect(screen.getByText('Second line')).toBeInTheDocument();
@@ -483,7 +503,13 @@ describe('SourcePanel', () => {
   it('should render non-breaking space for empty lines', () => {
     const lines = ['Before', '', 'After'];
     const { container } = render(
-      <SourcePanel sourceLines={lines} fields={new Map()} unmatchedPairs={[]} highlightedLine={null} sourceRef={null} />
+      <SourcePanel
+        sourceLines={lines}
+        fields={new Map()}
+        unmatchedPairs={[]}
+        highlightedLine={null}
+        sourceRef={null}
+      />,
     );
     // Empty line should render \u00A0 (non-breaking space)
     const divs = container.querySelectorAll('[id^="source-line-"]');
@@ -493,7 +519,13 @@ describe('SourcePanel', () => {
   it('should assign source-line-N ids to each line', () => {
     const lines = ['A', 'B'];
     const { container } = render(
-      <SourcePanel sourceLines={lines} fields={new Map()} unmatchedPairs={[]} highlightedLine={null} sourceRef={null} />
+      <SourcePanel
+        sourceLines={lines}
+        fields={new Map()}
+        unmatchedPairs={[]}
+        highlightedLine={null}
+        sourceRef={null}
+      />,
     );
     expect(container.querySelector('#source-line-0')).toBeInTheDocument();
     expect(container.querySelector('#source-line-1')).toBeInTheDocument();

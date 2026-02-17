@@ -16,7 +16,7 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
   categories,
   currentUser,
   onViewItem,
-  onBack
+  onBack,
 }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('name');
@@ -26,7 +26,7 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
     let items = [...inventory];
 
     if (selectedCategory !== 'all') {
-      items = items.filter(i => i.category === selectedCategory);
+      items = items.filter((i) => i.category === selectedCategory);
     }
 
     switch (sortBy) {
@@ -59,7 +59,7 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
 
     // By category
     const byCategory = {};
-    inventory.forEach(item => {
+    inventory.forEach((item) => {
       const cat = item.category || 'Uncategorized';
       if (!byCategory[cat]) {
         byCategory[cat] = { count: 0, value: 0 };
@@ -70,21 +70,21 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
 
     // By status
     const byStatus = {};
-    inventory.forEach(item => {
+    inventory.forEach((item) => {
       const status = item.status || 'unknown';
       byStatus[status] = (byStatus[status] || 0) + 1;
     });
 
     // By condition
     const byCondition = {};
-    inventory.forEach(item => {
+    inventory.forEach((item) => {
       const condition = item.condition || 'Unknown';
       byCondition[condition] = (byCondition[condition] || 0) + 1;
     });
 
     // By location
     const byLocation = {};
-    inventory.forEach(item => {
+    inventory.forEach((item) => {
       const loc = item.location || 'Unassigned';
       if (!byLocation[loc]) {
         byLocation[loc] = { count: 0, value: 0 };
@@ -107,42 +107,74 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'available': return colors.available;
-      case 'checked-out': return colors.checkedOut;
-      case 'reserved': return colors.primary;
-      case 'needs-attention': return colors.danger;
-      case 'missing': return colors.textMuted;
-      case 'low-stock': return colors.warning;
-      default: return colors.textMuted;
+      case 'available':
+        return colors.available;
+      case 'checked-out':
+        return colors.checkedOut;
+      case 'reserved':
+        return colors.primary;
+      case 'needs-attention':
+        return colors.danger;
+      case 'missing':
+        return colors.textMuted;
+      case 'low-stock':
+        return colors.warning;
+      default:
+        return colors.textMuted;
     }
   };
 
   const formatStatus = (status) => {
     switch (status) {
-      case 'available': return 'Available';
-      case 'checked-out': return 'Checked Out';
-      case 'reserved': return 'Reserved';
-      case 'needs-attention': return 'Needs Attention';
-      case 'missing': return 'Missing';
-      case 'low-stock': return 'Low Stock';
-      default: return status;
+      case 'available':
+        return 'Available';
+      case 'checked-out':
+        return 'Checked Out';
+      case 'reserved':
+        return 'Reserved';
+      case 'needs-attention':
+        return 'Needs Attention';
+      case 'missing':
+        return 'Missing';
+      case 'low-stock':
+        return 'Low Stock';
+      default:
+        return status;
     }
   };
 
   const formatCondition = (c) => {
     switch (c) {
-      case 'excellent': return 'Excellent';
-      case 'good': return 'Good';
-      case 'fair': return 'Fair';
-      case 'poor': return 'Poor';
-      default: return c;
+      case 'excellent':
+        return 'Excellent';
+      case 'good':
+        return 'Good';
+      case 'fair':
+        return 'Fair';
+      case 'poor':
+        return 'Poor';
+      default:
+        return c;
     }
   };
 
   // Export CSV
   const handleExport = () => {
-    const headers = ['Item ID', 'Name', 'Brand', 'Category', 'Status', 'Condition', 'Location', 'Serial Number', 'Purchase Date', 'Purchase Price', 'Current Value', 'Quantity'];
-    const rows = filteredItems.map(item => [
+    const headers = [
+      'Item ID',
+      'Name',
+      'Brand',
+      'Category',
+      'Status',
+      'Condition',
+      'Location',
+      'Serial Number',
+      'Purchase Date',
+      'Purchase Price',
+      'Current Value',
+      'Quantity',
+    ];
+    const rows = filteredItems.map((item) => [
       item.id,
       item.name,
       item.brand || '',
@@ -158,8 +190,8 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
     ]);
 
     const csvContent = [
-      headers.map(h => sanitizeCSVCell(h)).join(','),
-      ...rows.map(row => row.map(cell => sanitizeCSVCell(cell)).join(','))
+      headers.map((h) => sanitizeCSVCell(h)).join(','),
+      ...rows.map((row) => row.map((cell) => sanitizeCSVCell(cell)).join(',')),
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -178,52 +210,120 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
         subtitle="Complete breakdown of all inventory items"
         onBack={onBack}
         backLabel="Back to Reports"
-        action={<Button onClick={handleExport} icon={Download}>Export CSV</Button>}
+        action={
+          <Button onClick={handleExport} icon={Download}>
+            Export CSV
+          </Button>
+        }
       />
 
       {/* Profile branding for print/export */}
-      {currentUser?.profile && (() => {
-        const p = currentUser.profile;
-        const sf = p.showFields || {};
-        const hasContent = Object.entries(sf).some(([k, v]) => v && p[k]);
-        if (!hasContent) return null;
-        return (
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4], padding: spacing[3], marginBottom: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
-            {sf.logo && p.logo && <img src={p.logo} alt="" style={{ height: 36, objectFit: 'contain' }} />}
-            <div>
-              {sf.businessName && p.businessName && <div style={{ fontWeight: typography.fontWeight.semibold, color: colors.textPrimary }}>{p.businessName}</div>}
-              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted, display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
-                {sf.displayName && p.displayName && <span>{p.displayName}</span>}
-                {sf.phone && p.phone && <span>{p.phone}</span>}
-                {sf.email && p.email && <span>{p.email}</span>}
+      {currentUser?.profile &&
+        (() => {
+          const p = currentUser.profile;
+          const sf = p.showFields || {};
+          const hasContent = Object.entries(sf).some(([k, v]) => v && p[k]);
+          if (!hasContent) return null;
+          return (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[4],
+                padding: spacing[3],
+                marginBottom: spacing[4],
+                borderBottom: `1px solid ${colors.borderLight}`,
+              }}
+            >
+              {sf.logo && p.logo && (
+                <img src={p.logo} alt="" style={{ height: 36, objectFit: 'contain' }} />
+              )}
+              <div>
+                {sf.businessName && p.businessName && (
+                  <div
+                    style={{
+                      fontWeight: typography.fontWeight.semibold,
+                      color: colors.textPrimary,
+                    }}
+                  >
+                    {p.businessName}
+                  </div>
+                )}
+                <div
+                  style={{
+                    fontSize: typography.fontSize.xs,
+                    color: colors.textMuted,
+                    display: 'flex',
+                    gap: spacing[3],
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  {sf.displayName && p.displayName && <span>{p.displayName}</span>}
+                  {sf.phone && p.phone && <span>{p.phone}</span>}
+                  {sf.email && p.email && <span>{p.email}</span>}
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* Summary Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: spacing[4], marginBottom: spacing[6] }}>
-        <StatCard icon={Package} label="Total Items" value={stats.totalItems} color={colors.primary} />
-        <StatCard icon={BarChart3} label="Total Value" value={formatMoney(stats.totalValue)} color={colors.available} />
-        <StatCard icon={BarChart3} label="Purchase Value" value={formatMoney(stats.totalPurchase)} color={colors.accent1} />
-        <StatCard icon={Layers} label="Categories" value={Object.keys(stats.byCategory).length} color={colors.checkedOut} />
-        <StatCard icon={MapPin} label="Locations" value={Object.keys(stats.byLocation).length} color={colors.accent2} />
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+          gap: spacing[4],
+          marginBottom: spacing[6],
+        }}
+      >
+        <StatCard
+          icon={Package}
+          label="Total Items"
+          value={stats.totalItems}
+          color={colors.primary}
+        />
+        <StatCard
+          icon={BarChart3}
+          label="Total Value"
+          value={formatMoney(stats.totalValue)}
+          color={colors.available}
+        />
+        <StatCard
+          icon={BarChart3}
+          label="Purchase Value"
+          value={formatMoney(stats.totalPurchase)}
+          color={colors.accent1}
+        />
+        <StatCard
+          icon={Layers}
+          label="Categories"
+          value={Object.keys(stats.byCategory).length}
+          color={colors.checkedOut}
+        />
+        <StatCard
+          icon={MapPin}
+          label="Locations"
+          value={Object.keys(stats.byLocation).length}
+          color={colors.accent2}
+        />
       </div>
 
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Main inventory table */}
-        <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 380px)' }}>
+        <Card
+          padding={false}
+          style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 380px)' }}
+        >
           <CardHeader
             title="All Items"
             action={
               <div style={{ display: 'flex', gap: spacing[2] }}>
                 <Select
                   value={selectedCategory}
-                  onChange={e => setSelectedCategory(e.target.value)}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
                   options={[
                     { value: 'all', label: 'All Categories' },
-                    ...categories.map(cat => ({ value: cat, label: cat }))
+                    ...categories.map((cat) => ({ value: cat, label: cat })),
                   ]}
                   style={{ width: 140 }}
                   compact
@@ -231,7 +331,7 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
                 />
                 <Select
                   value={sortBy}
-                  onChange={e => setSortBy(e.target.value)}
+                  onChange={(e) => setSortBy(e.target.value)}
                   options={[
                     { value: 'name', label: 'Name' },
                     { value: 'value-desc', label: 'Value (High to Low)' },
@@ -250,10 +350,50 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: colors.bgDark, position: 'sticky', top: 0 }}>
-                  <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Item</th>
-                  <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Category</th>
-                  <th style={{ padding: spacing[3], textAlign: 'left', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Status</th>
-                  <th style={{ padding: spacing[3], textAlign: 'right', fontSize: typography.fontSize.xs, color: colors.textMuted, fontWeight: typography.fontWeight.medium }}>Value</th>
+                  <th
+                    style={{
+                      padding: spacing[3],
+                      textAlign: 'left',
+                      fontSize: typography.fontSize.xs,
+                      color: colors.textMuted,
+                      fontWeight: typography.fontWeight.medium,
+                    }}
+                  >
+                    Item
+                  </th>
+                  <th
+                    style={{
+                      padding: spacing[3],
+                      textAlign: 'left',
+                      fontSize: typography.fontSize.xs,
+                      color: colors.textMuted,
+                      fontWeight: typography.fontWeight.medium,
+                    }}
+                  >
+                    Category
+                  </th>
+                  <th
+                    style={{
+                      padding: spacing[3],
+                      textAlign: 'left',
+                      fontSize: typography.fontSize.xs,
+                      color: colors.textMuted,
+                      fontWeight: typography.fontWeight.medium,
+                    }}
+                  >
+                    Status
+                  </th>
+                  <th
+                    style={{
+                      padding: spacing[3],
+                      textAlign: 'right',
+                      fontSize: typography.fontSize.xs,
+                      color: colors.textMuted,
+                      fontWeight: typography.fontWeight.medium,
+                    }}
+                  >
+                    Value
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -267,31 +407,67 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
                     }}
                   >
                     <td style={{ padding: spacing[3] }}>
-                      <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary, fontSize: typography.fontSize.sm }}>
+                      <div
+                        style={{
+                          fontWeight: typography.fontWeight.medium,
+                          color: colors.textPrimary,
+                          fontSize: typography.fontSize.sm,
+                        }}
+                      >
                         {item.name}
                       </div>
                       <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                        {item.id}{item.brand ? ` \u2022 ${item.brand}` : ''}{item.location ? ` \u2022 ${item.location}` : ''}
+                        {item.id}
+                        {item.brand ? ` \u2022 ${item.brand}` : ''}
+                        {item.location ? ` \u2022 ${item.location}` : ''}
                       </div>
                     </td>
                     <td style={{ padding: spacing[3] }}>
                       <Badge text={item.category || 'None'} color={colors.primary} size="xs" />
                     </td>
                     <td style={{ padding: spacing[3] }}>
-                      <Badge text={formatStatus(item.status)} color={getStatusColor(item.status)} size="xs" />
+                      <Badge
+                        text={formatStatus(item.status)}
+                        color={getStatusColor(item.status)}
+                        size="xs"
+                      />
                     </td>
-                    <td style={{ padding: spacing[3], textAlign: 'right', fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium, color: colors.available }}>
+                    <td
+                      style={{
+                        padding: spacing[3],
+                        textAlign: 'right',
+                        fontSize: typography.fontSize.sm,
+                        fontWeight: typography.fontWeight.medium,
+                        color: colors.available,
+                      }}
+                    >
                       {formatMoney(item.currentValue)}
                     </td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr style={{ background: colors.bgDark, fontWeight: typography.fontWeight.semibold }}>
-                  <td colSpan={3} style={{ padding: spacing[3], fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
+                <tr
+                  style={{ background: colors.bgDark, fontWeight: typography.fontWeight.semibold }}
+                >
+                  <td
+                    colSpan={3}
+                    style={{
+                      padding: spacing[3],
+                      fontSize: typography.fontSize.sm,
+                      color: colors.textPrimary,
+                    }}
+                  >
                     Total ({filteredItems.length} items)
                   </td>
-                  <td style={{ padding: spacing[3], textAlign: 'right', fontSize: typography.fontSize.sm, color: colors.available }}>
+                  <td
+                    style={{
+                      padding: spacing[3],
+                      textAlign: 'right',
+                      fontSize: typography.fontSize.sm,
+                      color: colors.available,
+                    }}
+                  >
                     {formatMoney(filteredItems.reduce((sum, i) => sum + (i.currentValue || 0), 0))}
                   </td>
                 </tr>
@@ -309,12 +485,39 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
               {Object.entries(stats.byStatus)
                 .sort((a, b) => b[1] - a[1])
                 .map(([status, count]) => (
-                  <div key={status} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing[2] }}>
+                  <div
+                    key={status}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: spacing[2],
+                    }}
+                  >
                     <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: getStatusColor(status) }} />
-                      <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>{formatStatus(status)}</span>
+                      <div
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: getStatusColor(status),
+                        }}
+                      />
+                      <span
+                        style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}
+                      >
+                        {formatStatus(status)}
+                      </span>
                     </div>
-                    <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{count}</span>
+                    <span
+                      style={{
+                        fontSize: typography.fontSize.sm,
+                        fontWeight: typography.fontWeight.medium,
+                        color: colors.textPrimary,
+                      }}
+                    >
+                      {count}
+                    </span>
                   </div>
                 ))}
             </div>
@@ -328,19 +531,44 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
                 .sort((a, b) => b[1].count - a[1].count)
                 .map(([category, data]) => (
                   <div key={category} style={{ marginBottom: spacing[3] }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[1] }}>
-                      <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>{category}</span>
-                      <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: spacing[1],
+                      }}
+                    >
+                      <span
+                        style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}
+                      >
+                        {category}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: typography.fontSize.sm,
+                          fontWeight: typography.fontWeight.medium,
+                          color: colors.textPrimary,
+                        }}
+                      >
                         {data.count} ({formatMoney(data.value)})
                       </span>
                     </div>
-                    <div style={{ height: 6, background: colors.borderLight, borderRadius: borderRadius.full, overflow: 'hidden' }}>
-                      <div style={{
-                        height: '100%',
-                        width: `${(data.count / stats.totalItems) * 100}%`,
-                        background: colors.primary,
+                    <div
+                      style={{
+                        height: 6,
+                        background: colors.borderLight,
                         borderRadius: borderRadius.full,
-                      }} />
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${(data.count / stats.totalItems) * 100}%`,
+                          background: colors.primary,
+                          borderRadius: borderRadius.full,
+                        }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -354,9 +582,26 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
               {Object.entries(stats.byCondition)
                 .sort((a, b) => b[1] - a[1])
                 .map(([condition, count]) => (
-                  <div key={condition} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing[2] }}>
-                    <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>{formatCondition(condition)}</span>
-                    <span style={{ fontSize: typography.fontSize.sm, fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>{count}</span>
+                  <div
+                    key={condition}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: spacing[2],
+                    }}
+                  >
+                    <span style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}>
+                      {formatCondition(condition)}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: typography.fontSize.sm,
+                        fontWeight: typography.fontWeight.medium,
+                        color: colors.textPrimary,
+                      }}
+                    >
+                      {count}
+                    </span>
                   </div>
                 ))}
             </div>
@@ -372,21 +617,23 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
 // ============================================================================
 InventoryReportPanel.propTypes = {
   /** Full inventory array */
-  inventory: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-    brand: PropTypes.string,
-    category: PropTypes.string,
-    status: PropTypes.string,
-    condition: PropTypes.string,
-    location: PropTypes.string,
-    serialNumber: PropTypes.string,
-    purchaseDate: PropTypes.string,
-    purchasePrice: PropTypes.number,
-    currentValue: PropTypes.number,
-    quantity: PropTypes.number,
-    createdAt: PropTypes.string,
-  })).isRequired,
+  inventory: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      brand: PropTypes.string,
+      category: PropTypes.string,
+      status: PropTypes.string,
+      condition: PropTypes.string,
+      location: PropTypes.string,
+      serialNumber: PropTypes.string,
+      purchaseDate: PropTypes.string,
+      purchasePrice: PropTypes.number,
+      currentValue: PropTypes.number,
+      quantity: PropTypes.number,
+      createdAt: PropTypes.string,
+    }),
+  ).isRequired,
   /** Available categories for filtering */
   categories: PropTypes.arrayOf(PropTypes.string).isRequired,
   /** Currently logged in user */

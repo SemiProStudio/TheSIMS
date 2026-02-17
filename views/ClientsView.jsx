@@ -4,13 +4,30 @@
 
 import { memo, useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  Users, Plus, Building2, Mail, Phone, Calendar,
-  ChevronRight, Edit2, Trash2, MapPin,
-  Star, MessageSquare,
+  Users,
+  Plus,
+  Building2,
+  Mail,
+  Phone,
+  Calendar,
+  ChevronRight,
+  Edit2,
+  Trash2,
+  MapPin,
+  Star,
+  MessageSquare,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatMoney, formatDate, formatPhoneNumber, handlePhoneInput } from '../utils';
-import { Card, Button, SearchInput, Badge, ConfirmDialog, CollapsibleSection, PageHeader } from '../components/ui.jsx';
+import {
+  Card,
+  Button,
+  SearchInput,
+  Badge,
+  ConfirmDialog,
+  CollapsibleSection,
+  PageHeader,
+} from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from '../modals/ModalBase.jsx';
 import NotesSection from '../components/NotesSection.jsx';
@@ -27,21 +44,21 @@ const CLIENT_TYPES = ['Individual', 'Company', 'Agency', 'Non-Profit', 'Governme
 // ============================================================================
 const ClientCard = memo(function ClientCard({ client, stats, onSelect }) {
   return (
-    <Card
-      style={{ cursor: 'pointer', position: 'relative' }}
-      onClick={() => onSelect(client)}
-    >
+    <Card style={{ cursor: 'pointer', position: 'relative' }} onClick={() => onSelect(client)}>
       <div style={{ display: 'flex', gap: spacing[3] }}>
         {/* Avatar */}
-        <div style={{
-          width: 48, height: 48,
-          borderRadius: borderRadius.lg,
-          background: `${withOpacity(colors.primary, 20)}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}>
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: borderRadius.lg,
+            background: `${withOpacity(colors.primary, 20)}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
           {client.type === 'Company' || client.type === 'Agency' ? (
             <Building2 size={24} color={colors.primary} />
           ) : (
@@ -51,54 +68,64 @@ const ClientCard = memo(function ClientCard({ client, stats, onSelect }) {
 
         {/* Info */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[2],
-            marginBottom: spacing[1],
-          }}>
-            <span style={{
-              fontWeight: typography.fontWeight.semibold,
-              color: colors.textPrimary,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[2],
+              marginBottom: spacing[1],
+            }}
+          >
+            <span
+              style={{
+                fontWeight: typography.fontWeight.semibold,
+                color: colors.textPrimary,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
               {client.name}
             </span>
             {client.favorite && <Star size={14} color="#f59e0b" fill="#f59e0b" />}
           </div>
 
           {client.company && client.type === 'Individual' && (
-            <div style={{
-              fontSize: typography.fontSize.xs,
-              color: colors.textMuted,
-              marginBottom: spacing[1],
-            }}>
+            <div
+              style={{
+                fontSize: typography.fontSize.xs,
+                color: colors.textMuted,
+                marginBottom: spacing[1],
+              }}
+            >
               {client.company}
             </div>
           )}
 
           <div style={{ display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
             {client.email && (
-              <span style={{
-                fontSize: typography.fontSize.xs,
-                color: colors.textSecondary,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-              }}>
+              <span
+                style={{
+                  fontSize: typography.fontSize.xs,
+                  color: colors.textSecondary,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
                 <Mail size={12} /> {client.email}
               </span>
             )}
             {client.phone && (
-              <span style={{
-                fontSize: typography.fontSize.xs,
-                color: colors.textSecondary,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-              }}>
+              <span
+                style={{
+                  fontSize: typography.fontSize.xs,
+                  color: colors.textSecondary,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                }}
+              >
                 <Phone size={12} /> {client.phone}
               </span>
             )}
@@ -106,12 +133,14 @@ const ClientCard = memo(function ClientCard({ client, stats, onSelect }) {
         </div>
 
         {/* Stats */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-end',
-          gap: spacing[1],
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: spacing[1],
+          }}
+        >
           <Badge color={colors.primary}>{stats.totalProjects} projects</Badge>
           {stats.activeReservations > 0 && (
             <Badge color={colors.success}>{stats.activeReservations} active</Badge>
@@ -160,7 +189,10 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
   return (
     <Modal onClose={onClose} maxWidth={500}>
       <ModalHeader title={client ? 'Edit Client' : 'Add New Client'} onClose={onClose} />
-      <form onSubmit={handleSubmit} style={{ padding: spacing[4], maxHeight: 'calc(90vh - 80px)', overflowY: 'auto' }}>
+      <form
+        onSubmit={handleSubmit}
+        style={{ padding: spacing[4], maxHeight: 'calc(90vh - 80px)', overflowY: 'auto' }}
+      >
         {/* Name - Required field */}
         <div style={{ marginBottom: spacing[3] }}>
           <label style={{ ...styles.label, color: isNameEmpty ? colors.danger : undefined }}>
@@ -169,12 +201,19 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
           <input
             type="text"
             value={formData.name}
-            onChange={(e) => { setFormData(prev => ({ ...prev, name: e.target.value })); setNameError(''); }}
+            onChange={(e) => {
+              setFormData((prev) => ({ ...prev, name: e.target.value }));
+              setNameError('');
+            }}
             style={{ ...styles.input, borderColor: isNameEmpty ? colors.danger : colors.border }}
             placeholder="Client name"
             autoFocus
           />
-          {nameError && <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>{nameError}</span>}
+          {nameError && (
+            <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>
+              {nameError}
+            </span>
+          )}
         </div>
 
         {/* Type */}
@@ -182,8 +221,8 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
           <label style={styles.label}>Type</label>
           <Select
             value={formData.type}
-            onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-            options={CLIENT_TYPES.map(t => ({ value: t, label: t }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
+            options={CLIENT_TYPES.map((t) => ({ value: t, label: t }))}
             aria-label="Client type"
           />
         </div>
@@ -195,7 +234,7 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
             <input
               type="text"
               value={formData.company}
-              onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, company: e.target.value }))}
               style={styles.input}
               placeholder="Company name (optional)"
             />
@@ -203,13 +242,20 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
         )}
 
         {/* Email & Phone */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3], marginBottom: spacing[3] }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: spacing[3],
+            marginBottom: spacing[3],
+          }}
+        >
           <div>
             <label style={styles.label}>Email</label>
             <input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
               style={styles.input}
               placeholder="email@example.com"
             />
@@ -219,7 +265,9 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
             <input
               type="tel"
               value={formData.phone}
-              onChange={(e) => handlePhoneInput(e, v => setFormData(prev => ({ ...prev, phone: v })))}
+              onChange={(e) =>
+                handlePhoneInput(e, (v) => setFormData((prev) => ({ ...prev, phone: v })))
+              }
               style={styles.input}
               placeholder="555-123-4567"
               maxLength={12}
@@ -233,7 +281,7 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
           <input
             type="text"
             value={formData.address}
-            onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
             style={styles.input}
             placeholder="Street address, city, state"
           />
@@ -244,26 +292,28 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
           <label style={styles.label}>Notes</label>
           <textarea
             value={formData.notes}
-            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
             style={{ ...styles.input, minHeight: 80, resize: 'vertical' }}
             placeholder="Additional notes about this client"
           />
         </div>
 
         {/* Favorite */}
-        <label style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: spacing[2],
-          color: colors.textSecondary,
-          fontSize: typography.fontSize.sm,
-          cursor: 'pointer',
-          marginBottom: spacing[4],
-        }}>
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[2],
+            color: colors.textSecondary,
+            fontSize: typography.fontSize.sm,
+            cursor: 'pointer',
+            marginBottom: spacing[4],
+          }}
+        >
           <input
             type="checkbox"
             checked={formData.favorite}
-            onChange={(e) => setFormData(prev => ({ ...prev, favorite: e.target.checked }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, favorite: e.target.checked }))}
             style={{ accentColor: colors.primary }}
           />
           <Star size={14} /> Mark as favorite
@@ -271,7 +321,9 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
 
         {/* Actions */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: spacing[2] }}>
-          <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
           <Button type="submit" icon={isEditing ? Edit2 : Plus}>
             {isEditing ? 'Save Changes' : 'Add Client'}
           </Button>
@@ -299,23 +351,32 @@ const ClientDetailView = memo(function ClientDetailView({
 }) {
   const [notesCollapsed, setNotesCollapsed] = useState(false);
 
-  const stats = useMemo(() => ({
-    totalProjects: projects.length,
-    activeProjects: projects.filter(p => new Date(p.end) >= new Date()).length,
-    totalValue: projects.reduce((sum, p) => sum + (p.value || 0), 0),
-    lastProject: projects.length > 0
-      ? projects.sort((a, b) => new Date(b.start) - new Date(a.start))[0]
-      : null,
-  }), [projects]);
+  const stats = useMemo(
+    () => ({
+      totalProjects: projects.length,
+      activeProjects: projects.filter((p) => new Date(p.end) >= new Date()).length,
+      totalValue: projects.reduce((sum, p) => sum + (p.value || 0), 0),
+      lastProject:
+        projects.length > 0
+          ? projects.sort((a, b) => new Date(b.start) - new Date(a.start))[0]
+          : null,
+    }),
+    [projects],
+  );
 
   const clientNotes = client.clientNotes || [];
 
   // Navigate to reservation detail with proper item object and back context
-  const handleViewProject = useCallback((project) => {
-    if (!onViewReservation) return;
-    const item = inventory.find(i => i.id === project.itemId);
-    onViewReservation(project, item || { id: project.itemId, name: project.itemName }, { clientId: client.id });
-  }, [onViewReservation, inventory, client.id]);
+  const handleViewProject = useCallback(
+    (project) => {
+      if (!onViewReservation) return;
+      const item = inventory.find((i) => i.id === project.itemId);
+      onViewReservation(project, item || { id: project.itemId, name: project.itemName }, {
+        clientId: client.id,
+      });
+    },
+    [onViewReservation, inventory, client.id],
+  );
 
   return (
     <div>
@@ -340,15 +401,18 @@ const ClientDetailView = memo(function ClientDetailView({
       <Card style={{ marginBottom: spacing[4] }}>
         <div style={{ display: 'flex', gap: spacing[4], alignItems: 'flex-start' }}>
           {/* Avatar */}
-          <div style={{
-            width: 64, height: 64,
-            borderRadius: borderRadius.xl,
-            background: `${withOpacity(colors.primary, 20)}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}>
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: borderRadius.xl,
+              background: `${withOpacity(colors.primary, 20)}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
             {client.type === 'Company' || client.type === 'Agency' ? (
               <Building2 size={32} color={colors.primary} />
             ) : (
@@ -358,13 +422,28 @@ const ClientDetailView = memo(function ClientDetailView({
 
           {/* Info */}
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2], marginBottom: spacing[2] }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[2],
+                marginBottom: spacing[2],
+              }}
+            >
               <h2 style={{ margin: 0, color: colors.textPrimary }}>{client.name}</h2>
               {client.favorite && <Star size={18} color="#f59e0b" fill="#f59e0b" />}
               <Badge>{client.type}</Badge>
             </div>
 
-            <div style={{ display: 'flex', gap: spacing[4], flexWrap: 'wrap', color: colors.textSecondary, fontSize: typography.fontSize.sm }}>
+            <div
+              style={{
+                display: 'flex',
+                gap: spacing[4],
+                flexWrap: 'wrap',
+                color: colors.textSecondary,
+                fontSize: typography.fontSize.sm,
+              }}
+            >
               {client.email && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <Mail size={14} /> {client.email}
@@ -383,11 +462,13 @@ const ClientDetailView = memo(function ClientDetailView({
             </div>
 
             {client.notes && (
-              <p style={{
-                margin: `${spacing[3]}px 0 0`,
-                color: colors.textMuted,
-                fontSize: typography.fontSize.sm,
-              }}>
+              <p
+                style={{
+                  margin: `${spacing[3]}px 0 0`,
+                  color: colors.textMuted,
+                  fontSize: typography.fontSize.sm,
+                }}
+              >
                 {client.notes}
               </p>
             )}
@@ -405,29 +486,53 @@ const ClientDetailView = memo(function ClientDetailView({
       </Card>
 
       {/* Stats */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-        gap: spacing[3],
-        marginBottom: spacing[4],
-      }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: spacing[3],
+          marginBottom: spacing[4],
+        }}
+      >
         <Card style={{ textAlign: 'center', padding: spacing[4] }}>
-          <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: 'bold', color: colors.primary }}>
+          <div
+            style={{
+              fontSize: typography.fontSize['2xl'],
+              fontWeight: 'bold',
+              color: colors.primary,
+            }}
+          >
             {stats.totalProjects}
           </div>
-          <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Total Projects</div>
+          <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+            Total Projects
+          </div>
         </Card>
         <Card style={{ textAlign: 'center', padding: spacing[4] }}>
-          <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: 'bold', color: colors.success }}>
+          <div
+            style={{
+              fontSize: typography.fontSize['2xl'],
+              fontWeight: 'bold',
+              color: colors.success,
+            }}
+          >
             {stats.activeProjects}
           </div>
           <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Active</div>
         </Card>
         <Card style={{ textAlign: 'center', padding: spacing[4] }}>
-          <div style={{ fontSize: typography.fontSize['2xl'], fontWeight: 'bold', color: colors.accent1 }}>
+          <div
+            style={{
+              fontSize: typography.fontSize['2xl'],
+              fontWeight: 'bold',
+              color: colors.accent1,
+            }}
+          >
             {formatMoney(stats.totalValue)}
           </div>
-          <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Total Value</div>
+          <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+            Total Value
+          </div>
         </Card>
       </div>
 
@@ -435,7 +540,7 @@ const ClientDetailView = memo(function ClientDetailView({
       <CollapsibleSection
         title="Notes"
         icon={MessageSquare}
-        badge={clientNotes.filter(n => !n.deleted).length || null}
+        badge={clientNotes.filter((n) => !n.deleted).length || null}
         badgeColor={colors.primary}
         collapsed={notesCollapsed}
         onToggleCollapse={() => setNotesCollapsed(!notesCollapsed)}
@@ -458,16 +563,18 @@ const ClientDetailView = memo(function ClientDetailView({
         </h3>
 
         {projects.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: spacing[6],
-            color: colors.textMuted,
-          }}>
+          <div
+            style={{
+              textAlign: 'center',
+              padding: spacing[6],
+              color: colors.textMuted,
+            }}
+          >
             No projects yet
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-            {projects.map(project => (
+            {projects.map((project) => (
               <div
                 key={project.id}
                 onClick={() => handleViewProject(project)}
@@ -483,11 +590,14 @@ const ClientDetailView = memo(function ClientDetailView({
               >
                 <Calendar size={16} color={colors.textMuted} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}>
+                  <div
+                    style={{ fontWeight: typography.fontWeight.medium, color: colors.textPrimary }}
+                  >
                     {project.project}
                   </div>
                   <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                    {formatDate(project.start)} – {formatDate(project.end)} • {project.itemCount || 1} items
+                    {formatDate(project.start)} – {formatDate(project.end)} •{' '}
+                    {project.itemCount || 1} items
                   </div>
                 </div>
                 {project.value > 0 && (
@@ -528,7 +638,7 @@ function ClientsView({
   const [selectedClient, setSelectedClient] = useState(() => {
     const restoredClientId = reservationBackView?.context?.clientId;
     if (restoredClientId) {
-      return clients.find(c => c.id === restoredClientId) || null;
+      return clients.find((c) => c.id === restoredClientId) || null;
     }
     return null;
   });
@@ -547,7 +657,7 @@ function ClientsView({
   // Keep selectedClient in sync with clients prop (for when notes are added/updated)
   useEffect(() => {
     if (selectedClient) {
-      const updatedClient = clients.find(c => c.id === selectedClient.id);
+      const updatedClient = clients.find((c) => c.id === selectedClient.id);
       if (updatedClient && updatedClient !== selectedClient) {
         setSelectedClient(updatedClient);
       }
@@ -555,32 +665,38 @@ function ClientsView({
   }, [clients, selectedClient]);
 
   // Get project history for each client from reservations
-  const getClientProjects = useCallback((clientId) => {
-    const projects = [];
-    inventory.forEach(item => {
-      (item.reservations || []).forEach(res => {
-        if (res.clientId === clientId) {
-          projects.push({
-            ...res,
-            itemId: item.id,
-            itemName: item.name,
-            itemCount: 1,
-          });
-        }
+  const getClientProjects = useCallback(
+    (clientId) => {
+      const projects = [];
+      inventory.forEach((item) => {
+        (item.reservations || []).forEach((res) => {
+          if (res.clientId === clientId) {
+            projects.push({
+              ...res,
+              itemId: item.id,
+              itemName: item.name,
+              itemCount: 1,
+            });
+          }
+        });
       });
-    });
-    return projects.sort((a, b) => new Date(b.start) - new Date(a.start));
-  }, [inventory]);
+      return projects.sort((a, b) => new Date(b.start) - new Date(a.start));
+    },
+    [inventory],
+  );
 
   // Get stats for a client
-  const getClientStats = useCallback((client) => {
-    const projects = getClientProjects(client.id);
-    return {
-      totalProjects: projects.length,
-      activeReservations: projects.filter(p => new Date(p.end) >= new Date()).length,
-      totalValue: projects.reduce((sum, p) => sum + (p.value || 0), 0),
-    };
-  }, [getClientProjects]);
+  const getClientStats = useCallback(
+    (client) => {
+      const projects = getClientProjects(client.id);
+      return {
+        totalProjects: projects.length,
+        activeReservations: projects.filter((p) => new Date(p.end) >= new Date()).length,
+        totalValue: projects.reduce((sum, p) => sum + (p.value || 0), 0),
+      };
+    },
+    [getClientProjects],
+  );
 
   // Filter clients — searches name, email, company, AND phone
   const filteredClients = useMemo(() => {
@@ -589,20 +705,21 @@ function ClientsView({
     // Search filter
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(c =>
-        c.name.toLowerCase().includes(q) ||
-        c.email?.toLowerCase().includes(q) ||
-        c.company?.toLowerCase().includes(q) ||
-        c.phone?.toLowerCase().includes(q)
+      result = result.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.email?.toLowerCase().includes(q) ||
+          c.company?.toLowerCase().includes(q) ||
+          c.phone?.toLowerCase().includes(q),
       );
     }
 
     // Type filter
     if (filterType !== 'all') {
       if (filterType === 'favorites') {
-        result = result.filter(c => c.favorite);
+        result = result.filter((c) => c.favorite);
       } else {
-        result = result.filter(c => c.type === filterType);
+        result = result.filter((c) => c.type === filterType);
       }
     }
 
@@ -615,38 +732,41 @@ function ClientsView({
   }, [clients, searchQuery, filterType]);
 
   // Save client — used by both list and detail views for consistency
-  const handleSaveClient = useCallback(async (clientData) => {
-    const exists = clients.find(c => c.id === clientData.id);
-    if (exists) {
-      // Update existing client — persist to Supabase
-      try {
-        if (dataContext?.updateClient) {
-          await dataContext.updateClient(clientData.id, clientData);
-        } else {
+  const handleSaveClient = useCallback(
+    async (clientData) => {
+      const exists = clients.find((c) => c.id === clientData.id);
+      if (exists) {
+        // Update existing client — persist to Supabase
+        try {
+          if (dataContext?.updateClient) {
+            await dataContext.updateClient(clientData.id, clientData);
+          } else {
+            dataContext.patchClient(clientData.id, clientData);
+          }
+        } catch (err) {
+          logError('Failed to update client:', err);
           dataContext.patchClient(clientData.id, clientData);
         }
-      } catch (err) {
-        logError('Failed to update client:', err);
-        dataContext.patchClient(clientData.id, clientData);
-      }
-      // If currently viewing this client, update selected state
-      if (selectedClient?.id === clientData.id) {
-        setSelectedClient(clientData);
-      }
-    } else {
-      // New client - create in database, only set selected after success
-      try {
-        if (dataContext?.createClient) {
-          await dataContext.createClient(clientData);
+        // If currently viewing this client, update selected state
+        if (selectedClient?.id === clientData.id) {
+          setSelectedClient(clientData);
         }
-        setSelectedClient(clientData);
-      } catch (err) {
-        logError('Failed to create client:', err);
+      } else {
+        // New client - create in database, only set selected after success
+        try {
+          if (dataContext?.createClient) {
+            await dataContext.createClient(clientData);
+          }
+          setSelectedClient(clientData);
+        } catch (err) {
+          logError('Failed to create client:', err);
+        }
       }
-    }
-    setShowAddModal(false);
-    setEditingClient(null);
-  }, [clients, dataContext, selectedClient]);
+      setShowAddModal(false);
+      setEditingClient(null);
+    },
+    [clients, dataContext, selectedClient],
+  );
 
   const handleDeleteClient = useCallback(async () => {
     if (deleteConfirm.client) {
@@ -667,7 +787,7 @@ function ClientsView({
           type: 'client_deleted',
           description: `Client "${clientToDelete.name}" deleted`,
           user: user?.name || 'Unknown',
-          clientId: clientToDelete.id
+          clientId: clientToDelete.id,
         });
       }
     }
@@ -683,8 +803,12 @@ function ClientsView({
           projects={getClientProjects(selectedClient.id)}
           inventory={inventory}
           onBack={() => setSelectedClient(null)}
-          onEdit={(c) => { setEditingClient(c); }}
-          onDelete={(c) => { setDeleteConfirm({ isOpen: true, client: c }); }}
+          onEdit={(c) => {
+            setEditingClient(c);
+          }}
+          onDelete={(c) => {
+            setDeleteConfirm({ isOpen: true, client: c });
+          }}
           onViewReservation={onViewReservation}
           onAddNote={(text) => onAddNote(selectedClient.id, text)}
           onReplyNote={(parentId, text) => onReplyNote(selectedClient.id, parentId, text)}
@@ -705,7 +829,10 @@ function ClientsView({
           title="Delete Client"
           message={`Are you sure you want to delete "${deleteConfirm.client?.name}"? This cannot be undone.`}
           confirmText="Delete"
-          onConfirm={() => { handleDeleteClient(); setSelectedClient(null); }}
+          onConfirm={() => {
+            handleDeleteClient();
+            setSelectedClient(null);
+          }}
           onCancel={() => setDeleteConfirm({ isOpen: false, client: null })}
         />
       </>
@@ -741,7 +868,7 @@ function ClientsView({
             options={[
               { value: 'all', label: 'All Types' },
               { value: 'favorites', label: '★ Favorites' },
-              ...CLIENT_TYPES.map(t => ({ value: t, label: t }))
+              ...CLIENT_TYPES.map((t) => ({ value: t, label: t })),
             ]}
             style={{ minWidth: 140 }}
             aria-label="Filter by type"
@@ -759,18 +886,21 @@ function ClientsView({
           <p style={{ margin: `${spacing[2]}px 0 0`, color: colors.textMuted }}>
             {clients.length === 0
               ? 'Add your first client to start tracking projects'
-              : 'Try adjusting your search or filters'
-            }
+              : 'Try adjusting your search or filters'}
           </p>
           {clients.length === 0 && (
-            <Button onClick={() => setShowAddModal(true)} icon={Plus} style={{ marginTop: spacing[4] }}>
+            <Button
+              onClick={() => setShowAddModal(true)}
+              icon={Plus}
+              style={{ marginTop: spacing[4] }}
+            >
               Add Client
             </Button>
           )}
         </Card>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
-          {filteredClients.map(client => (
+          {filteredClients.map((client) => (
             <ClientCard
               key={client.id}
               client={client}
@@ -786,7 +916,10 @@ function ClientsView({
         <ClientFormModal
           client={editingClient}
           onSave={handleSaveClient}
-          onClose={() => { setShowAddModal(false); setEditingClient(null); }}
+          onClose={() => {
+            setShowAddModal(false);
+            setEditingClient(null);
+          }}
         />
       )}
 

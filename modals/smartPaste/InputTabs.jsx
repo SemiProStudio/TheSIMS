@@ -15,25 +15,38 @@ const TAB_CONFIG = [
 ];
 
 export function InputTabs({
-  inputMode, setInputMode,
-  inputText, setInputText,
-  handlePaste, handleFileImport,
-  handleUrlFetch, urlInput, setUrlInput, urlLoading,
-  dragOver, setDragOver,
-  textareaRef, fileInputRef,
-  setParseResult, setImportStatus, setManualMappings,
-  pasteHistory, onRestoreHistory,
+  inputMode,
+  setInputMode,
+  inputText,
+  setInputText,
+  handlePaste,
+  handleFileImport,
+  handleUrlFetch,
+  urlInput,
+  setUrlInput,
+  urlLoading,
+  dragOver,
+  setDragOver,
+  textareaRef,
+  fileInputRef,
+  setParseResult,
+  setImportStatus,
+  setManualMappings,
+  pasteHistory,
+  onRestoreHistory,
 }) {
   return (
     <>
       {/* Tab Navigation */}
-      <div style={{
-        display: 'flex',
-        gap: 0,
-        marginBottom: 0,
-        borderBottom: `2px solid ${colors.border}`,
-      }}>
-        {TAB_CONFIG.map(tab => {
+      <div
+        style={{
+          display: 'flex',
+          gap: 0,
+          marginBottom: 0,
+          borderBottom: `2px solid ${colors.border}`,
+        }}
+      >
+        {TAB_CONFIG.map((tab) => {
           const isActive = inputMode === tab.key;
           return (
             <button
@@ -42,9 +55,7 @@ export function InputTabs({
               style={{
                 background: 'none',
                 border: 'none',
-                borderBottom: isActive
-                  ? `2px solid ${colors.primary}`
-                  : '2px solid transparent',
+                borderBottom: isActive ? `2px solid ${colors.primary}` : '2px solid transparent',
                 marginBottom: -2,
                 padding: `${spacing[2]}px ${spacing[3]}px`,
                 fontSize: typography.fontSize.sm,
@@ -68,13 +79,16 @@ export function InputTabs({
       {inputMode === 'paste' && (
         <div style={{ marginTop: spacing[2] }}>
           {/* Paste history */}
-          {!inputText && (
-            <PasteHistory pasteHistory={pasteHistory} onRestore={onRestoreHistory} />
-          )}
+          {!inputText && <PasteHistory pasteHistory={pasteHistory} onRestore={onRestoreHistory} />}
           <textarea
             ref={textareaRef}
             value={inputText}
-            onChange={e => { setInputText(e.target.value); setParseResult(null); setImportStatus(''); setManualMappings({}); }}
+            onChange={(e) => {
+              setInputText(e.target.value);
+              setParseResult(null);
+              setImportStatus('');
+              setManualMappings({});
+            }}
             onPaste={handlePaste}
             placeholder={`Paste product specifications here...\n\nSupported formats:\n  Key: Value\n  Key → Value\n  Key\tValue  (tab-separated)\n  Key = Value\n  Key | Value\n\nHTML table content is automatically cleaned.\nTip: Copy from a web page to preserve table structure.`}
             style={{
@@ -95,9 +109,13 @@ export function InputTabs({
         <div style={{ marginTop: spacing[2] }}>
           {/* Drop zone */}
           <div
-            onDragOver={e => { e.preventDefault(); e.stopPropagation(); setDragOver(true); }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragOver(true);
+            }}
             onDragLeave={() => setDragOver(false)}
-            onDrop={e => {
+            onDrop={(e) => {
               e.preventDefault();
               e.stopPropagation();
               setDragOver(false);
@@ -117,25 +135,32 @@ export function InputTabs({
               transition: 'border-color 0.15s, background 0.15s',
             }}
           >
-            <Upload size={32} style={{
-              color: dragOver ? colors.primary : colors.textMuted,
-              margin: '0 auto',
-              display: 'block',
-              marginBottom: spacing[2],
-              opacity: 0.6,
-            }} />
-            <div style={{
-              fontSize: typography.fontSize.base,
-              fontWeight: 600,
-              color: colors.textPrimary,
-              marginBottom: spacing[1],
-            }}>
+            <Upload
+              size={32}
+              style={{
+                color: dragOver ? colors.primary : colors.textMuted,
+                margin: '0 auto',
+                display: 'block',
+                marginBottom: spacing[2],
+                opacity: 0.6,
+              }}
+            />
+            <div
+              style={{
+                fontSize: typography.fontSize.base,
+                fontWeight: 600,
+                color: colors.textPrimary,
+                marginBottom: spacing[1],
+              }}
+            >
               Drop a file here or click to browse
             </div>
-            <div style={{
-              fontSize: typography.fontSize.sm,
-              color: colors.textMuted,
-            }}>
+            <div
+              style={{
+                fontSize: typography.fontSize.sm,
+                color: colors.textMuted,
+              }}
+            >
               PDF, TXT, CSV, TSV, Markdown, RTF, or Images (OCR)
             </div>
           </div>
@@ -150,29 +175,34 @@ export function InputTabs({
           {/* Imported text preview */}
           {inputText && (
             <div style={{ marginTop: spacing[2] }}>
-              <div style={{
-                fontSize: typography.fontSize.xs,
-                fontWeight: 600,
-                color: colors.textMuted,
-                marginBottom: spacing[1],
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}>
+              <div
+                style={{
+                  fontSize: typography.fontSize.xs,
+                  fontWeight: 600,
+                  color: colors.textMuted,
+                  marginBottom: spacing[1],
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}
+              >
                 Imported Content Preview
               </div>
-              <div style={{
-                ...styles.input,
-                width: '100%',
-                maxHeight: 120,
-                overflowY: 'auto',
-                fontFamily: 'ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace',
-                fontSize: typography.fontSize.xs,
-                lineHeight: 1.5,
-                whiteSpace: 'pre-wrap',
-                color: colors.textMuted,
-                padding: spacing[2],
-              }}>
-                {inputText.slice(0, 2000)}{inputText.length > 2000 ? '\n...' : ''}
+              <div
+                style={{
+                  ...styles.input,
+                  width: '100%',
+                  maxHeight: 120,
+                  overflowY: 'auto',
+                  fontFamily: 'ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace',
+                  fontSize: typography.fontSize.xs,
+                  lineHeight: 1.5,
+                  whiteSpace: 'pre-wrap',
+                  color: colors.textMuted,
+                  padding: spacing[2],
+                }}
+              >
+                {inputText.slice(0, 2000)}
+                {inputText.length > 2000 ? '\n...' : ''}
               </div>
             </div>
           )}
@@ -182,20 +212,24 @@ export function InputTabs({
       {/* URL Import tab */}
       {inputMode === 'url' && (
         <div style={{ marginTop: spacing[2] }}>
-          <div style={{
-            fontSize: typography.fontSize.xs,
-            color: colors.textMuted,
-            marginBottom: spacing[2],
-          }}>
-            Enter a product page URL to fetch and parse specs automatically.
-            Supported sites include B&H, Adorama, manufacturer pages, and Amazon.
+          <div
+            style={{
+              fontSize: typography.fontSize.xs,
+              color: colors.textMuted,
+              marginBottom: spacing[2],
+            }}
+          >
+            Enter a product page URL to fetch and parse specs automatically. Supported sites include
+            B&H, Adorama, manufacturer pages, and Amazon.
           </div>
           <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
             <input
               type="url"
               value={urlInput}
-              onChange={e => setUrlInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && urlInput.trim() && !urlLoading) handleUrlFetch(); }}
+              onChange={(e) => setUrlInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && urlInput.trim() && !urlLoading) handleUrlFetch();
+              }}
               placeholder="https://www.bhphotovideo.com/c/product/..."
               style={{
                 ...styles.input,

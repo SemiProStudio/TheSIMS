@@ -1,60 +1,63 @@
 import { memo, forwardRef } from 'react';
 import PropTypes from 'prop-types';
 
-
 // ============================================================================
 // Button - Primary and secondary buttons
 // ============================================================================
 
-export const Button = memo(forwardRef(function Button(
-  { 
-    children, 
-    variant = 'primary', 
-    size = 'md',
-    disabled = false,
-    danger = false,
-    fullWidth = false,
-    icon: Icon,
-    iconOnly = false,
-    'aria-label': ariaLabel,
-    onClick,
-    style: customStyle,
-    className: customClassName,
-    type = 'button',
-    ...props 
-  },
-  ref
-) {
-  // Build CSS class list
-  const classNames = [
-    variant === 'primary' ? 'btn' : 'btn-secondary',
-    danger && 'btn-danger',
-    size === 'sm' && 'btn-sm',
-    fullWidth && 'btn-full',
-    customClassName,
-  ].filter(Boolean).join(' ');
+export const Button = memo(
+  forwardRef(function Button(
+    {
+      children,
+      variant = 'primary',
+      size = 'md',
+      disabled = false,
+      danger = false,
+      fullWidth = false,
+      icon: Icon,
+      iconOnly = false,
+      'aria-label': ariaLabel,
+      onClick,
+      style: customStyle,
+      className: customClassName,
+      type = 'button',
+      ...props
+    },
+    ref,
+  ) {
+    // Build CSS class list
+    const classNames = [
+      variant === 'primary' ? 'btn' : 'btn-secondary',
+      danger && 'btn-danger',
+      size === 'sm' && 'btn-sm',
+      fullWidth && 'btn-full',
+      customClassName,
+    ]
+      .filter(Boolean)
+      .join(' ');
 
-  // Icon-only buttons must have aria-label
-  const isIconOnly = iconOnly || (Icon && !children);
-  const accessibleLabel = ariaLabel || (isIconOnly ? 'Button' : undefined);
+    // Icon-only buttons must have aria-label
+    const isIconOnly = iconOnly || (Icon && !children);
+    const accessibleLabel = ariaLabel || (isIconOnly ? 'Button' : undefined);
 
-  return (
-    <button
-      ref={ref}
-      className={classNames}
-      style={customStyle}
-      disabled={disabled}
-      onClick={onClick}
-      type={type}
-      aria-label={accessibleLabel}
-      aria-disabled={disabled || undefined}
-      {...props}
-    >
-      {Icon && <Icon size={size === 'sm' ? 14 : 16} aria-hidden="true" />}
-      {children}
-    </button>
-  );
-}));
+    return (
+      <button
+        ref={ref}
+        className={classNames}
+        style={customStyle}
+        disabled={disabled}
+        onClick={onClick}
+        type={type}
+        aria-label={accessibleLabel}
+        aria-disabled={disabled || undefined}
+        {...props}
+      >
+        {Icon && <Icon size={size === 'sm' ? 14 : 16} aria-hidden="true" />}
+        {children}
+      </button>
+    );
+  }),
+);
 
 Button.propTypes = {
   /** Button content */

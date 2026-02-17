@@ -242,7 +242,7 @@ describe('Reservation Conflict Edge Cases', () => {
       const result = getAllReservationConflicts(null, '2024-01-01', '2024-01-05');
       expect(result).toEqual({
         reservationConflicts: [],
-        checkoutConflict: null
+        checkoutConflict: null,
       });
     });
 
@@ -260,13 +260,19 @@ describe('Reservation Conflict Edge Cases', () => {
     });
 
     it('should handle null start date', () => {
-      const item = { id: '1', reservations: [{ id: 'r1', start: '2024-01-01', end: '2024-01-05' }] };
+      const item = {
+        id: '1',
+        reservations: [{ id: 'r1', start: '2024-01-01', end: '2024-01-05' }],
+      };
       const result = getAllReservationConflicts(item, null, '2024-01-05');
       expect(result.reservationConflicts).toEqual([]);
     });
 
     it('should handle null end date', () => {
-      const item = { id: '1', reservations: [{ id: 'r1', start: '2024-01-01', end: '2024-01-05' }] };
+      const item = {
+        id: '1',
+        reservations: [{ id: 'r1', start: '2024-01-01', end: '2024-01-05' }],
+      };
       const result = getAllReservationConflicts(item, '2024-01-01', null);
       expect(result.reservationConflicts).toEqual([]);
     });
@@ -274,9 +280,7 @@ describe('Reservation Conflict Edge Cases', () => {
     it('should detect overlapping reservations', () => {
       const item = {
         id: '1',
-        reservations: [
-          { id: 'r1', start: '2024-01-03', end: '2024-01-07' }
-        ]
+        reservations: [{ id: 'r1', start: '2024-01-03', end: '2024-01-07' }],
       };
       const result = getAllReservationConflicts(item, '2024-01-01', '2024-01-05');
       expect(result.reservationConflicts.length).toBe(1);
@@ -286,9 +290,7 @@ describe('Reservation Conflict Edge Cases', () => {
     it('should exclude specified reservation id', () => {
       const item = {
         id: '1',
-        reservations: [
-          { id: 'r1', start: '2024-01-03', end: '2024-01-07' }
-        ]
+        reservations: [{ id: 'r1', start: '2024-01-03', end: '2024-01-07' }],
       };
       const result = getAllReservationConflicts(item, '2024-01-01', '2024-01-05', 'r1');
       expect(result.reservationConflicts.length).toBe(0);
@@ -301,7 +303,7 @@ describe('Reservation Conflict Edge Cases', () => {
         checkedOutTo: 'John',
         checkedOutDate: '2024-01-01',
         dueBack: '2024-01-10',
-        reservations: []
+        reservations: [],
       };
       const result = getAllReservationConflicts(item, '2024-01-05', '2024-01-08');
       expect(result.checkoutConflict).not.toBeNull();
@@ -315,7 +317,7 @@ describe('Reservation Conflict Edge Cases', () => {
         checkedOutTo: 'John',
         checkedOutDate: '2024-01-01',
         dueBack: null,
-        reservations: []
+        reservations: [],
       };
       const result = getAllReservationConflicts(item, '2024-01-05', '2024-01-08');
       expect(result.checkoutConflict).not.toBeNull();
@@ -389,11 +391,13 @@ describe('Note System Edge Cases', () => {
     });
 
     it('should find nested reply', () => {
-      const notes = [{
-        id: 'note-1',
-        text: 'parent',
-        replies: [{ id: 'reply-1', text: 'child' }]
-      }];
+      const notes = [
+        {
+          id: 'note-1',
+          text: 'parent',
+          replies: [{ id: 'reply-1', text: 'child' }],
+        },
+      ];
       const result = findNoteById(notes, 'reply-1');
       expect(result?.text).toBe('child');
     });
@@ -507,7 +511,7 @@ describe('Error Boundary Component', () => {
 
   const SimpleErrorBoundary = ({ children }) => {
     const [hasError, setHasError] = React.useState(false);
-    
+
     if (hasError) {
       return (
         <div role="alert" data-testid="error-fallback">
@@ -516,21 +520,17 @@ describe('Error Boundary Component', () => {
         </div>
       );
     }
-    
-    return (
-      <React.Suspense fallback={<div>Loading...</div>}>
-        {children}
-      </React.Suspense>
-    );
+
+    return <React.Suspense fallback={<div>Loading...</div>}>{children}</React.Suspense>;
   };
 
   it('should render children when no error', () => {
     render(
       <SimpleErrorBoundary>
         <div data-testid="child">Child content</div>
-      </SimpleErrorBoundary>
+      </SimpleErrorBoundary>,
     );
-    
+
     expect(screen.getByTestId('child')).toBeInTheDocument();
   });
 
@@ -541,9 +541,9 @@ describe('Error Boundary Component', () => {
         <p>Please try again</p>
       </div>
     );
-    
+
     render(<ErrorDisplay />);
-    
+
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByRole('heading')).toHaveTextContent('Error occurred');
   });
@@ -556,7 +556,7 @@ describe('Error Boundary Component', () => {
 describe('Form Validation Edge Cases', () => {
   const validateItemForm = (data) => {
     const errors = {};
-    
+
     if (!data.name || !data.name.trim()) {
       errors.name = 'Name is required';
     } else if (data.name.trim().length < 2) {
@@ -564,11 +564,11 @@ describe('Form Validation Edge Cases', () => {
     } else if (data.name.trim().length > 100) {
       errors.name = 'Name must be less than 100 characters';
     }
-    
+
     if (!data.category) {
       errors.category = 'Category is required';
     }
-    
+
     if (data.value !== undefined && data.value !== '') {
       const numValue = parseFloat(data.value);
       if (isNaN(numValue)) {
@@ -577,7 +577,7 @@ describe('Form Validation Edge Cases', () => {
         errors.value = 'Value cannot be negative';
       }
     }
-    
+
     if (data.purchaseDate) {
       const date = new Date(data.purchaseDate);
       if (isNaN(date.getTime())) {
@@ -586,10 +586,10 @@ describe('Form Validation Edge Cases', () => {
         errors.purchaseDate = 'Purchase date cannot be in the future';
       }
     }
-    
+
     return {
       isValid: Object.keys(errors).length === 0,
-      errors
+      errors,
     };
   };
 
@@ -637,10 +637,10 @@ describe('Form Validation Edge Cases', () => {
   it('should reject future purchase date', () => {
     const futureDate = new Date();
     futureDate.setFullYear(futureDate.getFullYear() + 1);
-    const result = validateItemForm({ 
-      name: 'Test', 
-      category: 'Camera', 
-      purchaseDate: futureDate.toISOString() 
+    const result = validateItemForm({
+      name: 'Test',
+      category: 'Camera',
+      purchaseDate: futureDate.toISOString(),
     });
     expect(result.errors.purchaseDate).toBe('Purchase date cannot be in the future');
   });
@@ -650,7 +650,7 @@ describe('Form Validation Edge Cases', () => {
       name: 'Canon C70',
       category: 'Camera',
       value: '5000',
-      purchaseDate: '2023-01-15'
+      purchaseDate: '2023-01-15',
     });
     expect(result.isValid).toBe(true);
     expect(result.errors).toEqual({});
@@ -659,7 +659,7 @@ describe('Form Validation Edge Cases', () => {
   it('should accept empty optional fields', () => {
     const result = validateItemForm({
       name: 'Canon C70',
-      category: 'Camera'
+      category: 'Camera',
     });
     expect(result.isValid).toBe(true);
   });
@@ -674,18 +674,18 @@ describe('Data Type Coercion', () => {
     if (value === null || value === undefined || value === '') {
       return 0;
     }
-    
+
     // Handle string with currency symbol
     if (typeof value === 'string') {
       const cleaned = value.replace(/[$,]/g, '');
       const parsed = parseFloat(cleaned);
       return isNaN(parsed) ? 0 : parsed;
     }
-    
+
     if (typeof value === 'number') {
       return isNaN(value) ? 0 : value;
     }
-    
+
     return 0;
   };
 
@@ -741,44 +741,44 @@ describe('Data Type Coercion', () => {
 describe('Concurrent Operations', () => {
   it('should handle rapid successive updates', () => {
     let data = [{ id: '1', count: 0 }];
-    
+
     // Simulate rapid updates
     for (let i = 0; i < 100; i++) {
       data = updateById(data, '1', (item) => ({ count: item.count + 1 }));
     }
-    
+
     expect(data[0].count).toBe(100);
   });
 
   it('should handle interleaved add/remove operations', () => {
     let data = [];
-    
+
     // Add items
     for (let i = 0; i < 10; i++) {
       data = [...data, { id: `item-${i}`, value: i }];
     }
-    
+
     // Remove every other item
     for (let i = 0; i < 10; i += 2) {
       data = removeById(data, `item-${i}`);
     }
-    
+
     expect(data.length).toBe(5);
-    expect(data.every(item => parseInt(item.id.split('-')[1]) % 2 === 1)).toBe(true);
+    expect(data.every((item) => parseInt(item.id.split('-')[1]) % 2 === 1)).toBe(true);
   });
 
   it('should maintain data integrity during bulk updates', () => {
     const items = Array.from({ length: 1000 }, (_, i) => ({
       id: `item-${i}`,
-      value: i
+      value: i,
     }));
-    
+
     // Update all items
-    const updated = items.map(item => ({
+    const updated = items.map((item) => ({
       ...item,
-      value: item.value * 2
+      value: item.value * 2,
     }));
-    
+
     expect(updated.length).toBe(1000);
     expect(updated[500].value).toBe(1000);
   });
@@ -846,44 +846,45 @@ describe('Boundary Value Tests', () => {
 describe('Recovery and Retry Logic', () => {
   const fetchWithRetry = async (fn, maxRetries = 3, delay = 100) => {
     let lastError;
-    
+
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         return await fn();
       } catch (error) {
         lastError = error;
         if (attempt < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }
-    
+
     throw lastError;
   };
 
   it('should succeed on first attempt', async () => {
     const fn = vi.fn().mockResolvedValue('success');
     const result = await fetchWithRetry(fn);
-    
+
     expect(result).toBe('success');
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
   it('should retry on failure and eventually succeed', async () => {
-    const fn = vi.fn()
+    const fn = vi
+      .fn()
       .mockRejectedValueOnce(new Error('Fail 1'))
       .mockRejectedValueOnce(new Error('Fail 2'))
       .mockResolvedValue('success');
-    
+
     const result = await fetchWithRetry(fn, 3, 10);
-    
+
     expect(result).toBe('success');
     expect(fn).toHaveBeenCalledTimes(3);
   });
 
   it('should throw after max retries', async () => {
     const fn = vi.fn().mockRejectedValue(new Error('Always fails'));
-    
+
     await expect(fetchWithRetry(fn, 3, 10)).rejects.toThrow('Always fails');
     expect(fn).toHaveBeenCalledTimes(3);
   });

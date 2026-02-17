@@ -17,15 +17,24 @@ import NavigationContext from './NavigationContext.js';
 export function NavigationProviderWithData({ children }) {
   const { inventory, packages } = useData();
   const { isAuthenticated } = useAuth();
-  
+
   return (
-    <NavigationProvider isLoggedIn={isAuthenticated} inventory={inventory || []} packages={packages || []}>
+    <NavigationProvider
+      isLoggedIn={isAuthenticated}
+      inventory={inventory || []}
+      packages={packages || []}
+    >
       {children}
     </NavigationProvider>
   );
 }
 
-export function NavigationProvider({ children, isLoggedIn = false, inventory = [], packages = [] }) {
+export function NavigationProvider({
+  children,
+  isLoggedIn = false,
+  inventory = [],
+  packages = [],
+}) {
   // Navigation state
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -59,8 +68,10 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
 
     if (window.history.state?.view === undefined) {
       window.history.replaceState(state, '', window.location.pathname);
-    } else if (window.history.state?.view !== currentView ||
-               window.history.state?.selectedItemId !== state.selectedItemId) {
+    } else if (
+      window.history.state?.view !== currentView ||
+      window.history.state?.selectedItemId !== state.selectedItemId
+    ) {
       window.history.pushState(state, '', window.location.pathname);
     }
   }, [currentView, selectedItem?.id, selectedPackage?.id, isLoggedIn]);
@@ -78,11 +89,11 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
         if (event.state.view === VIEWS.PACKAGE_DETAIL) {
           setCurrentView(VIEWS.PACKAGES);
           if (event.state.selectedPackageId) {
-            const pkg = packages.find(p => p.id === event.state.selectedPackageId);
+            const pkg = packages.find((p) => p.id === event.state.selectedPackageId);
             if (pkg) setSelectedPackage(pkg);
           }
         } else if (event.state.view === VIEWS.GEAR_DETAIL && event.state.selectedItemId) {
-          const item = inventory.find(i => i.id === event.state.selectedItemId);
+          const item = inventory.find((i) => i.id === event.state.selectedItemId);
           if (item) setSelectedItem(item);
         }
       } else {
@@ -130,13 +141,16 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
     window.scrollTo(0, 0);
   }, []);
 
-  const navigateToReservation = useCallback((reservation, item, backContext = null) => {
-    setReservationBackView({ view: currentView, context: backContext });
-    setSelectedReservation(reservation);
-    setSelectedReservationItem(item);
-    setCurrentView(VIEWS.RESERVATION_DETAIL);
-    window.scrollTo(0, 0);
-  }, [currentView]);
+  const navigateToReservation = useCallback(
+    (reservation, item, backContext = null) => {
+      setReservationBackView({ view: currentView, context: backContext });
+      setSelectedReservation(reservation);
+      setSelectedReservationItem(item);
+      setCurrentView(VIEWS.RESERVATION_DETAIL);
+      window.scrollTo(0, 0);
+    },
+    [currentView],
+  );
 
   const goBack = useCallback(() => {
     if (currentView === VIEWS.GEAR_DETAIL) {
@@ -157,11 +171,9 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
     window.scrollTo(0, 0);
   }, [currentView, itemBackContext, reservationBackView]);
 
-  const isDetailView = [
-    VIEWS.GEAR_DETAIL,
-    VIEWS.PACKAGE_DETAIL,
-    VIEWS.RESERVATION_DETAIL,
-  ].includes(currentView);
+  const isDetailView = [VIEWS.GEAR_DETAIL, VIEWS.PACKAGE_DETAIL, VIEWS.RESERVATION_DETAIL].includes(
+    currentView,
+  );
 
   const resetNavigation = useCallback(() => {
     setCurrentView(VIEWS.DASHBOARD);
@@ -177,47 +189,57 @@ export function NavigationProvider({ children, isLoggedIn = false, inventory = [
   // ============================================================================
   // Memoized context value — only changes when actual state changes
   // ============================================================================
-  const value = useMemo(() => ({
-    // State
-    currentView,
-    selectedItem,
-    selectedPackage,
-    selectedPackList,
-    selectedReservation,
-    selectedReservationItem,
-    itemBackContext,
-    reservationBackView,
-    isDetailView,
+  const value = useMemo(
+    () => ({
+      // State
+      currentView,
+      selectedItem,
+      selectedPackage,
+      selectedPackList,
+      selectedReservation,
+      selectedReservationItem,
+      itemBackContext,
+      reservationBackView,
+      isDetailView,
 
-    // Setters
-    setCurrentView,
-    setSelectedItem,
-    setSelectedPackage,
-    setSelectedPackList,
-    setSelectedReservation,
-    setSelectedReservationItem,
-    setItemBackContext,
-    setReservationBackView,
+      // Setters
+      setCurrentView,
+      setSelectedItem,
+      setSelectedPackage,
+      setSelectedPackList,
+      setSelectedReservation,
+      setSelectedReservationItem,
+      setItemBackContext,
+      setReservationBackView,
 
-    // Handlers
-    navigate,
-    navigateToItem,
-    navigateToPackage,
-    navigateToPackList,
-    navigateToReservation,
-    goBack,
-    resetNavigation,
-  }), [
-    currentView, selectedItem, selectedPackage, selectedPackList,
-    selectedReservation, selectedReservationItem, itemBackContext, reservationBackView, isDetailView,
-    navigate, navigateToItem, navigateToPackage, navigateToPackList,
-    navigateToReservation, goBack, resetNavigation,
-  ]);
-
-  return (
-    <NavigationContext.Provider value={value}>
-      {children}
-    </NavigationContext.Provider>
+      // Handlers
+      navigate,
+      navigateToItem,
+      navigateToPackage,
+      navigateToPackList,
+      navigateToReservation,
+      goBack,
+      resetNavigation,
+    }),
+    [
+      currentView,
+      selectedItem,
+      selectedPackage,
+      selectedPackList,
+      selectedReservation,
+      selectedReservationItem,
+      itemBackContext,
+      reservationBackView,
+      isDetailView,
+      navigate,
+      navigateToItem,
+      navigateToPackage,
+      navigateToPackList,
+      navigateToReservation,
+      goBack,
+      resetNavigation,
+    ],
   );
-}
 
+  return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>;
+}

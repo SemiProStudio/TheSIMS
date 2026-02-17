@@ -21,12 +21,12 @@ import {
 /**
  * Hook for screen reader announcements in React components
  * Provides memoized announcement functions that are stable across re-renders
- * 
+ *
  * @returns {Object} Announcement functions
- * 
+ *
  * @example
  * const { announcePageChange, announceSuccess } = useAnnounce();
- * 
+ *
  * useEffect(() => {
  *   announcePageChange('Dashboard');
  * }, [currentView]);
@@ -43,18 +43,24 @@ export function useAnnounce() {
     announceSuccess: useCallback((message) => announceSuccess(message), []),
     announcePageChange: useCallback((pageName) => announcePageChange(pageName), []),
     announceModal: useCallback((modalName, isOpen) => announceModal(modalName, isOpen), []),
-    announceSelection: useCallback((itemName, isSelected) => announceSelection(itemName, isSelected), []),
-    announceFilterChange: useCallback((filterType, value) => announceFilterChange(filterType, value), []),
+    announceSelection: useCallback(
+      (itemName, isSelected) => announceSelection(itemName, isSelected),
+      [],
+    ),
+    announceFilterChange: useCallback(
+      (filterType, value) => announceFilterChange(filterType, value),
+      [],
+    ),
   };
 }
 
 /**
  * Hook that announces when a view/page changes
- * 
+ *
  * @param {string} viewName - Current view name to announce
  * @param {Object} options - Options
  * @param {boolean} options.skip - Skip the announcement
- * 
+ *
  * @example
  * useAnnounceViewChange(currentView === VIEWS.DASHBOARD ? 'Dashboard' : 'Gear List');
  */
@@ -83,11 +89,11 @@ export function useAnnounceViewChange(viewName, options = {}) {
 
 /**
  * Hook that announces loading state changes
- * 
+ *
  * @param {boolean} isLoading - Current loading state
  * @param {string} contentName - Name of content being loaded
  * @param {number} itemCount - Optional count of loaded items
- * 
+ *
  * @example
  * useAnnounceLoading(isLoading, 'Inventory', items.length);
  */
@@ -106,10 +112,10 @@ export function useAnnounceLoading(isLoading, contentName = 'Content', itemCount
 
 /**
  * Hook that announces modal open/close
- * 
+ *
  * @param {boolean} isOpen - Whether modal is open
  * @param {string} modalName - Name of the modal
- * 
+ *
  * @example
  * useAnnounceModal(isAddItemOpen, 'Add Item');
  */
@@ -126,9 +132,9 @@ export function useAnnounceModal(isOpen, modalName) {
 
 /**
  * Hook that announces errors
- * 
+ *
  * @param {string|null} error - Current error message
- * 
+ *
  * @example
  * useAnnounceError(formError);
  */

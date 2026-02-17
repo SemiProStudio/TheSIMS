@@ -385,10 +385,7 @@ describe('validateItem', () => {
   });
 
   it('detects duplicate codes', () => {
-    const result = validateItem(
-      { ...validItem, code: 'CAM-001' },
-      { existingCodes: ['CAM-001'] }
-    );
+    const result = validateItem({ ...validItem, code: 'CAM-001' }, { existingCodes: ['CAM-001'] });
     expect(result.isValid).toBe(false);
     expect(result.errors.code).toBeTruthy();
   });
@@ -396,7 +393,7 @@ describe('validateItem', () => {
   it('allows same code when editing that item', () => {
     const result = validateItem(
       { ...validItem, id: 'item-1', code: 'CAM-001' },
-      { existingCodes: ['CAM-001'], editingId: 'item-1' }
+      { existingCodes: ['CAM-001'], editingId: 'item-1' },
     );
     expect(result.isValid).toBe(true);
   });

@@ -18,44 +18,44 @@ export const colors = {
   bgLight: 'var(--bg-light)',
   bgCard: 'var(--bg-card)',
   bgCardSolid: 'var(--bg-card-solid)',
-  
+
   // Accent colors
   primary: 'var(--primary)',
   primaryLight: 'var(--primary-light)',
   primaryDark: 'var(--primary-dark)',
-  
+
   accent1: 'var(--accent1)',
   accent2: 'var(--accent2)',
   accent3: 'var(--accent3)',
-  
+
   // Status colors
   available: 'var(--status-available)',
   checkedOut: 'var(--status-checked-out)',
   reserved: 'var(--status-reserved)',
   needsAttention: 'var(--status-needs-attention)',
   missing: 'var(--status-missing)',
-  
+
   // Condition colors
   excellent: 'var(--condition-excellent)',
   good: 'var(--condition-good)',
   fair: 'var(--condition-fair)',
   poor: 'var(--condition-poor)',
-  
+
   // Text colors
   textPrimary: 'var(--text-primary)',
   textSecondary: 'var(--text-secondary)',
   textMuted: 'var(--text-muted)',
-  
+
   // Border colors
   border: 'var(--border)',
   borderLight: 'var(--border-light)',
-  
+
   // Semantic colors
   danger: 'var(--danger)',
   dangerBg: 'var(--danger-bg)',
   success: 'var(--success)',
   warning: 'var(--warning)',
-  
+
   // Focus ring (accessibility)
   focusRing: 'var(--focus-ring-color)',
 };
@@ -67,19 +67,19 @@ export const colors = {
 /**
  * Apply opacity to a CSS color variable using color-mix()
  * This works with CSS variables and automatically updates with theme changes
- * 
+ *
  * @param {string} color - A CSS variable reference (e.g., colors.primary or 'var(--primary)') or hex color
  * @param {number} percent - Opacity percentage (0-100), e.g., 20 for 20% opacity
  * @returns {string} CSS color-mix() expression
- * 
+ *
  * @example
  * // Using with colors object
  * background: withOpacity(colors.primary, 20)  // 20% opacity
  * border: `1px solid ${withOpacity(colors.primary, 50)}`  // 50% opacity
- * 
+ *
  * // Using with CSS variable string
  * background: withOpacity('var(--panel-alerts)', 15)
- * 
+ *
  * // Using with hex color (works but not reactive to theme)
  * background: withOpacity('#6366f1', 20)
  */
@@ -363,4 +363,3 @@ export const componentStyles = {
     },
   },
 };
-

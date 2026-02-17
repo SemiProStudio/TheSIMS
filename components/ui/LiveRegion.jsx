@@ -2,10 +2,10 @@ import { memo } from 'react';
 import PropTypes from 'prop-types';
 
 // LiveRegion - Announce dynamic content to screen readers
-export const LiveRegion = memo(function LiveRegion({ 
-  children, 
+export const LiveRegion = memo(function LiveRegion({
+  children,
   politeness = 'polite', // 'polite' or 'assertive'
-  atomic = true 
+  atomic = true,
 }) {
   return (
     <div

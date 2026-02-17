@@ -14,19 +14,19 @@ import { colors, styles, borderRadius, spacing, typography, withOpacity } from '
 
 export const BackButton = memo(function BackButton({ onClick, children = 'Back' }) {
   return (
-    <button 
-      onClick={onClick} 
+    <button
+      onClick={onClick}
       type="button"
       aria-label={`Go back: ${children}`}
-      style={{ 
-        ...styles.btnSec, 
-        marginBottom: spacing[4], 
-        border: 'none', 
-        background: 'none', 
-        padding: 0, 
-        color: colors.textSecondary, 
-        display: 'flex', 
-        alignItems: 'center', 
+      style={{
+        ...styles.btnSec,
+        marginBottom: spacing[4],
+        border: 'none',
+        background: 'none',
+        padding: 0,
+        color: colors.textSecondary,
+        display: 'flex',
+        alignItems: 'center',
         gap: spacing[2],
         cursor: 'pointer',
       }}
@@ -40,9 +40,9 @@ export const BackButton = memo(function BackButton({ onClick, children = 'Back' 
 // PageHeader - Consistent page title with optional subtitle and actions
 // ============================================================================
 
-export const PageHeader = memo(function PageHeader({ 
-  title, 
-  subtitle, 
+export const PageHeader = memo(function PageHeader({
+  title,
+  subtitle,
   action,
   backButton,
   onBack,
@@ -50,23 +50,25 @@ export const PageHeader = memo(function PageHeader({
 }) {
   return (
     <>
-      {(backButton || onBack) && (
-        <BackButton onClick={onBack}>{backLabel}</BackButton>
-      )}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: spacing[5] 
-      }}>
+      {(backButton || onBack) && <BackButton onClick={onBack}>{backLabel}</BackButton>}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: spacing[5],
+        }}
+      >
         <div>
           <h2 style={{ margin: 0, color: colors.textPrimary }}>{title}</h2>
           {subtitle && (
-            <p style={{ 
-              margin: `${spacing[1]}px 0 0`, 
-              color: colors.textMuted, 
-              fontSize: typography.fontSize.sm 
-            }}>
+            <p
+              style={{
+                margin: `${spacing[1]}px 0 0`,
+                color: colors.textMuted,
+                fontSize: typography.fontSize.sm,
+              }}
+            >
               {subtitle}
             </p>
           )}
@@ -83,12 +85,14 @@ export const PageHeader = memo(function PageHeader({
 
 export const DragHandle = memo(function DragHandle({ canDrag = true, size = 16 }) {
   return (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center',
-      color: canDrag ? colors.textMuted : colors.borderLight,
-      cursor: canDrag ? 'grab' : 'default',
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        color: canDrag ? colors.textMuted : colors.borderLight,
+        cursor: canDrag ? 'grab' : 'default',
+      }}
+    >
       <GripVertical size={size} />
     </div>
   );
@@ -106,7 +110,7 @@ export const Badge = memo(function Badge({ text, children, color = colors.primar
   };
 
   const content = text || children;
-  
+
   // Don't render if no content
   if (!content) return null;
 
@@ -134,75 +138,77 @@ export const Badge = memo(function Badge({ text, children, color = colors.primar
 // Button - Primary and secondary buttons
 // ============================================================================
 
-export const Button = memo(forwardRef(function Button(
-  { 
-    children, 
-    variant = 'primary', 
-    size = 'md',
-    disabled = false,
-    danger = false,
-    fullWidth = false,
-    icon: Icon,
-    iconOnly = false,
-    'aria-label': ariaLabel,
-    onClick,
-    style: customStyle,
-    className: customClassName,
-    type = 'button',
-    ...props 
-  },
-  ref
-) {
-  // Build CSS class list
-  const classNames = [
-    variant === 'primary' ? 'btn' : 'btn-secondary',
-    danger && 'btn-danger',
-    size === 'sm' && 'btn-sm',
-    fullWidth && 'btn-full',
-    customClassName,
-  ].filter(Boolean).join(' ');
+export const Button = memo(
+  forwardRef(function Button(
+    {
+      children,
+      variant = 'primary',
+      size = 'md',
+      disabled = false,
+      danger = false,
+      fullWidth = false,
+      icon: Icon,
+      iconOnly = false,
+      'aria-label': ariaLabel,
+      onClick,
+      style: customStyle,
+      className: customClassName,
+      type = 'button',
+      ...props
+    },
+    ref,
+  ) {
+    // Build CSS class list
+    const classNames = [
+      variant === 'primary' ? 'btn' : 'btn-secondary',
+      danger && 'btn-danger',
+      size === 'sm' && 'btn-sm',
+      fullWidth && 'btn-full',
+      customClassName,
+    ]
+      .filter(Boolean)
+      .join(' ');
 
-  // Icon-only buttons must have aria-label
-  const isIconOnly = iconOnly || (Icon && !children);
-  const accessibleLabel = ariaLabel || (isIconOnly ? 'Button' : undefined);
+    // Icon-only buttons must have aria-label
+    const isIconOnly = iconOnly || (Icon && !children);
+    const accessibleLabel = ariaLabel || (isIconOnly ? 'Button' : undefined);
 
-  return (
-    <button
-      ref={ref}
-      className={classNames}
-      style={customStyle}
-      disabled={disabled}
-      onClick={onClick}
-      type={type}
-      aria-label={accessibleLabel}
-      aria-disabled={disabled || undefined}
-      {...props}
-    >
-      {Icon && <Icon size={size === 'sm' ? 14 : 16} aria-hidden="true" />}
-      {children}
-    </button>
-  );
-}));
+    return (
+      <button
+        ref={ref}
+        className={classNames}
+        style={customStyle}
+        disabled={disabled}
+        onClick={onClick}
+        type={type}
+        aria-label={accessibleLabel}
+        aria-disabled={disabled || undefined}
+        {...props}
+      >
+        {Icon && <Icon size={size === 'sm' ? 14 : 16} aria-hidden="true" />}
+        {children}
+      </button>
+    );
+  }),
+);
 
 // ============================================================================
 // Card - Container component
 // ============================================================================
 
-export const Card = memo(function Card({ 
-  children, 
+export const Card = memo(function Card({
+  children,
   padding = true,
   onClick,
   style: customStyle,
   className: customClassName,
-  ...props 
+  ...props
 }) {
   const isClickable = !!onClick;
-  const classNames = [
-    'card', 
-    isClickable && 'card-clickable',
-    customClassName
-  ].filter(Boolean).join(' ');
-  
+  const classNames = ['card', isClickable && 'card-clickable', customClassName]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <div
       className={classNames}
@@ -215,12 +221,16 @@ export const Card = memo(function Card({
       // Make clickable cards keyboard accessible
       tabIndex={isClickable ? 0 : undefined}
       role={isClickable ? 'button' : undefined}
-      onKeyDown={isClickable ? (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick?.(e);
-        }
-      } : undefined}
+      onKeyDown={
+        isClickable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick?.(e);
+              }
+            }
+          : undefined
+      }
       {...props}
     >
       {children}
@@ -232,12 +242,7 @@ export const Card = memo(function Card({
 // CardHeader - Card header with title
 // ============================================================================
 
-export const CardHeader = memo(function CardHeader({ 
-  title, 
-  icon: Icon,
-  action,
-  children 
-}) {
+export const CardHeader = memo(function CardHeader({ title, icon: Icon, action, children }) {
   return (
     <div
       style={{
@@ -264,16 +269,16 @@ export const CardHeader = memo(function CardHeader({
 // Uses CSS color-mix() for CSS variables, converts hex to rgba for hex colors
 const withAlpha = (color, alpha) => {
   if (!color) return color;
-  
+
   // Already has alpha
   if (color.startsWith('rgba') || color.startsWith('rgb')) return color;
-  
+
   // CSS variable - use color-mix()
   if (color.startsWith('var(')) {
     const percent = Math.round(alpha * 100);
     return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
   }
-  
+
   // Hex color - convert to rgba
   const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
   const expandedHex = color.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
@@ -297,13 +302,15 @@ export const CollapsibleSection = memo(function CollapsibleSection({
   const accentColor = headerColor || colors.primary;
 
   return (
-    <div style={{
-      background: withAlpha(accentColor, 0.18),
-      borderRadius: borderRadius.lg,
-      border: `1px solid ${withAlpha(accentColor, 0.35)}`,
-      overflow: 'hidden',
-      ...style,
-    }}>
+    <div
+      style={{
+        background: withAlpha(accentColor, 0.18),
+        borderRadius: borderRadius.lg,
+        border: `1px solid ${withAlpha(accentColor, 0.35)}`,
+        overflow: 'hidden',
+        ...style,
+      }}
+    >
       {/* Header - clickable to toggle, hover handled by CSS */}
       <div
         className="collapsible-header"
@@ -316,40 +323,38 @@ export const CollapsibleSection = memo(function CollapsibleSection({
           gap: spacing[2],
           cursor: 'pointer',
           userSelect: 'none',
-          background: collapsed ? withAlpha(accentColor, 0.30) : withAlpha(accentColor, 0.38),
+          background: collapsed ? withAlpha(accentColor, 0.3) : withAlpha(accentColor, 0.38),
           borderBottom: collapsed ? 'none' : `1px solid ${withAlpha(accentColor, 0.4)}`,
           borderLeft: `4px solid ${accentColor}`,
         }}
       >
         {Icon && <Icon size={16} color={accentColor} />}
-        <strong style={{ color: colors.textPrimary, flex: 1 }}>
-          {title}
-        </strong>
+        <strong style={{ color: colors.textPrimary, flex: 1 }}>{title}</strong>
         {badge !== undefined && badge !== null && (
-          <span style={{
-            background: withAlpha(accentColor, 0.5),
-            color: colors.textPrimary,
-            padding: '2px 8px',
-            borderRadius: borderRadius.full,
-            fontSize: typography.fontSize.xs,
-            fontWeight: typography.fontWeight.medium,
-          }}>
+          <span
+            style={{
+              background: withAlpha(accentColor, 0.5),
+              color: colors.textPrimary,
+              padding: '2px 8px',
+              borderRadius: borderRadius.full,
+              fontSize: typography.fontSize.xs,
+              fontWeight: typography.fontWeight.medium,
+            }}
+          >
             {badge}
           </span>
         )}
-        {action && (
-          <div onClick={e => e.stopPropagation()}>
-            {action}
-          </div>
-        )}
+        {action && <div onClick={(e) => e.stopPropagation()}>{action}</div>}
       </div>
-      
+
       {/* Content - shown when not collapsed */}
       {!collapsed && (
-        <div style={{
-          padding: padding ? spacing[4] : 0,
-          background: withAlpha(accentColor, 0.30),
-        }}>
+        <div
+          style={{
+            padding: padding ? spacing[4] : 0,
+            background: withAlpha(accentColor, 0.3),
+          }}
+        >
           {children}
         </div>
       )}
@@ -361,97 +366,100 @@ export const CollapsibleSection = memo(function CollapsibleSection({
 // Input - Form input field
 // ============================================================================
 
-export const Input = memo(forwardRef(function Input(
-  { 
-    label,
-    error,
-    icon: Icon,
-    style: customStyle,
-    containerStyle,
-    className: customClassName,
-    ...props 
-  },
-  ref
-) {
-  const inputClassNames = [
-    'input',
-    error && 'input-error',
-    customClassName,
-  ].filter(Boolean).join(' ');
+export const Input = memo(
+  forwardRef(function Input(
+    {
+      label,
+      error,
+      icon: Icon,
+      style: customStyle,
+      containerStyle,
+      className: customClassName,
+      ...props
+    },
+    ref,
+  ) {
+    const inputClassNames = ['input', error && 'input-error', customClassName]
+      .filter(Boolean)
+      .join(' ');
 
-  return (
-    <div style={containerStyle}>
-      {label && <label className={error ? 'label label-error' : 'label'}>{label}</label>}
-      <div style={{ position: 'relative' }}>
-        {Icon && (
-          <div
+    return (
+      <div style={containerStyle}>
+        {label && <label className={error ? 'label label-error' : 'label'}>{label}</label>}
+        <div style={{ position: 'relative' }}>
+          {Icon && (
+            <div
+              style={{
+                position: 'absolute',
+                left: spacing[3],
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: colors.textMuted,
+              }}
+            >
+              <Icon size={16} />
+            </div>
+          )}
+          <input
+            ref={ref}
+            className={inputClassNames}
             style={{
-              position: 'absolute',
-              left: spacing[3],
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: colors.textMuted,
+              ...(Icon && { paddingLeft: spacing[10] }),
+              ...customStyle,
+            }}
+            {...props}
+          />
+        </div>
+        {error && (
+          <span
+            style={{
+              color: colors.danger,
+              fontSize: typography.fontSize.xs,
+              marginTop: spacing[1],
             }}
           >
-            <Icon size={16} />
-          </div>
+            {error}
+          </span>
         )}
-        <input
-          ref={ref}
-          className={inputClassNames}
-          style={{
-            ...(Icon && { paddingLeft: spacing[10] }),
-            ...customStyle,
-          }}
-          {...props}
-        />
       </div>
-      {error && (
-        <span style={{ color: colors.danger, fontSize: typography.fontSize.xs, marginTop: spacing[1] }}>
-          {error}
-        </span>
-      )}
-    </div>
-  );
-}));
+    );
+  }),
+);
 
 // ============================================================================
 // SelectInput - Basic dropdown select (legacy - prefer components/Select.jsx)
 // ============================================================================
 
-export const SelectInput = memo(forwardRef(function SelectInput(
-  { label, options, style: customStyle, className: customClassName, ...props },
-  ref
-) {
-  const selectClassNames = ['select', customClassName].filter(Boolean).join(' ');
-  
-  return (
-    <div>
-      {label && <label className="label">{label}</label>}
-      <select
-        ref={ref}
-        className={selectClassNames}
-        style={customStyle}
-        {...props}
-      >
-        {options.map(opt => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}));
+export const SelectInput = memo(
+  forwardRef(function SelectInput(
+    { label, options, style: customStyle, className: customClassName, ...props },
+    ref,
+  ) {
+    const selectClassNames = ['select', customClassName].filter(Boolean).join(' ');
+
+    return (
+      <div>
+        {label && <label className="label">{label}</label>}
+        <select ref={ref} className={selectClassNames} style={customStyle} {...props}>
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }),
+);
 
 // ============================================================================
 // StatCard - Dashboard statistic card
 // ============================================================================
 
-export const StatCard = memo(function StatCard({ 
-  icon: Icon, 
-  value, 
-  label, 
+export const StatCard = memo(function StatCard({
+  icon: Icon,
+  value,
+  label,
   color = colors.primary,
   onClick,
 }) {
@@ -511,9 +519,9 @@ export const StatCard = memo(function StatCard({
 // ItemImage - Image with placeholder
 // ============================================================================
 
-export const ItemImage = memo(function ItemImage({ 
-  src, 
-  alt = '', 
+export const ItemImage = memo(function ItemImage({
+  src,
+  alt = '',
   size = 56,
   borderRadius: radius = borderRadius.md,
   showPlaceholder = true,
@@ -549,10 +557,17 @@ export const ItemImage = memo(function ItemImage({
         color: colors.textMuted,
       }}
     >
-      <svg width={size * 0.4} height={size * 0.4} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <polyline points="21 15 16 10 5 21"/>
+      <svg
+        width={size * 0.4}
+        height={size * 0.4}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      >
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <polyline points="21 15 16 10 5 21" />
       </svg>
       {size >= 48 && (
         <span style={{ fontSize: Math.max(8, size * 0.15), marginTop: 2 }}>No Image</span>
@@ -565,19 +580,13 @@ export const ItemImage = memo(function ItemImage({
 // Modal - Modal container
 // ============================================================================
 
-export const Modal = memo(function Modal({ 
-  isOpen, 
-  onClose, 
-  title,
-  maxWidth = 500,
-  children 
-}) {
+export const Modal = memo(function Modal({ isOpen, onClose, title, maxWidth = 500, children }) {
   if (!isOpen) return null;
 
   return (
     <div className="modal-backdrop" style={styles.modal} onClick={onClose}>
       <div
-        onClick={e => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
         style={{ ...styles.modalBox, maxWidth }}
         role="dialog"
         aria-modal="true"
@@ -593,7 +602,10 @@ export const Modal = memo(function Modal({
               justifyContent: 'space-between',
             }}
           >
-            <h3 id="modal-title" style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary }}>
+            <h3
+              id="modal-title"
+              style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary }}
+            >
               {title}
             </h3>
             <button
@@ -613,16 +625,22 @@ export const Modal = memo(function Modal({
                 justifyContent: 'center',
               }}
             >
-              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <svg
+                width={20}
+                height={20}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
           </div>
         )}
-        <div style={{ padding: spacing[4] }}>
-          {children}
-        </div>
+        <div style={{ padding: spacing[4] }}>{children}</div>
       </div>
     </div>
   );
@@ -632,12 +650,7 @@ export const Modal = memo(function Modal({
 // EmptyState - No data placeholder
 // ============================================================================
 
-export const EmptyState = memo(function EmptyState({ 
-  icon: Icon, 
-  title, 
-  description,
-  action,
-}) {
+export const EmptyState = memo(function EmptyState({ icon: Icon, title, description, action }) {
   return (
     <Card style={{ padding: spacing[12], textAlign: 'center' }}>
       {Icon && (
@@ -666,9 +679,7 @@ export const EmptyState = memo(function EmptyState({
         {title}
       </h3>
       {description && (
-        <p style={{ color: colors.textMuted, marginBottom: spacing[5] }}>
-          {description}
-        </p>
+        <p style={{ color: colors.textMuted, marginBottom: spacing[5] }}>{description}</p>
       )}
       {action}
     </Card>
@@ -679,46 +690,49 @@ export const EmptyState = memo(function EmptyState({
 // ConfirmDialog - Styled confirmation modal
 // ============================================================================
 
-export const ConfirmDialog = memo(function ConfirmDialog({ 
-  isOpen, 
-  title = 'Confirm', 
-  message, 
-  confirmText = 'Delete', 
+export const ConfirmDialog = memo(function ConfirmDialog({
+  isOpen,
+  title = 'Confirm',
+  message,
+  confirmText = 'Delete',
   cancelText = 'Cancel',
-  onConfirm, 
+  onConfirm,
   onCancel,
-  danger = true 
+  danger = true,
 }) {
   const dialogRef = useRef(null);
   const cancelButtonRef = useRef(null);
-  
+
   // Focus management and keyboard handling
   useEffect(() => {
     if (isOpen) {
       // Focus the cancel button when dialog opens
       cancelButtonRef.current?.focus();
-      
+
       // Prevent body scroll
       document.body.style.overflow = 'hidden';
-      
+
       return () => {
         document.body.style.overflow = '';
       };
     }
   }, [isOpen]);
-  
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      onCancel();
-    }
-  }, [onCancel]);
-  
+
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onCancel();
+      }
+    },
+    [onCancel],
+  );
+
   if (!isOpen) return null;
-  
+
   return (
-    <div 
-      className="modal-backdrop" 
+    <div
+      className="modal-backdrop"
       style={{
         position: 'fixed',
         inset: 0,
@@ -726,14 +740,14 @@ export const ConfirmDialog = memo(function ConfirmDialog({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000
-      }} 
+        zIndex: 1000,
+      }}
       onClick={onCancel}
       role="presentation"
     >
-      <div 
+      <div
         ref={dialogRef}
-        onClick={e => e.stopPropagation()} 
+        onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
         role="alertdialog"
         aria-modal="true"
@@ -746,46 +760,48 @@ export const ConfirmDialog = memo(function ConfirmDialog({
           width: '100%',
           maxWidth: 400,
           overflow: 'hidden',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.4)'
+          boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
         }}
       >
         <div style={{ padding: spacing[5] }}>
-          <h3 
+          <h3
             id="confirm-dialog-title"
-            style={{ 
-              margin: `0 0 ${spacing[3]}px`, 
-              fontSize: typography.fontSize.lg, 
-              color: colors.textPrimary 
+            style={{
+              margin: `0 0 ${spacing[3]}px`,
+              fontSize: typography.fontSize.lg,
+              color: colors.textPrimary,
             }}
           >
             {title}
           </h3>
-          <p 
+          <p
             id="confirm-dialog-message"
-            style={{ 
-              margin: 0, 
+            style={{
+              margin: 0,
               color: colors.textSecondary,
               fontSize: typography.fontSize.sm,
-              lineHeight: 1.5
+              lineHeight: 1.5,
             }}
           >
             {message}
           </p>
         </div>
-        <div style={{ 
-          padding: spacing[4], 
-          borderTop: `1px solid ${colors.borderLight}`,
-          display: 'flex',
-          gap: spacing[3],
-          justifyContent: 'flex-end'
-        }}>
+        <div
+          style={{
+            padding: spacing[4],
+            borderTop: `1px solid ${colors.borderLight}`,
+            display: 'flex',
+            gap: spacing[3],
+            justifyContent: 'flex-end',
+          }}
+        >
           <button
             ref={cancelButtonRef}
             onClick={onCancel}
             type="button"
             style={{
               ...styles.btnSec,
-              padding: `${spacing[2]}px ${spacing[4]}px`
+              padding: `${spacing[2]}px ${spacing[4]}px`,
             }}
           >
             {cancelText}
@@ -796,7 +812,7 @@ export const ConfirmDialog = memo(function ConfirmDialog({
             style={{
               ...styles.btn,
               padding: `${spacing[2]}px ${spacing[4]}px`,
-              background: danger ? colors.danger : colors.primary
+              background: danger ? colors.danger : colors.primary,
             }}
           >
             {confirmText}
@@ -811,118 +827,118 @@ export const ConfirmDialog = memo(function ConfirmDialog({
 // SearchInput - Search input with icon
 // ============================================================================
 
-export const SearchInput = memo(forwardRef(function SearchInput({
-  value,
-  onChange,
-  placeholder = 'Search...',
-  onClear,
-  'aria-label': ariaLabel = 'Search',
-  id,
-  style: customStyle = {},
-  ...props
-}, ref) {
-  const stableIdRef = useRef(id || `search-input-${Math.random().toString(36).substr(2, 9)}`);
-  const inputId = id || stableIdRef.current;
-  const internalRef = useRef(null);
-  const inputRef = ref || internalRef;
-  const [isFocused, setIsFocused] = useState(false);
-  
-  return (
-    <div
-      role="search"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: spacing[2],
-        ...styles.input,
-        padding: '12px 16px',
-        ...(isFocused && {
-          borderColor: colors.primary,
-          boxShadow: `0 0 0 2px color-mix(in srgb, ${colors.primary} 20%, transparent)`,
-        }),
-        ...customStyle,
-      }}
-    >
-      <svg 
-        width={18} 
-        height={18} 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        stroke={colors.textMuted} 
-        strokeWidth="2"
-        aria-hidden="true"
-      >
-        <circle cx="11" cy="11" r="8" />
-        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-      </svg>
-      <input
-        ref={inputRef}
-        id={inputId}
-        type="text"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        aria-label={ariaLabel}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+export const SearchInput = memo(
+  forwardRef(function SearchInput(
+    {
+      value,
+      onChange,
+      placeholder = 'Search...',
+      onClear,
+      'aria-label': ariaLabel = 'Search',
+      id,
+      style: customStyle = {},
+      ...props
+    },
+    ref,
+  ) {
+    const stableIdRef = useRef(id || `search-input-${Math.random().toString(36).substr(2, 9)}`);
+    const inputId = id || stableIdRef.current;
+    const internalRef = useRef(null);
+    const inputRef = ref || internalRef;
+    const [isFocused, setIsFocused] = useState(false);
+
+    return (
+      <div
+        role="search"
         style={{
-          background: 'none',
-          border: 'none',
-          color: colors.textPrimary,
-          flex: 1,
-          outline: 'none',
-          fontSize: typography.fontSize.base,
-          padding: 0,
-          margin: 0,
-          // Hide any native styling
-          WebkitAppearance: 'none',
-          MozAppearance: 'none',
-          appearance: 'none',
-          boxShadow: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: spacing[2],
+          ...styles.input,
+          padding: '12px 16px',
+          ...(isFocused && {
+            borderColor: colors.primary,
+            boxShadow: `0 0 0 2px color-mix(in srgb, ${colors.primary} 20%, transparent)`,
+          }),
+          ...customStyle,
         }}
-        {...props}
-      />
-      {value && onClear && (
-        <button
-          onClick={onClear}
-          type="button"
-          aria-label="Clear search"
+      >
+        <svg
+          width={18}
+          height={18}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={colors.textMuted}
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          ref={inputRef}
+          id={inputId}
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          aria-label={ariaLabel}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           style={{
             background: 'none',
             border: 'none',
-            color: colors.textMuted,
-            cursor: 'pointer',
-            padding: 2,
+            color: colors.textPrimary,
+            flex: 1,
+            outline: 'none',
+            fontSize: typography.fontSize.base,
+            padding: 0,
+            margin: 0,
+            // Hide any native styling
+            WebkitAppearance: 'none',
+            MozAppearance: 'none',
+            appearance: 'none',
+            boxShadow: 'none',
           }}
-        >
-          <svg 
-            width={14} 
-            height={14} 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2"
-            aria-hidden="true"
+          {...props}
+        />
+        {value && onClear && (
+          <button
+            onClick={onClear}
+            type="button"
+            aria-label="Clear search"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: colors.textMuted,
+              cursor: 'pointer',
+              padding: 2,
+            }}
           >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      )}
-    </div>
-  );
-}));
+            <svg
+              width={14}
+              height={14}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
+    );
+  }),
+);
 
 // ============================================================================
 // Avatar - User avatar
 // ============================================================================
 
-export const Avatar = memo(function Avatar({ 
-  name, 
-  src, 
-  size = 40,
-  style: customStyle,
-}) {
+export const Avatar = memo(function Avatar({ name, src, size = 40, style: customStyle }) {
   const initial = name?.charAt(0)?.toUpperCase() || '?';
 
   if (src) {
@@ -982,8 +998,8 @@ export const Divider = memo(function Divider({ spacing: sp = 4 }) {
 // Grid - Responsive grid layout
 // ============================================================================
 
-export const Grid = memo(function Grid({ 
-  children, 
+export const Grid = memo(function Grid({
+  children,
   columns = 'auto-fill',
   minWidth = 180,
   gap = 4,
@@ -1007,8 +1023,8 @@ export const Grid = memo(function Grid({
 // Flex - Flexbox container
 // ============================================================================
 
-export const Flex = memo(function Flex({ 
-  children, 
+export const Flex = memo(function Flex({
+  children,
   direction = 'row',
   align = 'center',
   justify = 'flex-start',
@@ -1056,17 +1072,17 @@ export const Pagination = memo(function Pagination({
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
-    
+
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       // Always show first page
       pages.push(1);
-      
+
       // Calculate middle pages
       let start = Math.max(2, page - 1);
       let end = Math.min(totalPages - 1, page + 1);
-      
+
       // Adjust if at beginning
       if (page <= 3) {
         end = 4;
@@ -1075,20 +1091,20 @@ export const Pagination = memo(function Pagination({
       if (page >= totalPages - 2) {
         start = totalPages - 3;
       }
-      
+
       // Add ellipsis before middle pages if needed
       if (start > 2) pages.push('...');
-      
+
       // Add middle pages
       for (let i = start; i <= end; i++) pages.push(i);
-      
+
       // Add ellipsis after middle pages if needed
       if (end < totalPages - 1) pages.push('...');
-      
+
       // Always show last page
       pages.push(totalPages);
     }
-    
+
     return pages;
   };
 
@@ -1105,20 +1121,24 @@ export const Pagination = memo(function Pagination({
   });
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginTop: spacing[5],
-      paddingTop: spacing[4],
-      borderTop: `1px solid ${colors.borderLight}`,
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: spacing[5],
+        paddingTop: spacing[4],
+        borderTop: `1px solid ${colors.borderLight}`,
+      }}
+    >
       {/* Item count */}
       {showItemCount && (
-        <div style={{ 
-          fontSize: typography.fontSize.sm, 
-          color: colors.textMuted 
-        }}>
+        <div
+          style={{
+            fontSize: typography.fontSize.sm,
+            color: colors.textMuted,
+          }}
+        >
           Showing {startItem}-{endItem} of {totalItems} items
         </div>
       )}
@@ -1139,12 +1159,15 @@ export const Pagination = memo(function Pagination({
         </button>
 
         {/* Page numbers */}
-        {getPageNumbers().map((pageNum, idx) => (
+        {getPageNumbers().map((pageNum, idx) =>
           pageNum === '...' ? (
-            <span key={`ellipsis-${idx}`} style={{ 
-              padding: `0 ${spacing[2]}px`, 
-              color: colors.textMuted 
-            }}>
+            <span
+              key={`ellipsis-${idx}`}
+              style={{
+                padding: `0 ${spacing[2]}px`,
+                color: colors.textMuted,
+              }}
+            >
               …
             </span>
           ) : (
@@ -1155,8 +1178,8 @@ export const Pagination = memo(function Pagination({
             >
               {pageNum}
             </button>
-          )
-        ))}
+          ),
+        )}
 
         {/* Next button */}
         <button
@@ -1179,21 +1202,23 @@ export const Pagination = memo(function Pagination({
 // LoadingSpinner - Loading indicator
 // ============================================================================
 
-export const LoadingSpinner = memo(function LoadingSpinner({ 
-  size = 24, 
+export const LoadingSpinner = memo(function LoadingSpinner({
+  size = 24,
   color = colors.primary,
-  style: customStyle 
+  style: customStyle,
 }) {
   return (
-    <div style={{
-      width: size,
-      height: size,
-      border: `2px solid ${withOpacity(color, 30)}`,
-      borderTopColor: color,
-      borderRadius: '50%',
-      animation: 'spin 0.8s linear infinite',
-      ...customStyle,
-    }}>
+    <div
+      style={{
+        width: size,
+        height: size,
+        border: `2px solid ${withOpacity(color, 30)}`,
+        borderTopColor: color,
+        borderRadius: '50%',
+        animation: 'spin 0.8s linear infinite',
+        ...customStyle,
+      }}
+    >
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
@@ -1207,34 +1232,36 @@ export const LoadingSpinner = memo(function LoadingSpinner({
 // LoadingOverlay - Full-screen or container loading state
 // ============================================================================
 
-export const LoadingOverlay = memo(function LoadingOverlay({ 
+export const LoadingOverlay = memo(function LoadingOverlay({
   message = 'Loading...',
   fullScreen = false,
 }) {
-  const containerStyle = fullScreen ? {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(0,0,0,0.7)',
-    zIndex: 1000,
-  } : {
-    position: 'absolute',
-    inset: 0,
-    background: `${colors.bgDark}cc`,
-  };
+  const containerStyle = fullScreen
+    ? {
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.7)',
+        zIndex: 1000,
+      }
+    : {
+        position: 'absolute',
+        inset: 0,
+        background: `${colors.bgDark}cc`,
+      };
 
   return (
-    <div style={{
-      ...containerStyle,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: spacing[3],
-    }}>
+    <div
+      style={{
+        ...containerStyle,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing[3],
+      }}
+    >
       <LoadingSpinner size={32} />
-      <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>
-        {message}
-      </span>
+      <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>{message}</span>
     </div>
   );
 });
@@ -1265,10 +1292,10 @@ export const VisuallyHidden = memo(function VisuallyHidden({ children, as: Compo
 });
 
 // LiveRegion - Announce dynamic content to screen readers
-export const LiveRegion = memo(function LiveRegion({ 
-  children, 
+export const LiveRegion = memo(function LiveRegion({
+  children,
   politeness = 'polite', // 'polite' or 'assertive'
-  atomic = true 
+  atomic = true,
 }) {
   return (
     <div
@@ -1293,7 +1320,10 @@ export const LiveRegion = memo(function LiveRegion({
 });
 
 // SkipLink - Allow keyboard users to skip to main content
-export const SkipLink = memo(function SkipLink({ targetId = 'main-content', children = 'Skip to main content' }) {
+export const SkipLink = memo(function SkipLink({
+  targetId = 'main-content',
+  children = 'Skip to main content',
+}) {
   return (
     <a
       href={`#${targetId}`}
@@ -1442,10 +1472,12 @@ SelectInput.propTypes = {
   /** Label text */
   label: PropTypes.string,
   /** Array of { value, label } options */
-  options: PropTypes.arrayOf(PropTypes.shape({
-    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-    label: PropTypes.string.isRequired,
-  })).isRequired,
+  options: PropTypes.arrayOf(
+    PropTypes.shape({
+      value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      label: PropTypes.string.isRequired,
+    }),
+  ).isRequired,
   /** Current value */
   value: PropTypes.string,
   /** Change handler */
