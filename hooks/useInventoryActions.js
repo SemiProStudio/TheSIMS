@@ -31,7 +31,7 @@ export function useInventoryActions({
   
   // Current state for operations
   inventory,
-  selectedItem,
+  selectedItem: _selectedItem,
   currentUser,
   currentView,
   specs,
@@ -230,11 +230,15 @@ export function useInventoryActions({
 
       // Persist to Supabase AND update local state
       await dataContext.updateItem(editingItemId, updates);
-      
-      // Update selected item if it's the one being edited
-      if (selectedItem?.id === editingItemId) {
-        setSelectedItem(prev => ({ ...prev, ...updates }));
-      }
+
+      // Always refresh selectedItem with the latest updates
+      // Use editingItemId directly (not selectedItem from closure) to avoid stale reference
+      setSelectedItem(prev => {
+        if (prev?.id === editingItemId) {
+          return { ...prev, ...updates };
+        }
+        return prev;
+      });
       
       // Log the update
       if (changes.length > 0) {
@@ -264,7 +268,7 @@ export function useInventoryActions({
     } finally {
       setIsLoading(false);
     }
-  }, [itemForm, editingItemId, selectedItem, specs, closeModal, inventory, setSelectedItem, setEditingItemId, addChangeLog, addAuditLog, addToast, dataContext]);
+  }, [itemForm, editingItemId, specs, closeModal, inventory, setSelectedItem, setEditingItemId, addChangeLog, addAuditLog, addToast, dataContext]);
 
   // ============================================================================
   // Delete Item - NOW PERSISTS TO SUPABASE (with confirmation)
@@ -301,10 +305,13 @@ export function useInventoryActions({
           });
           
           // Clear selection if deleted item was selected
-          if (selectedItem?.id === id) {
-            setSelectedItem(null);
-            setCurrentView(VIEWS.GEAR_LIST);
-          }
+          setSelectedItem(prev => {
+            if (prev?.id === id) {
+              setCurrentView(VIEWS.GEAR_LIST);
+              return null;
+            }
+            return prev;
+          });
           
           setConfirmDialog(prev => ({ ...prev, isOpen: false }));
           addToast(`${itemToDelete?.name || 'Item'} deleted`, 'success');
@@ -318,7 +325,7 @@ export function useInventoryActions({
         }
       }
     });
-  }, [selectedItem, inventory, setSelectedItem, setCurrentView, setConfirmDialog, addChangeLog, addAuditLog, addToast, dataContext]);
+  }, [inventory, setSelectedItem, setCurrentView, setConfirmDialog, addChangeLog, addAuditLog, addToast, dataContext]);
 
   // ============================================================================
   // Bulk Action Handler
@@ -488,10 +495,13 @@ export function useInventoryActions({
       }
       
       // Clear selection if current item was deleted
-      if (selectedItem && bulkActionIds.includes(selectedItem.id)) {
-        setSelectedItem(null);
-        setCurrentView(VIEWS.GEAR_LIST);
-      }
+      setSelectedItem(prev => {
+        if (prev && bulkActionIds.includes(prev.id)) {
+          setCurrentView(VIEWS.GEAR_LIST);
+          return null;
+        }
+        return prev;
+      });
       
       addChangeLog({
         type: 'bulk_delete',
@@ -518,7 +528,7 @@ export function useInventoryActions({
     } finally {
       setIsLoading(false);
     }
-  }, [bulkActionIds, inventory, selectedItem, setSelectedItem, setCurrentView, addChangeLog, addAuditLog, addToast, closeModal, dataContext]);
+  }, [bulkActionIds, inventory, setSelectedItem, setCurrentView, addChangeLog, addAuditLog, addToast, closeModal, dataContext]);
 
   // ============================================================================
   // Edit Item Helper
