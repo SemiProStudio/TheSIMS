@@ -109,7 +109,15 @@ function ProfileModal({ user, onSave, onClose }) {
     if (user?.id) {
       setLogoUploading(true);
       try {
-        const { storageService } = await import('../lib/index.js');
+        const { storageService, isStorageUrl, getStoragePathFromUrl } = await import('../lib/index.js');
+
+        // Delete old logo from storage before uploading new one
+        const oldLogo = profile.logo;
+        if (oldLogo && isStorageUrl(oldLogo)) {
+          const oldPath = getStoragePathFromUrl(oldLogo);
+          if (oldPath) await storageService.deleteImage(oldPath).catch(() => {});
+        }
+
         const result = await storageService.uploadFromDataUrl(croppedDataUrl, `profiles/${user.id}`);
         handleChange('logo', result.url);
       } catch (_err) {
@@ -234,7 +242,19 @@ function ProfileModal({ user, onSave, onClose }) {
                       Resize / Crop
                     </button>
                     <button
-                      onClick={() => handleChange('logo', null)}
+                      onClick={async () => {
+                        // Delete old logo from storage
+                        if (profile.logo && user?.id) {
+                          try {
+                            const { storageService, isStorageUrl, getStoragePathFromUrl } = await import('../lib/index.js');
+                            if (isStorageUrl(profile.logo)) {
+                              const path = getStoragePathFromUrl(profile.logo);
+                              if (path) await storageService.deleteImage(path).catch(() => {});
+                            }
+                          } catch (_e) { /* non-fatal */ }
+                        }
+                        handleChange('logo', null);
+                      }}
                       style={{
                         display: 'block',
                         background: 'none',

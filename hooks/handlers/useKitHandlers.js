@@ -230,9 +230,21 @@ export function useKitHandlers({
 
   const selectImage = useCallback(async (image) => {
     if (selectedItem) {
+      // Clean up old image from storage if replacing or removing
+      const oldImage = selectedItem.image;
+      if (oldImage && oldImage !== image) {
+        try {
+          const { storageService, isStorageUrl, getStoragePathFromUrl } = await import('../../lib/index.js');
+          if (isStorageUrl(oldImage)) {
+            const oldPath = getStoragePathFromUrl(oldImage);
+            if (oldPath) await storageService.deleteImage(oldPath).catch(() => {});
+          }
+        } catch (_e) { /* non-fatal */ }
+      }
+
       dataContext.patchInventoryItem(selectedItem.id, { image });
       setSelectedItem(prev => ({ ...prev, image }));
-      
+
       try {
         await dataContext.updateItem(selectedItem.id, { image });
       } catch (err) {
