@@ -161,7 +161,7 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
 
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Main inventory list */}
-        <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 280px)' }}>
+        <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 380px)' }}>
           <CardHeader 
             title="Inventory Schedule" 
             action={
@@ -174,6 +174,7 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
                     ...categories.map(cat => ({ value: cat, label: cat }))
                   ]}
                   style={{ width: 140 }}
+                  compact
                   aria-label="Filter by category"
                 />
                 <Select
@@ -187,6 +188,7 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
                     { value: 'category', label: 'Category' },
                   ]}
                   style={{ width: 160 }}
+                  compact
                   aria-label="Sort by"
                 />
               </div>

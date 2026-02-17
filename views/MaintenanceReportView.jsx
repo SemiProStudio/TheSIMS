@@ -174,7 +174,7 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
 
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Main Records List */}
-        <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 320px)' }}>
+        <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 380px)' }}>
           <CardHeader title="All Maintenance Records" icon={Wrench} />
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 200 }}>
             {sortedRecords.length === 0 ? (

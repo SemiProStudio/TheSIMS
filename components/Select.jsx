@@ -9,13 +9,14 @@ import { createPortal } from 'react-dom';
 import {colors, typography, borderRadius} from '../theme.js';
 import { ChevronDown } from 'lucide-react';
 
-export function Select({ 
-  value, 
-  onChange, 
-  options = [], 
+export function Select({
+  value,
+  onChange,
+  options = [],
   placeholder = 'Select...',
   style = {},
   disabled = false,
+  compact = false,
   'aria-label': ariaLabel,
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -240,13 +241,13 @@ export function Select({
         aria-label={ariaLabel}
         style={{
           width: '100%',
-          padding: '12px 16px',
-          paddingRight: 40,
+          padding: compact ? '6px 12px' : '12px 16px',
+          paddingRight: compact ? 32 : 40,
           background: 'var(--input-bg, rgba(106, 154, 184, 0.1))',
           border: `1px solid ${colors.border}`,
           borderRadius: borderRadius.lg,
           color: selectedOption ? colors.textPrimary : colors.textMuted,
-          fontSize: typography.fontSize.base,
+          fontSize: compact ? typography.fontSize.sm : typography.fontSize.base,
           textAlign: 'left',
           cursor: disabled ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.6 : 1,

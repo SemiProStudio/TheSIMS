@@ -158,7 +158,7 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
         {/* Main content */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
           {/* Most Checked Out */}
-          <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 420px)' }}>
+          <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 380px)' }}>
             <CardHeader title="Most Checked Out Items" icon={TrendingUp} />
             <div style={{ flex: 1, overflowY: 'auto', minHeight: 200 }}>
               {activityData.topItems.length === 0 ? (

@@ -213,7 +213,7 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
 
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Main inventory table */}
-        <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 280px)' }}>
+        <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 380px)' }}>
           <CardHeader
             title="All Items"
             action={
@@ -226,6 +226,7 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
                     ...categories.map(cat => ({ value: cat, label: cat }))
                   ]}
                   style={{ width: 140 }}
+                  compact
                   aria-label="Filter by category"
                 />
                 <Select
@@ -239,6 +240,7 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
                     { value: 'newest', label: 'Newest First' },
                   ]}
                   style={{ width: 160 }}
+                  compact
                   aria-label="Sort by"
                 />
               </div>

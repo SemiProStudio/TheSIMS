@@ -158,7 +158,7 @@ export const AlertsReportPanel = memo(function AlertsReportPanel({
 
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Main alerts list */}
-        <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 280px)' }}>
+        <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 380px)' }}>
           <CardHeader title="All Alert Items" icon={AlertTriangle} />
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 200 }}>
             {alertData.allAlerts.length === 0 ? (

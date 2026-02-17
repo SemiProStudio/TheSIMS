@@ -117,16 +117,16 @@ export const ClientReportPanel = memo(function ClientReportPanel({
       </div>
       
       {/* Client List */}
-      <Card padding={false}>
+      <Card padding={false} style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 380px)' }}>
         <CardHeader title="Clients by Reservation Count" />
         {clientsWithStats.length === 0 ? (
-          <EmptyState 
-            icon={Building2} 
-            title="No Clients" 
-            description="Add clients to see them in this report." 
+          <EmptyState
+            icon={Building2}
+            title="No Clients"
+            description="Add clients to see them in this report."
           />
         ) : (
-          <div style={{ overflow: 'auto' }}>
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 200 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: `1px solid ${colors.border}` }}>
