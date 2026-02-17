@@ -3,7 +3,7 @@
 // Provides authentication state and methods using Supabase Auth
 // =============================================================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getSupabase, auth } from '../lib/supabase.js';
 import { usersService } from '../lib/services.js';
 import { log, error as logError } from '../lib/logger.js';
@@ -24,21 +24,21 @@ export function AuthProvider({ children }) {
   // =============================================================================
   useEffect(() => {
     let subscription = null;
-    
+
     const initAuth = async () => {
       setLoading(true);
 
       try {
         // Wait for Supabase client to be ready
         const supabase = await getSupabase();
-        
+
         // Get current session
         const currentSession = await auth.getSession();
         setSession(currentSession);
-        
+
         if (currentSession?.user) {
           setUser(currentSession.user);
-          
+
           // Fetch user profile from database
           try {
             const profile = await usersService.getById(currentSession.user.id);
@@ -47,13 +47,13 @@ export function AuthProvider({ children }) {
             logError('Failed to fetch user profile:', profileErr);
           }
         }
-        
+
         // Subscribe to auth changes (now that supabase is ready)
         const { data } = supabase.auth.onAuthStateChange(async (event, newSession) => {
           log('Auth state changed:', event);
           setSession(newSession);
           setUser(newSession?.user ?? null);
-          
+
           if (newSession?.user) {
             try {
               const profile = await usersService.getById(newSession.user.id);
@@ -65,7 +65,7 @@ export function AuthProvider({ children }) {
             setUserProfile(null);
           }
         });
-        
+
         subscription = data.subscription;
       } catch (err) {
         logError('Auth init error:', err);
@@ -118,11 +118,11 @@ export function AuthProvider({ children }) {
   // =============================================================================
   // Sign Up
   // =============================================================================
-  const signUp = useCallback(async (email, password, name) => {
+  const signUp = useCallback(async (email, password, name, roleId) => {
     setError(null);
-    
+
     try {
-      const data = await auth.signUp(email, password, name);
+      const data = await auth.signUp(email, password, name, roleId);
       return { user: data.user, error: null };
     } catch (err) {
       setError(err);
@@ -151,7 +151,7 @@ export function AuthProvider({ children }) {
   // =============================================================================
   const resetPassword = useCallback(async (email) => {
     setError(null);
-    
+
     try {
       await auth.resetPassword(email);
       return { error: null };
@@ -166,7 +166,7 @@ export function AuthProvider({ children }) {
   // =============================================================================
   const updatePassword = useCallback(async (newPassword) => {
     setError(null);
-    
+
     try {
       await auth.updatePassword(newPassword);
       return { error: null };
@@ -179,50 +179,63 @@ export function AuthProvider({ children }) {
   // =============================================================================
   // Update Profile
   // =============================================================================
-  const updateProfile = useCallback(async (updates) => {
-    if (!user) return { error: new Error('Not authenticated') };
-    
-    try {
-      await usersService.update(user.id, updates);
-      const updatedProfile = { ...userProfile, ...updates };
-      setUserProfile(updatedProfile);
-      return { error: null };
-    } catch (err) {
-      setError(err);
-      return { error: err };
-    }
-  }, [user, userProfile]);
+  const updateProfile = useCallback(
+    async (updates) => {
+      if (!user) return { error: new Error('Not authenticated') };
+
+      try {
+        await usersService.update(user.id, updates);
+        const updatedProfile = { ...userProfile, ...updates };
+        setUserProfile(updatedProfile);
+        return { error: null };
+      } catch (err) {
+        setError(err);
+        return { error: err };
+      }
+    },
+    [user, userProfile],
+  );
 
   // =============================================================================
   // Context Value
   // =============================================================================
-  const value = {
-    // State
-    user,
-    userProfile,
-    session,
-    loading,
-    error,
-    
-    // Computed
-    isAuthenticated: !!user,
-    userRole: userProfile?.role || userProfile?.roleId || 'viewer',
-    userName: userProfile?.name || user?.email?.split('@')[0] || 'User',
-    userEmail: userProfile?.email || user?.email || '',
-    
-    // Methods
-    signIn,
-    signUp,
-    signOut,
-    resetPassword,
-    updatePassword,
-    updateProfile
-  };
+  const value = useMemo(
+    () => ({
+      // State
+      user,
+      userProfile,
+      session,
+      loading,
+      error,
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+      // Computed
+      isAuthenticated: !!user,
+      userRole: userProfile?.role || userProfile?.roleId || 'viewer',
+      userName: userProfile?.name || user?.email?.split('@')[0] || 'User',
+      userEmail: userProfile?.email || user?.email || '',
+
+      // Methods
+      signIn,
+      signUp,
+      signOut,
+      resetPassword,
+      updatePassword,
+      updateProfile,
+    }),
+    [
+      user,
+      userProfile,
+      session,
+      loading,
+      error,
+      signIn,
+      signUp,
+      signOut,
+      resetPassword,
+      updatePassword,
+      updateProfile,
+    ],
   );
-}
 
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}

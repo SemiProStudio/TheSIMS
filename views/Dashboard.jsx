@@ -5,14 +5,34 @@
 
 import { memo, useState, useMemo, useEffect } from 'react';
 import {
-  Package, CheckCircle, Clock, AlertTriangle, Calendar,
-  ChevronRight, Search, Bell, TrendingDown, Layout, Loader,
-  LogOut, LogIn, Wrench, Activity, Bookmark
+  Package,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  Calendar,
+  ChevronRight,
+  Search,
+  Bell,
+  TrendingDown,
+  Layout,
+  Loader,
+  LogOut,
+  LogIn,
+  Wrench,
+  Activity,
+  Bookmark,
 } from 'lucide-react';
 import { STATUS, DASHBOARD_SECTIONS } from '../constants.js';
-import { colors, styles, spacing, borderRadius, typography, withOpacity} from '../theme.js';
+import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, getStatusColor, getTodayISO, isReminderDue } from '../utils';
-import { Badge, StatCard, SearchInput, Button, CollapsibleSection, PageHeader } from '../components/ui.jsx';
+import {
+  Badge,
+  StatCard,
+  SearchInput,
+  Button,
+  CollapsibleSection,
+  PageHeader,
+} from '../components/ui.jsx';
 import { usePermissions } from '../contexts/PermissionsContext.js';
 import { useData } from '../contexts/DataContext.js';
 
@@ -74,7 +94,7 @@ function Dashboard({
   // Local state for collapsed sections (for immediate UI response)
   const [collapsedSections, setCollapsedSections] = useState(() => {
     const initial = {};
-    Object.values(DASHBOARD_SECTIONS).forEach(s => {
+    Object.values(DASHBOARD_SECTIONS).forEach((s) => {
       initial[s.id] = layoutPrefs?.sections?.[s.id]?.collapsed || false;
     });
     return initial;
@@ -83,9 +103,9 @@ function Dashboard({
   // Sync with layoutPrefs when they change externally
   useEffect(() => {
     if (layoutPrefs?.sections) {
-      setCollapsedSections(prev => {
+      setCollapsedSections((prev) => {
         const updated = { ...prev };
-        Object.keys(layoutPrefs.sections).forEach(id => {
+        Object.keys(layoutPrefs.sections).forEach((id) => {
           if (layoutPrefs.sections[id]?.collapsed !== undefined) {
             updated[id] = layoutPrefs.sections[id].collapsed;
           }
@@ -100,9 +120,9 @@ function Dashboard({
 
   // Handle collapse toggle - update local state immediately, then notify parent
   const toggleCollapse = (sectionId) => {
-    setCollapsedSections(prev => ({
+    setCollapsedSections((prev) => ({
       ...prev,
-      [sectionId]: !prev[sectionId]
+      [sectionId]: !prev[sectionId],
     }));
     // Also notify parent to persist
     if (onToggleCollapse) {
@@ -113,7 +133,7 @@ function Dashboard({
   // Get sections sorted by order
   const sectionOrder = useMemo(() => {
     const getOrder = (sectionId) => {
-      const defaultSection = Object.values(DASHBOARD_SECTIONS).find(s => s.id === sectionId);
+      const defaultSection = Object.values(DASHBOARD_SECTIONS).find((s) => s.id === sectionId);
       const pref = layoutPrefs?.sections?.[sectionId];
       return pref?.order ?? defaultSection?.order ?? 99;
     };
@@ -121,102 +141,133 @@ function Dashboard({
       const pref = layoutPrefs?.sections?.[sectionId];
       return pref?.visible !== false;
     };
-    const sections = ['stats', 'quickSearch', 'checkedOut', 'alerts', 'reminders', 'lowStock', 'reservations', 'maintenance', 'recentActivity'];
+    const sections = [
+      'stats',
+      'quickSearch',
+      'checkedOut',
+      'alerts',
+      'reminders',
+      'lowStock',
+      'reservations',
+      'maintenance',
+      'recentActivity',
+    ];
     return sections
-      .filter(id => isVisible(id))
-      .map(id => ({ id, order: getOrder(id) }))
+      .filter((id) => isVisible(id))
+      .map((id) => ({ id, order: getOrder(id) }))
       .sort((a, b) => a.order - b.order)
-      .map(s => s.id);
+      .map((s) => s.id);
   }, [layoutPrefs]);
 
-  // Computed stats
+  // Computed stats — single-pass over inventory for performance
   const stats = useMemo(() => {
     const today = getTodayISO();
 
-    // Get all due reminders across all items
-    const dueReminders = inventory.flatMap(item =>
-      (item.reminders || [])
-        .filter(r => isReminderDue(r))
-        .map(r => ({ ...r, item }))
-    );
+    let available = 0;
+    let reserved = 0;
+    const alerts = [];
+    const overdue = [];
+    const checkedOutItems = [];
+    const dueReminders = [];
+    const lowStockItems = [];
+    const pendingMaintenance = [];
+    const activityEvents = [];
 
-    // Get low stock items
-    const lowStockItems = inventory.filter(item => {
-      const settings = categorySettings?.[item.category];
-      if (!settings?.trackQuantity) return false;
+    for (const item of inventory) {
+      // Status counts
+      switch (item.status) {
+        case STATUS.AVAILABLE:
+          available++;
+          break;
+        case STATUS.CHECKED_OUT:
+          checkedOutItems.push(item);
+          if (item.dueBack && item.dueBack < today) {
+            overdue.push(item);
+          }
+          break;
+        case STATUS.RESERVED:
+          reserved++;
+          break;
+        case STATUS.NEEDS_ATTENTION:
+          alerts.push(item);
+          break;
+      }
 
-      // Only consider items that have a quantity defined
-      if (item.quantity === undefined || item.quantity === null) return false;
+      // Due reminders
+      const reminders = item.reminders;
+      if (reminders && reminders.length > 0) {
+        for (const r of reminders) {
+          if (isReminderDue(r)) {
+            dueReminders.push({ ...r, item });
+          }
+        }
+      }
 
-      const quantity = item.quantity;
-      const threshold = item.reorderPoint || settings.lowStockThreshold || 0;
+      // Low stock check
+      const catSettings = categorySettings?.[item.category];
+      if (catSettings?.trackQuantity && item.quantity != null) {
+        const threshold = item.reorderPoint || catSettings.lowStockThreshold || 0;
+        if (threshold > 0 && item.quantity <= threshold) {
+          lowStockItems.push(item);
+        }
+      }
 
-      return threshold > 0 && quantity <= threshold;
+      // Pending maintenance
+      const history = item.maintenanceHistory;
+      if (history && history.length > 0) {
+        for (const m of history) {
+          if (m.status === 'scheduled' || m.status === 'in-progress') {
+            pendingMaintenance.push({ ...m, item });
+          }
+        }
+      }
+
+      // Recent activity events
+      if (item.status === STATUS.CHECKED_OUT && item.checkedOutDate) {
+        activityEvents.push({
+          id: `${item.id}-checkout`,
+          type: 'checkout',
+          item,
+          date: item.checkedOutDate,
+          who: item.checkedOutTo || 'Unknown',
+        });
+      }
+      if (item.lastCheckedIn) {
+        activityEvents.push({
+          id: `${item.id}-checkin`,
+          type: 'checkin',
+          item,
+          date: item.lastCheckedIn,
+          who: item.lastCheckedInBy || 'Unknown',
+        });
+      }
+    }
+
+    // Sort only the collected arrays (much smaller than full inventory)
+    checkedOutItems.sort((a, b) => {
+      if (!a.dueBack && !b.dueBack) return 0;
+      if (!a.dueBack) return 1;
+      if (!b.dueBack) return -1;
+      return a.dueBack.localeCompare(b.dueBack);
     });
 
-    // Get checked out items sorted by due date
-    const checkedOutItems = inventory
-      .filter(i => i.status === STATUS.CHECKED_OUT)
-      .sort((a, b) => {
-        // Items with due dates first, sorted ascending; no due date last
-        if (!a.dueBack && !b.dueBack) return 0;
-        if (!a.dueBack) return 1;
-        if (!b.dueBack) return -1;
-        return a.dueBack.localeCompare(b.dueBack);
-      });
-
-    // Get pending maintenance from items
-    const pendingMaintenance = inventory.flatMap(item =>
-      (item.maintenanceHistory || [])
-        .filter(m => m.status === 'scheduled' || m.status === 'in-progress')
-        .map(m => ({ ...m, item }))
-    ).sort((a, b) => {
+    pendingMaintenance.sort((a, b) => {
       if (!a.scheduledDate && !b.scheduledDate) return 0;
       if (!a.scheduledDate) return 1;
       if (!b.scheduledDate) return -1;
       return a.scheduledDate.localeCompare(b.scheduledDate);
     });
 
-    // Build recent activity from checked out items
-    const recentActivity = inventory
-      .filter(i => i.checkedOutDate || i.lastCheckedIn)
-      .map(i => {
-        const events = [];
-        if (i.status === STATUS.CHECKED_OUT && i.checkedOutDate) {
-          events.push({
-            id: `${i.id}-checkout`,
-            type: 'checkout',
-            item: i,
-            date: i.checkedOutDate,
-            who: i.checkedOutTo || 'Unknown',
-          });
-        }
-        if (i.lastCheckedIn) {
-          events.push({
-            id: `${i.id}-checkin`,
-            type: 'checkin',
-            item: i,
-            date: i.lastCheckedIn,
-            who: i.lastCheckedInBy || 'Unknown',
-          });
-        }
-        return events;
-      })
-      .flat()
-      .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
-      .slice(0, 8);
-
-    const reserved = inventory.filter(i => i.status === STATUS.RESERVED).length;
+    activityEvents.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const recentActivity = activityEvents.slice(0, 8);
 
     return {
       total: inventory.length,
-      available: inventory.filter(i => i.status === STATUS.AVAILABLE).length,
+      available,
       checkedOut: checkedOutItems.length,
       reserved,
-      alerts: inventory.filter(i => i.status === STATUS.NEEDS_ATTENTION),
-      overdue: inventory.filter(i =>
-        i.status === STATUS.CHECKED_OUT && i.dueBack && i.dueBack < today
-      ),
+      alerts,
+      overdue,
       dueReminders,
       lowStockItems,
       checkedOutItems,
@@ -228,8 +279,8 @@ function Dashboard({
   // Upcoming reservations
   const upcomingReservations = useMemo(() => {
     return inventory
-      .flatMap(i => (i.reservations || []).map(r => ({ ...r, item: i })))
-      .filter(r => new Date(r.start) >= new Date())
+      .flatMap((i) => (i.reservations || []).map((r) => ({ ...r, item: i })))
+      .filter((r) => new Date(r.start) >= new Date())
       .sort((a, b) => new Date(a.start) - new Date(b.start))
       .slice(0, 6);
   }, [inventory]);
@@ -239,10 +290,11 @@ function Dashboard({
     if (!quickSearch.trim()) return [];
     const q = quickSearch.toLowerCase();
     return inventory
-      .filter(item =>
-        item.name.toLowerCase().includes(q) ||
-        item.id.toLowerCase().includes(q) ||
-        item.brand.toLowerCase().includes(q)
+      .filter(
+        (item) =>
+          item.name.toLowerCase().includes(q) ||
+          item.id.toLowerCase().includes(q) ||
+          item.brand.toLowerCase().includes(q),
       )
       .slice(0, 5);
   }, [inventory, quickSearch]);
@@ -262,11 +314,13 @@ function Dashboard({
             collapsed={isCollapsed('stats')}
             onToggleCollapse={() => toggleCollapse('stats')}
           >
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-              gap: spacing[3],
-            }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                gap: spacing[3],
+              }}
+            >
               <StatCard
                 icon={Package}
                 value={stats.total}
@@ -331,44 +385,56 @@ function Dashboard({
 
             {searchResults.length > 0 && (
               <div style={{ marginTop: spacing[3] }}>
-                {searchResults.map(item => (
+                {searchResults.map((item) => (
                   <div
                     key={item.id}
                     onClick={() => onViewItem(item.id)}
                     style={listItemStyle(PANEL_COLORS.search)}
                   >
-                    <div style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: borderRadius.sm,
-                      background: withOpacity(PANEL_COLORS.search, 25),
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: colors.textMuted,
-                      fontSize: typography.fontSize.xs
-                    }}>
+                    <div
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: borderRadius.sm,
+                        background: withOpacity(PANEL_COLORS.search, 25),
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: colors.textMuted,
+                        fontSize: typography.fontSize.xs,
+                      }}
+                    >
                       {item.image ? (
-                        <img src={item.image} alt="" style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          borderRadius: borderRadius.sm
-                        }} />
-                      ) : 'No img'}
+                        <img
+                          src={item.image}
+                          alt=""
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            borderRadius: borderRadius.sm,
+                          }}
+                        />
+                      ) : (
+                        'No img'
+                      )}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{
-                        fontSize: typography.fontSize.sm,
-                        fontWeight: typography.fontWeight.medium,
-                        color: colors.textPrimary
-                      }}>
+                      <div
+                        style={{
+                          fontSize: typography.fontSize.sm,
+                          fontWeight: typography.fontWeight.medium,
+                          color: colors.textPrimary,
+                        }}
+                      >
                         {item.name}
                       </div>
-                      <div style={{
-                        fontSize: typography.fontSize.xs,
-                        color: colors.textMuted
-                      }}>
+                      <div
+                        style={{
+                          fontSize: typography.fontSize.xs,
+                          color: colors.textMuted,
+                        }}
+                      >
                         {item.id} &bull; {item.category}
                       </div>
                     </div>
@@ -382,9 +448,7 @@ function Dashboard({
               <p style={emptyStateStyle}>No items found</p>
             )}
 
-            {!quickSearch && (
-              <p style={emptyStateStyle}>Start typing to search inventory</p>
-            )}
+            {!quickSearch && <p style={emptyStateStyle}>Start typing to search inventory</p>}
           </CollapsibleSection>
         );
 
@@ -399,21 +463,30 @@ function Dashboard({
             headerColor={PANEL_COLORS.checkedOut}
             collapsed={isCollapsed('checkedOut')}
             onToggleCollapse={() => toggleCollapse('checkedOut')}
-            action={stats.checkedOutItems.length > 0 ? (
-              <button
-                onClick={(e) => { e.stopPropagation(); onViewCheckedOut?.(); }}
-                style={{ ...styles.btnSec, padding: `${spacing[1]}px ${spacing[2]}px`, fontSize: typography.fontSize.xs }}
-              >
-                View All
-              </button>
-            ) : null}
+            action={
+              stats.checkedOutItems.length > 0 ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewCheckedOut?.();
+                  }}
+                  style={{
+                    ...styles.btnSec,
+                    padding: `${spacing[1]}px ${spacing[2]}px`,
+                    fontSize: typography.fontSize.xs,
+                  }}
+                >
+                  View All
+                </button>
+              ) : null
+            }
             padding={false}
           >
             {stats.checkedOutItems.length === 0 ? (
               <div style={emptyStateStyle}>All items are available</div>
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 300, overflowY: 'auto' }}>
-                {stats.checkedOutItems.slice(0, 8).map(item => {
+                {stats.checkedOutItems.slice(0, 8).map((item) => {
                   const today = getTodayISO();
                   const isOverdue = item.dueBack && item.dueBack < today;
                   return (
@@ -424,22 +497,28 @@ function Dashboard({
                     >
                       <LogOut size={16} color={PANEL_COLORS.checkedOut} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          fontSize: typography.fontSize.sm,
-                          color: colors.textPrimary,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}>
+                        <div
+                          style={{
+                            fontSize: typography.fontSize.sm,
+                            color: colors.textPrimary,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
                           {item.name}
                         </div>
-                        <div style={{ fontSize: typography.fontSize.xs, color: PANEL_COLORS.checkedOut }}>
-                          {item.checkedOutTo || 'Unknown'}{item.dueBack ? ` \u2022 Due ${formatDate(item.dueBack)}` : ''}
+                        <div
+                          style={{
+                            fontSize: typography.fontSize.xs,
+                            color: PANEL_COLORS.checkedOut,
+                          }}
+                        >
+                          {item.checkedOutTo || 'Unknown'}
+                          {item.dueBack ? ` \u2022 Due ${formatDate(item.dueBack)}` : ''}
                         </div>
                       </div>
-                      {isOverdue && (
-                        <Badge text="Overdue" color={colors.danger} size="xs" />
-                      )}
+                      {isOverdue && <Badge text="Overdue" color={colors.danger} size="xs" />}
                       <ChevronRight size={16} color={colors.textMuted} />
                     </div>
                   );
@@ -460,21 +539,30 @@ function Dashboard({
             headerColor={PANEL_COLORS.alerts}
             collapsed={isCollapsed('alerts')}
             onToggleCollapse={() => toggleCollapse('alerts')}
-            action={stats.alerts.length > 0 ? (
-              <button
-                onClick={(e) => { e.stopPropagation(); onViewAlerts(); }}
-                style={{ ...styles.btnSec, padding: `${spacing[1]}px ${spacing[2]}px`, fontSize: typography.fontSize.xs }}
-              >
-                View All
-              </button>
-            ) : null}
+            action={
+              stats.alerts.length > 0 ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewAlerts();
+                  }}
+                  style={{
+                    ...styles.btnSec,
+                    padding: `${spacing[1]}px ${spacing[2]}px`,
+                    fontSize: typography.fontSize.xs,
+                  }}
+                >
+                  View All
+                </button>
+              ) : null
+            }
             padding={false}
           >
             {stats.alerts.length === 0 ? (
               <div style={emptyStateStyle}>No alerts</div>
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
-                {stats.alerts.map(item => (
+                {stats.alerts.map((item) => (
                   <div
                     key={item.id}
                     onClick={() => onViewItem(item.id)}
@@ -514,7 +602,7 @@ function Dashboard({
               <div style={emptyStateStyle}>No due reminders</div>
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
-                {stats.dueReminders.map(reminder => (
+                {stats.dueReminders.map((reminder) => (
                   <div
                     key={reminder.id}
                     onClick={() => onViewItem(reminder.item.id)}
@@ -525,7 +613,9 @@ function Dashboard({
                       <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
                         {reminder.title}
                       </div>
-                      <div style={{ fontSize: typography.fontSize.xs, color: PANEL_COLORS.reminders }}>
+                      <div
+                        style={{ fontSize: typography.fontSize.xs, color: PANEL_COLORS.reminders }}
+                      >
                         {reminder.item.name} &bull; Due {formatDate(reminder.dueDate)}
                       </div>
                     </div>
@@ -548,21 +638,30 @@ function Dashboard({
             headerColor={PANEL_COLORS.lowStock}
             collapsed={isCollapsed('lowStock')}
             onToggleCollapse={() => toggleCollapse('lowStock')}
-            action={stats.lowStockItems.length > 0 ? (
-              <button
-                onClick={(e) => { e.stopPropagation(); onViewLowStock(); }}
-                style={{ ...styles.btnSec, padding: `${spacing[1]}px ${spacing[2]}px`, fontSize: typography.fontSize.xs }}
-              >
-                View All
-              </button>
-            ) : null}
+            action={
+              stats.lowStockItems.length > 0 ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewLowStock();
+                  }}
+                  style={{
+                    ...styles.btnSec,
+                    padding: `${spacing[1]}px ${spacing[2]}px`,
+                    fontSize: typography.fontSize.xs,
+                  }}
+                >
+                  View All
+                </button>
+              ) : null
+            }
             padding={false}
           >
             {stats.lowStockItems.length === 0 ? (
               <div style={emptyStateStyle}>No low stock items</div>
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 200, overflowY: 'auto' }}>
-                {stats.lowStockItems.map(item => (
+                {stats.lowStockItems.map((item) => (
                   <div
                     key={item.id}
                     onClick={() => onViewItem(item.id)}
@@ -573,8 +672,14 @@ function Dashboard({
                       <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
                         {item.name}
                       </div>
-                      <div style={{ fontSize: typography.fontSize.xs, color: PANEL_COLORS.lowStock }}>
-                        {item.quantity || 0} remaining (min: {item.reorderPoint || categorySettings?.[item.category]?.lowStockThreshold || 0})
+                      <div
+                        style={{ fontSize: typography.fontSize.xs, color: PANEL_COLORS.lowStock }}
+                      >
+                        {item.quantity || 0} remaining (min:{' '}
+                        {item.reorderPoint ||
+                          categorySettings?.[item.category]?.lowStockThreshold ||
+                          0}
+                        )
                       </div>
                     </div>
                     <Badge text={item.category} color={PANEL_COLORS.lowStock} size="xs" />
@@ -599,8 +704,15 @@ function Dashboard({
             onToggleCollapse={() => toggleCollapse('reservations')}
             action={
               <button
-                onClick={(e) => { e.stopPropagation(); onViewReservations(); }}
-                style={{ ...styles.btnSec, padding: `${spacing[1]}px ${spacing[2]}px`, fontSize: typography.fontSize.xs }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewReservations();
+                }}
+                style={{
+                  ...styles.btnSec,
+                  padding: `${spacing[1]}px ${spacing[2]}px`,
+                  fontSize: typography.fontSize.xs,
+                }}
               >
                 View All
               </button>
@@ -609,23 +721,38 @@ function Dashboard({
           >
             <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
               {upcomingReservations.length === 0 ? (
-                <p style={{ ...emptyStateStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: spacing[2] }}>
+                <p
+                  style={{
+                    ...emptyStateStyle,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: spacing[2],
+                  }}
+                >
                   {!tier2Loaded ? (
-                    <><Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading reservations...</>
+                    <>
+                      <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading
+                      reservations...
+                    </>
                   ) : (
                     'No upcoming reservations'
                   )}
                 </p>
               ) : (
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-                  gap: spacing[3]
-                }}>
-                  {upcomingReservations.map(r => (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                    gap: spacing[3],
+                  }}
+                >
+                  {upcomingReservations.map((r) => (
                     <div
                       key={r.id}
-                      onClick={() => onViewReservation ? onViewReservation(r, r.item) : onViewItem(r.item.id)}
+                      onClick={() =>
+                        onViewReservation ? onViewReservation(r, r.item) : onViewItem(r.item.id)
+                      }
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -634,45 +761,58 @@ function Dashboard({
                         borderRadius: borderRadius.md,
                         background: withOpacity(PANEL_COLORS.reservations, 15),
                         border: `1px solid ${withOpacity(PANEL_COLORS.reservations, 40)}`,
-                        cursor: 'pointer'
+                        cursor: 'pointer',
                       }}
                     >
-                      <div style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: borderRadius.sm,
-                        background: withOpacity(PANEL_COLORS.reservations, 25),
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: colors.textMuted,
-                        fontSize: typography.fontSize.xs,
-                        flexShrink: 0
-                      }}>
+                      <div
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: borderRadius.sm,
+                          background: withOpacity(PANEL_COLORS.reservations, 25),
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: colors.textMuted,
+                          fontSize: typography.fontSize.xs,
+                          flexShrink: 0,
+                        }}
+                      >
                         {r.item.image ? (
-                          <img src={r.item.image} alt="" style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            borderRadius: borderRadius.sm
-                          }} />
-                        ) : 'img'}
+                          <img
+                            src={r.item.image}
+                            alt=""
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              borderRadius: borderRadius.sm,
+                            }}
+                          />
+                        ) : (
+                          'img'
+                        )}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{
-                          fontSize: typography.fontSize.sm,
-                          color: colors.textPrimary,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
+                        <div
+                          style={{
+                            fontSize: typography.fontSize.sm,
+                            color: colors.textPrimary,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
                           {r.item.name}
                         </div>
-                        <div style={{
-                          fontSize: typography.fontSize.xs,
-                          color: PANEL_COLORS.reservations
-                        }}>
-                          {r.project ? `${r.project} \u2022 ` : ''}{formatDate(r.start)}
+                        <div
+                          style={{
+                            fontSize: typography.fontSize.xs,
+                            color: PANEL_COLORS.reservations,
+                          }}
+                        >
+                          {r.project ? `${r.project} \u2022 ` : ''}
+                          {formatDate(r.start)}
                         </div>
                       </div>
                     </div>
@@ -699,8 +839,16 @@ function Dashboard({
             {stats.pendingMaintenance.length === 0 ? (
               <div style={emptyStateStyle}>
                 {!tier2Loaded ? (
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: spacing[2] }}>
-                    <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading maintenance...
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: spacing[2],
+                    }}
+                  >
+                    <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading
+                    maintenance...
                   </span>
                 ) : (
                   'No scheduled maintenance'
@@ -708,7 +856,7 @@ function Dashboard({
               </div>
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
-                {stats.pendingMaintenance.slice(0, 6).map(record => (
+                {stats.pendingMaintenance.slice(0, 6).map((record) => (
                   <div
                     key={record.id}
                     onClick={() => onViewItem(record.item.id)}
@@ -716,22 +864,32 @@ function Dashboard({
                   >
                     <Wrench size={16} color={PANEL_COLORS.maintenance} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        fontSize: typography.fontSize.sm,
-                        color: colors.textPrimary,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}>
+                      <div
+                        style={{
+                          fontSize: typography.fontSize.sm,
+                          color: colors.textPrimary,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
                         {record.item.name}
                       </div>
-                      <div style={{ fontSize: typography.fontSize.xs, color: PANEL_COLORS.maintenance }}>
-                        {record.type || 'Maintenance'}{record.scheduledDate ? ` \u2022 ${formatDate(record.scheduledDate)}` : ''}
+                      <div
+                        style={{
+                          fontSize: typography.fontSize.xs,
+                          color: PANEL_COLORS.maintenance,
+                        }}
+                      >
+                        {record.type || 'Maintenance'}
+                        {record.scheduledDate ? ` \u2022 ${formatDate(record.scheduledDate)}` : ''}
                       </div>
                     </div>
                     <Badge
                       text={record.status === 'in-progress' ? 'In Progress' : 'Scheduled'}
-                      color={record.status === 'in-progress' ? colors.warning : PANEL_COLORS.maintenance}
+                      color={
+                        record.status === 'in-progress' ? colors.warning : PANEL_COLORS.maintenance
+                      }
                       size="xs"
                     />
                     <ChevronRight size={16} color={colors.textMuted} />
@@ -758,7 +916,7 @@ function Dashboard({
               <div style={emptyStateStyle}>No recent activity</div>
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 300, overflowY: 'auto' }}>
-                {stats.recentActivity.map(event => (
+                {stats.recentActivity.map((event) => (
                   <div
                     key={event.id}
                     onClick={() => onViewItem(event.item.id)}
@@ -770,17 +928,25 @@ function Dashboard({
                       <LogIn size={16} color={PANEL_COLORS.recentActivity} />
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        fontSize: typography.fontSize.sm,
-                        color: colors.textPrimary,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}>
+                      <div
+                        style={{
+                          fontSize: typography.fontSize.sm,
+                          color: colors.textPrimary,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
                         {event.item.name}
                       </div>
-                      <div style={{ fontSize: typography.fontSize.xs, color: PANEL_COLORS.recentActivity }}>
-                        {event.type === 'checkout' ? 'Checked out to' : 'Returned by'} {event.who} &bull; {formatDate(event.date)}
+                      <div
+                        style={{
+                          fontSize: typography.fontSize.xs,
+                          color: PANEL_COLORS.recentActivity,
+                        }}
+                      >
+                        {event.type === 'checkout' ? 'Checked out to' : 'Returned by'} {event.who}{' '}
+                        &bull; {formatDate(event.date)}
                       </div>
                     </div>
                     <Badge
@@ -805,16 +971,18 @@ function Dashboard({
       {/* Header */}
       <PageHeader
         title="Dashboard"
-        action={onCustomizeLayout && (
-          <Button variant="secondary" onClick={onCustomizeLayout} icon={Layout}>
-            Customize
-          </Button>
-        )}
+        action={
+          onCustomizeLayout && (
+            <Button variant="secondary" onClick={onCustomizeLayout} icon={Layout}>
+              Customize
+            </Button>
+          )
+        }
       />
 
       {/* Render sections in order */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-        {sectionOrder.map(sectionId => renderSection(sectionId))}
+        {sectionOrder.map((sectionId) => renderSection(sectionId))}
       </div>
     </>
   );
