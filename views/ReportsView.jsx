@@ -17,7 +17,6 @@ export const ReportsPanel = memo(function ReportsPanel({
   onExport,
   onBack,
   setCurrentView,
-  setSelectedStatuses,
 }) {
   const alerts = inventory.filter(i => i.status === 'needs-attention');
   const totalVal = inventory.reduce((s, i) => s + (i.currentValue || 0), 0);
@@ -155,7 +154,7 @@ export const ReportsPanel = memo(function ReportsPanel({
             </div>
           </div>
           <div style={buttonRowStyle}>
-            <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.GEAR_LIST)} icon={Eye}>View</Button>
+            <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.INVENTORY_REPORT)} icon={Eye}>View</Button>
             <Button variant="secondary" style={{ flex: 1 }} onClick={onExport} icon={Download}>Export</Button>
           </div>
         </Card>
@@ -176,7 +175,7 @@ export const ReportsPanel = memo(function ReportsPanel({
             <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Total Checkouts</div>
           </div>
           <div style={buttonRowStyle}>
-            <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.SCHEDULE)} icon={Eye}>View</Button>
+            <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.ACTIVITY_REPORT)} icon={Eye}>View</Button>
             <Button variant="secondary" style={{ flex: 1 }} onClick={onExport} icon={Download}>Export</Button>
           </div>
         </Card>
@@ -197,7 +196,7 @@ export const ReportsPanel = memo(function ReportsPanel({
             <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Need Attention</div>
           </div>
           <div style={buttonRowStyle}>
-            <Button variant="secondary" style={{ flex: 1 }} onClick={() => { setSelectedStatuses?.(['needs-attention']); setCurrentView(VIEWS.SEARCH); }} icon={Eye}>View</Button>
+            <Button variant="secondary" style={{ flex: 1 }} onClick={() => setCurrentView(VIEWS.ALERTS_REPORT)} icon={Eye}>View</Button>
             <Button variant="secondary" style={{ flex: 1 }} onClick={onExport} icon={Download}>Export</Button>
           </div>
         </Card>
@@ -305,6 +304,4 @@ ReportsPanel.propTypes = {
   onBack: PropTypes.func.isRequired,
   /** Function to change current view */
   setCurrentView: PropTypes.func.isRequired,
-  /** Function to set selected statuses for filtering */
-  setSelectedStatuses: PropTypes.func,
 };

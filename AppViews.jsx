@@ -41,6 +41,9 @@ const AdminPanel = lazy(() => import('./views/AdminView.jsx').then(m => ({ defau
 const UsersPanel = lazy(() => import('./views/UsersView.jsx').then(m => ({ default: m.UsersPanel })));
 const ReportsPanel = lazy(() => import('./views/ReportsView.jsx').then(m => ({ default: m.ReportsPanel })));
 const AuditLogPanel = lazy(() => import('./views/AuditLogView.jsx').then(m => ({ default: m.AuditLogPanel })));
+const InventoryReportPanel = lazy(() => import('./views/InventoryReportView.jsx').then(m => ({ default: m.InventoryReportPanel })));
+const ActivityReportPanel = lazy(() => import('./views/ActivityReportView.jsx').then(m => ({ default: m.ActivityReportPanel })));
+const AlertsReportPanel = lazy(() => import('./views/AlertsReportView.jsx').then(m => ({ default: m.AlertsReportPanel })));
 const MaintenanceReportPanel = lazy(() => import('./views/MaintenanceReportView.jsx').then(m => ({ default: m.MaintenanceReportPanel })));
 const InsuranceReportPanel = lazy(() => import('./views/InsuranceReportView.jsx').then(m => ({ default: m.InsuranceReportPanel })));
 const ClientReportPanel = lazy(() => import('./views/ClientReportView.jsx').then(m => ({ default: m.ClientReportPanel })));
@@ -525,7 +528,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               onExport={() => openModal(MODALS.EXPORT)}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
               setCurrentView={setCurrentView}
-              setSelectedStatuses={setSelectedStatuses}
             />
           </Suspense>
         )}
@@ -537,6 +539,46 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             <AuditLogPanel 
               auditLog={auditLog} 
               onBack={() => setCurrentView(VIEWS.ADMIN)}
+            />
+          </Suspense>
+        )}
+      </PermissionGate>
+
+      <PermissionGate permission="reports">
+        {currentView === VIEWS.INVENTORY_REPORT && (
+          <Suspense fallback={<ViewLoading message="Loading Inventory Report..." />}>
+            <InventoryReportPanel
+              inventory={inventory}
+              categories={categories}
+              currentUser={currentUser}
+              onViewItem={navigateToItem}
+              onBack={() => setCurrentView(VIEWS.REPORTS)}
+            />
+          </Suspense>
+        )}
+      </PermissionGate>
+
+      <PermissionGate permission="reports">
+        {currentView === VIEWS.ACTIVITY_REPORT && (
+          <Suspense fallback={<ViewLoading message="Loading Activity Report..." />}>
+            <ActivityReportPanel
+              inventory={inventory}
+              currentUser={currentUser}
+              onViewItem={navigateToItem}
+              onBack={() => setCurrentView(VIEWS.REPORTS)}
+            />
+          </Suspense>
+        )}
+      </PermissionGate>
+
+      <PermissionGate permission="reports">
+        {currentView === VIEWS.ALERTS_REPORT && (
+          <Suspense fallback={<ViewLoading message="Loading Alerts Report..." />}>
+            <AlertsReportPanel
+              inventory={inventory}
+              currentUser={currentUser}
+              onViewItem={navigateToItem}
+              onBack={() => setCurrentView(VIEWS.REPORTS)}
             />
           </Suspense>
         )}
