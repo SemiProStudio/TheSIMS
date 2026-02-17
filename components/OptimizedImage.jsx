@@ -19,7 +19,7 @@ import { colors, borderRadius } from '../theme.js';
  * - Error fallback
  * - Smooth fade-in transition
  */
-export function OptimizedImage({
+export const OptimizedImage = memo(function OptimizedImage({
   src,
   alt = '',
   size = 'thumbnail', // 'thumbnail' | 'full'
@@ -54,7 +54,7 @@ export function OptimizedImage({
         }
       },
       {
-        rootMargin: '50px', // Start loading slightly before in view
+        rootMargin: '200px', // Pre-load images before they scroll into view
         threshold: 0.01,
       }
     );
@@ -180,7 +180,7 @@ export function OptimizedImage({
       )}
     </div>
   );
-}
+});
 
 OptimizedImage.propTypes = {
   src: PropTypes.string,
@@ -197,4 +197,4 @@ OptimizedImage.propTypes = {
   lazy: PropTypes.bool,
 };
 
-export default memo(OptimizedImage);
+export default OptimizedImage;

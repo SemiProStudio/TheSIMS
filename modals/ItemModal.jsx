@@ -52,11 +52,21 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
   // Image crop handler — uploads to Supabase Storage when editing, stores base64 for new items
   const handleCropComplete = useCallback(async (croppedDataUrl) => {
     setCropSrc(null);
-    
+
     if (isEdit && itemId) {
       setImageUploading(true);
       try {
-        const { storageService } = await import('../lib/index.js');
+        const { storageService, isStorageUrl, getStoragePathFromUrl } = await import('../lib/index.js');
+
+        // Delete old image from storage before uploading new one
+        const oldImageUrl = itemForm.image;
+        if (oldImageUrl && isStorageUrl(oldImageUrl)) {
+          const oldPath = getStoragePathFromUrl(oldImageUrl);
+          if (oldPath) {
+            await storageService.deleteImage(oldPath).catch(() => {});
+          }
+        }
+
         const result = await storageService.uploadFromDataUrl(croppedDataUrl, itemId);
         handleChange('image', result.url);
       } catch (_err) {
@@ -67,7 +77,7 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
     } else {
       handleChange('image', croppedDataUrl);
     }
-  }, [isEdit, itemId, handleChange]);
+  }, [isEdit, itemId, itemForm.image, handleChange]);
 
   // Handle save with validation
   const handleSave = () => {
@@ -194,7 +204,19 @@ export const ItemModal = memo(function ItemModal({ isEdit, itemId, itemForm, set
                       Resize / Crop
                     </button>
                     <button
-                      onClick={() => handleChange('image', null)}
+                      onClick={async () => {
+                        // Delete from storage if it's a storage URL
+                        if (isEdit && itemForm.image) {
+                          try {
+                            const { storageService, isStorageUrl, getStoragePathFromUrl } = await import('../lib/index.js');
+                            if (isStorageUrl(itemForm.image)) {
+                              const path = getStoragePathFromUrl(itemForm.image);
+                              if (path) await storageService.deleteImage(path).catch(() => {});
+                            }
+                          } catch (_e) { /* non-fatal */ }
+                        }
+                        handleChange('image', null);
+                      }}
                       style={{
                         background: 'none',
                         border: 'none',

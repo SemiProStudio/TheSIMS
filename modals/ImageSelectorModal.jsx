@@ -65,18 +65,26 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
   
   const handleUseImage = async () => {
     if (!uploadedImage) return;
-    
+
     setUploading(true);
     setError(null);
-    
+
     try {
       // Import storage service dynamically to avoid circular deps
-      const { storageService } = await import('../lib/index.js');
-      
+      const { storageService, isStorageUrl, getStoragePathFromUrl } = await import('../lib/index.js');
+
       if (!itemId) {
         // No itemId, just use the data URL
         onSelect(uploadedImage);
       } else {
+        // Delete old image from storage before uploading new one
+        if (currentImage && isStorageUrl(currentImage)) {
+          const oldPath = getStoragePathFromUrl(currentImage);
+          if (oldPath) {
+            await storageService.deleteImage(oldPath).catch(() => {});
+          }
+        }
+
         // Upload to Supabase Storage
         const result = await storageService.uploadFromDataUrl(uploadedImage, itemId);
         onSelect(result.url);
@@ -192,11 +200,23 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
             )}
             
             {currentImage && (
-              <Button 
-                variant="secondary" 
-                danger 
-                fullWidth 
-                onClick={() => onSelect(null)} 
+              <Button
+                variant="secondary"
+                danger
+                fullWidth
+                onClick={async () => {
+                  // Delete from storage if it's a storage URL
+                  if (itemId) {
+                    try {
+                      const { storageService, isStorageUrl, getStoragePathFromUrl } = await import('../lib/index.js');
+                      if (isStorageUrl(currentImage)) {
+                        const path = getStoragePathFromUrl(currentImage);
+                        if (path) await storageService.deleteImage(path).catch(() => {});
+                      }
+                    } catch (_e) { /* non-fatal */ }
+                  }
+                  onSelect(null);
+                }}
                 icon={Trash2}
                 disabled={uploading}
               >

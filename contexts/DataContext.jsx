@@ -353,6 +353,15 @@ export function DataProvider({ children }) {
   }, []);
 
   const deleteItem = useCallback(async (id) => {
+    // Clean up storage images before deleting the item record
+    try {
+      const { storageService } = await import('../lib/storage.js');
+      await storageService.deleteItemImages(id);
+    } catch (imgErr) {
+      logError('Failed to clean up item images from storage:', imgErr);
+      // Non-fatal — proceed with item deletion even if image cleanup fails
+    }
+
     try {
       await inventoryService.delete(id);
     } catch (err) {
