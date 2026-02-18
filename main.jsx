@@ -32,6 +32,16 @@ window.addEventListener('error', (event) => {
 // Clear the reload flag on successful load so future deploys can trigger it again
 sessionStorage.removeItem('chunk-reload');
 
+// Fade out and remove the static login shell once React paints
+function dismissShell() {
+  const shell = document.getElementById('login-shell');
+  if (!shell) return;
+  shell.style.opacity = '0';
+  shell.addEventListener('transitionend', () => shell.remove(), { once: true });
+  // Fallback removal if transition doesn't fire (e.g. display:none race)
+  setTimeout(() => shell.remove(), 200);
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
@@ -59,3 +69,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </React.StrictMode>,
 );
+
+// Dismiss shell after React has committed to the DOM
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    dismissShell();
+  });
+});
