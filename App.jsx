@@ -52,6 +52,18 @@ import AppModals from './AppModals.jsx';
 
 export default function App() {
   // ============================================================================
+  // Reveal app — fade in #root once React has committed the first paint
+  // ============================================================================
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const root = document.getElementById('root');
+        if (root) root.style.opacity = '1';
+      });
+    });
+  }, []);
+
+  // ============================================================================
   // Theme
   // ============================================================================
   const { currentTheme } = useTheme();

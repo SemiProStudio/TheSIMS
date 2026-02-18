@@ -59,11 +59,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </React.StrictMode>,
 );
-
-// Fade in the app once React has painted
-requestAnimationFrame(() => {
-  requestAnimationFrame(() => {
-    const root = document.getElementById('root');
-    if (root) root.style.opacity = '1';
-  });
-});
