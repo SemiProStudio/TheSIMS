@@ -49,7 +49,10 @@ export function AuthProvider({ children }) {
         }
 
         // Subscribe to auth changes (now that supabase is ready)
+        // Skip INITIAL_SESSION — we already handled it above to avoid a flash
         const { data } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+          if (event === 'INITIAL_SESSION') return;
+
           log('Auth state changed:', event);
           setSession(newSession);
           setUser(newSession?.user ?? null);
