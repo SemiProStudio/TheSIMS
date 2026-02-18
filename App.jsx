@@ -828,7 +828,7 @@ export default function App() {
   // ============================================================================
   // Loading / Login
   // ============================================================================
-  if (auth.loading || dataContext.loading) {
+  if (auth.loading) {
     return <FullPageLoading message="Loading SIMS..." />;
   }
 
@@ -931,6 +931,17 @@ export default function App() {
             onSetView={setCurrentView}
             onLogout={handleLogout}
           />
+
+          {dataContext.loading && (
+            <div
+              style={{
+                height: 3,
+                background: `linear-gradient(90deg, transparent, ${colors.primary}, transparent)`,
+                animation: 'shimmer 1.5s infinite',
+                flexShrink: 0,
+              }}
+            />
+          )}
 
           <AppViews handlers={viewHandlers} currentUser={currentUser} changeLog={changeLog} />
         </main>

@@ -1945,6 +1945,16 @@ button:disabled,
   background: rgba(var(--danger-rgb), 0.1);
 }
 
+/* Data loading shimmer bar */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* Toast animation */
 @keyframes toast-in {
   from {
