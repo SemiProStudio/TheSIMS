@@ -18,47 +18,47 @@
   /* Theme background image - set by ThemeContext for themed backgrounds */
   --theme-bg-image: none;
 
-  /* Primary/Accent - Lightened for better contrast */
-  --primary: #6a9ab8; /* Was #5d8aa8, now 5.4:1 on dark */
-  --primary-light: #8bb5cc; /* Was #7ba3be, now 7.5:1 on dark */
-  --primary-dark: #5a8099;
-  --accent1: #7cb0b0; /* Was #6b9e9e, now 6.8:1 on dark */
-  --accent2: #8fa88f; /* Was #7a8f7a, now 5.9:1 on dark */
-  --accent3: #9fb5c5; /* Was #8fa5b5, now 7.9:1 on dark */
+  /* Primary/Accent - Matches DEFAULT_CUSTOM_THEME to avoid flash on mount */
+  --primary: #5d8aa8;
+  --primary-light: #7ba3be;
+  --primary-dark: #4a7089;
+  --accent1: #6b9e9e;
+  --accent2: #7a8f7a;
+  --accent3: #8fa5b5;
 
-  /* Status - Adjusted for 4.5:1+ contrast on dark backgrounds */
-  --status-available: #7db88a; /* Was #6b9e78, now 6.6:1 on dark */
-  --status-checked-out: #9fb5c5; /* Was #8fa5b5, now 7.9:1 on dark */
-  --status-reserved: #6a9ab8; /* Was #5d8aa8, now 5.4:1 on dark */
-  --status-needs-attention: #d4a574; /* Was #b58f6b, now 7.0:1 on dark */
-  --status-missing: #c08080; /* Was #9e6b6b, now 5.4:1 on dark */
+  /* Status */
+  --status-available: #6b9e78;
+  --status-checked-out: #8fa5b5;
+  --status-reserved: #5d8aa8;
+  --status-needs-attention: #b58f6b;
+  --status-missing: #9e6b6b;
 
-  /* Condition - Adjusted for accessibility */
-  --condition-excellent: #7db88a; /* Was #6b9e78 */
-  --condition-good: #8fa88f; /* Was #7a8f7a */
-  --condition-fair: #d4c07a; /* Was #b5a56b, now 8.3:1 on dark */
-  --condition-poor: #d4a574; /* Was #b58f6b */
+  /* Condition */
+  --condition-excellent: #6b9e78;
+  --condition-good: #7a8f7a;
+  --condition-fair: #b5a56b;
+  --condition-poor: #b58f6b;
 
-  /* Text - Improved contrast ratios */
-  --text-primary: #e8ecf0; /* Was #e2e6ea, now 14.1:1 on dark */
-  --text-secondary: rgba(232, 236, 240, 0.75); /* Was 0.65, now ~8.4:1 */
-  --text-muted: rgba(232, 236, 240, 0.62); /* Was 0.55, bumped for readability */
+  /* Text - Matches DEFAULT_CUSTOM_THEME to avoid flash on mount */
+  --text-primary: #e2e6ea;
+  --text-secondary: rgba(226, 230, 234, 0.65);
+  --text-muted: rgba(226, 230, 234, 0.4);
 
-  /* Borders */
-  --border: rgba(106, 154, 184, 0.25); /* Updated to match new primary */
-  --border-light: rgba(106, 154, 184, 0.12);
+  /* Borders - Matches DEFAULT_CUSTOM_THEME to avoid flash on mount */
+  --border: rgba(93, 138, 168, 0.2);
+  --border-light: rgba(93, 138, 168, 0.1);
 
-  /* Semantic - Improved for WCAG AA */
-  --danger: #d08080; /* Was #b56b6b, now 5.4:1 on dark */
-  --danger-bg: rgba(208, 128, 128, 0.12);
-  --success: #7db88a; /* Was #6b9e78, now 6.6:1 on dark */
-  --warning: #d4c07a; /* Was #b5a56b, now 8.3:1 on dark */
+  /* Semantic */
+  --danger: #b56b6b;
+  --danger-bg: rgba(181, 107, 107, 0.1);
+  --success: #6b9e78;
+  --warning: #b5a56b;
 
   /* RGB values for rgba() usage */
-  --primary-rgb: 106, 154, 184; /* Updated */
-  --accent2-rgb: 143, 168, 143; /* Updated */
-  --danger-rgb: 208, 128, 128; /* Updated */
-  --status-needs-attention-rgb: 212, 165, 116; /* Updated */
+  --primary-rgb: 93, 138, 168;
+  --accent2-rgb: 122, 143, 122;
+  --danger-rgb: 181, 107, 107;
+  --status-needs-attention-rgb: 181, 143, 107;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -67,7 +67,7 @@
   --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.25);
 
   /* Input */
-  --input-bg: rgba(106, 154, 184, 0.12); /* Updated to match new primary */
+  --input-bg: rgba(106, 154, 184, 0.12);
 
   /* Custom cursor */
   --theme-cursor: default;
