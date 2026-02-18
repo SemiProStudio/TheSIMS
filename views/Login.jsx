@@ -2,12 +2,38 @@
 // Login Component
 // ============================================================================
 
-import { memo, useState } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Spinner } from '../components/Loading.jsx';
 
 function Login({ loginForm, setLoginForm, onLogin, isLoading, isCheckingAuth, error }) {
   const [showPassword, setShowPassword] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const wasCheckingRef = useRef(isCheckingAuth);
+
+  // Show the card once auth check completes, with a tiny frame delay so the
+  // browser can paint the opacity:0 state first (prevents flash in private windows).
+  // If the auth check was already done on first render (normal window with session),
+  // show immediately without any animation.
+  useEffect(() => {
+    if (!isCheckingAuth) {
+      if (!wasCheckingRef.current) {
+        // Auth was never loading (already resolved before mount) — show instantly
+        setVisible(true);
+      } else {
+        // Auth just finished — use rAF so the browser paints opacity:0 first,
+        // then transition smoothly to opacity:1
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setVisible(true);
+          });
+        });
+      }
+    }
+  }, [isCheckingAuth]);
+
+  // Determine if we should animate or show instantly
+  const shouldAnimate = wasCheckingRef.current;
 
   return (
     <div
@@ -26,9 +52,9 @@ function Login({ loginForm, setLoginForm, onLogin, isLoading, isCheckingAuth, er
           width: '100%',
           maxWidth: 400,
           padding: spacing[8],
-          opacity: isCheckingAuth ? 0 : 1,
-          transform: isCheckingAuth ? 'translateY(8px)' : 'translateY(0)',
-          transition: 'opacity 0.3s ease, transform 0.3s ease',
+          opacity: visible ? 1 : 0,
+          transform: visible ? 'translateY(0)' : 'translateY(8px)',
+          transition: shouldAnimate ? 'opacity 0.3s ease, transform 0.3s ease' : 'none',
         }}
       >
         {/* Logo */}
