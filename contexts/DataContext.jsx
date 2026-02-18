@@ -61,13 +61,20 @@ export function DataProvider({ children }) {
   const [lastLoadedAt, setLastLoadedAt] = useState(null);
   const [tier2Loaded, setTier2Loaded] = useState(false);
 
+  // Lazy-load tracking — these tables are fetched on-demand, not at startup
+  const [clientsLoaded, setClientsLoaded] = useState(false);
+  const [auditLogLoaded, setAuditLogLoaded] = useState(false);
+  const [packListsLoaded, setPackListsLoaded] = useState(false);
+
   // =============================================================================
   // DATA LOADING FUNCTION (Tiered)
   //
-  // Tier 1 (blocking): inventory, categories, users, roles, locations, specs
+  // Tier 1 (blocking): inventory, categories, roles, locations, specs
   //   → UI renders as soon as these arrive
-  // Tier 2 (background): reservations, packages, pack lists, clients, audit log
+  // Tier 2 (background): reservations, packages, users
   //   → Loaded after first paint, merged into state progressively
+  // Lazy (on-demand): clients, packLists, auditLog
+  //   → Loaded when the consuming view mounts
   // =============================================================================
 
   const loadData = useCallback(async () => {
@@ -78,11 +85,10 @@ export function DataProvider({ children }) {
 
     try {
       // --- Tier 1: Critical data (blocks rendering) ---
-      const [inventoryData, categoriesData, usersData, rolesData, locationsData, specsData] =
+      const [inventoryData, categoriesData, rolesData, locationsData, specsData] =
         await Promise.all([
           inventoryService.getAll(),
           categoriesService.getAll(),
-          usersService.getAll(),
           rolesService.getAll(),
           locationsService.getAll(),
           specsService.getAll(),
@@ -91,7 +97,6 @@ export function DataProvider({ children }) {
       log('[DataContext] Tier 1 loaded:', {
         inventory: inventoryData?.length || 0,
         categories: categoriesData?.length || 0,
-        users: usersData?.length || 0,
       });
 
       setInventory(inventoryData || []);
@@ -107,7 +112,6 @@ export function DataProvider({ children }) {
       });
       setCategories(catNames);
       setCategorySettings(catSettings);
-      setUsers(usersData || []);
       setRoles(rolesData || DEFAULT_ROLES);
       setLocations(locationsData || []);
       setSpecs(specsData || {});
@@ -121,21 +125,18 @@ export function DataProvider({ children }) {
     }
 
     // --- Tier 2: Secondary data (non-blocking, after first paint) ---
+    // Note: clients, packLists, and auditLog are lazy-loaded on demand
     try {
-      const [reservationsData, packagesData, packListsData, clientsData, auditLogData] =
-        await Promise.all([
-          reservationsService.getAll(),
-          packagesService.getAll(),
-          packListsService.getAll(),
-          clientsService.getAll(),
-          auditLogService.getAll({ limit: 100 }),
-        ]);
+      const [reservationsData, packagesData, usersData] = await Promise.all([
+        reservationsService.getAll(),
+        packagesService.getAll(),
+        usersService.getAll(),
+      ]);
 
       log('[DataContext] Tier 2 loaded:', {
         reservations: reservationsData?.length || 0,
         packages: packagesData?.length || 0,
-        packLists: packListsData?.length || 0,
-        clients: clientsData?.length || 0,
+        users: usersData?.length || 0,
       });
 
       // Merge reservations into inventory items
@@ -155,9 +156,7 @@ export function DataProvider({ children }) {
       );
 
       setPackages(packagesData || []);
-      setPackLists(packListsData || []);
-      setClients(clientsData || []);
-      setAuditLog(auditLogData || []);
+      setUsers(usersData || []);
       setTier2Loaded(true);
     } catch (err) {
       logError('[DataContext] Tier 2 load failed (non-critical):', err);
@@ -165,6 +164,49 @@ export function DataProvider({ children }) {
       setTier2Loaded(true); // Mark loaded even on error to prevent permanent loading state
     }
   }, []);
+
+  // =============================================================================
+  // LAZY-LOAD FUNCTIONS — fetch on first access, then cache
+  // =============================================================================
+
+  const ensureClients = useCallback(async () => {
+    if (clientsLoaded) return;
+    try {
+      const data = await clientsService.getAll();
+      setClients(data || []);
+      setClientsLoaded(true);
+      log('[DataContext] Lazy-loaded clients:', data?.length || 0);
+    } catch (err) {
+      logError('[DataContext] Failed to lazy-load clients:', err);
+      setClientsLoaded(true); // Prevent retry loops
+    }
+  }, [clientsLoaded]);
+
+  const ensureAuditLog = useCallback(async () => {
+    if (auditLogLoaded) return;
+    try {
+      const data = await auditLogService.getAll({ limit: 100 });
+      setAuditLog(data || []);
+      setAuditLogLoaded(true);
+      log('[DataContext] Lazy-loaded audit log:', data?.length || 0);
+    } catch (err) {
+      logError('[DataContext] Failed to lazy-load audit log:', err);
+      setAuditLogLoaded(true);
+    }
+  }, [auditLogLoaded]);
+
+  const ensurePackLists = useCallback(async () => {
+    if (packListsLoaded) return;
+    try {
+      const data = await packListsService.getAll();
+      setPackLists(data || []);
+      setPackListsLoaded(true);
+      log('[DataContext] Lazy-loaded pack lists:', data?.length || 0);
+    } catch (err) {
+      logError('[DataContext] Failed to lazy-load pack lists:', err);
+      setPackListsLoaded(true);
+    }
+  }, [packListsLoaded]);
 
   // =============================================================================
   // INITIAL DATA LOAD
@@ -191,13 +233,13 @@ export function DataProvider({ children }) {
       if (freshness.reservations && freshness.reservations > lastLoadedAt) {
         staleTables.push('reservations');
       }
-      if (freshness.clients && freshness.clients > lastLoadedAt) {
+      if (clientsLoaded && freshness.clients && freshness.clients > lastLoadedAt) {
         staleTables.push('clients');
       }
       if (freshness.packages && freshness.packages > lastLoadedAt) {
         staleTables.push('packages');
       }
-      if (freshness.pack_lists && freshness.pack_lists > lastLoadedAt) {
+      if (packListsLoaded && freshness.pack_lists && freshness.pack_lists > lastLoadedAt) {
         staleTables.push('pack_lists');
       }
 
@@ -266,7 +308,7 @@ export function DataProvider({ children }) {
       logError('[DataContext] Freshness check failed:', err);
       // Non-fatal — stale data is better than no data
     }
-  }, [lastLoadedAt]);
+  }, [lastLoadedAt, clientsLoaded, packListsLoaded]);
 
   // =============================================================================
   // AUTOMATIC STALENESS POLLING
@@ -1048,6 +1090,11 @@ export function DataProvider({ children }) {
       refreshData: loadData,
       refreshStaleData,
 
+      // Lazy-load functions — call these before accessing the data
+      ensureClients,
+      ensureAuditLog,
+      ensurePackLists,
+
       // Local State Patch Operations (optimistic UI updates)
       patchInventoryItem,
       addInventoryItems,
@@ -1143,6 +1190,9 @@ export function DataProvider({ children }) {
       auditLog,
       loadData,
       refreshStaleData,
+      ensureClients,
+      ensureAuditLog,
+      ensurePackLists,
       updateItem,
       createItem,
       deleteItem,

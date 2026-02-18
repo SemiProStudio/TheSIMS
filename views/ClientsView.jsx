@@ -631,8 +631,14 @@ function ClientsView({
 }) {
   const ctxData = useData();
   const dataContext = propDataContext || ctxData;
+  const { ensureClients } = ctxData;
   const { reservationBackView, setReservationBackView } = useNavigationContext();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Lazy-load clients on mount
+  useEffect(() => {
+    ensureClients();
+  }, [ensureClients]);
 
   // Restore selected client when returning from reservation detail
   const [selectedClient, setSelectedClient] = useState(() => {

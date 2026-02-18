@@ -556,6 +556,11 @@ describe('DataProvider', () => {
         expect(capturedContext?.updateClient).toBeDefined();
       });
 
+      // Lazy-load clients first (mirrors real app flow where views call ensureClients)
+      await act(async () => {
+        await capturedContext.ensureClients();
+      });
+
       await act(async () => {
         await capturedContext.updateClient('client-1', { name: 'Updated Client' });
       });
@@ -580,6 +585,14 @@ describe('DataProvider', () => {
       await waitFor(() => {
         expect(capturedContext?.deleteClient).toBeDefined();
       });
+
+      // Lazy-load clients first (mirrors real app flow where views call ensureClients)
+      await act(async () => {
+        await capturedContext.ensureClients();
+      });
+
+      // Verify client-1 exists before deletion
+      expect(capturedContext.clients.find((c) => c.id === 'client-1')).toBeDefined();
 
       await act(async () => {
         await capturedContext.deleteClient('client-1');

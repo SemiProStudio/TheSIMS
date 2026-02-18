@@ -3,11 +3,12 @@
 // Historical record of system events with filtering and search
 // ============================================================================
 
-import { memo, useState, useMemo } from 'react';
+import { memo, useState, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Clock, Filter } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
 import { formatDateTime } from '../utils';
+import { useData } from '../contexts/DataContext.js';
 import { Badge, Card, EmptyState, PageHeader, SearchInput } from '../components/ui.jsx';
 
 // Event type → color mapping for meaningful badge differentiation
@@ -73,9 +74,15 @@ const getEventTypes = (auditLog) => {
 const ITEMS_PER_PAGE = 50;
 
 export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {
+  const { ensureAuditLog } = useData();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+
+  // Lazy-load audit log on mount
+  useEffect(() => {
+    ensureAuditLog();
+  }, [ensureAuditLog]);
 
   const eventTypes = useMemo(() => getEventTypes(auditLog), [auditLog]);
 

@@ -3,7 +3,7 @@
 // Clients ranked by reservation activity
 // ============================================================================
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Download, Building2, Users, FileText, DollarSign } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
@@ -17,6 +17,7 @@ import {
   Button,
   PageHeader,
 } from '../components/ui.jsx';
+import { useData } from '../contexts/DataContext.js';
 
 export const ClientReportPanel = memo(function ClientReportPanel({
   clients = [],
@@ -25,6 +26,13 @@ export const ClientReportPanel = memo(function ClientReportPanel({
   onViewClient,
   onBack,
 }) {
+  const { ensureClients } = useData();
+
+  // Lazy-load clients on mount
+  useEffect(() => {
+    ensureClients();
+  }, [ensureClients]);
+
   // Calculate reservation counts for each client
   const clientsWithStats = useMemo(() => {
     const reservationCounts = {};

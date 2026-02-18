@@ -3,7 +3,7 @@
 // Overview of inventory, clients, and activity with navigation to detailed reports
 // ============================================================================
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import {
   Download,
@@ -19,6 +19,7 @@ import { VIEWS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatMoney, sanitizeCSVCell } from '../utils';
 import { Card, Button, PageHeader } from '../components/ui.jsx';
+import { useData } from '../contexts/DataContext.js';
 
 export const ReportsPanel = memo(function ReportsPanel({
   inventory,
@@ -27,6 +28,12 @@ export const ReportsPanel = memo(function ReportsPanel({
   onBack,
   setCurrentView,
 }) {
+  const { ensureClients } = useData();
+
+  // Lazy-load clients on mount
+  useEffect(() => {
+    ensureClients();
+  }, [ensureClients]);
   const alerts = inventory.filter((i) => i.status === 'needs-attention');
   const totalVal = inventory.reduce((s, i) => s + (i.currentValue || 0), 0);
   const totalCheckouts = inventory.reduce((s, i) => s + (i.checkoutCount || 0), 0);

@@ -3,7 +3,7 @@
 // Renders the active modal based on activeModal from ModalContext.
 // ============================================================================
 
-import { lazy, Suspense, memo } from 'react';
+import { lazy, Suspense, memo, useEffect } from 'react';
 import { VIEWS, MODALS } from './constants.js';
 import { generateItemCode } from './utils';
 import { error as logError } from './lib/logger.js';
@@ -99,10 +99,25 @@ export default memo(function AppModals({ handlers, currentUser }) {
     refreshData,
     addInventoryItems,
     addLocalUser,
+    ensureClients,
+    ensureAuditLog,
+    ensurePackLists,
   } = useData();
 
   const auth = useAuth();
   const { addToast } = useToast();
+
+  // Lazy-load data when modals that need it open
+  useEffect(() => {
+    if (activeModal === MODALS.CHECK_OUT || activeModal === MODALS.ADD_RESERVATION) {
+      ensureClients();
+    }
+    if (activeModal === MODALS.DATABASE_EXPORT) {
+      ensureClients();
+      ensureAuditLog();
+      ensurePackLists();
+    }
+  }, [activeModal, ensureClients, ensureAuditLog, ensurePackLists]);
 
   // Destructure handlers
   const {

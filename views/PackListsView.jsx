@@ -60,7 +60,13 @@ function PackListsView({
 }) {
   const ctxData = useData();
   const dataContext = propDataContext || ctxData;
+  const { ensurePackLists } = ctxData;
   const { addToast } = useToast();
+
+  // Lazy-load pack lists on mount
+  useEffect(() => {
+    ensurePackLists();
+  }, [ensurePackLists]);
   const [selectedListInternal, setSelectedListInternal] = useState(initialSelectedList);
   const [isSaving, setIsSaving] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
