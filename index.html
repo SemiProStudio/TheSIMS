@@ -57,7 +57,129 @@
         <p>SIMS requires JavaScript to run. Please enable JavaScript in your browser settings.</p>
       </div>
     </noscript>
-    <div id="root" style="background-color: #1a1d21; min-height: 100vh"></div>
+    <div id="root" style="background-color: #1a1d21; min-height: 100vh">
+      <!-- Static login shell — shown instantly while JS loads, replaced by React -->
+      <div
+        id="login-shell"
+        style="
+          min-height: 100vh;
+          background: #1a1d21;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family:
+            system-ui,
+            -apple-system,
+            sans-serif;
+        "
+      >
+        <div
+          style="
+            background: #2a2f36;
+            border-radius: 12px;
+            border: 1px solid rgba(93, 138, 168, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            padding: 32px;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 16px;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 12px;
+              margin-bottom: 32px;
+            "
+          >
+            <img
+              src="/moe.png"
+              alt=""
+              width="56"
+              height="56"
+              style="border-radius: 12px; object-fit: cover"
+            />
+            <div>
+              <div style="font-size: 24px; font-weight: 700; color: #e8ecf0; margin: 0">SIMS</div>
+              <div style="font-size: 12px; color: rgba(232, 236, 240, 0.62)">
+                Studio Inventory Management System
+              </div>
+            </div>
+          </div>
+          <div style="margin-bottom: 16px">
+            <div
+              style="
+                font-size: 11px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: rgba(232, 236, 240, 0.62);
+                margin-bottom: 6px;
+              "
+            >
+              Email
+            </div>
+            <div
+              style="
+                height: 40px;
+                background: rgba(106, 154, 184, 0.08);
+                border: 1px solid rgba(106, 154, 184, 0.2);
+                border-radius: 8px;
+              "
+            ></div>
+          </div>
+          <div style="margin-bottom: 24px">
+            <div
+              style="
+                font-size: 11px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: rgba(232, 236, 240, 0.62);
+                margin-bottom: 6px;
+              "
+            >
+              Password
+            </div>
+            <div
+              style="
+                height: 40px;
+                background: rgba(106, 154, 184, 0.08);
+                border: 1px solid rgba(106, 154, 184, 0.2);
+                border-radius: 8px;
+              "
+            ></div>
+          </div>
+          <div
+            style="
+              height: 42px;
+              background: #6a9ab8;
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-weight: 600;
+              font-size: 14px;
+            "
+          >
+            Sign In
+          </div>
+          <div
+            style="
+              text-align: center;
+              color: rgba(232, 236, 240, 0.62);
+              font-size: 12px;
+              margin-top: 24px;
+            "
+          >
+            Contact admin for access
+          </div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/main.jsx"></script>
   </body>
 </html>
