@@ -32,8 +32,11 @@ window.addEventListener('error', (event) => {
 // Clear the reload flag on successful load so future deploys can trigger it again
 sessionStorage.removeItem('chunk-reload');
 
+const isDev = import.meta.env.DEV;
+const Wrapper = isDev ? React.StrictMode : React.Fragment;
+
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  <Wrapper>
     <ErrorBoundary>
       <ToastProvider>
         <ThemeProvider>
@@ -57,5 +60,5 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </ThemeProvider>
       </ToastProvider>
     </ErrorBoundary>
-  </React.StrictMode>,
+  </Wrapper>,
 );
