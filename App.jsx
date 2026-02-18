@@ -19,7 +19,6 @@ import { useTheme } from './contexts/ThemeContext.js';
 import { PermissionsProvider } from './contexts/PermissionsContext.jsx';
 import { useAuth } from './contexts/AuthContext.js';
 import { useData } from './contexts/DataContext.js';
-import { FullPageLoading } from './components/Loading.jsx';
 import { SkipLink } from './components/ui.jsx';
 import { log, error as logError } from './lib/logger.js';
 import { useToast } from './contexts/ToastContext.js';
@@ -828,10 +827,6 @@ export default function App() {
   // ============================================================================
   // Loading / Login
   // ============================================================================
-  if (auth.loading) {
-    return <FullPageLoading message="Loading SIMS..." />;
-  }
-
   if (!isLoggedIn) {
     return (
       <div
@@ -849,6 +844,7 @@ export default function App() {
           setLoginForm={setLoginForm}
           onLogin={handleLogin}
           isLoading={auth.loading}
+          isCheckingAuth={auth.loading}
           error={auth.error?.message}
         />
       </div>

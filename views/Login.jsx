@@ -6,7 +6,7 @@ import { memo, useState } from 'react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Spinner } from '../components/Loading.jsx';
 
-function Login({ loginForm, setLoginForm, onLogin, isLoading, error }) {
+function Login({ loginForm, setLoginForm, onLogin, isLoading, isCheckingAuth, error }) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
@@ -26,6 +26,9 @@ function Login({ loginForm, setLoginForm, onLogin, isLoading, error }) {
           width: '100%',
           maxWidth: 400,
           padding: spacing[8],
+          opacity: isCheckingAuth ? 0 : 1,
+          transform: isCheckingAuth ? 'translateY(8px)' : 'translateY(0)',
+          transition: 'opacity 0.3s ease, transform 0.3s ease',
         }}
       >
         {/* Logo */}
