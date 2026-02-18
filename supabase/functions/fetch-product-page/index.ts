@@ -14,6 +14,7 @@ const ALLOWED_DOMAINS = [
   'manfrotto.com', 'atomos.com', 'smallhd.com', 'teradek.com',
   'smallrig.com', 'tilta.com', 'profoto.com',
   'amazon.com', 'www.amazon.com',
+  'bhphoto.com',
 ];
 
 // Max page size to prevent abuse (5MB)
@@ -163,31 +164,104 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Fetch the page with timeout
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    // Header strategies — try progressively simpler headers if blocked
+    const headerStrategies = [
+      // Strategy 1: Full modern browser headers
+      {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Upgrade-Insecure-Requests': '1',
+      },
+      // Strategy 2: Minimal headers with Googlebot-compatible UA
+      {
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.5',
+      },
+      // Strategy 3: Bare-minimum fetch (some sites whitelist simple requests)
+      {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15',
+        'Accept': '*/*',
+      },
+    ];
 
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'SIMS-SmartPaste/1.0 (Product Spec Importer)',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-        },
-      });
-    } catch (err) {
-      if (err.name === 'AbortError') {
-        return errorResponse('Request timed out (10s limit)', 504);
+    let response: Response | null = null;
+    let lastError: Error | null = null;
+    let lastStatus = 0;
+
+    for (const headers of headerStrategies) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+      try {
+        response = await fetch(url, {
+          signal: controller.signal,
+          headers,
+          redirect: 'follow',
+        });
+      } catch (err) {
+        lastError = err;
+        continue;
+      } finally {
+        clearTimeout(timeout);
       }
-      return errorResponse(`Failed to fetch URL: ${err.message}`, 502);
-    } finally {
-      clearTimeout(timeout);
+
+      // If we got a successful response, break out
+      if (response.ok) break;
+
+      // If blocked (403/429), try the next strategy
+      lastStatus = response.status;
+      if (response.status === 403 || response.status === 429) {
+        response = null;
+        continue;
+      }
+
+      // For other error statuses, don't retry
+      break;
+    }
+
+    // Handle cases where all strategies failed
+    if (!response) {
+      if (lastError) {
+        if (lastError.name === 'AbortError') {
+          return errorResponse('Request timed out (10s limit)', 504);
+        }
+        return errorResponse(`Failed to connect to ${parsedUrl.hostname}: ${lastError.message}`, 502);
+      }
+      if (lastStatus === 403 || lastStatus === 429) {
+        const hostname = parsedUrl.hostname;
+        return errorResponse(
+          `${hostname} blocked the request (HTTP ${lastStatus}). ` +
+          `This site has bot protection that prevents server-side fetching. ` +
+          `Try copying the page content and using the Paste tab instead.`,
+          422
+        );
+      }
+      return errorResponse('All fetch strategies failed', 502);
     }
 
     if (!response.ok) {
-      return errorResponse(`Remote server returned ${response.status} ${response.statusText}`, 502);
+      // Return 422 for client-actionable remote errors, 502 for true proxy failures
+      const remoteStatus = response.status;
+      if (remoteStatus >= 400 && remoteStatus < 500) {
+        return errorResponse(
+          `${parsedUrl.hostname} returned ${remoteStatus} ${response.statusText}. ` +
+          `Try copying the page content and using the Paste tab instead.`,
+          422
+        );
+      }
+      return errorResponse(
+        `${parsedUrl.hostname} returned ${remoteStatus} ${response.statusText}`,
+        502
+      );
     }
 
     // Check content type
