@@ -844,7 +844,6 @@ export default function App() {
           setLoginForm={setLoginForm}
           onLogin={handleLogin}
           isLoading={auth.loading}
-          isCheckingAuth={auth.loading}
           error={auth.error?.message}
         />
       </div>
