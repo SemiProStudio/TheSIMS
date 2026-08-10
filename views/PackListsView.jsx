@@ -94,6 +94,13 @@ function PackListsView({
   // Alias for internal use
   const selectedList = selectedListInternal;
 
+  // Ref mirror of selectedList — always assigned during render so callbacks
+  // trapped in stale closures (e.g. the camera scan loop) read current state.
+  // Handlers that mutate packedItems also write here synchronously, so rapid
+  // consecutive scans compound instead of each starting from stale state.
+  const selectedListRef = useRef(selectedList);
+  selectedListRef.current = selectedList;
+
   // List search state
   const [packListSearch, setPackListSearch] = useState('');
 
@@ -659,35 +666,51 @@ function PackListsView({
     [itemToPackagesMap, packages],
   );
 
-  // Toggle packed state for an item in the detail view
+  // Toggle packed state for an item in the detail view.
+  // Reads from selectedListRef (not the closure) so calls from long-lived
+  // callbacks — the camera scan loop ran for its whole session on the closure
+  // from the render it started in, silently unmarking every previous scan —
+  // always compound on current state. Persists via a single-row update rather
+  // than rewriting the whole child table.
   const handleTogglePacked = useCallback(
     async (itemId) => {
-      if (!selectedList) return;
-      const packedItems = selectedList.packedItems || [];
+      const current = selectedListRef.current;
+      if (!current) return;
+      const packedItems = current.packedItems || [];
       const isPacked = packedItems.includes(itemId);
       const newPackedItems = isPacked
         ? packedItems.filter((id) => id !== itemId)
         : [...packedItems, itemId];
 
-      // Optimistically update local state
-      const updatedList = { ...selectedList, packedItems: newPackedItems };
+      // Optimistically update local state (ref synchronously, so back-to-back
+      // scans in the same frame each see the previous one)
+      const updatedList = { ...current, packedItems: newPackedItems };
+      selectedListRef.current = updatedList;
       setSelectedList(updatedList);
-      dataContext.patchPackList(selectedList.id, { packedItems: newPackedItems });
+      dataContext.patchPackList(current.id, { packedItems: newPackedItems });
 
       // Persist to Supabase
-      if (dataContext?.updatePackList) {
+      if (dataContext?.togglePackListItemPacked) {
         try {
-          await dataContext.updatePackList(selectedList.id, {
-            items: selectedList.items,
-            packages: selectedList.packages,
-            packedItems: newPackedItems,
-          });
+          await dataContext.togglePackListItemPacked(current.id, itemId, !isPacked);
         } catch (err) {
           logError('Failed to toggle packed state:', err);
+          // Roll back this item's toggle without clobbering later scans
+          const latest = selectedListRef.current;
+          if (latest?.id === current.id) {
+            const revertedPacked = isPacked
+              ? [...(latest.packedItems || []), itemId]
+              : (latest.packedItems || []).filter((id) => id !== itemId);
+            const revertedList = { ...latest, packedItems: revertedPacked };
+            selectedListRef.current = revertedList;
+            setSelectedList(revertedList);
+            dataContext.patchPackList(current.id, { packedItems: revertedPacked });
+          }
+          addToast('Failed to save packed state — try again', 'error');
         }
       }
     },
-    [selectedList, setSelectedList, dataContext],
+    [setSelectedList, dataContext, addToast],
   );
 
   // Reset all packed items
@@ -1574,6 +1597,14 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
     [listItemMap, packedItems, onTogglePacked],
   );
 
+  // The requestAnimationFrame loop below is started once and re-schedules
+  // itself, permanently capturing the closures from the render where the
+  // camera started. Routing through a ref (reassigned every render) keeps the
+  // loop calling the CURRENT processCode — with fresh packedItems — instead of
+  // the stale one, which used to silently unmark all previous scans.
+  const processCodeRef = useRef(processCode);
+  processCodeRef.current = processCode;
+
   // Start camera
   const startScanning = async () => {
     try {
@@ -1623,7 +1654,7 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
 
       if (qr && qr.data && qr.data !== lastScannedRef.current) {
         lastScannedRef.current = qr.data;
-        processCode(qr.data);
+        processCodeRef.current(qr.data);
         // Reset dedup after 2s so the same code can be re-scanned
         setTimeout(() => {
           lastScannedRef.current = null;

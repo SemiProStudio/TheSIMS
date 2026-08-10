@@ -5,9 +5,10 @@
 
 import { useCallback, useState } from 'react';
 import { generateItemCode } from '../utils';
-import { VIEWS, STATUS, MODALS } from '../constants.js';
+import { VIEWS, STATUS, MODALS, CATEGORY_PREFIXES } from '../constants.js';
 import { useToast } from '../contexts/ToastContext.js';
 import { error as logError } from '../lib/logger.js';
+import { inventoryService } from '../lib/services.js';
 
 /**
  * Custom hook for inventory CRUD operations
@@ -101,10 +102,19 @@ export function useInventoryActions({
     setError(null);
 
     try {
-      const id = generateItemCode(
-        itemForm.category,
-        inventory.map((i) => i.id),
-      );
+      // Prefer the race-safe server RPC (sequential, numeric ordering); fall
+      // back to local random generation if the RPC is unreachable
+      let id;
+      try {
+        const prefix = CATEGORY_PREFIXES[itemForm.category] || 'OT';
+        id = await inventoryService.generateId(prefix);
+      } catch (idErr) {
+        logError('generate_item_id RPC unavailable, using local fallback:', idErr);
+        id = generateItemCode(
+          itemForm.category,
+          inventory.map((i) => i.id),
+        );
+      }
       const itemSpecs = {};
       (specs[itemForm.category] || []).forEach((f) => {
         if (itemForm.specs[f.name]) itemSpecs[f.name] = itemForm.specs[f.name];

@@ -324,6 +324,10 @@ export function useCheckoutHandlers({
           setSelectedItem((prev) => ({ ...prev, maintenanceHistory: prevHistory }));
         }
         addToast('Maintenance save failed — changes reverted', 'error');
+        closeModal();
+        setMaintenanceItem(null);
+        setEditingMaintenanceRecord(null);
+        return; // Don't write audit/change log entries for a failed save
       }
 
       addAuditLog({
@@ -367,15 +371,20 @@ export function useCheckoutHandlers({
   );
 
   const updateMaintenanceStatus = useCallback(
-    (recordId, newStatus) => {
+    async (recordId, newStatus) => {
       if (!selectedItem) return;
 
       const itemId = selectedItem.id;
       const completedDate =
         newStatus === 'completed' ? new Date().toISOString().split('T')[0] : null;
 
-      dataContext.patchInventoryItem(itemId, (item) => ({
-        maintenanceHistory: (item.maintenanceHistory || []).map((m) =>
+      // Capture previous state for rollback
+      const currentItem = inventory.find((i) => i.id === itemId);
+      const prevHistory = currentItem?.maintenanceHistory || [];
+      const prevSelectedHistory = selectedItem.maintenanceHistory || [];
+
+      const applyStatus = (history) =>
+        (history || []).map((m) =>
           m.id === recordId
             ? {
                 ...m,
@@ -384,22 +393,30 @@ export function useCheckoutHandlers({
                 updatedAt: new Date().toISOString(),
               }
             : m,
-        ),
-      }));
+        );
 
+      // Optimistic local update
+      dataContext.patchInventoryItem(itemId, (item) => ({
+        maintenanceHistory: applyStatus(item.maintenanceHistory),
+      }));
       setSelectedItem((prev) => ({
         ...prev,
-        maintenanceHistory: (prev.maintenanceHistory || []).map((m) =>
-          m.id === recordId
-            ? {
-                ...m,
-                status: newStatus,
-                completedDate: completedDate || m.completedDate,
-                updatedAt: new Date().toISOString(),
-              }
-            : m,
-        ),
+        maintenanceHistory: applyStatus(prev.maintenanceHistory),
       }));
+
+      // Persist — this handler previously only patched local state, so status
+      // changes showed success and silently reverted on reload
+      try {
+        const dbUpdates = { status: newStatus };
+        if (completedDate) dbUpdates.completed_date = completedDate;
+        await dataContext.updateMaintenance(recordId, dbUpdates);
+      } catch (err) {
+        logError('Failed to persist maintenance status:', err);
+        dataContext.patchInventoryItem(itemId, { maintenanceHistory: prevHistory });
+        setSelectedItem((prev) => ({ ...prev, maintenanceHistory: prevSelectedHistory }));
+        addToast('Failed to update maintenance status — change reverted', 'error');
+        return;
+      }
 
       addAuditLog({
         type: 'maintenance_status_changed',
@@ -408,7 +425,7 @@ export function useCheckoutHandlers({
         itemId: itemId,
       });
     },
-    [selectedItem, setSelectedItem, currentUser, addAuditLog, dataContext],
+    [selectedItem, setSelectedItem, inventory, currentUser, addAuditLog, addToast, dataContext],
   );
 
   return {
