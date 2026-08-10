@@ -14,6 +14,26 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // -------------------------------------------------------------------------
+    // Authorization: this function is deployed with verify_jwt = false so a
+    // cron scheduler can call it, and it runs with the service role. Without a
+    // check here, ANYONE with the URL could trigger the reminder/email job.
+    // Accepted callers:
+    //  - x-cron-secret header matching the CRON_SECRET env var, or
+    //  - Authorization: Bearer <service role key>
+    // -------------------------------------------------------------------------
+    const cronSecret = Deno.env.get('CRON_SECRET');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const providedSecret = req.headers.get('x-cron-secret');
+    const providedAuth = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+
+    const secretOk = Boolean(cronSecret) && providedSecret === cronSecret;
+    const serviceKeyOk = Boolean(serviceRoleKey) && providedAuth === serviceRoleKey;
+    if (!secretOk && !serviceKeyOk) {
+      console.warn('Rejected unauthorized due-date-reminder invocation');
+      return errorResponse('Unauthorized', 401);
+    }
+
     console.log('Starting due date reminder check...');
 
     // Create Supabase client with service role

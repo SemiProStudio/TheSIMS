@@ -4,7 +4,13 @@
 // =============================================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, jsonResponse, errorResponse, renderTemplate } from '../_shared/utils.ts';
+import {
+  corsHeaders,
+  jsonResponse,
+  errorResponse,
+  renderTemplate,
+  decodeAuthClaims,
+} from '../_shared/utils.ts';
 
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight
@@ -33,6 +39,32 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // -------------------------------------------------------------------------
+    // Authorization: verify_jwt only guarantees *a* valid JWT. Without this
+    // check any authenticated user (including read-only Viewers) could use the
+    // org's sending domain as an open relay to arbitrary addresses.
+    //  - service_role callers (due-date-reminder, other internal functions)
+    //    may send to anyone.
+    //  - authenticated users may only send to addresses already on record:
+    //    a registered SIMS user (colleague) or a client in the clients table.
+    //    The app's notification flows never need to email anyone else.
+    // -------------------------------------------------------------------------
+    const claims = decodeAuthClaims(req);
+    if (!claims) {
+      return errorResponse('Unauthorized', 401);
+    }
+    if (claims.role !== 'service_role') {
+      const [{ data: userMatch }, { data: clientMatch }] = await Promise.all([
+        supabase.from('users').select('id').ilike('email', String(to)).maybeSingle(),
+        supabase.from('clients').select('id').ilike('email', String(to)).maybeSingle(),
+      ]);
+
+      if (!userMatch && !clientMatch) {
+        console.warn(`Rejected email to unknown address (caller ${claims.sub}):`, to);
+        return errorResponse('Recipient must be a registered user or client', 403);
+      }
+    }
+
     // Check if user has notifications enabled (if userId provided)
     if (userId) {
       const { data: prefs } = await supabase
@@ -60,9 +92,10 @@ Deno.serve(async (req: Request) => {
       return errorResponse(`Email template not found: ${templateKey}`, 404);
     }
 
-    // Render template
+    // Render template — HTML body escapes substituted values so caller-supplied
+    // templateData cannot inject markup/links into emails
     const subject = renderTemplate(template.subject, templateData);
-    const htmlBody = renderTemplate(template.body_html, templateData);
+    const htmlBody = renderTemplate(template.body_html, templateData, true);
     const textBody = template.body_text
       ? renderTemplate(template.body_text, templateData)
       : undefined;
