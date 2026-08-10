@@ -17,6 +17,9 @@ vi.mock('../lib/supabase.js', () => ({
 
 // Mock the services
 vi.mock('../lib/services.js', () => ({
+  freshnessService: {
+    check: vi.fn(() => Promise.resolve({ server_time: '2026-08-10T12:00:00.000Z' })),
+  },
   inventoryService: {
     getAll: vi.fn(() =>
       Promise.resolve([
@@ -29,6 +32,8 @@ vi.mock('../lib/services.js', () => ({
     delete: vi.fn((id) => Promise.resolve({ id })),
     checkOut: vi.fn((id, data) => Promise.resolve({ id, status: 'checked-out', ...data })),
     checkIn: vi.fn((id, data) => Promise.resolve({ id, status: 'available', ...data })),
+    getSince: vi.fn(() => Promise.resolve([])),
+    getIds: vi.fn(() => Promise.resolve(new Set(['CAM001', 'LENS001']))),
     getByIdWithDetails: vi.fn((id) =>
       Promise.resolve({
         id,
@@ -52,6 +57,7 @@ vi.mock('../lib/services.js', () => ({
     create: vi.fn((pl) => Promise.resolve(pl)),
     update: vi.fn((id, updates) => Promise.resolve({ id, ...updates })),
     delete: vi.fn((id) => Promise.resolve({ id })),
+    toggleItemPacked: vi.fn(() => Promise.resolve({})),
   },
   clientsService: {
     getAll: vi.fn(() => Promise.resolve([{ id: 'client-1', name: 'Test Client' }])),
@@ -79,6 +85,8 @@ vi.mock('../lib/services.js', () => ({
   },
   reservationsService: {
     getAll: vi.fn(() => Promise.resolve([])),
+    getSince: vi.fn(() => Promise.resolve([])),
+    getIds: vi.fn(() => Promise.resolve(new Set())),
   },
   maintenanceService: {
     getAll: vi.fn(() => Promise.resolve([])),

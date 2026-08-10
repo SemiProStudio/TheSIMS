@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import { VIEWS, MODALS } from '../../constants.js';
 import { generateId, formatPhoneNumber } from '../../utils';
 import { error as logError } from '../../lib/logger.js';
+import { useToast } from '../../contexts/ToastContext.js';
 
 export function useReservationHandlers({
   inventory,
@@ -30,6 +31,8 @@ export function useReservationHandlers({
   navigateToReservation,
   showConfirm,
 }) {
+  const { addToast } = useToast();
+
   const saveReservation = useCallback(async () => {
     if (editingReservationId) {
       const updatedReservation = {
@@ -38,12 +41,14 @@ export function useReservationHandlers({
         dueBack: reservationForm.end,
       };
 
-      {
-        try {
-          await dataContext.updateReservation(editingReservationId, reservationForm);
-        } catch (err) {
-          logError('Failed to update reservation:', err);
-        }
+      try {
+        await dataContext.updateReservation(editingReservationId, reservationForm);
+      } catch (err) {
+        // Leave local state untouched — patching it would show an update
+        // that never landed
+        logError('Failed to update reservation:', err);
+        addToast('Failed to update reservation: ' + (err.message || 'Please try again.'), 'error');
+        return;
       }
 
       dataContext.patchInventoryItem(selectedReservationItem.id, (item) => ({
@@ -117,7 +122,14 @@ export function useReservationHandlers({
             reservation.id = dbResult.id;
           }
         } catch (err) {
+          // Skip local injection entirely — a ghost reservation here would
+          // block real bookings until reload while not existing server-side
           logError('Failed to create reservation for', targetItemId, err);
+          addToast(
+            `Failed to reserve ${targetItem.name}: ` + (err.message || 'Please try again.'),
+            'error',
+          );
+          continue;
         }
 
         if (!firstCreatedReservation) {
@@ -151,11 +163,12 @@ export function useReservationHandlers({
         });
       }
 
-      // Send reservation confirmation email (non-blocking) - send once for all items
+      // Send reservation confirmation email (non-blocking) - send once for all
+      // items, and only if at least one reservation was actually created
       const userEmail = reservationForm.contactEmail;
       const firstItemId = itemIds[0];
       const firstItem = inventory.find((i) => i.id === firstItemId);
-      if (userEmail && dataContext?.sendReservationEmail && firstItem) {
+      if (firstCreatedReservation && userEmail && dataContext?.sendReservationEmail && firstItem) {
         dataContext
           .sendReservationEmail({
             userEmail,
@@ -187,6 +200,7 @@ export function useReservationHandlers({
     navigateToReservation,
     addChangeLog,
     addAuditLog,
+    addToast,
     currentUser,
     setSelectedReservation,
     setEditingReservationId,

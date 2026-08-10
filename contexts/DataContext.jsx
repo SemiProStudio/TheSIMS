@@ -3,7 +3,7 @@
 // Provides centralized state management with Supabase
 // =============================================================================
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   freshnessService,
   inventoryService,
@@ -85,13 +85,17 @@ export function DataProvider({ children }) {
 
     try {
       // --- Tier 1: Critical data (blocks rendering) ---
-      const [inventoryData, categoriesData, rolesData, locationsData, specsData] =
+      // The freshness check rides along to supply a SERVER-side watermark for
+      // incremental refresh — a fast local clock would otherwise skip
+      // colleagues' changes within the skew window.
+      const [inventoryData, categoriesData, rolesData, locationsData, specsData, freshnessData] =
         await Promise.all([
           inventoryService.getAll(),
           categoriesService.getAll(),
           rolesService.getAll(),
           locationsService.getAll(),
           specsService.getAll(),
+          freshnessService.check().catch(() => null),
         ]);
 
       log('[DataContext] Tier 1 loaded:', {
@@ -116,7 +120,7 @@ export function DataProvider({ children }) {
       setLocations(locationsData || []);
       setSpecs(specsData || {});
       setDataLoaded(true);
-      setLastLoadedAt(new Date().toISOString());
+      setLastLoadedAt(freshnessData?.server_time || new Date().toISOString());
     } catch (err) {
       logError('[DataContext] Tier 1 load failed:', err);
       setError(err);
@@ -169,44 +173,51 @@ export function DataProvider({ children }) {
   // LAZY-LOAD FUNCTIONS — fetch on first access, then cache
   // =============================================================================
 
+  // In-flight promise per lazy table: dedupes concurrent callers, and — unlike
+  // the previous `loaded = true` latch on error — a FAILED load stays unloaded
+  // so the next view mount retries instead of caching an empty list forever.
+  const lazyLoadsRef = useRef({});
+
+  const lazyLoad = useCallback((key, fetcher, onData, setLoaded) => {
+    const inflight = lazyLoadsRef.current[key];
+    if (inflight) return inflight;
+
+    const promise = (async () => {
+      try {
+        const data = await fetcher();
+        onData(data || []);
+        setLoaded(true);
+        log(`[DataContext] Lazy-loaded ${key}:`, data?.length || 0);
+      } catch (err) {
+        logError(`[DataContext] Failed to lazy-load ${key} (will retry on next access):`, err);
+      } finally {
+        lazyLoadsRef.current[key] = null;
+      }
+    })();
+
+    lazyLoadsRef.current[key] = promise;
+    return promise;
+  }, []);
+
   const ensureClients = useCallback(async () => {
     if (clientsLoaded) return;
-    try {
-      const data = await clientsService.getAll();
-      setClients(data || []);
-      setClientsLoaded(true);
-      log('[DataContext] Lazy-loaded clients:', data?.length || 0);
-    } catch (err) {
-      logError('[DataContext] Failed to lazy-load clients:', err);
-      setClientsLoaded(true); // Prevent retry loops
-    }
-  }, [clientsLoaded]);
+    return lazyLoad('clients', () => clientsService.getAll(), setClients, setClientsLoaded);
+  }, [clientsLoaded, lazyLoad]);
 
   const ensureAuditLog = useCallback(async () => {
     if (auditLogLoaded) return;
-    try {
-      const data = await auditLogService.getAll({ limit: 100 });
-      setAuditLog(data || []);
-      setAuditLogLoaded(true);
-      log('[DataContext] Lazy-loaded audit log:', data?.length || 0);
-    } catch (err) {
-      logError('[DataContext] Failed to lazy-load audit log:', err);
-      setAuditLogLoaded(true);
-    }
-  }, [auditLogLoaded]);
+    return lazyLoad(
+      'auditLog',
+      () => auditLogService.getAll({ limit: 100 }),
+      setAuditLog,
+      setAuditLogLoaded,
+    );
+  }, [auditLogLoaded, lazyLoad]);
 
   const ensurePackLists = useCallback(async () => {
     if (packListsLoaded) return;
-    try {
-      const data = await packListsService.getAll();
-      setPackLists(data || []);
-      setPackListsLoaded(true);
-      log('[DataContext] Lazy-loaded pack lists:', data?.length || 0);
-    } catch (err) {
-      logError('[DataContext] Failed to lazy-load pack lists:', err);
-      setPackListsLoaded(true);
-    }
-  }, [packListsLoaded]);
+    return lazyLoad('packLists', () => packListsService.getAll(), setPackLists, setPackListsLoaded);
+  }, [packListsLoaded, lazyLoad]);
 
   // =============================================================================
   // INITIAL DATA LOAD
@@ -243,43 +254,56 @@ export function DataProvider({ children }) {
         staleTables.push('pack_lists');
       }
 
-      if (staleTables.length === 0) {
-        log('[DataContext] Data is fresh, no update needed');
-        return;
-      }
-
+      // NOTE: no early return when staleTables is empty — deletions don't bump
+      // MAX(updated_at), so the id-based prune below must always run
       log('[DataContext] Stale tables detected:', staleTables);
 
-      // Fetch changed rows in parallel
-      const [updatedItems, updatedReservations, updatedClients, updatedPackages, updatedPackLists] =
-        await Promise.all([
-          staleTables.includes('inventory') ? inventoryService.getSince(lastLoadedAt) : null,
-          staleTables.includes('reservations') ? reservationsService.getSince(lastLoadedAt) : null,
-          staleTables.includes('clients') ? clientsService.getAll() : null,
-          staleTables.includes('packages') ? packagesService.getAll() : null,
-          staleTables.includes('pack_lists') ? packListsService.getAll() : null,
-        ]);
+      // Fetch changed rows in parallel. ID sets are always fetched (cheap,
+      // id-only) because deletions don't bump MAX(updated_at) — without them,
+      // deleted items and cancelled reservations would linger as phantoms
+      // until a full reload.
+      const [
+        updatedItems,
+        updatedReservations,
+        updatedClients,
+        updatedPackages,
+        updatedPackLists,
+        currentItemIds,
+        currentReservationIds,
+      ] = await Promise.all([
+        staleTables.includes('inventory') ? inventoryService.getSince(lastLoadedAt) : null,
+        staleTables.includes('reservations') ? reservationsService.getSince(lastLoadedAt) : null,
+        staleTables.includes('clients') ? clientsService.getAll() : null,
+        staleTables.includes('packages') ? packagesService.getAll() : null,
+        staleTables.includes('pack_lists') ? packListsService.getAll() : null,
+        inventoryService.getIds(),
+        reservationsService.getIds(),
+      ]);
 
-      // Merge updated inventory items and detect deletions
-      if (staleTables.includes('inventory')) {
-        const currentIds = await inventoryService.getIds();
-        setInventory((prev) => {
-          // Remove deleted items
-          let next = prev.filter((item) => currentIds.has(item.id));
-          // Merge updated items
-          if (updatedItems && updatedItems.length > 0) {
-            const updatedMap = new Map(updatedItems.map((i) => [i.id, i]));
-            next = next.map((item) =>
-              updatedMap.has(item.id) ? { ...item, ...updatedMap.get(item.id) } : item,
-            );
-            // Add any new items not already in state
-            const existingIds = new Set(next.map((i) => i.id));
-            const newItems = updatedItems.filter((i) => !existingIds.has(i.id));
-            if (newItems.length > 0) next = [...next, ...newItems];
-          }
-          return next;
+      // Merge updated inventory items, drop deleted ones, and prune
+      // reservations that no longer exist server-side
+      setInventory((prev) => {
+        let next = prev.filter((item) => currentItemIds.has(item.id));
+
+        if (updatedItems && updatedItems.length > 0) {
+          const updatedMap = new Map(updatedItems.map((i) => [i.id, i]));
+          next = next.map((item) =>
+            updatedMap.has(item.id) ? { ...item, ...updatedMap.get(item.id) } : item,
+          );
+          // Add any new items not already in state
+          const existingIds = new Set(next.map((i) => i.id));
+          const newItems = updatedItems.filter((i) => !existingIds.has(i.id));
+          if (newItems.length > 0) next = [...next, ...newItems];
+        }
+
+        return next.map((item) => {
+          const reservations = item.reservations || [];
+          const pruned = reservations.filter((r) => currentReservationIds.has(r.id));
+          return pruned.length === reservations.length
+            ? item
+            : { ...item, reservations: pruned };
         });
-      }
+      });
 
       // Re-merge reservations into inventory if reservations changed
       if (updatedReservations && updatedReservations.length > 0) {
@@ -302,7 +326,8 @@ export function DataProvider({ children }) {
       if (updatedPackages) setPackages(updatedPackages);
       if (updatedPackLists) setPackLists(updatedPackLists);
 
-      setLastLoadedAt(new Date().toISOString());
+      // Server-side watermark — never trust the local clock
+      setLastLoadedAt(freshness.server_time || new Date().toISOString());
       log('[DataContext] Incremental refresh complete');
     } catch (err) {
       logError('[DataContext] Freshness check failed:', err);
@@ -389,20 +414,22 @@ export function DataProvider({ children }) {
   }, []);
 
   const deleteItem = useCallback(async (id) => {
-    // Clean up storage images before deleting the item record
-    try {
-      const { storageService } = await import('../lib/storage.js');
-      await storageService.deleteItemImages(id);
-    } catch (imgErr) {
-      logError('Failed to clean up item images from storage:', imgErr);
-      // Non-fatal — proceed with item deletion even if image cleanup fails
-    }
-
+    // Delete the DB record FIRST — destroying storage images before a delete
+    // that then fails would leave a live item with permanently broken images
     try {
       await inventoryService.delete(id);
     } catch (err) {
       logError('Failed to delete item:', err);
       throw err;
+    }
+
+    // Clean up storage images after the record is gone (non-fatal: an orphaned
+    // image wastes a little storage, which beats a live item with no image)
+    try {
+      const { storageService } = await import('../lib/storage.js');
+      await storageService.deleteItemImages(id);
+    } catch (imgErr) {
+      logError('Failed to clean up item images from storage:', imgErr);
     }
 
     setInventory((prev) => prev.filter((item) => item.id !== id));
@@ -551,7 +578,7 @@ export function DataProvider({ children }) {
       return result; // Returns record with real UUID
     } catch (err) {
       logError('Failed to save maintenance record:', err);
-      return null;
+      throw err; // Callers rely on this to roll back optimistic updates
     }
   }, []);
 
@@ -560,6 +587,7 @@ export function DataProvider({ children }) {
       await maintenanceService.update(recordId, updates);
     } catch (err) {
       logError('Failed to update maintenance record:', err);
+      throw err; // Callers rely on this to roll back optimistic updates
     }
   }, []);
 
@@ -568,6 +596,7 @@ export function DataProvider({ children }) {
       await maintenanceService.delete(recordId);
     } catch (err) {
       logError('Failed to delete maintenance record:', err);
+      throw err;
     }
   }, []);
 
@@ -820,6 +849,18 @@ export function DataProvider({ children }) {
     setPackLists((prev) => prev.filter((pl) => pl.id !== id));
   }, []);
 
+  // Toggle a single item's packed state — updates one row instead of
+  // rewriting the whole child table, so rapid consecutive scans can't
+  // clobber each other
+  const togglePackListItemPacked = useCallback(async (listId, itemId, isPacked) => {
+    try {
+      await packListsService.toggleItemPacked(listId, itemId, isPacked);
+    } catch (err) {
+      logError('Failed to toggle packed state:', err);
+      throw err;
+    }
+  }, []);
+
   // =============================================================================
   // CLIENTS OPERATIONS
   // =============================================================================
@@ -872,32 +913,46 @@ export function DataProvider({ children }) {
   // CATEGORIES OPERATIONS
   // =============================================================================
 
-  const updateCategories = useCallback(async (newCategories, newSettings = {}) => {
-    setCategories(newCategories);
-    setCategorySettings(newSettings);
-    try {
-      await categoriesService.syncAll(newCategories, newSettings);
-    } catch (err) {
-      logError('Failed to save categories:', err);
-    }
-  }, []);
+  const updateCategories = useCallback(
+    async (newCategories, newSettings = {}) => {
+      const prevCategories = categories;
+      const prevSettings = categorySettings;
+      setCategories(newCategories);
+      setCategorySettings(newSettings);
+      try {
+        await categoriesService.syncAll(newCategories, newSettings);
+      } catch (err) {
+        logError('Failed to save categories:', err);
+        setCategories(prevCategories);
+        setCategorySettings(prevSettings);
+        throw err;
+      }
+    },
+    [categories, categorySettings],
+  );
 
   // =============================================================================
   // SPECS OPERATIONS
   // =============================================================================
 
-  const updateSpecs = useCallback(async (newSpecs) => {
-    setSpecs(newSpecs);
-    try {
-      // Upsert specs for each category
-      const promises = Object.entries(newSpecs).map(([categoryName, fields]) =>
-        specsService.upsert(categoryName, fields),
-      );
-      await Promise.all(promises);
-    } catch (err) {
-      logError('Failed to save specs:', err);
-    }
-  }, []);
+  const updateSpecs = useCallback(
+    async (newSpecs) => {
+      const prevSpecs = specs;
+      setSpecs(newSpecs);
+      try {
+        // Upsert specs for each category
+        const promises = Object.entries(newSpecs).map(([categoryName, fields]) =>
+          specsService.upsert(categoryName, fields),
+        );
+        await Promise.all(promises);
+      } catch (err) {
+        logError('Failed to save specs:', err);
+        setSpecs(prevSpecs);
+        throw err;
+      }
+    },
+    [specs],
+  );
 
   // =============================================================================
   // NOTIFICATION OPERATIONS
@@ -1153,6 +1208,7 @@ export function DataProvider({ children }) {
       createPackList,
       updatePackList,
       deletePackList,
+      togglePackListItemPacked,
 
       // Client Operations
       createClient,
@@ -1216,6 +1272,7 @@ export function DataProvider({ children }) {
       createPackList,
       updatePackList,
       deletePackList,
+      togglePackListItemPacked,
       createClient,
       updateClient,
       deleteClient,
