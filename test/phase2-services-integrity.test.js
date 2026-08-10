@@ -60,7 +60,9 @@ vi.mock('../lib/supabase.js', () => ({
   supabase: null,
 }));
 
-const { packagesService, packListsService, specsService } = await import('../lib/services.js');
+const { packagesService, packListsService, specsService, reservationsService } = await import(
+  '../lib/services.js'
+);
 
 beforeEach(() => {
   state.rpcResults = {};
@@ -174,6 +176,33 @@ describe('packListsService — transactional child sync', () => {
     ).rejects.toThrow('boom');
 
     expect(state.deletes).toContainEqual(['pack_lists', 'id', 'list-9']);
+  });
+});
+
+// -----------------------------------------------------------------------------
+// Regression: reservationsService.create receives the DB-shaped row
+// (start_date/end_date/contact_name). It used to re-validate that object with
+// the FRONTEND-shape validator (start/end/user), so every insert failed with
+// "Start date is required, End date is required, Borrower name is required" —
+// swallowed upstream, ghost-injected locally, and lost on reload.
+// -----------------------------------------------------------------------------
+describe('reservationsService.create — accepts DB-shaped rows', () => {
+  it('inserts a DB-shaped reservation without frontend-shape validation errors', async () => {
+    const dbRow = {
+      item_id: 'CAM001',
+      project: 'Shoot',
+      project_type: 'Other',
+      start_date: '2099-01-01',
+      end_date: '2099-01-03',
+      status: 'confirmed',
+      contact_name: 'Client A',
+      notes: [],
+    };
+
+    const result = await reservationsService.create(dbRow);
+
+    expect(state.inserts).toContainEqual(['reservations', dbRow]);
+    expect(result.project).toBe('Shoot');
   });
 });
 
