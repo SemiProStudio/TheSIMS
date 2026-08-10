@@ -27,7 +27,7 @@ export function useInventoryActions({
   setSelectedItem,
   setCurrentView,
   setChangeLog,
-  setConfirmDialog,
+  showConfirm,
 
   // Current state for operations
   inventory,
@@ -314,10 +314,11 @@ export function useInventoryActions({
     (id) => {
       const itemToDelete = inventory.find((i) => i.id === id);
 
-      setConfirmDialog({
-        isOpen: true,
+      showConfirm({
         title: 'Delete Item',
         message: 'Are you sure you want to delete this item? This action cannot be undone.',
+        confirmText: 'Delete',
+        variant: 'danger',
         onConfirm: async () => {
           setIsLoading(true);
           setError(null);
@@ -350,13 +351,11 @@ export function useInventoryActions({
               return prev;
             });
 
-            setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
             addToast(`${itemToDelete?.name || 'Item'} deleted`, 'success');
           } catch (err) {
             logError('Failed to delete item:', err);
             setError(err.message || 'Failed to delete item');
             addToast(err.message || 'Operation failed', 'error');
-            setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
           } finally {
             setIsLoading(false);
           }
@@ -367,7 +366,7 @@ export function useInventoryActions({
       inventory,
       setSelectedItem,
       setCurrentView,
-      setConfirmDialog,
+      showConfirm,
       addChangeLog,
       addAuditLog,
       addToast,

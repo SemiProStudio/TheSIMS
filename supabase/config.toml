@@ -15,8 +15,12 @@ name = "sims"
 [functions.send-email]
 verify_jwt = true
 
-# Due Date Reminder Function  
+# Due Date Reminder Function
 # Runs daily at 9:00 AM UTC to check for items due soon
+# verify_jwt is false so the cron scheduler can call it, but the function
+# itself requires either an `x-cron-secret: <CRON_SECRET>` header or
+# `Authorization: Bearer <service role key>` — configure the cron job to send
+# one of these. Unauthenticated calls are rejected with 401.
 [functions.due-date-reminder]
 verify_jwt = false
 
@@ -38,6 +42,9 @@ verify_jwt = true
 #
 # RESEND_API_KEY     - Your Resend API key (get from resend.com)
 # FROM_EMAIL         - The "from" email address (e.g., "SIMS <notifications@yourdomain.com>")
+# CRON_SECRET        - Shared secret for invoking due-date-reminder (any long
+#                      random string; send it as the x-cron-secret header from
+#                      your cron scheduler)
 #
 # These are automatically available:
 # SUPABASE_URL            - Your project URL

@@ -23,6 +23,92 @@ const MAX_CONTENT_LENGTH = 5 * 1024 * 1024;
 // Timeout for fetch (10s)
 const FETCH_TIMEOUT_MS = 10_000;
 
+// Max redirects to follow (each hop is re-validated against the allowlist)
+const MAX_REDIRECTS = 5;
+
+/**
+ * Validate a URL against protocol, allowlist, and private-address rules.
+ * Returns an error message, or null if the URL is acceptable.
+ * Applied to the initial URL AND every redirect hop — `redirect: 'follow'`
+ * would otherwise let an allowlisted page redirect the fetch to internal
+ * addresses (cloud metadata, private services) and return the body (SSRF).
+ */
+function validateTargetUrl(parsedUrl: URL): string | null {
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    return 'Only HTTP/HTTPS URLs are supported';
+  }
+
+  const hostname = parsedUrl.hostname.toLowerCase();
+
+  // Reject IP literals and internal-looking hostnames outright
+  const isIpv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname);
+  const isIpv6 = hostname.includes(':') || hostname.startsWith('[');
+  if (
+    isIpv4 ||
+    isIpv6 ||
+    hostname === 'localhost' ||
+    hostname.endsWith('.localhost') ||
+    hostname.endsWith('.local') ||
+    hostname.endsWith('.internal')
+  ) {
+    return 'Direct IP and internal addresses are not allowed';
+  }
+
+  if (ALLOWED_DOMAINS.length > 0) {
+    const bare = hostname.replace(/^www\./, '');
+    const isAllowed = ALLOWED_DOMAINS.some((d) => bare === d || bare.endsWith('.' + d));
+    if (!isAllowed) {
+      return (
+        `Domain "${parsedUrl.hostname}" is not in the allowed list. ` +
+        `Contact your admin to add it, or paste the page content manually.`
+      );
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Fetch with manual redirect handling: every hop is validated before it is
+ * followed, so a redirect cannot escape the allowlist.
+ */
+async function fetchWithValidatedRedirects(
+  startUrl: string,
+  headers: Record<string, string>,
+  signal: AbortSignal,
+): Promise<Response> {
+  let currentUrl = startUrl;
+
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    const response = await fetch(currentUrl, {
+      signal,
+      headers,
+      redirect: 'manual',
+    });
+
+    if (![301, 302, 303, 307, 308].includes(response.status)) {
+      return response;
+    }
+
+    const location = response.headers.get('location');
+    if (!location) {
+      return response;
+    }
+
+    // Discard the redirect body before following
+    await response.body?.cancel();
+
+    const nextUrl = new URL(location, currentUrl);
+    const validationError = validateTargetUrl(nextUrl);
+    if (validationError) {
+      throw new Error(`Blocked redirect to ${nextUrl.hostname}: ${validationError}`);
+    }
+    currentUrl = nextUrl.toString();
+  }
+
+  throw new Error(`Too many redirects (limit ${MAX_REDIRECTS})`);
+}
+
 /**
  * Strip HTML tags and extract readable text from an HTML document.
  * Preserves table structure as tab-separated values for the parser.
@@ -146,22 +232,10 @@ Deno.serve(async (req: Request) => {
       return errorResponse('Invalid URL format');
     }
 
-    // Only allow HTTP/HTTPS
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-      return errorResponse('Only HTTP/HTTPS URLs are supported');
-    }
-
-    // Check domain allowlist (if configured)
-    if (ALLOWED_DOMAINS.length > 0) {
-      const hostname = parsedUrl.hostname.replace(/^www\./, '');
-      const isAllowed = ALLOWED_DOMAINS.some(d => hostname === d || hostname.endsWith('.' + d));
-      if (!isAllowed) {
-        return errorResponse(
-          `Domain "${parsedUrl.hostname}" is not in the allowed list. ` +
-          `Contact your admin to add it, or paste the page content manually.`,
-          403
-        );
-      }
+    // Validate protocol, allowlist, and private-address rules
+    const validationError = validateTargetUrl(parsedUrl);
+    if (validationError) {
+      return errorResponse(validationError, 403);
     }
 
     // Header strategies — try progressively simpler headers if blocked
@@ -202,11 +276,7 @@ Deno.serve(async (req: Request) => {
       const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
       try {
-        response = await fetch(url, {
-          signal: controller.signal,
-          headers,
-          redirect: 'follow',
-        });
+        response = await fetchWithValidatedRedirects(url, headers, controller.signal);
       } catch (err) {
         lastError = err;
         continue;
