@@ -434,9 +434,15 @@ export const SmartPasteModal = memo(function SmartPasteModal({
     const selected = batchResults
       .filter((_, i) => batchSelected.has(i))
       .map(({ result }) => buildApplyPayload(result, {}, { normalizeMetric }));
-    if (selected.length > 0) {
-      onApply(selected.length === 1 ? selected[0] : selected);
+    // The host form holds a single item, so only a single-product apply is
+    // possible — an array payload would be silently dropped by consumers.
+    if (selected.length === 1) {
+      onApply(selected[0]);
       onClose();
+    } else if (selected.length > 1) {
+      setImportStatus(
+        'error:This form imports one product at a time — select a single product (use Edit to review it first)',
+      );
     }
   }, [batchResults, batchSelected, normalizeMetric, onApply, onClose]);
 

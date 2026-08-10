@@ -52,7 +52,7 @@ export const generateId = () => {
  * Parse a date string or Date as local time (avoids UTC timezone shift).
  * "2025-01-15" → local midnight, not UTC midnight.
  */
-const parseLocalDate = (date) => {
+export const parseLocalDate = (date) => {
   if (date instanceof Date) return date;
   if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
     // Date-only string: parse as local to avoid timezone shift

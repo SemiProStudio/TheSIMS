@@ -481,18 +481,7 @@ function ItemDetail({
         order: pref?.order ?? defaultSection?.order ?? 99,
       };
     };
-    const sectionIds = [
-      'specifications',
-      'reservations',
-      'notes',
-      'reminders',
-      'addToKit',
-      'maintenance',
-      'timeline',
-      'checkoutHistory',
-      'value',
-      'depreciation',
-    ];
+    const sectionIds = Object.values(ITEM_DETAIL_SECTIONS).map((s) => s.id);
     return sectionIds
       .filter((id) => getPref(id).visible)
       .map((id) => ({ id, order: getPref(id).order }))

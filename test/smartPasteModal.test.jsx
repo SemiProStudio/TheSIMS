@@ -389,25 +389,31 @@ describe('BatchSelector', () => {
     expect(fieldTexts.length).toBe(2);
   });
 
-  it('should show import button with count', () => {
+  it('should show the import button enabled with exactly one product selected', () => {
     render(<BatchSelector {...defaultProps} />);
-    expect(screen.getByText(/Import 1 Product/)).toBeInTheDocument();
+    const importBtn = screen.getByText('Import Selected Product');
+    expect(importBtn.closest('button')).not.toBeDisabled();
   });
 
-  it('should pluralize import button correctly', () => {
+  // Regression (H14): consumers hold a single-item form, so a multi-select
+  // apply used to pass an array they silently dropped — now the button is
+  // disabled with an explanation instead.
+  it('should disable import and explain when multiple products are selected', () => {
     render(<BatchSelector {...defaultProps} batchSelected={new Set([0, 1])} />);
-    expect(screen.getByText(/Import 2 Products/)).toBeInTheDocument();
+    const importBtn = screen.getByText('Import Selected Product');
+    expect(importBtn.closest('button')).toBeDisabled();
+    expect(screen.getByText(/one product at a time/)).toBeInTheDocument();
   });
 
   it('should disable import button when nothing selected', () => {
     render(<BatchSelector {...defaultProps} batchSelected={new Set()} />);
-    const importBtn = screen.getByText(/Import 0 Product/);
+    const importBtn = screen.getByText('Import Selected Product');
     expect(importBtn.closest('button')).toBeDisabled();
   });
 
   it('should call onBatchApply when import button clicked', () => {
     render(<BatchSelector {...defaultProps} />);
-    fireEvent.click(screen.getByText(/Import 1 Product/));
+    fireEvent.click(screen.getByText('Import Selected Product'));
     expect(defaultProps.onBatchApply).toHaveBeenCalled();
   });
 

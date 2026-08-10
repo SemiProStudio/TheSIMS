@@ -8,7 +8,12 @@ import PropTypes from 'prop-types';
 import { Plus, Save, AlertTriangle, Search, X, Package } from 'lucide-react';
 import { PROJECT_TYPES } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { getAllReservationConflicts, formatPhoneNumber, handlePhoneInput } from '../utils';
+import {
+  getAllReservationConflicts,
+  getStatusColor,
+  formatPhoneNumber,
+  handlePhoneInput,
+} from '../utils';
 import { Button, Badge } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
@@ -36,7 +41,9 @@ const ItemSearch = memo(function ItemSearch({
       .filter(
         (item) =>
           !selectedItemIds.includes(item.id) && // Exclude already selected
-          (item.status === 'available' || item.status === 'reserved') && // Only available/reserved items
+          // No status filter: reservations are for future dates, so an item
+          // that is checked out today can still be reserved — date conflicts
+          // are surfaced per item by getAllReservationConflicts below.
           (item.name?.toLowerCase().includes(q) ||
             item.id?.toLowerCase().includes(q) ||
             item.brand?.toLowerCase().includes(q) ||
@@ -200,6 +207,12 @@ const ItemSearch = memo(function ItemSearch({
                     <span>{item.brand}</span>
                     {item.status === 'reserved' && (
                       <Badge text="Has Reservations" color={colors.warning} />
+                    )}
+                    {item.status !== 'available' && item.status !== 'reserved' && (
+                      <Badge
+                        text={item.status.replace(/-/g, ' ')}
+                        color={getStatusColor(item.status)}
+                      />
                     )}
                   </div>
                 </div>

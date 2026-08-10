@@ -147,11 +147,26 @@ export function BatchSelector({
         style={{
           padding: `${spacing[2]}px ${spacing[3]}px`,
           display: 'flex',
+          alignItems: 'center',
           justifyContent: 'flex-end',
+          gap: spacing[2],
         }}
       >
-        <Button onClick={onBatchApply} disabled={batchSelected.size === 0}>
-          Import {batchSelected.size} Product{batchSelected.size !== 1 ? 's' : ''}
+        {batchSelected.size > 1 && (
+          <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+            This form imports one product at a time
+          </span>
+        )}
+        <Button
+          onClick={onBatchApply}
+          disabled={batchSelected.size !== 1}
+          title={
+            batchSelected.size > 1
+              ? 'Select a single product — this form imports one product at a time'
+              : undefined
+          }
+        >
+          Import Selected Product
         </Button>
       </div>
     </div>

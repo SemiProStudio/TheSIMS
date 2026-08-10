@@ -280,7 +280,7 @@ function Dashboard({
   const upcomingReservations = useMemo(() => {
     return inventory
       .flatMap((i) => (i.reservations || []).map((r) => ({ ...r, item: i })))
-      .filter((r) => new Date(r.start) >= new Date())
+      .filter((r) => r.start >= getTodayISO())
       .sort((a, b) => new Date(a.start) - new Date(b.start))
       .slice(0, 6);
   }, [inventory]);

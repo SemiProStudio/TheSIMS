@@ -38,6 +38,7 @@ export const OptimizedImage = memo(function OptimizedImage({
   const [isInView, setIsInView] = useState(!lazy);
   const imgRef = useRef(null);
   const containerRef = useRef(null);
+  const triedFullSizeRef = useRef(false);
 
   // Get the appropriate URL based on size
   const imageUrl = size === 'thumbnail' ? getThumbnailUrl(src) : src;
@@ -70,6 +71,7 @@ export const OptimizedImage = memo(function OptimizedImage({
   useEffect(() => {
     setIsLoaded(false);
     setHasError(false);
+    triedFullSizeRef.current = false;
   }, [src]);
 
   const handleLoad = (e) => {
@@ -78,14 +80,16 @@ export const OptimizedImage = memo(function OptimizedImage({
   };
 
   const handleError = (e) => {
+    // If the thumbnail failed, try full-size ONCE as a fallback. Without the
+    // guard, a broken full-size URL re-enters this handler with imageUrl !== src
+    // still true, re-assigning src in an infinite request loop.
+    if (size === 'thumbnail' && imageUrl !== src && !triedFullSizeRef.current) {
+      triedFullSizeRef.current = true;
+      e.target.src = src;
+      return;
+    }
     setHasError(true);
     onError?.(e);
-
-    // If thumbnail failed, try full-size as fallback
-    if (size === 'thumbnail' && imageUrl !== src) {
-      const img = e.target;
-      img.src = src;
-    }
   };
 
   // Default placeholder

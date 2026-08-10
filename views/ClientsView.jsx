@@ -18,7 +18,13 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatMoney, formatDate, formatPhoneNumber, handlePhoneInput } from '../utils';
+import {
+  formatMoney,
+  formatDate,
+  formatPhoneNumber,
+  getTodayISO,
+  handlePhoneInput,
+} from '../utils';
 import {
   Card,
   Button,
@@ -354,7 +360,7 @@ const ClientDetailView = memo(function ClientDetailView({
   const stats = useMemo(
     () => ({
       totalProjects: projects.length,
-      activeProjects: projects.filter((p) => new Date(p.end) >= new Date()).length,
+      activeProjects: projects.filter((p) => p.end >= getTodayISO()).length,
       totalValue: projects.reduce((sum, p) => sum + (p.value || 0), 0),
       lastProject:
         projects.length > 0
@@ -697,7 +703,7 @@ function ClientsView({
       const projects = getClientProjects(client.id);
       return {
         totalProjects: projects.length,
-        activeReservations: projects.filter((p) => new Date(p.end) >= new Date()).length,
+        activeReservations: projects.filter((p) => p.end >= getTodayISO()).length,
         totalValue: projects.reduce((sum, p) => sum + (p.value || 0), 0),
       };
     },
