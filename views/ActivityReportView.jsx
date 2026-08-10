@@ -7,7 +7,7 @@ import { memo, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Download, BarChart3, TrendingUp, LogOut, Package } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, sanitizeCSVCell } from '../utils';
+import { formatDate, isOverdue, sanitizeCSVCell } from '../utils';
 import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
 
 export const ActivityReportPanel = memo(function ActivityReportPanel({
@@ -64,7 +64,7 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
         checkedOutDate: item.checkedOutDate,
         dueBack: item.dueBack,
         project: item.checkoutProject,
-        isOverdue: item.dueBack && new Date(item.dueBack) < new Date(),
+        isOverdue: isOverdue(item.dueBack),
       }));
 
     // Utilization rate: items that have been checked out at least once

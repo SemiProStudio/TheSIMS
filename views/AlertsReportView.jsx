@@ -7,7 +7,7 @@ import { memo, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Download, AlertTriangle, Clock, Package, MapPin, TrendingDown } from 'lucide-react';
 import { colors, spacing, borderRadius, typography } from '../theme.js';
-import { formatDate, formatMoney, sanitizeCSVCell } from '../utils';
+import { formatDate, formatMoney, isOverdue, sanitizeCSVCell } from '../utils';
 import {
   Badge,
   Card,
@@ -31,7 +31,7 @@ export const AlertsReportPanel = memo(function AlertsReportPanel({
     const lowStock = inventory.filter((i) => i.status === 'low-stock');
     const overdue = inventory.filter((i) => {
       if (i.status !== 'checked-out') return false;
-      return i.dueBack && new Date(i.dueBack) < new Date();
+      return isOverdue(i.dueBack);
     });
     const poorCondition = inventory.filter((i) => i.condition === 'poor');
 

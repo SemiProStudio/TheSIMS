@@ -132,6 +132,36 @@ describe('usePagination', () => {
     expect(result.current.page).toBe(1);
   });
 
+  // Regression (Phase 3): goToPage identity must NOT change when the item
+  // count changes — consumers list it in filter-reset effect deps, so an
+  // unstable identity bounced users back to page 1 on background refreshes.
+  it('keeps goToPage identity stable across item-count changes', () => {
+    let items = makeItems(100);
+    const { result, rerender } = renderHook(({ items: i }) => usePagination(i, 20), {
+      initialProps: { items },
+    });
+    const firstGoToPage = result.current.goToPage;
+
+    items = makeItems(45); // totalPages changes 5 -> 3
+    rerender({ items });
+    expect(result.current.goToPage).toBe(firstGoToPage);
+  });
+
+  it('clamps to the last page (not page 1) when the list shrinks mid-browse', () => {
+    let items = makeItems(100);
+    const { result, rerender } = renderHook(({ items: i }) => usePagination(i, 20), {
+      initialProps: { items },
+    });
+    act(() => result.current.goToPage(5));
+    expect(result.current.page).toBe(5);
+
+    items = makeItems(50); // 3 pages now
+    rerender({ items });
+    // Renders the last valid page immediately — no empty page, no jump to 1
+    expect(result.current.page).toBe(3);
+    expect(result.current.paginatedItems[0].id).toBe(41);
+  });
+
   it('updates paginatedItems when items change', () => {
     let items = makeItems(50);
     const { result, rerender } = renderHook(({ items: i }) => usePagination(i, 20), {

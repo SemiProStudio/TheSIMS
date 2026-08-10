@@ -71,6 +71,9 @@ function PackListsView({
   const [isSaving, setIsSaving] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
+  // Non-null while the prompt is renaming an existing list: holds the name to
+  // restore on cancel (null means the prompt is part of the create flow)
+  const [namePromptPrevName, setNamePromptPrevName] = useState(null);
   const [showExport, setShowExport] = useState(false);
   const [showScanToPack, setShowScanToPack] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, id: null, name: '' });
@@ -322,15 +325,37 @@ function PackListsView({
       setNameError('Pack list name is required');
       return;
     }
-    // Check for duplicate name (case-insensitive)
-    const isDuplicate = packLists.some((pl) => pl.name.toLowerCase() === trimmedName.toLowerCase());
+    // Check for duplicate name (case-insensitive), ignoring the list being edited
+    const isDuplicate = packLists.some(
+      (pl) => pl.id !== editingList?.id && pl.name.toLowerCase() === trimmedName.toLowerCase(),
+    );
     if (isDuplicate) {
       setNameError('A pack list with this name already exists');
       return;
     }
+    setNamePromptPrevName(null);
     setShowNamePrompt(false);
     setShowCreate(true);
-  }, [listName, packLists]);
+  }, [listName, packLists, editingList]);
+
+  // Open the name prompt from the edit screen to rename the list
+  const handleStartRename = useCallback(() => {
+    setNamePromptPrevName(listName);
+    setShowNamePrompt(true);
+  }, [listName]);
+
+  // Cancel out of the name prompt: back to the edit form when renaming,
+  // otherwise abandon the create flow entirely
+  const handleNamePromptCancel = useCallback(() => {
+    if (namePromptPrevName !== null) {
+      setListName(namePromptPrevName);
+      setNamePromptPrevName(null);
+      setNameError('');
+      setShowNamePrompt(false);
+    } else {
+      handleCancel();
+    }
+  }, [namePromptPrevName, handleCancel]);
 
   // Start creating - show name prompt first
   const handleStartCreate = useCallback(() => {
@@ -749,7 +774,9 @@ function PackListsView({
         <div className="modal-backdrop" style={styles.modal}>
           <div style={{ ...styles.modalBox, maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
             <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
-              <h3 style={{ margin: 0, color: colors.textPrimary }}>New Pack List</h3>
+              <h3 style={{ margin: 0, color: colors.textPrimary }}>
+                {namePromptPrevName !== null ? 'Rename Pack List' : 'New Pack List'}
+              </h3>
             </div>
             <div style={{ padding: spacing[4] }}>
               <label style={{ ...styles.label, color: isNameEmpty ? colors.danger : undefined }}>
@@ -785,11 +812,11 @@ function PackListsView({
                 justifyContent: 'flex-end',
               }}
             >
-              <Button variant="secondary" onClick={handleCancel}>
+              <Button variant="secondary" onClick={handleNamePromptCancel}>
                 Cancel
               </Button>
               <Button onClick={handleNameSubmit} disabled={isNameEmpty}>
-                Continue
+                {namePromptPrevName !== null ? 'Save Name' : 'Continue'}
               </Button>
             </div>
           </div>
@@ -819,6 +846,9 @@ function PackListsView({
           subtitle={`${selectedPackageIds.length} packages, ${selectedItemIds.length} items selected`}
           action={
             <div style={{ display: 'flex', gap: spacing[2] }}>
+              <Button variant="secondary" icon={Edit2} onClick={handleStartRename}>
+                Rename
+              </Button>
               <Button variant="secondary" onClick={handleCancel}>
                 Cancel
               </Button>

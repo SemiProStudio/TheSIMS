@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { SCHEDULE_MODES, SCHEDULE_PERIODS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate } from '../utils';
+import { formatDate, parseLocalDate } from '../utils';
 import { Badge, Card, Button, PageHeader } from '../components/ui.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 import { useData } from '../contexts/DataContext.js';
@@ -95,7 +95,7 @@ function ScheduleView({
 
   // Get dates for current view
   const scheduleDates = useMemo(() => {
-    const base = new Date(scheduleDate);
+    const base = parseLocalDate(scheduleDate);
     if (scheduleView === SCHEDULE_PERIODS.DAY) return [base];
     if (scheduleView === SCHEDULE_PERIODS.WEEK) {
       const weekStart = new Date(base);
@@ -133,7 +133,7 @@ function ScheduleView({
 
   const navigate = useCallback(
     (dir) => {
-      const d = new Date(scheduleDate);
+      const d = parseLocalDate(scheduleDate);
       if (scheduleView === SCHEDULE_PERIODS.DAY) d.setDate(d.getDate() + dir);
       else if (scheduleView === SCHEDULE_PERIODS.WEEK) d.setDate(d.getDate() + dir * 7);
       else d.setMonth(d.getMonth() + dir);
@@ -651,7 +651,7 @@ function ScheduleView({
       {scheduleMode === SCHEDULE_MODES.CALENDAR &&
         isMonth &&
         (() => {
-          const currentMonth = new Date(scheduleDate).getMonth();
+          const currentMonth = parseLocalDate(scheduleDate).getMonth();
           const DATE_HEADER_H = 24;
           const BAR_H = 18;
           const BAR_GAP = 2;
