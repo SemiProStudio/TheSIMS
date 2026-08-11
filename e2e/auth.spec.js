@@ -52,7 +52,11 @@ test.describe('Authentication', () => {
       await expect(emailLabel).toBeVisible();
       await expect(passwordLabel).toBeVisible();
 
-      // Check inputs are focusable
+      // Inputs are disabled while the initial session check runs — wait
+      // for them to become interactive before testing focusability
+      await expect(page.locator('input[type="email"]')).toBeEnabled();
+      await expect(page.locator('input[type="password"]')).toBeEnabled();
+
       await page.locator('input[type="email"]').focus();
       await expect(page.locator('input[type="email"]')).toBeFocused();
 
@@ -105,22 +109,12 @@ test.describe('Authentication', () => {
       await pages.login.loginAsAdmin();
       await pages.dashboard.expectDashboard();
 
-      // Find and click user menu or logout button
-      const userMenuButton = page.locator('button').filter({ hasText: 'Admin' }).first();
-      if (await userMenuButton.isVisible()) {
-        await userMenuButton.click();
-      }
+      // The sidebar user menu carries the Sign Out action
+      await page.locator('.sidebar-user-section button').first().click();
+      await page.locator('.sidebar-user-menu button', { hasText: 'Sign Out' }).click();
 
-      // Click logout
-      const logoutButton = page.locator(
-        'button:has-text("Logout"), button:has-text("Log Out"), button:has-text("Sign Out")',
-      );
-      if (await logoutButton.isVisible()) {
-        await logoutButton.click();
-      }
-
-      // Should return to login page (or remain logged in if no logout exists)
-      await page.waitForTimeout(500);
+      // Must land back on the login page
+      await pages.login.expectLoginPage();
     });
   });
 

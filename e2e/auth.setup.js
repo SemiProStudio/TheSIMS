@@ -7,6 +7,13 @@
 
 import { test as setup } from '@playwright/test';
 import { LoginPage, DashboardPage, testUsers, STORAGE_STATE } from './fixtures.js';
+import { cleanupTestData } from './db.js';
+
+// Self-healing: remove any "ZZZ E2E ..." rows a previous (crashed) run left
+// behind, BEFORE tests assert against the seeded dataset.
+setup('clean stray E2E data from previous runs', async () => {
+  await cleanupTestData();
+});
 
 setup('authenticate as admin', async ({ page }) => {
   const login = new LoginPage(page);

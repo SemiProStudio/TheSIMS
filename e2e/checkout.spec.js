@@ -1,400 +1,274 @@
 // =============================================================================
 // E2E Tests - Check-Out/Check-In Workflow
-// Tests for the equipment checkout and return process
+// Every test creates a PRIVATE item (db.js) so it can assert strictly
+// without mutating the seeded dataset or racing parallel tests.
 // =============================================================================
 
-import { test, expect, getFutureDate } from './fixtures.js';
+import { test, expect } from './fixtures.js';
+import { createTestItem, checkOutTestItem, deleteTestItem, E2E_PREFIX } from './db.js';
 
-test.describe('Check-Out/Check-In Workflow', () => {
-  test.beforeEach(async ({ page, pages }) => {
-    await page.goto('/');
-    await pages.dashboard.expectDashboard();
+// Opens the detail page of an item via gear-list search (unique id).
+async function openItemDetail(page, pages, id, name, status = 'available') {
+  await page.goto('/');
+  await pages.dashboard.expectDashboard();
+  await pages.dashboard.navigateTo('Gear List');
+  await pages.gearList.expectGearList();
+  await pages.gearList.openItem(id, name, status);
+  await pages.itemDetail.expectItemDetail();
+}
+
+async function openCheckOutModal(page, pages, id, name) {
+  await openItemDetail(page, pages, id, name, 'available');
+  await page.getByRole('button', { name: 'Check Out', exact: true }).click();
+  const modal = page.locator('[role="dialog"]');
+  await expect(modal).toBeVisible();
+  await expect(modal.getByText('Check Out Item')).toBeVisible();
+  return modal;
+}
+
+async function openCheckInModal(page, pages, id, name) {
+  await openItemDetail(page, pages, id, name, 'checked-out');
+  await page.getByRole('button', { name: 'Check In', exact: true }).click();
+  const modal = page.locator('[role="dialog"]');
+  await expect(modal).toBeVisible();
+  await expect(modal.getByText('Check In Item')).toBeVisible();
+  return modal;
+}
+
+test.describe('Check-Out Flow', () => {
+  test('opens the check-out modal for an available item', async ({ page, pages }) => {
+    const name = `${E2E_PREFIX} CheckOut Open`;
+    const id = await createTestItem({ name });
+    try {
+      const modal = await openCheckOutModal(page, pages, id, name);
+      await expect(modal.locator('input[placeholder="Who is taking this item?"]')).toBeVisible();
+      await expect(modal.locator('input[placeholder="Select due date"]')).toBeVisible();
+      await expect(modal.getByRole('button', { name: 'Confirm Check Out' })).toBeVisible();
+    } finally {
+      await deleteTestItem(id);
+    }
   });
 
-  test.describe('Check-Out Flow', () => {
-    test('should open check-out modal for available item', async ({ page, pages }) => {
-      // Navigate to Gear List
-      await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
-
-      // Find an available item and click on it
-      const availableItem = page.locator('text=Available').first();
-
-      if (await availableItem.isVisible()) {
-        // Click on the item (might be on card or row)
-        await availableItem.click();
-        await page.waitForTimeout(500);
-
-        // Look for check out button
-        const checkOutButton = page.locator('button:has-text("Check Out")');
-
-        if (await checkOutButton.isVisible()) {
-          await checkOutButton.click();
-          await page.waitForTimeout(500);
-
-          // Modal should be open
-          const modal = page.locator('[role="dialog"]');
-          await expect(modal).toBeVisible();
-
-          // Should have borrower name field
-          const borrowerInput = page.locator('input[placeholder="Who is taking this item?"]');
-          await expect(borrowerInput).toBeVisible();
-        }
-      }
-    });
-
-    test('should require borrower name for check-out', async ({ page, pages }) => {
-      await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
-
-      // Find and click available item
-      const availableItem = page.locator('text=Available').first();
-
-      if (await availableItem.isVisible()) {
-        await availableItem.click();
-        await page.waitForTimeout(500);
-
-        const checkOutButton = page.locator('button:has-text("Check Out")');
-
-        if (await checkOutButton.isVisible()) {
-          await checkOutButton.click();
-          await page.waitForTimeout(500);
-
-          // Try to submit without filling required fields — the checkout must
-          // NOT go through: either the button is disabled or the modal stays
-          // open with the item still available
-          const submitButton = page.locator('[role="dialog"] button:has-text("Check Out")');
-          await expect(submitButton).toBeVisible();
-
-          if (await submitButton.isEnabled()) {
-            await submitButton.click();
-            await page.waitForTimeout(500);
-          }
-          await expect(page.locator('[role="dialog"]')).toBeVisible();
-        }
-      }
-    });
-
-    test('should complete check-out with valid data', async ({ page, pages }) => {
-      await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
-
-      // Find and click available item
-      const availableItem = page.locator('text=Available').first();
-
-      if (await availableItem.isVisible()) {
-        await availableItem.click();
-        await page.waitForTimeout(500);
-
-        const checkOutButton = page.locator('button:has-text("Check Out")');
-
-        if (await checkOutButton.isVisible()) {
-          await checkOutButton.click();
-          await page.waitForTimeout(500);
-
-          // Fill in required fields
-          const borrowerInput = page
-            .locator('input[id*="borrower"], input[placeholder*="Borrower"]')
-            .first();
-          const dueDateInput = page.locator('input[type="date"]').first();
-          const acknowledgeCheckbox = page.locator('input[type="checkbox"]').first();
-
-          if (await borrowerInput.isVisible()) {
-            await borrowerInput.fill('Test Borrower');
-          }
-
-          if (await dueDateInput.isVisible()) {
-            await dueDateInput.fill(getFutureDate(7));
-          }
-
-          if (await acknowledgeCheckbox.isVisible()) {
-            await acknowledgeCheckbox.check();
-          }
-
-          // Submit
-          const submitButton = page.locator('[role="dialog"] button:has-text("Check Out")');
-          if (await submitButton.isVisible()) {
-            await submitButton.click();
-            await page.waitForTimeout(1000);
-
-            // Modal should close
-            const modalClosed = !(await page.locator('[role="dialog"]').isVisible());
-
-            // Or status should change to checked out
-            const statusChanged = await page.locator('text=/Checked Out|checked out/').isVisible();
-
-            console.log(`Modal closed: ${modalClosed}, Status changed: ${statusChanged}`);
-          }
-        }
-      }
-    });
-
-    test('should show quick due date options', async ({ page, pages }) => {
-      await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
-
-      const availableItem = page.locator('text=Available').first();
-
-      if (await availableItem.isVisible()) {
-        await availableItem.click();
-        await page.waitForTimeout(500);
-
-        const checkOutButton = page.locator('button:has-text("Check Out")');
-
-        if (await checkOutButton.isVisible()) {
-          await checkOutButton.click();
-          await page.waitForTimeout(500);
-
-          // Look for quick date options
-          const quickDateOptions = page.locator(
-            'button:has-text("Tomorrow"), button:has-text("1 week"), button:has-text("3 days")',
-          );
-          const count = await quickDateOptions.count();
-
-          console.log(`Quick date options found: ${count}`);
-
-          // The modal always renders quick options (End of day / Tomorrow /
-          // 3 days / 1 week / 2 weeks)
-          expect(count).toBeGreaterThan(0);
-
-          // Click one option — the custom DatePicker input must populate
-          await quickDateOptions.first().click();
-          const dueDateInput = page.locator('input[placeholder="Select due date"]').first();
-          const value = await dueDateInput.inputValue();
-          expect(value).toBeTruthy();
-        }
-      }
-    });
-  });
-
-  test.describe('Check-In Flow', () => {
-    test('should open check-in modal for checked out item', async ({ page, pages }) => {
-      await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
-
-      // Find a checked out item
-      const checkedOutItem = page.locator('text=/Checked Out/i').first();
-
-      if (await checkedOutItem.isVisible()) {
-        await checkedOutItem.click();
-        await page.waitForTimeout(500);
-
-        const checkInButton = page.locator('button:has-text("Check In")');
-
-        if (await checkInButton.isVisible()) {
-          await checkInButton.click();
-          await page.waitForTimeout(500);
-
-          // Modal should be open
-          const modal = page.locator('[role="dialog"]');
-          await expect(modal).toBeVisible();
-        }
-      }
-    });
-
-    test('should display checkout information in check-in modal', async ({ page, pages }) => {
-      await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
-
-      const checkedOutItem = page.locator('text=/Checked Out/i').first();
-
-      if (await checkedOutItem.isVisible()) {
-        await checkedOutItem.click();
-        await page.waitForTimeout(500);
-
-        const checkInButton = page.locator('button:has-text("Check In")');
-
-        if (await checkInButton.isVisible()) {
-          await checkInButton.click();
-          await page.waitForTimeout(500);
-
-          // Should show borrower info or checkout details
-          const hasBorrowerInfo = await page
-            .locator('text=/Checked out|Borrower|Due/i')
-            .isVisible();
-          console.log(`Has borrower info: ${hasBorrowerInfo}`);
-        }
-      }
-    });
-
-    test('should allow reporting damage during check-in', async ({ page, pages }) => {
-      await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
-
-      const checkedOutItem = page.locator('text=/Checked Out/i').first();
-
-      if (await checkedOutItem.isVisible()) {
-        await checkedOutItem.click();
-        await page.waitForTimeout(500);
-
-        const checkInButton = page.locator('button:has-text("Check In")');
-
-        if (await checkInButton.isVisible()) {
-          await checkInButton.click();
-          await page.waitForTimeout(500);
-
-          // Look for damage reporting option
-          const damageCheckbox = page
-            .locator('input[type="checkbox"]')
-            .filter({ hasText: /damage/i });
-          const damageOption = page.locator('text=/damage|issue|problem/i');
-
-          const hasDamageOption =
-            (await damageCheckbox.isVisible()) || (await damageOption.isVisible());
-          console.log(`Has damage reporting option: ${hasDamageOption}`);
-        }
-      }
-    });
-
-    test('should complete check-in successfully', async ({ page, pages }) => {
-      await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
-
-      const checkedOutItem = page.locator('text=/Checked Out/i').first();
-
-      if (await checkedOutItem.isVisible()) {
-        await checkedOutItem.click();
-        await page.waitForTimeout(500);
-
-        const checkInButton = page.locator('button:has-text("Check In")');
-
-        if (await checkInButton.isVisible()) {
-          await checkInButton.click();
-          await page.waitForTimeout(500);
-
-          // Submit check-in
-          const submitButton = page.locator('[role="dialog"] button:has-text("Check In")');
-
-          if (await submitButton.isVisible()) {
-            await submitButton.click();
-            await page.waitForTimeout(1000);
-
-            // Modal should close and status should change
-            const modalClosed = !(await page.locator('[role="dialog"]').isVisible());
-            console.log(`Modal closed after check-in: ${modalClosed}`);
-          }
-        }
-      }
-    });
-
-    test('should update item condition during check-in', async ({ page, pages }) => {
-      await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
-
-      const checkedOutItem = page.locator('text=/Checked Out/i').first();
-
-      if (await checkedOutItem.isVisible()) {
-        await checkedOutItem.click();
-        await page.waitForTimeout(500);
-
-        const checkInButton = page.locator('button:has-text("Check In")');
-
-        if (await checkInButton.isVisible()) {
-          await checkInButton.click();
-          await page.waitForTimeout(500);
-
-          // Look for condition selector
-          const conditionSelect = page.locator('select[id*="condition"]');
-
-          if (await conditionSelect.isVisible()) {
-            // Change condition
-            await conditionSelect.selectOption('good');
-            console.log('Changed condition to good');
-          }
-        }
-      }
-    });
-  });
-
-  test.describe('Dashboard Quick Actions', () => {
-    test('should show overdue items on dashboard', async ({ page }) => {
-      // Look for overdue section or alert on dashboard
-      const overdueSection = page.locator('text=/overdue/i');
-      const hasOverdue = await overdueSection.isVisible().catch(() => false);
-
-      console.log(`Dashboard shows overdue items: ${hasOverdue}`);
-    });
-
-    test('should show items due soon on dashboard', async ({ page }) => {
-      // Look for due soon section
-      const dueSoonSection = page.locator('text=/due soon|upcoming returns|due today/i');
-      const hasDueSoon = await dueSoonSection.isVisible().catch(() => false);
-
-      console.log(`Dashboard shows due soon: ${hasDueSoon}`);
-    });
-
-    test('should be able to quick check-out from dashboard', async ({ page }) => {
-      // Look for quick action buttons on dashboard
-      const quickCheckOut = page.locator(
-        'button:has-text("Quick Check"), button:has-text("Check Out")',
+  test('rejects submission until required fields are filled', async ({ page, pages }) => {
+    const name = `${E2E_PREFIX} CheckOut Required`;
+    const id = await createTestItem({ name });
+    try {
+      const modal = await openCheckOutModal(page, pages, id, name);
+
+      // The borrower field is prefilled with the current user, so due date
+      // and acknowledgement are the two open requirements
+      await expect(modal.locator('input[placeholder="Who is taking this item?"]')).not.toHaveValue(
+        '',
       );
 
-      if (await quickCheckOut.first().isVisible()) {
-        console.log('Quick check-out available from dashboard');
-      }
-    });
+      await modal.getByRole('button', { name: 'Confirm Check Out' }).click();
+
+      // Validation messages must appear and the modal must stay open
+      await expect(modal.getByText('Due date is required')).toBeVisible();
+      await expect(modal.getByText('Please acknowledge the item condition')).toBeVisible();
+      await expect(modal).toBeVisible();
+    } finally {
+      await deleteTestItem(id);
+    }
   });
 
-  test.describe('Workflow Accessibility', () => {
-    test('check-out modal should be keyboard accessible', async ({ page, pages }) => {
-      await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+  test('completes a check-out with valid data', async ({ page, pages }) => {
+    const name = `${E2E_PREFIX} CheckOut Complete`;
+    const id = await createTestItem({ name });
+    try {
+      const modal = await openCheckOutModal(page, pages, id, name);
 
-      const availableItem = page.locator('text=Available').first();
+      await modal.locator('input[placeholder="Who is taking this item?"]').fill(
+        `${E2E_PREFIX} Borrower`,
+      );
+      await modal.locator('input[placeholder="email@example.com"]').fill('e2e-borrower@example.com');
+      await modal.getByRole('button', { name: '1 week', exact: true }).click();
+      await expect(modal.locator('input[placeholder="Select due date"]')).not.toHaveValue('');
+      await modal.locator('input[type="checkbox"]').check();
 
-      if (await availableItem.isVisible()) {
-        await availableItem.click();
-        await page.waitForTimeout(500);
+      await modal.getByRole('button', { name: 'Confirm Check Out' }).click();
 
-        const checkOutButton = page.locator('button:has-text("Check Out")');
+      // Modal closes and the item is now checked out (Check In appears)
+      await expect(modal).toBeHidden();
+      await expect(page.getByRole('button', { name: 'Check In', exact: true })).toBeVisible();
+      await expect(page.getByText(`${E2E_PREFIX} Borrower`).first()).toBeVisible();
+    } finally {
+      await deleteTestItem(id);
+    }
+  });
 
-        if (await checkOutButton.isVisible()) {
-          await checkOutButton.click();
-          await page.waitForTimeout(500);
+  test('quick due-date options populate the due date', async ({ page, pages }) => {
+    const name = `${E2E_PREFIX} CheckOut QuickDates`;
+    const id = await createTestItem({ name });
+    try {
+      const modal = await openCheckOutModal(page, pages, id, name);
 
-          // Modal should trap focus
-          const modal = page.locator('[role="dialog"]');
-
-          if (await modal.isVisible()) {
-            // Tab through modal
-            await page.keyboard.press('Tab');
-            await page.keyboard.press('Tab');
-
-            // Escape should close modal
-            await page.keyboard.press('Escape');
-            await page.waitForTimeout(300);
-
-            const modalClosed = !(await modal.isVisible());
-            console.log(`Modal closed with Escape: ${modalClosed}`);
-          }
-        }
+      // The modal always renders all five quick options
+      for (const label of ['End of day', 'Tomorrow', '3 days', '1 week', '2 weeks']) {
+        await expect(modal.getByRole('button', { name: label, exact: true })).toBeVisible();
       }
-    });
 
-    test('check-out form should have proper labels', async ({ page, pages }) => {
-      await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+      const dueDateInput = modal.locator('input[placeholder="Select due date"]');
+      await expect(dueDateInput).toHaveValue('');
+      await modal.getByRole('button', { name: 'Tomorrow', exact: true }).click();
+      await expect(dueDateInput).not.toHaveValue('');
+    } finally {
+      await deleteTestItem(id);
+    }
+  });
+});
 
-      const availableItem = page.locator('text=Available').first();
+test.describe('Check-In Flow', () => {
+  test('opens the check-in modal for a checked-out item', async ({ page, pages }) => {
+    const name = `${E2E_PREFIX} CheckIn Open`;
+    const id = await createTestItem({ name });
+    try {
+      await checkOutTestItem(id);
+      const modal = await openCheckInModal(page, pages, id, name);
+      await expect(modal.getByText(name)).toBeVisible();
+      await expect(modal.getByRole('button', { name: 'Confirm Check In' })).toBeVisible();
+    } finally {
+      await deleteTestItem(id);
+    }
+  });
 
-      if (await availableItem.isVisible()) {
-        await availableItem.click();
-        await page.waitForTimeout(500);
+  test('displays checkout information in the check-in modal', async ({ page, pages }) => {
+    const name = `${E2E_PREFIX} CheckIn Info`;
+    const borrower = `${E2E_PREFIX} Holder Info`;
+    const id = await createTestItem({ name });
+    try {
+      await checkOutTestItem(id, { borrower });
+      const modal = await openCheckInModal(page, pages, id, name);
+      await expect(modal.getByText('Checked out to:')).toBeVisible();
+      await expect(modal.getByText(borrower)).toBeVisible();
+    } finally {
+      await deleteTestItem(id);
+    }
+  });
 
-        const checkOutButton = page.locator('button:has-text("Check Out")');
+  test('damage reporting requires a description', async ({ page, pages }) => {
+    const name = `${E2E_PREFIX} CheckIn Damage`;
+    const id = await createTestItem({ name });
+    try {
+      await checkOutTestItem(id);
+      const modal = await openCheckInModal(page, pages, id, name);
 
-        if (await checkOutButton.isVisible()) {
-          await checkOutButton.click();
-          await page.waitForTimeout(500);
+      await modal.getByText('Report damage or issue').click();
+      await expect(modal.getByText(/Describe the damage/)).toBeVisible();
 
-          // Check for labels
-          const labels = page.locator('label');
-          const labelCount = await labels.count();
+      // Submitting without a description must be rejected
+      await modal.getByRole('button', { name: 'Confirm Check In' }).click();
+      await expect(modal.getByText('Please describe the damage')).toBeVisible();
+      await expect(modal).toBeVisible();
+    } finally {
+      await deleteTestItem(id);
+    }
+  });
 
-          console.log(`Form has ${labelCount} labels`);
-          expect(labelCount).toBeGreaterThan(0);
-        }
-      }
-    });
+  test('completes a check-in and returns the item to available', async ({ page, pages }) => {
+    const name = `${E2E_PREFIX} CheckIn Complete`;
+    const id = await createTestItem({ name });
+    try {
+      await checkOutTestItem(id);
+      const modal = await openCheckInModal(page, pages, id, name);
+
+      await modal.getByRole('button', { name: 'Confirm Check In' }).click();
+
+      await expect(modal).toBeHidden();
+      await expect(page.getByRole('button', { name: 'Check Out', exact: true })).toBeVisible();
+    } finally {
+      await deleteTestItem(id);
+    }
+  });
+
+  test('flags a condition change during check-in', async ({ page, pages }) => {
+    const name = `${E2E_PREFIX} CheckIn Condition`;
+    const id = await createTestItem({ name });
+    try {
+      await checkOutTestItem(id);
+      const modal = await openCheckInModal(page, pages, id, name);
+
+      // Item was created in excellent condition; select Good
+      await modal.getByText('Good', { exact: true }).click();
+      await expect(modal.getByText(/Condition changed from excellent to good/)).toBeVisible();
+      await expect(modal.locator('textarea[placeholder="Explain the condition change..."]'))
+        .toBeVisible();
+
+      await modal.getByRole('button', { name: 'Cancel' }).click();
+      await expect(modal).toBeHidden();
+    } finally {
+      await deleteTestItem(id);
+    }
+  });
+});
+
+test.describe('Dashboard Panels', () => {
+  test('shows a checked-out item with an overdue due date', async ({ page, pages }) => {
+    const name = `${E2E_PREFIX} Overdue Item`;
+    const id = await createTestItem({ name });
+    try {
+      await checkOutTestItem(id, { dueInDays: -2 });
+      await page.goto('/');
+      await pages.dashboard.expectDashboard();
+      // Overdue checkouts surface in the "Currently Checked Out" panel
+      await expect(page.getByText('Currently Checked Out')).toBeVisible();
+      await expect(page.getByText(name).first()).toBeVisible();
+    } finally {
+      await deleteTestItem(id);
+    }
+  });
+
+  test('shows needs-attention items in the Alerts panel', async ({ page, pages }) => {
+    const name = `${E2E_PREFIX} Alert Item`;
+    const id = await createTestItem({ name, status: 'needs-attention' });
+    try {
+      await page.goto('/');
+      await pages.dashboard.expectDashboard();
+      await expect(page.getByText('Alerts')).toBeVisible();
+      await expect(page.getByText(name).first()).toBeVisible();
+    } finally {
+      await deleteTestItem(id);
+    }
+  });
+
+  test('quick gear search navigates to the item detail', async ({ page, pages }) => {
+    await page.goto('/');
+    await pages.dashboard.expectDashboard();
+
+    await page.locator('input[placeholder="Search by name, ID, or brand..."]').fill('Sony FX6');
+    const result = page.getByText('Sony FX6').first();
+    await expect(result).toBeVisible();
+    await result.click();
+
+    await pages.itemDetail.expectItemDetail();
+    await expect(page.locator('h1').filter({ hasText: 'Sony FX6' })).toBeVisible();
+  });
+});
+
+test.describe('Workflow Accessibility', () => {
+  test('check-out modal closes with Escape', async ({ page, pages }) => {
+    const name = `${E2E_PREFIX} CheckOut Escape`;
+    const id = await createTestItem({ name });
+    try {
+      const modal = await openCheckOutModal(page, pages, id, name);
+      await page.keyboard.press('Escape');
+      await expect(modal).toBeHidden();
+    } finally {
+      await deleteTestItem(id);
+    }
+  });
+
+  test('check-out form has labeled sections and fields', async ({ page, pages }) => {
+    const name = `${E2E_PREFIX} CheckOut Labels`;
+    const id = await createTestItem({ name });
+    try {
+      const modal = await openCheckOutModal(page, pages, id, name);
+      await expect(modal.getByText('Return Schedule')).toBeVisible();
+      await expect(modal.getByText('Quick Select')).toBeVisible();
+      const labelCount = await modal.locator('label').count();
+      expect(labelCount).toBeGreaterThanOrEqual(5);
+    } finally {
+      await deleteTestItem(id);
+    }
   });
 });

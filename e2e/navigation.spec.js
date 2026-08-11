@@ -110,15 +110,13 @@ test.describe('Navigation', () => {
     });
 
     test('should have skip link for keyboard users', async ({ page }) => {
-      // Skip links are often hidden but focusable
-      const skipLink = page.locator('a:has-text("Skip to"), [href="#main-content"]');
+      // App.jsx renders a SkipLink targeting #main-content; it must exist
+      // and be the first tab stop
+      const skipLink = page.locator('a[href="#main-content"]');
+      await expect(skipLink).toHaveCount(1);
 
-      // Tab to it (usually first focusable element)
       await page.keyboard.press('Tab');
-
-      // Check if skip link exists (it's a best practice, may not be implemented)
-      const skipLinkExists = (await skipLink.count()) > 0;
-      console.log(`Skip link exists: ${skipLinkExists}`);
+      await expect(skipLink).toBeFocused();
     });
   });
 
@@ -168,29 +166,18 @@ test.describe('Navigation', () => {
 
   test.describe('Item Detail Navigation', () => {
     test('should navigate to item detail and back', async ({ page, pages }) => {
-      // Navigate to Gear List
       await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+      await pages.gearList.expectGearList();
 
-      // Click on first item (could be card or row)
-      const firstItem = page.locator('[data-testid="item-card"], [role="button"]').first();
+      // Open a seeded item deterministically
+      await pages.gearList.openItem('CA1001', 'Sony A7S III');
+      await pages.itemDetail.expectItemDetail();
+      await expect(page.locator('h1').filter({ hasText: 'Sony A7S III' })).toBeVisible();
 
-      if (await firstItem.isVisible()) {
-        await firstItem.click();
-
-        // Should be on detail page (has Back button)
-        const backButton = page.locator('button:has-text("Back")');
-
-        if (await backButton.isVisible({ timeout: 5000 })) {
-          // Click back
-          await backButton.click();
-
-          // Should return to Gear List
-          await expect(
-            page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")'),
-          ).toBeVisible({ timeout: 5000 });
-        }
-      }
+      await pages.itemDetail.goBack();
+      await expect(
+        page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")'),
+      ).toBeVisible();
     });
   });
 

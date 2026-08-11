@@ -76,12 +76,29 @@ export default defineConfig({
     timeout: 5000,
   },
 
-  // Configure projects for major browsers.
-  // 'setup' logs in once per run (e2e/auth.setup.js) and saves storage
-  // states; the browser projects start every test already authenticated as
-  // the admin user. Specs that need a logged-out page (auth.spec.js, the
-  // login-page visual block) or the standard user override storageState
-  // locally via test.use().
+  // Clean up E2E-created rows in the test Supabase project after the run
+  // (auth.setup.js also cleans BEFORE the run, so the suite self-heals).
+  globalTeardown: './e2e/global-teardown.js',
+
+  // Project layout:
+  // - 'setup' logs in once per run (e2e/auth.setup.js), saves storage
+  //   states, and wipes stray E2E data from previous runs. Every test in
+  //   the browser projects starts already authenticated as the admin user;
+  //   logged-out specs and the standard user override storageState locally.
+  // - 'chromium' runs the functional specs. These MUTATE database state
+  //   (private "ZZZ E2E ..." items they create and delete).
+  // - 'chromium-visual' runs the screenshot specs and depends on
+  //   'chromium', so it starts only after every functional test finished
+  //   and removed its private data. Screenshots therefore always see the
+  //   pristine seeded dataset. Do not merge these projects: a functional
+  //   test checking out an item mid-run would flake any full-page
+  //   screenshot that shows inventory counts or status badges.
+  //
+  // firefox/webkit/mobile projects were removed 2026-08: they were
+  // configured but never verified green (mobile navigation cannot work via
+  // the desktop sidebar page objects), and unverified projects are exactly
+  // the kind of fake coverage this suite no longer carries. Re-add a
+  // browser project only together with a run that proves it passes.
   projects: [
     {
       name: 'setup',
@@ -89,29 +106,15 @@ export default defineConfig({
     },
     {
       name: 'chromium',
+      testIgnore: /visual-.*\.spec\.js/,
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
       dependencies: ['setup'],
     },
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'], storageState: 'e2e/.auth/admin.json' },
-      dependencies: ['setup'],
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'], storageState: 'e2e/.auth/admin.json' },
-      dependencies: ['setup'],
-    },
-    // Mobile viewports
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'], storageState: 'e2e/.auth/admin.json' },
-      dependencies: ['setup'],
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'], storageState: 'e2e/.auth/admin.json' },
-      dependencies: ['setup'],
+      name: 'chromium-visual',
+      testMatch: /visual-.*\.spec\.js/,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['chromium'],
     },
   ],
 

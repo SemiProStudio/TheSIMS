@@ -3,8 +3,8 @@
 // Screenshot comparison tests for main application pages
 // =============================================================================
 
-import { test, expect, compareSnapshot, setTheme, availableThemes } from './visual-utils.js';
-import { DashboardPage } from './fixtures.js';
+import { test, expect } from './visual-utils.js';
+import { DashboardPage, LoginPage } from './fixtures.js';
 
 test.describe('Visual Regression - Pages', () => {
   test.describe('Login Page', () => {
@@ -23,23 +23,23 @@ test.describe('Visual Regression - Pages', () => {
     test('login page with error should match baseline', async ({ page }) => {
       await page.goto('/');
 
-      // Trigger an error by submitting invalid credentials
-      await page.locator('input[type="email"]').fill('test@test.com');
-      await page.locator('input[type="password"]').fill('wrongpassword');
+      // Trigger an error by submitting invalid credentials.
+      // fillCredentials is remount-safe — the login card can remount right
+      // after first paint and wipe directly-filled inputs.
+      const loginPage = new LoginPage(page);
+      await expect(page.locator('input[type="email"]')).toBeVisible();
+      await loginPage.fillCredentials('test@test.com', 'wrongpassword');
       await page.locator('button[type="submit"]').click();
 
-      await page.waitForTimeout(1000);
+      // The error banner must appear before capturing
+      await expect(page.locator('text=/invalid|error|incorrect/i').first()).toBeVisible({
+        timeout: 10000,
+      });
+      await page.waitForTimeout(300);
 
-      // Only capture if there's an error visible
-      const hasError = await page
-        .locator('text=/invalid|error|incorrect/i')
-        .isVisible()
-        .catch(() => false);
-      if (hasError) {
-        await expect(page).toHaveScreenshot('login-page-error.png', {
-          maxDiffPixels: 100,
-        });
-      }
+      await expect(page).toHaveScreenshot('login-page-error.png', {
+        maxDiffPixels: 100,
+      });
     });
 
     test('login page on mobile should match baseline', async ({ page }) => {
@@ -109,12 +109,8 @@ test.describe('Visual Regression - Pages', () => {
     });
 
     test('gear list grid view should match baseline', async ({ page }) => {
-      // Click grid view if available
-      const gridButton = page.locator('button[aria-label*="grid"]');
-      if (await gridButton.isVisible()) {
-        await gridButton.click();
-        await page.waitForTimeout(500);
-      }
+      await page.getByRole('button', { name: 'Grid view' }).click();
+      await page.waitForTimeout(500);
 
       await expect(page).toHaveScreenshot('gear-list-grid.png', {
         maxDiffPixels: 300,
@@ -123,10 +119,9 @@ test.describe('Visual Regression - Pages', () => {
 
     test('gear list with search should match baseline', async ({ page }) => {
       const searchInput = page.locator('input[placeholder*="Search"]');
-      if (await searchInput.isVisible()) {
-        await searchInput.fill('Camera');
-        await page.waitForTimeout(500);
-      }
+      await expect(searchInput).toBeVisible();
+      await searchInput.fill('Sony');
+      await page.waitForTimeout(500);
 
       await expect(page).toHaveScreenshot('gear-list-search.png', {
         maxDiffPixels: 300,
