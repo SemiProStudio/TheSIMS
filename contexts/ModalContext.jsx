@@ -2,10 +2,16 @@
 // ModalContext
 // Provides modal state via context so opening/closing modals only
 // re-renders modal-dependent components — not the entire App tree.
+//
+// NOTE: modals are opened with openModal(MODALS.X) plus the shared form/
+// editing state below. A previous generation of per-modal helpers
+// (openEditItemModal, openImageSelectorModal, bulk-action openers, ...) was
+// never wired to the running app and was removed — do not reintroduce a
+// second modal-opening API alongside this one.
 // =============================================================================
 
 import { useState, useCallback, useMemo } from 'react';
-import { MODALS, EMPTY_ITEM_FORM, EMPTY_RESERVATION_FORM } from '../constants.js';
+import { EMPTY_ITEM_FORM, EMPTY_RESERVATION_FORM } from '../constants.js';
 import ModalContext from './ModalContext.js';
 
 export function ModalProvider({ children }) {
@@ -32,166 +38,16 @@ export function ModalProvider({ children }) {
     onCancel: null,
   });
 
-  // Modal-specific data
-  const [modalData, setModalData] = useState(null);
-
   // ============================================================================
   // Modal Handlers
   // ============================================================================
 
-  const openModal = useCallback((modalId, data = null) => {
+  const openModal = useCallback((modalId) => {
     setActiveModal(modalId);
-    setModalData(data);
   }, []);
 
   const closeModal = useCallback(() => {
     setActiveModal(null);
-    setModalData(null);
-  }, []);
-
-  const isModalOpen = useCallback((modalId) => activeModal === modalId, [activeModal]);
-
-  // ============================================================================
-  // Item Modal Handlers
-  // ============================================================================
-
-  const openAddItemModal = useCallback((initialData = null) => {
-    setEditingItemId(null);
-    setItemForm(initialData || { ...EMPTY_ITEM_FORM });
-    setActiveModal(MODALS.ADD_ITEM);
-  }, []);
-
-  const openEditItemModal = useCallback((item) => {
-    setEditingItemId(item.id);
-    setItemForm({
-      name: item.name || '',
-      code: item.code || '',
-      category: item.category || '',
-      subcategory: item.subcategory || '',
-      status: item.status || 'available',
-      condition: item.condition || 'excellent',
-      location: item.location || '',
-      sublocation: item.sublocation || '',
-      value: item.value || '',
-      serialNumber: item.serialNumber || '',
-      manufacturer: item.manufacturer || '',
-      model: item.model || '',
-      purchaseDate: item.purchaseDate || '',
-      purchasePrice: item.purchasePrice || '',
-      vendor: item.vendor || '',
-      warrantyExpires: item.warrantyExpires || '',
-      description: item.description || '',
-      image: item.image || '',
-      tags: item.tags || [],
-      specs: item.specs || {},
-      customFields: item.customFields || {},
-    });
-    setActiveModal(MODALS.ADD_ITEM);
-  }, []);
-
-  const closeItemModal = useCallback(() => {
-    setActiveModal(null);
-    setEditingItemId(null);
-    setItemForm({ ...EMPTY_ITEM_FORM });
-  }, []);
-
-  // ============================================================================
-  // Reservation Modal Handlers
-  // ============================================================================
-
-  const openAddReservationModal = useCallback((item) => {
-    setEditingReservationId(null);
-    setReservationForm({ ...EMPTY_RESERVATION_FORM });
-    setModalData(item);
-    setActiveModal(MODALS.ADD_RESERVATION);
-  }, []);
-
-  const openEditReservationModal = useCallback((reservation, item) => {
-    setEditingReservationId(reservation.id);
-    setReservationForm({
-      name: reservation.name || '',
-      start: reservation.start || '',
-      end: reservation.end || '',
-      clientId: reservation.clientId || '',
-      clientName: reservation.clientName || '',
-      project: reservation.project || '',
-      notes: reservation.notes || '',
-      status: reservation.status || 'pending',
-    });
-    setModalData(item);
-    setActiveModal(MODALS.ADD_RESERVATION);
-  }, []);
-
-  const closeReservationModal = useCallback(() => {
-    setActiveModal(null);
-    setEditingReservationId(null);
-    setReservationForm({ ...EMPTY_RESERVATION_FORM });
-    setModalData(null);
-  }, []);
-
-  // ============================================================================
-  // Check-Out/Check-In
-  // ============================================================================
-
-  const openCheckOutModal = useCallback((item) => {
-    setModalData(item);
-    setActiveModal(MODALS.CHECK_OUT);
-  }, []);
-
-  const openCheckInModal = useCallback((item) => {
-    setModalData(item);
-    setActiveModal(MODALS.CHECK_IN);
-  }, []);
-
-  // ============================================================================
-  // Other Modal Handlers
-  // ============================================================================
-
-  const openQRModal = useCallback((item) => {
-    setModalData(item);
-    setActiveModal(MODALS.QR_CODE);
-  }, []);
-
-  const openExportModal = useCallback((options = {}) => {
-    setModalData(options);
-    setActiveModal(MODALS.EXPORT);
-  }, []);
-
-  const openMaintenanceModal = useCallback((item, record = null) => {
-    setModalData({ item, record });
-    setActiveModal(MODALS.MAINTENANCE);
-  }, []);
-
-  const openCSVImportModal = useCallback(() => setActiveModal(MODALS.CSV_IMPORT), []);
-  const openQRScannerModal = useCallback(() => setActiveModal(MODALS.QR_SCANNER), []);
-
-  const openImageSelectorModal = useCallback((onSelect) => {
-    setModalData({ onSelect });
-    setActiveModal(MODALS.IMAGE_SELECTOR);
-  }, []);
-
-  // ============================================================================
-  // Bulk Action Handlers
-  // ============================================================================
-
-  const openBulkStatusModal = useCallback((ids) => {
-    setModalData({ ids });
-    setActiveModal(MODALS.BULK_STATUS);
-  }, []);
-
-  const openBulkLocationModal = useCallback((ids) => {
-    setModalData({ ids });
-    setActiveModal(MODALS.BULK_LOCATION);
-  }, []);
-
-  const openBulkCategoryModal = useCallback((ids) => {
-    setModalData({ ids });
-    setActiveModal(MODALS.BULK_CATEGORY);
-  }, []);
-
-  const openBulkDeleteModal = useCallback((ids) => {
-    setModalData({ ids });
-    setActiveModal(MODALS.BULK_DELETE);
   }, []);
 
   // ============================================================================
@@ -222,20 +78,6 @@ export function ModalProvider({ children }) {
     [],
   );
 
-  const showDeleteConfirm = useCallback(
-    (itemName, onConfirm) => {
-      showConfirm({
-        title: 'Delete Item',
-        message: `Are you sure you want to delete "${itemName}"? This action cannot be undone.`,
-        confirmText: 'Delete',
-        cancelText: 'Cancel',
-        variant: 'danger',
-        onConfirm,
-      });
-    },
-    [showConfirm],
-  );
-
   const closeConfirm = useCallback(() => {
     setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
   }, []);
@@ -254,14 +96,6 @@ export function ModalProvider({ children }) {
   // Form Helpers
   // ============================================================================
 
-  const updateItemForm = useCallback((field, value) => {
-    setItemForm((prev) => ({ ...prev, [field]: value }));
-  }, []);
-
-  const updateReservationForm = useCallback((field, value) => {
-    setReservationForm((prev) => ({ ...prev, [field]: value }));
-  }, []);
-
   const resetItemForm = useCallback(() => {
     setItemForm({ ...EMPTY_ITEM_FORM });
     setEditingItemId(null);
@@ -279,11 +113,8 @@ export function ModalProvider({ children }) {
     () => ({
       activeModal,
       setActiveModal,
-      modalData,
-      setModalData,
       openModal,
       closeModal,
-      isModalOpen,
       editingItemId,
       setEditingItemId,
       editingReservationId,
@@ -291,41 +122,18 @@ export function ModalProvider({ children }) {
       isEditing: editingItemId !== null || editingReservationId !== null,
       itemForm,
       setItemForm,
-      updateItemForm,
       resetItemForm,
       reservationForm,
       setReservationForm,
-      updateReservationForm,
       resetReservationForm,
-      openAddItemModal,
-      openEditItemModal,
-      closeItemModal,
-      openAddReservationModal,
-      openEditReservationModal,
-      closeReservationModal,
-      openCheckOutModal,
-      openCheckInModal,
-      openQRModal,
-      openExportModal,
-      openMaintenanceModal,
-      openCSVImportModal,
-      openQRScannerModal,
-      openImageSelectorModal,
-      openBulkStatusModal,
-      openBulkLocationModal,
-      openBulkCategoryModal,
-      openBulkDeleteModal,
       confirmDialog,
-      setConfirmDialog,
       showConfirm,
-      showDeleteConfirm,
       closeConfirm,
       handleConfirm,
       handleCancel,
     }),
     [
       activeModal,
-      modalData,
       editingItemId,
       editingReservationId,
       itemForm,
@@ -333,31 +141,9 @@ export function ModalProvider({ children }) {
       confirmDialog,
       openModal,
       closeModal,
-      isModalOpen,
-      updateItemForm,
       resetItemForm,
-      updateReservationForm,
       resetReservationForm,
-      openAddItemModal,
-      openEditItemModal,
-      closeItemModal,
-      openAddReservationModal,
-      openEditReservationModal,
-      closeReservationModal,
-      openCheckOutModal,
-      openCheckInModal,
-      openQRModal,
-      openExportModal,
-      openMaintenanceModal,
-      openCSVImportModal,
-      openQRScannerModal,
-      openImageSelectorModal,
-      openBulkStatusModal,
-      openBulkLocationModal,
-      openBulkCategoryModal,
-      openBulkDeleteModal,
       showConfirm,
-      showDeleteConfirm,
       closeConfirm,
       handleConfirm,
       handleCancel,

@@ -13,12 +13,3 @@ export { useDebounce } from './useDebounce.js';
 
 // PWA Support
 export { usePWA, InstallStatus } from './usePWA.js';
-
-// Screen Reader Announcements
-export {
-  useAnnounce,
-  useAnnounceViewChange,
-  useAnnounceLoading,
-  useAnnounceModal,
-  useAnnounceError,
-} from './useAnnounce.js';

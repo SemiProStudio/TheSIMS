@@ -12,14 +12,11 @@ import {
   Badge,
   Card,
   Input,
-  Modal,
   EmptyState,
-  LoadingSpinner,
   PageHeader,
   BackButton,
 } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
-import { StatCard } from '../components/ui/StatCard.jsx';
 
 // =============================================================================
 // Button Tests
@@ -349,91 +346,6 @@ describe('Select', () => {
 });
 
 // =============================================================================
-// Modal Tests
-// =============================================================================
-
-describe('Modal', () => {
-  it('should not render when isOpen is false', () => {
-    render(
-      <Modal isOpen={false} onClose={() => {}} title="Test Modal">
-        Content
-      </Modal>,
-    );
-    expect(screen.queryByText('Test Modal')).not.toBeInTheDocument();
-  });
-
-  it('should render when isOpen is true', () => {
-    render(
-      <Modal isOpen={true} onClose={() => {}} title="Test Modal">
-        Content
-      </Modal>,
-    );
-    expect(screen.getByText('Test Modal')).toBeInTheDocument();
-    expect(screen.getByText('Content')).toBeInTheDocument();
-  });
-
-  it('should call onClose when backdrop clicked', () => {
-    const handleClose = vi.fn();
-    render(
-      <Modal isOpen={true} onClose={handleClose} title="Test">
-        Content
-      </Modal>,
-    );
-    fireEvent.click(screen.getByRole('dialog').parentElement);
-    expect(handleClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('should not call onClose when modal content clicked', () => {
-    const handleClose = vi.fn();
-    render(
-      <Modal isOpen={true} onClose={handleClose} title="Test">
-        Content
-      </Modal>,
-    );
-    fireEvent.click(screen.getByText('Content'));
-    expect(handleClose).not.toHaveBeenCalled();
-  });
-
-  it('should have role="dialog"', () => {
-    render(
-      <Modal isOpen={true} onClose={() => {}} title="Test">
-        Content
-      </Modal>,
-    );
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-  });
-
-  it('should have aria-modal="true"', () => {
-    render(
-      <Modal isOpen={true} onClose={() => {}} title="Test">
-        Content
-      </Modal>,
-    );
-    expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
-  });
-
-  it('should call onClose when close button clicked', () => {
-    const handleClose = vi.fn();
-    render(
-      <Modal isOpen={true} onClose={handleClose} title="Test">
-        Content
-      </Modal>,
-    );
-    fireEvent.click(screen.getByLabelText('Close modal'));
-    expect(handleClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('should render without title', () => {
-    render(
-      <Modal isOpen={true} onClose={() => {}}>
-        Content Only
-      </Modal>,
-    );
-    expect(screen.getByText('Content Only')).toBeInTheDocument();
-  });
-});
-
-// =============================================================================
 // EmptyState Tests
 // =============================================================================
 
@@ -452,47 +364,6 @@ describe('EmptyState', () => {
     const action = <button>Add Item</button>;
     render(<EmptyState title="Empty" action={action} />);
     expect(screen.getByText('Add Item')).toBeInTheDocument();
-  });
-});
-
-// =============================================================================
-// LoadingSpinner Tests
-// =============================================================================
-
-describe('LoadingSpinner', () => {
-  it('should render spinner', () => {
-    const { container } = render(<LoadingSpinner />);
-    expect(container.firstChild).toBeInTheDocument();
-  });
-
-  it('should apply custom size', () => {
-    const { container } = render(<LoadingSpinner size={48} />);
-    const spinner = container.firstChild;
-    expect(spinner).toHaveStyle({ width: '48px', height: '48px' });
-  });
-});
-
-// =============================================================================
-// StatCard Tests
-// =============================================================================
-
-describe('StatCard', () => {
-  it('should render label and value', () => {
-    render(<StatCard label="Total Items" value={42} />);
-    expect(screen.getByText('Total Items')).toBeInTheDocument();
-    expect(screen.getByText('42')).toBeInTheDocument();
-  });
-
-  it('should render string value', () => {
-    render(<StatCard label="Status" value="Active" />);
-    expect(screen.getByText('Active')).toBeInTheDocument();
-  });
-
-  it('should be clickable when onClick provided', () => {
-    const handleClick = vi.fn();
-    render(<StatCard label="Click Me" value={0} onClick={handleClick} />);
-    fireEvent.click(screen.getByText('Click Me').closest('div'));
-    expect(handleClick).toHaveBeenCalledTimes(1);
   });
 });
 

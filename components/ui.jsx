@@ -5,7 +5,7 @@
 
 import { memo, forwardRef, useState, useCallback, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { ArrowLeft, GripVertical } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { colors, styles, borderRadius, spacing, typography, withOpacity } from '../theme.js';
 
 // ============================================================================
@@ -76,25 +76,6 @@ export const PageHeader = memo(function PageHeader({
         {action}
       </div>
     </>
-  );
-});
-
-// ============================================================================
-// DragHandle - Visual grip handle for draggable items
-// ============================================================================
-
-export const DragHandle = memo(function DragHandle({ canDrag = true, size = 16 }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        color: canDrag ? colors.textMuted : colors.borderLight,
-        cursor: canDrag ? 'grab' : 'default',
-      }}
-    >
-      <GripVertical size={size} />
-    </div>
   );
 });
 
@@ -427,32 +408,6 @@ export const Input = memo(
 );
 
 // ============================================================================
-// SelectInput - Basic dropdown select (legacy - prefer components/Select.jsx)
-// ============================================================================
-
-export const SelectInput = memo(
-  forwardRef(function SelectInput(
-    { label, options, style: customStyle, className: customClassName, ...props },
-    ref,
-  ) {
-    const selectClassNames = ['select', customClassName].filter(Boolean).join(' ');
-
-    return (
-      <div>
-        {label && <label className="label">{label}</label>}
-        <select ref={ref} className={selectClassNames} style={customStyle} {...props}>
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }),
-);
-
-// ============================================================================
 // StatCard - Dashboard statistic card
 // ============================================================================
 
@@ -510,137 +465,6 @@ export const StatCard = memo(function StatCard({
         }}
       >
         {label}
-      </div>
-    </div>
-  );
-});
-
-// ============================================================================
-// ItemImage - Image with placeholder
-// ============================================================================
-
-export const ItemImage = memo(function ItemImage({
-  src,
-  alt = '',
-  size = 56,
-  borderRadius: radius = borderRadius.md,
-  showPlaceholder = true,
-}) {
-  if (src) {
-    return (
-      <img
-        src={src}
-        alt={alt}
-        style={{
-          width: size,
-          height: size,
-          borderRadius: radius,
-          objectFit: 'cover',
-        }}
-      />
-    );
-  }
-
-  if (!showPlaceholder) return null;
-
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: radius,
-        background: `${withOpacity(colors.primary, 15)}`,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: colors.textMuted,
-      }}
-    >
-      <svg
-        width={size * 0.4}
-        height={size * 0.4}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      >
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-        <circle cx="8.5" cy="8.5" r="1.5" />
-        <polyline points="21 15 16 10 5 21" />
-      </svg>
-      {size >= 48 && (
-        <span style={{ fontSize: Math.max(8, size * 0.15), marginTop: 2 }}>No Image</span>
-      )}
-    </div>
-  );
-});
-
-// ============================================================================
-// Modal - Modal container
-// ============================================================================
-
-export const Modal = memo(function Modal({ isOpen, onClose, title, maxWidth = 500, children }) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="modal-backdrop" style={styles.modal} onClick={onClose}>
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{ ...styles.modalBox, maxWidth }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={title ? 'modal-title' : undefined}
-      >
-        {title && (
-          <div
-            style={{
-              padding: spacing[4],
-              borderBottom: `1px solid ${colors.borderLight}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <h3
-              id="modal-title"
-              style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary }}
-            >
-              {title}
-            </h3>
-            <button
-              onClick={onClose}
-              className="modal-close"
-              aria-label="Close modal"
-              type="button"
-              style={{
-                background: 'none',
-                border: 'none',
-                color: colors.textMuted,
-                cursor: 'pointer',
-                padding: spacing[2],
-                borderRadius: borderRadius.full,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <svg
-                width={20}
-                height={20}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden="true"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
-        )}
-        <div style={{ padding: spacing[4] }}>{children}</div>
       </div>
     </div>
   );
@@ -979,22 +803,6 @@ export const Avatar = memo(function Avatar({ name, src, size = 40, style: custom
 });
 
 // ============================================================================
-// Divider - Horizontal line
-// ============================================================================
-
-export const Divider = memo(function Divider({ spacing: sp = 4 }) {
-  return (
-    <hr
-      style={{
-        border: 'none',
-        borderTop: `1px solid ${colors.borderLight}`,
-        margin: `${spacing[sp]}px 0`,
-      }}
-    />
-  );
-});
-
-// ============================================================================
 // Grid - Responsive grid layout
 // ============================================================================
 
@@ -1013,38 +821,6 @@ export const Grid = memo(function Grid({
         gap: spacing[gap],
         ...customStyle,
       }}
-    >
-      {children}
-    </div>
-  );
-});
-
-// ============================================================================
-// Flex - Flexbox container
-// ============================================================================
-
-export const Flex = memo(function Flex({
-  children,
-  direction = 'row',
-  align = 'center',
-  justify = 'flex-start',
-  gap = 2,
-  wrap = false,
-  style: customStyle,
-  ...props
-}) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: direction,
-        alignItems: align,
-        justifyContent: justify,
-        gap: spacing[gap],
-        flexWrap: wrap ? 'wrap' : 'nowrap',
-        ...customStyle,
-      }}
-      {...props}
     >
       {children}
     </div>
@@ -1199,126 +975,8 @@ export const Pagination = memo(function Pagination({
 });
 
 // ============================================================================
-// LoadingSpinner - Loading indicator
-// ============================================================================
-
-export const LoadingSpinner = memo(function LoadingSpinner({
-  size = 24,
-  color = colors.primary,
-  style: customStyle,
-}) {
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        border: `2px solid ${withOpacity(color, 30)}`,
-        borderTopColor: color,
-        borderRadius: '50%',
-        animation: 'spin 0.8s linear infinite',
-        ...customStyle,
-      }}
-    >
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-    </div>
-  );
-});
-
-// ============================================================================
-// LoadingOverlay - Full-screen or container loading state
-// ============================================================================
-
-export const LoadingOverlay = memo(function LoadingOverlay({
-  message = 'Loading...',
-  fullScreen = false,
-}) {
-  const containerStyle = fullScreen
-    ? {
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.7)',
-        zIndex: 1000,
-      }
-    : {
-        position: 'absolute',
-        inset: 0,
-        background: `${colors.bgDark}cc`,
-      };
-
-  return (
-    <div
-      style={{
-        ...containerStyle,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: spacing[3],
-      }}
-    >
-      <LoadingSpinner size={32} />
-      <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>{message}</span>
-    </div>
-  );
-});
-
-// ============================================================================
 // Accessibility Helpers
 // ============================================================================
-
-// VisuallyHidden - Hide content visually but keep it accessible to screen readers
-export const VisuallyHidden = memo(function VisuallyHidden({ children, as: Component = 'span' }) {
-  return (
-    <Component
-      style={{
-        position: 'absolute',
-        width: 1,
-        height: 1,
-        padding: 0,
-        margin: -1,
-        overflow: 'hidden',
-        clip: 'rect(0, 0, 0, 0)',
-        whiteSpace: 'nowrap',
-        border: 0,
-      }}
-    >
-      {children}
-    </Component>
-  );
-});
-
-// LiveRegion - Announce dynamic content to screen readers
-export const LiveRegion = memo(function LiveRegion({
-  children,
-  politeness = 'polite', // 'polite' or 'assertive'
-  atomic = true,
-}) {
-  return (
-    <div
-      role="status"
-      aria-live={politeness}
-      aria-atomic={atomic}
-      style={{
-        position: 'absolute',
-        width: 1,
-        height: 1,
-        padding: 0,
-        margin: -1,
-        overflow: 'hidden',
-        clip: 'rect(0, 0, 0, 0)',
-        whiteSpace: 'nowrap',
-        border: 0,
-      }}
-    >
-      {children}
-    </div>
-  );
-});
-
 // SkipLink - Allow keyboard users to skip to main content
 export const SkipLink = memo(function SkipLink({
   targetId = 'main-content',
@@ -1382,13 +1040,6 @@ PageHeader.propTypes = {
   onBack: PropTypes.func,
   /** Label for back button */
   backLabel: PropTypes.string,
-};
-
-DragHandle.propTypes = {
-  /** Whether dragging is enabled */
-  canDrag: PropTypes.bool,
-  /** Icon size */
-  size: PropTypes.number,
 };
 
 Badge.propTypes = {
@@ -1468,24 +1119,6 @@ Input.propTypes = {
   disabled: PropTypes.bool,
 };
 
-SelectInput.propTypes = {
-  /** Label text */
-  label: PropTypes.string,
-  /** Array of { value, label } options */
-  options: PropTypes.arrayOf(
-    PropTypes.shape({
-      value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-      label: PropTypes.string.isRequired,
-    }),
-  ).isRequired,
-  /** Current value */
-  value: PropTypes.string,
-  /** Change handler */
-  onChange: PropTypes.func,
-  /** Disabled state */
-  disabled: PropTypes.bool,
-};
-
 StatCard.propTypes = {
   /** Lucide icon component */
   icon: PropTypes.elementType.isRequired,
@@ -1501,32 +1134,6 @@ StatCard.propTypes = {
   trend: PropTypes.oneOf(['up', 'down']),
   /** Trend percentage value */
   trendValue: PropTypes.string,
-};
-
-ItemImage.propTypes = {
-  /** Image source URL */
-  src: PropTypes.string,
-  /** Alt text */
-  alt: PropTypes.string,
-  /** Image size in pixels */
-  size: PropTypes.number,
-  /** Click handler */
-  onClick: PropTypes.func,
-  /** Show clickable indicator */
-  clickable: PropTypes.bool,
-};
-
-Modal.propTypes = {
-  /** Whether the modal is open */
-  isOpen: PropTypes.bool.isRequired,
-  /** Close handler */
-  onClose: PropTypes.func.isRequired,
-  /** Modal title */
-  title: PropTypes.string,
-  /** Maximum width in pixels */
-  maxWidth: PropTypes.number,
-  /** Modal content */
-  children: PropTypes.node.isRequired,
 };
 
 EmptyState.propTypes = {
@@ -1585,11 +1192,6 @@ Avatar.propTypes = {
   color: PropTypes.string,
 };
 
-Divider.propTypes = {
-  /** Vertical spacing (theme spacing key) */
-  spacing: PropTypes.number,
-};
-
 Grid.propTypes = {
   /** Grid content */
   children: PropTypes.node.isRequired,
@@ -1597,21 +1199,6 @@ Grid.propTypes = {
   minWidth: PropTypes.number,
   /** Gap between items */
   gap: PropTypes.number,
-};
-
-Flex.propTypes = {
-  /** Flex content */
-  children: PropTypes.node.isRequired,
-  /** Flex direction */
-  direction: PropTypes.oneOf(['row', 'column']),
-  /** Align items */
-  align: PropTypes.oneOf(['start', 'center', 'end', 'stretch']),
-  /** Justify content */
-  justify: PropTypes.oneOf(['start', 'center', 'end', 'between', 'around']),
-  /** Gap between items */
-  gap: PropTypes.number,
-  /** Allow wrapping */
-  wrap: PropTypes.bool,
 };
 
 Pagination.propTypes = {
@@ -1627,36 +1214,6 @@ Pagination.propTypes = {
   pageSize: PropTypes.number,
   /** Whether to show item count text */
   showItemCount: PropTypes.bool,
-};
-
-LoadingSpinner.propTypes = {
-  /** Spinner size in pixels */
-  size: PropTypes.number,
-  /** Spinner color */
-  color: PropTypes.string,
-};
-
-LoadingOverlay.propTypes = {
-  /** Loading message text */
-  message: PropTypes.string,
-  /** Whether to display as full-screen overlay */
-  fullScreen: PropTypes.bool,
-};
-
-VisuallyHidden.propTypes = {
-  /** Content to hide visually */
-  children: PropTypes.node.isRequired,
-  /** HTML element to render */
-  as: PropTypes.elementType,
-};
-
-LiveRegion.propTypes = {
-  /** Message to announce */
-  message: PropTypes.string,
-  /** ARIA politeness level */
-  politeness: PropTypes.oneOf(['polite', 'assertive']),
-  /** Clear message after delay */
-  clearAfter: PropTypes.number,
 };
 
 SkipLink.propTypes = {
