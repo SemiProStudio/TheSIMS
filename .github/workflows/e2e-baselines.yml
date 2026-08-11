@@ -1,0 +1,88 @@
+# =============================================================================
+# E2E linux visual baselines
+# Regenerates the linux screenshot baselines that CI's visual tests compare
+# against. Two ways to run it:
+#
+#   1. Push a branch named e2e-baselines/<anything> (branched from the code
+#      you want baselines for). The workflow runs on that branch and COMMITS
+#      the refreshed *-linux.png files back to it — merge them from there.
+#   2. Manually via workflow_dispatch (Actions → "E2E linux visual
+#      baselines" → Run workflow) once this file is on the default branch;
+#      baselines upload as an artifact to download and commit.
+#
+# See e2e/README.md → "Visual Regression Testing".
+# =============================================================================
+
+name: E2E linux visual baselines
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ['e2e-baselines/**']
+
+permissions:
+  contents: write
+
+jobs:
+  update-baselines:
+    name: Regenerate linux baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+
+    steps:
+      - name: Check E2E secrets
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$E2E_ADMIN_PASSWORD" ]; then
+            echo "E2E secrets not configured — cannot generate baselines (see e2e/README.md)" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # Runs setup + functional (chromium) first via project dependencies,
+      # then regenerates every visual baseline for this platform.
+      - name: Regenerate visual baselines
+        run: npx playwright test --project=chromium --project=chromium-visual --update-snapshots
+
+      - name: Commit refreshed linux baselines back to this branch
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f e2e/*-snapshots/*-linux.png
+          if git diff --cached --quiet; then
+            echo "No baseline changes to commit" >> "$GITHUB_STEP_SUMMARY"
+          else
+            git commit -m "chore: regenerate linux visual baselines"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Upload linux baselines
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-linux-baselines
+          path: e2e/*-snapshots/*-linux.png
+          retention-days: 14
+          if-no-files-found: error
