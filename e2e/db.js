@@ -114,12 +114,41 @@ export async function checkOutTestItem(
   if (error) throw new Error(`checkOutTestItem failed: ${error.message}`);
 }
 
+/** Attach a reminder to a private item (dashboard Due Reminders fixtures). */
+export async function addTestReminder(itemId, { title, dueInDays = 0, completed = false } = {}) {
+  const db = await adminDb();
+  const { error } = await db.from('item_reminders').insert({
+    item_id: itemId,
+    title: title || `${E2E_PREFIX} Reminder`,
+    due_date: isoDate(dueInDays),
+    completed,
+  });
+  if (error) throw new Error(`addTestReminder failed: ${error.message}`);
+}
+
+/** Attach a maintenance record to a private item (dashboard fixtures). */
+export async function addTestMaintenance(
+  itemId,
+  { type, status = 'scheduled', inDays = 3 } = {},
+) {
+  const db = await adminDb();
+  const { error } = await db.from('maintenance_records').insert({
+    item_id: itemId,
+    type: type || `${E2E_PREFIX} Service`,
+    status,
+    scheduled_date: isoDate(inDays),
+  });
+  if (error) throw new Error(`addTestMaintenance failed: ${error.message}`);
+}
+
 /** Delete one private item and its dependent rows. Safe to call twice. */
 export async function deleteTestItem(id) {
   if (!id) return;
   const db = await adminDb();
   await db.from('checkout_history').delete().eq('item_id', id);
   await db.from('reservations').delete().eq('item_id', id);
+  await db.from('item_reminders').delete().eq('item_id', id);
+  await db.from('maintenance_records').delete().eq('item_id', id);
   const { error } = await db.from('inventory').delete().eq('id', id);
   if (error) throw new Error(`deleteTestItem(${id}) failed: ${error.message}`);
 }
@@ -147,6 +176,8 @@ export async function cleanupTestData() {
   if (ids.length > 0) {
     await db.from('checkout_history').delete().in('item_id', ids);
     await db.from('reservations').delete().in('item_id', ids);
+    await db.from('item_reminders').delete().in('item_id', ids);
+    await db.from('maintenance_records').delete().in('item_id', ids);
     await db.from('inventory').delete().in('id', ids);
   }
 

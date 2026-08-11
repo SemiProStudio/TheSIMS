@@ -129,33 +129,47 @@ export function DataProvider({ children }) {
     }
 
     // --- Tier 2: Secondary data (non-blocking, after first paint) ---
-    // Note: clients, packLists, and auditLog are lazy-loaded on demand
+    // Note: clients, packLists, and auditLog are lazy-loaded on demand.
+    // Reminders and pending maintenance ride along because the dashboard's
+    // Due Reminders / Upcoming Maintenance panels need them inventory-wide —
+    // the Tier 1 list load intentionally omits those tables.
     try {
-      const [reservationsData, packagesData, usersData] = await Promise.all([
-        reservationsService.getAll(),
-        packagesService.getAll(),
-        usersService.getAll(),
-      ]);
+      const [reservationsData, packagesData, usersData, remindersData, maintenanceData] =
+        await Promise.all([
+          reservationsService.getAll(),
+          packagesService.getAll(),
+          usersService.getAll(),
+          itemRemindersService.getAllActive(),
+          maintenanceService.getAllPending(),
+        ]);
 
       log('[DataContext] Tier 2 loaded:', {
         reservations: reservationsData?.length || 0,
         packages: packagesData?.length || 0,
         users: usersData?.length || 0,
+        reminders: remindersData?.length || 0,
+        maintenance: maintenanceData?.length || 0,
       });
 
-      // Merge reservations into inventory items
-      const reservationsByItemId = {};
-      (reservationsData || []).forEach((res) => {
-        if (!reservationsByItemId[res.itemId]) {
-          reservationsByItemId[res.itemId] = [];
-        }
-        reservationsByItemId[res.itemId].push(res);
-      });
+      // Merge reservations, reminders, and pending maintenance into items
+      const groupByItemId = (rows) => {
+        const map = {};
+        (rows || []).forEach((row) => {
+          if (!map[row.itemId]) map[row.itemId] = [];
+          map[row.itemId].push(row);
+        });
+        return map;
+      };
+      const reservationsByItemId = groupByItemId(reservationsData);
+      const remindersByItemId = groupByItemId(remindersData);
+      const maintenanceByItemId = groupByItemId(maintenanceData);
 
       setInventory((prev) =>
         prev.map((item) => ({
           ...item,
           reservations: reservationsByItemId[item.id] || item.reservations || [],
+          reminders: remindersByItemId[item.id] || item.reminders || [],
+          maintenanceHistory: maintenanceByItemId[item.id] || item.maintenanceHistory || [],
         })),
       );
 
@@ -1140,6 +1154,7 @@ export function DataProvider({ children }) {
       categorySettings,
       specs,
       auditLog,
+      auditLogLoaded,
 
       // Refresh functions
       refreshData: loadData,
@@ -1244,6 +1259,7 @@ export function DataProvider({ children }) {
       categorySettings,
       specs,
       auditLog,
+      auditLogLoaded,
       loadData,
       refreshStaleData,
       ensureClients,

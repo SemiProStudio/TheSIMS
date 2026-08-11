@@ -90,6 +90,7 @@ vi.mock('../lib/services.js', () => ({
   },
   maintenanceService: {
     getAll: vi.fn(() => Promise.resolve([])),
+    getAllPending: vi.fn(() => Promise.resolve([])),
   },
   itemNotesService: {
     create: vi.fn((note) => Promise.resolve(note)),
@@ -99,6 +100,7 @@ vi.mock('../lib/services.js', () => ({
     create: vi.fn((r) => Promise.resolve(r)),
     update: vi.fn((id, u) => Promise.resolve({ id, ...u })),
     delete: vi.fn(() => Promise.resolve()),
+    getAllActive: vi.fn(() => Promise.resolve([])),
   },
   checkoutHistoryService: {
     create: vi.fn((r) => Promise.resolve(r)),

@@ -145,7 +145,9 @@ export class DashboardPage {
   }
 
   async navigateTo(linkName) {
-    await this.page.locator(`button:has-text("${linkName}")`).click();
+    // Scoped to the sidebar: dashboard section headers and rows are real
+    // buttons too, so a page-wide :has-text would hit "Quick Gear Search" etc.
+    await this.sidebar.locator(`button:has-text("${linkName}")`).click();
   }
 
   // The user section at the sidebar's bottom: avatar button opens a

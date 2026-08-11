@@ -1694,3 +1694,12 @@ button:disabled,
   outline: var(--focus-ring);
   outline-offset: 2px;
 }
+
+/* Dashboard interactive elements (CollapsibleSection toggle, stat cards,
+   panel list rows): visible keyboard focus */
+.collapsible-toggle:focus-visible,
+.stat-card-button:focus-visible,
+.dash-row:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}

@@ -151,6 +151,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     navigateToReservation,
     navigateToFilteredSearch,
     navigateToAlerts,
+    navigateToOverdue,
     navigateToLowStock,
     navigateToReservations,
     handleToggleCollapse,
@@ -197,6 +198,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onViewReservation={navigateToReservation}
           onFilteredView={navigateToFilteredSearch}
           onViewAlerts={navigateToAlerts}
+          onViewOverdue={navigateToOverdue}
           onViewLowStock={navigateToLowStock}
           onViewReservations={navigateToReservations}
           onViewCheckedOut={() => navigateToFilteredSearch('all', STATUS.CHECKED_OUT)}
