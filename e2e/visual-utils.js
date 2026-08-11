@@ -92,12 +92,11 @@ export async function compareElementSnapshot(locator, name, options = {}) {
 // =============================================================================
 
 export const test = base.extend({
-  // Fixture that provides authenticated page for visual tests
+  // Fixture that provides authenticated page for visual tests. The project's
+  // storageState (written by auth.setup.js) already carries the admin
+  // session — just load the app and wait for the dashboard.
   authenticatedPage: async ({ page }, use) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.loginAsAdmin();
-
+    await page.goto('/');
     const dashboard = new DashboardPage(page);
     await dashboard.expectDashboard();
 

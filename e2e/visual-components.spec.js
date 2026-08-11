@@ -4,14 +4,11 @@
 // =============================================================================
 
 import { test, expect, componentSelectors } from './visual-utils.js';
-import { LoginPage, DashboardPage } from './fixtures.js';
+import { DashboardPage } from './fixtures.js';
 
 test.describe('Visual Regression - Components', () => {
-  // Login before each test
   test.beforeEach(async ({ page }) => {
-    const loginPage = new LoginPage(page);
     await page.goto('/');
-    await loginPage.loginAsAdmin();
 
     const dashboard = new DashboardPage(page);
     await dashboard.expectDashboard();
@@ -143,17 +140,6 @@ test.describe('Visual Regression - Components', () => {
   });
 
   test.describe('Forms', () => {
-    test('login form should match baseline', async ({ page }) => {
-      // Go back to login
-      await page.goto('/');
-      await page.waitForTimeout(500);
-
-      const form = page.locator('form');
-      await expect(form).toHaveScreenshot('form-login.png', {
-        maxDiffPixels: 100,
-      });
-    });
-
     test('form with validation errors should match baseline', async ({ page }) => {
       // Navigate to gear list and open add form
       const dashboard = new DashboardPage(page);
@@ -329,6 +315,26 @@ test.describe('Visual Regression - Components', () => {
           });
         }
       }
+    });
+  });
+});
+
+// =============================================================================
+// Logged-out components (outside the authenticated describe above)
+// =============================================================================
+
+test.describe('Visual Regression - Login Form', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test('login form should match baseline', async ({ page }) => {
+    await page.goto('/');
+    // Wait for the REAL React form — the static pre-React shell has no <form>
+    await expect(page.locator('input[type="email"]')).toBeVisible();
+    await page.waitForTimeout(500);
+
+    const form = page.locator('form');
+    await expect(form).toHaveScreenshot('form-login.png', {
+      maxDiffPixels: 100,
     });
   });
 });

@@ -27,5 +27,6 @@ Thumbs.db
 coverage/
 test-results/
 playwright-report/
+e2e/.auth/
 .vercel
 .env*.local

@@ -3,7 +3,11 @@
 // Tests for login, logout, and session management
 // =============================================================================
 
-import { test, expect, LoginPage, DashboardPage, testUsers } from './fixtures.js';
+import { test, expect, testUsers } from './fixtures.js';
+
+// This spec tests the login flow itself — start logged OUT instead of with
+// the shared admin storage state every other spec reuses.
+test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('Authentication', () => {
   test.describe('Login', () => {

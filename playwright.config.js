@@ -76,28 +76,42 @@ export default defineConfig({
     timeout: 5000,
   },
 
-  // Configure projects for major browsers
+  // Configure projects for major browsers.
+  // 'setup' logs in once per run (e2e/auth.setup.js) and saves storage
+  // states; the browser projects start every test already authenticated as
+  // the admin user. Specs that need a logged-out page (auth.spec.js, the
+  // login-page visual block) or the standard user override storageState
+  // locally via test.use().
   projects: [
     {
+      name: 'setup',
+      testMatch: /auth\.setup\.js/,
+    },
+    {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['setup'],
     },
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: { ...devices['Desktop Firefox'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['setup'],
     },
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: { ...devices['Desktop Safari'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['setup'],
     },
     // Mobile viewports
     {
       name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
+      use: { ...devices['Pixel 5'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['setup'],
     },
     {
       name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
+      use: { ...devices['iPhone 12'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['setup'],
     },
   ],
 

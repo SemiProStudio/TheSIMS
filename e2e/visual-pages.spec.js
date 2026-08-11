@@ -4,10 +4,13 @@
 // =============================================================================
 
 import { test, expect, compareSnapshot, setTheme, availableThemes } from './visual-utils.js';
-import { LoginPage, DashboardPage } from './fixtures.js';
+import { DashboardPage } from './fixtures.js';
 
 test.describe('Visual Regression - Pages', () => {
   test.describe('Login Page', () => {
+    // Screenshots of the login page need a logged-out session
+    test.use({ storageState: { cookies: [], origins: [] } });
+
     test('login page should match baseline', async ({ page }) => {
       await page.goto('/');
       await page.waitForTimeout(500);
@@ -52,9 +55,7 @@ test.describe('Visual Regression - Pages', () => {
 
   test.describe('Dashboard', () => {
     test.beforeEach(async ({ page }) => {
-      const loginPage = new LoginPage(page);
       await page.goto('/');
-      await loginPage.loginAsAdmin();
 
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();
@@ -93,9 +94,7 @@ test.describe('Visual Regression - Pages', () => {
 
   test.describe('Gear List', () => {
     test.beforeEach(async ({ page }) => {
-      const loginPage = new LoginPage(page);
       await page.goto('/');
-      await loginPage.loginAsAdmin();
 
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();
@@ -146,9 +145,7 @@ test.describe('Visual Regression - Pages', () => {
 
   test.describe('Schedule View', () => {
     test.beforeEach(async ({ page }) => {
-      const loginPage = new LoginPage(page);
       await page.goto('/');
-      await loginPage.loginAsAdmin();
 
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();
@@ -166,9 +163,7 @@ test.describe('Visual Regression - Pages', () => {
 
   test.describe('Clients View', () => {
     test.beforeEach(async ({ page }) => {
-      const loginPage = new LoginPage(page);
       await page.goto('/');
-      await loginPage.loginAsAdmin();
 
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();
@@ -185,9 +180,7 @@ test.describe('Visual Regression - Pages', () => {
 
   test.describe('Admin Panel', () => {
     test.beforeEach(async ({ page }) => {
-      const loginPage = new LoginPage(page);
       await page.goto('/');
-      await loginPage.loginAsAdmin();
 
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();

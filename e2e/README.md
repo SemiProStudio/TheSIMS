@@ -24,14 +24,26 @@ skips cleanly unless these repository secrets are configured
 - `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD` — admin test user
 - `E2E_USER_EMAIL`, `E2E_USER_PASSWORD` — standard test user
 
+**Auth architecture**: `auth.setup.js` logs in ONCE per run (as admin and as
+the standard user) and saves storage states to `e2e/.auth/` (gitignored);
+every spec starts already authenticated as admin via the project config.
+Specs needing a logged-out page (`auth.spec.js`, login-page visual blocks)
+or the standard user override `storageState` locally with `test.use()`.
+Do NOT add per-test `login()` calls — besides being slow, Supabase
+rate-limits password grants per IP and a full parallel run exceeds it.
+
 **Remaining known debt** (inherited from the original suite):
 
-1. **Soft-fail pattern**: ~160 assertions are wrapped in
+1. **Soft-fail pattern**: ~140 assertions are still wrapped in
    `if (await x.isVisible())` — when the UI doesn't match, the test passes
-   with zero assertions instead of failing. These need to be unwrapped into
-   real assertions (expect the element, then assert on it).
-2. **No committed screenshot baselines**: the visual specs generate-and-pass
-   on first run until baselines are committed.
+   with zero assertions instead of failing. The auth, inventory-view,
+   add-item, checkout-modal, and mobile-nav paths have been unwrapped into
+   strict assertions; the rest need the same treatment.
+2. **Screenshot baselines are local-only**: `e2e/*-snapshots/` are generated
+   per-platform (darwin locally) and not committed. In CI (linux) the visual
+   tests bootstrap their own baselines on first attempt and pass on retry —
+   committing CI-generated linux baselines would make them real regressions
+   checks.
 3. **Test-data hygiene**: specs that create data should clean up after
    themselves; reseed the test project from `supabase/seed.sql` when it
    drifts.

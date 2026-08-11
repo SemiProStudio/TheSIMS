@@ -3,13 +3,11 @@
 // Tests for app navigation and routing
 // =============================================================================
 
-import { test, expect, LoginPage, DashboardPage } from './fixtures.js';
+import { test, expect } from './fixtures.js';
 
 test.describe('Navigation', () => {
-  // Login before each test
   test.beforeEach(async ({ page, pages }) => {
     await page.goto('/');
-    await pages.login.loginAsAdmin();
     await pages.dashboard.expectDashboard();
   });
 
@@ -18,7 +16,7 @@ test.describe('Navigation', () => {
       await pages.dashboard.navigateTo('Gear List');
 
       // Should show gear list
-      await expect(page.locator('h1:has-text("Gear List"), h1:has-text("Inventory")')).toBeVisible({
+      await expect(page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")')).toBeVisible({
         timeout: 10000,
       });
     });
@@ -27,49 +25,49 @@ test.describe('Navigation', () => {
       await pages.dashboard.navigateTo('Packages');
 
       // Should show packages view
-      await expect(page.locator('h1:has-text("Packages")')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('h2:has-text("Packages")')).toBeVisible({ timeout: 10000 });
     });
 
     test('should navigate to Pack Lists', async ({ page, pages }) => {
       await pages.dashboard.navigateTo('Pack Lists');
 
       // Should show pack lists view
-      await expect(page.locator('h1:has-text("Pack Lists")')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('h2:has-text("Pack Lists")')).toBeVisible({ timeout: 10000 });
     });
 
     test('should navigate to Schedule', async ({ page, pages }) => {
       await pages.dashboard.navigateTo('Schedule');
 
       // Should show schedule view
-      await expect(page.locator('h1:has-text("Schedule")')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('h2:has-text("Schedule")')).toBeVisible({ timeout: 10000 });
     });
 
     test('should navigate to Labels', async ({ page, pages }) => {
       await pages.dashboard.navigateTo('Labels');
 
       // Should show labels view
-      await expect(page.locator('h1:has-text("Labels")')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('h2:has-text("Labels")')).toBeVisible({ timeout: 10000 });
     });
 
     test('should navigate to Clients', async ({ page, pages }) => {
       await pages.dashboard.navigateTo('Clients');
 
       // Should show clients view
-      await expect(page.locator('h1:has-text("Clients")')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('h2:has-text("Clients")')).toBeVisible({ timeout: 10000 });
     });
 
     test('should navigate to Search', async ({ page, pages }) => {
       await pages.dashboard.navigateTo('Search');
 
       // Should show search view
-      await expect(page.locator('h1:has-text("Search")')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('h2:has-text("Search")')).toBeVisible({ timeout: 10000 });
     });
 
     test('should navigate to Admin Panel', async ({ page, pages }) => {
       await pages.dashboard.navigateTo('Admin Panel');
 
       // Should show admin panel
-      await expect(page.locator('h1:has-text("Admin")')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('h2:has-text("Admin")')).toBeVisible({ timeout: 10000 });
     });
 
     test('should show active state for current page', async ({ page, pages }) => {
@@ -129,18 +127,18 @@ test.describe('Navigation', () => {
       // Navigate to Gear List
       await pages.dashboard.navigateTo('Gear List');
       await expect(
-        page.locator('h1:has-text("Gear List"), h1:has-text("Inventory")'),
+        page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")'),
       ).toBeVisible();
 
       // Navigate to Packages
       await pages.dashboard.navigateTo('Packages');
-      await expect(page.locator('h1:has-text("Packages")')).toBeVisible();
+      await expect(page.locator('h2:has-text("Packages")')).toBeVisible();
 
       // Go back
       await page.goBack();
 
       // Should be on Gear List
-      await expect(page.locator('h1:has-text("Gear List"), h1:has-text("Inventory")')).toBeVisible({
+      await expect(page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")')).toBeVisible({
         timeout: 5000,
       });
     });
@@ -149,12 +147,12 @@ test.describe('Navigation', () => {
       // Navigate to Gear List
       await pages.dashboard.navigateTo('Gear List');
       await expect(
-        page.locator('h1:has-text("Gear List"), h1:has-text("Inventory")'),
+        page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")'),
       ).toBeVisible();
 
       // Navigate to Packages
       await pages.dashboard.navigateTo('Packages');
-      await expect(page.locator('h1:has-text("Packages")')).toBeVisible();
+      await expect(page.locator('h2:has-text("Packages")')).toBeVisible();
 
       // Go back
       await page.goBack();
@@ -164,7 +162,7 @@ test.describe('Navigation', () => {
       await page.goForward();
 
       // Should be on Packages
-      await expect(page.locator('h1:has-text("Packages")')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('h2:has-text("Packages")')).toBeVisible({ timeout: 5000 });
     });
   });
 
@@ -189,7 +187,7 @@ test.describe('Navigation', () => {
 
           // Should return to Gear List
           await expect(
-            page.locator('h1:has-text("Gear List"), h1:has-text("Inventory")'),
+            page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")'),
           ).toBeVisible({ timeout: 5000 });
         }
       }
@@ -202,19 +200,16 @@ test.describe('Navigation', () => {
       await page.setViewportSize({ width: 375, height: 667 });
       await page.waitForTimeout(500);
 
-      // Sidebar might be hidden or have hamburger menu
-      const hamburgerButton = page.locator(
-        'button[aria-label*="menu"], button.menu-toggle, [data-testid="mobile-menu"]',
-      );
+      // The mobile header shows a hamburger button (aria-label "Open menu")
+      const hamburgerButton = page.getByRole('button', { name: 'Open menu' });
+      await expect(hamburgerButton).toBeVisible();
 
-      if (await hamburgerButton.isVisible()) {
-        // Click to open sidebar
-        await hamburgerButton.click();
-        await page.waitForTimeout(300);
+      // Click to open sidebar
+      await hamburgerButton.click();
+      await page.waitForTimeout(300);
 
-        // Sidebar content should be visible
-        await expect(page.locator('button:has-text("Dashboard")')).toBeVisible();
-      }
+      // Sidebar content should be visible
+      await expect(page.locator('button:has-text("Dashboard")').first()).toBeVisible();
     });
 
     test('should be usable on tablet viewport', async ({ page }) => {

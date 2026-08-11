@@ -22,6 +22,14 @@ function requireEnv(name) {
   return value;
 }
 
+// Saved storage states written by auth.setup.js — every non-auth spec reuses
+// these sessions instead of logging in per test (Supabase rate-limits
+// password grants per IP; 146 fresh logins per run blew straight through it).
+export const STORAGE_STATE = {
+  admin: 'e2e/.auth/admin.json',
+  user: 'e2e/.auth/user.json',
+};
+
 export const testUsers = {
   admin: {
     get email() {
@@ -148,8 +156,10 @@ export class GearListPage {
     this.searchInput = page.locator('input[placeholder*="Search"]');
     this.categoryFilter = page.locator('select').first();
     this.addButton = page.locator('button:has-text("Add Item")');
-    this.itemCards = page.locator('[data-testid="item-card"]');
-    this.itemRows = page.locator('[role="row"], [data-testid="item-row"]');
+    // Items render as buttons labeled "<name> - <status>" in BOTH view modes
+    this.itemRows = page.getByRole('button', {
+      name: / - (available|checked-out|reserved|needs-attention|missing|overdue|low-stock)/,
+    });
   }
 
   async expectGearList() {
@@ -195,8 +205,8 @@ export class CheckOutModal {
   constructor(page) {
     this.page = page;
     this.modal = page.locator('[role="dialog"]');
-    this.borrowerInput = page.locator('input[id*="borrower"], input[placeholder*="Borrower"]');
-    this.dueDateInput = page.locator('input[type="date"]');
+    this.borrowerInput = page.locator('input[placeholder="Who is taking this item?"]');
+    this.dueDateInput = page.locator('input[placeholder="Select due date"]');
     this.projectInput = page.locator('input[id*="project"], input[placeholder*="Project"]');
     this.acknowledgeCheckbox = page.locator('input[type="checkbox"]');
     this.submitButton = page.locator('button:has-text("Check Out")');
@@ -253,13 +263,11 @@ export class ThemeSelectorPage {
 // =============================================================================
 
 export const test = base.extend({
-  // Fixture that provides a logged-in page
+  // Fixture that provides a logged-in page. The project's storageState
+  // (written by auth.setup.js) already carries the admin session — just
+  // load the app and wait for the dashboard.
   authenticatedPage: async ({ page }, use) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.loginAsAdmin();
-
-    // Wait for dashboard to load
+    await page.goto('/');
     const dashboard = new DashboardPage(page);
     await dashboard.expectDashboard();
 
