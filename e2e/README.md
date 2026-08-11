@@ -113,10 +113,13 @@ When UI changes are intentional, update darwin baselines locally:
 npx playwright test --project=chromium-visual --update-snapshots
 ```
 
-and regenerate linux baselines via the manually-triggered
-**"E2E linux visual baselines"** GitHub Actions workflow
-(`.github/workflows/e2e-baselines.yml`): run it, download the artifact, and
-commit the refreshed `*-linux.png` files.
+and regenerate linux baselines via the
+**"E2E linux visual baselines"** workflow
+(`.github/workflows/e2e-baselines.yml`). Easiest path: push a branch named
+`e2e-baselines/<anything>` from the code you want baselines for — the
+workflow runs there and commits the refreshed `*-linux.png` files back to
+that branch; merge them from it. (It can also be dispatched manually from
+the Actions tab, which uploads the baselines as a downloadable artifact.)
 
 Dynamic content (timestamps, toasts) is masked or waited out — see
 `visual-themes.spec.js` for the theme-toast pattern.
