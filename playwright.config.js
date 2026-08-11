@@ -3,7 +3,24 @@
 // End-to-end testing for SIMS application
 // =============================================================================
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
+
+// Load .env.e2e (test-project credentials + E2E user logins) into process.env
+// so both this config's webServer and the specs can read them. CI has no
+// .env.e2e file — it supplies the same variables as repository secrets.
+// Values already present in the environment win over the file.
+const envFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '.env.e2e');
+if (fs.existsSync(envFile)) {
+  for (const line of fs.readFileSync(envFile, 'utf8').split('\n')) {
+    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+    if (match && !(match[1] in process.env)) {
+      process.env[match[1]] = match[2];
+    }
+  }
+}
 
 export default defineConfig({
   // Test directory
@@ -29,8 +46,8 @@ export default defineConfig({
 
   // Shared settings for all projects
   use: {
-    // Base URL for the app
-    baseURL: 'http://localhost:5173',
+    // Base URL for the app (vite dev server — vite.config.js sets port 3000)
+    baseURL: 'http://localhost:3000',
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -84,10 +101,13 @@ export default defineConfig({
     },
   ],
 
-  // Run your local dev server before starting the tests
+  // Run your local dev server before starting the tests.
+  // --mode e2e makes Vite load .env.e2e, pointing the app at the DEDICATED
+  // TEST Supabase project instead of production. Never run E2E against
+  // production. (--no-open suppresses vite.config's browser auto-open.)
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    command: 'npm run dev -- --mode e2e --no-open',
+    url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

@@ -8,16 +8,38 @@ import { test as base, expect } from '@playwright/test';
 // Test Data
 // =============================================================================
 
+// Test users live in the DEDICATED TEST Supabase project (thesims-test).
+// Credentials come from the environment: .env.e2e locally (loaded by
+// playwright.config.js), repository secrets in CI. See e2e/README.md.
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `${name} is not set. E2E tests need the test-project credentials from ` +
+        `.env.e2e (copy .env.e2e.example) or CI secrets — see e2e/README.md.`,
+    );
+  }
+  return value;
+}
+
 export const testUsers = {
   admin: {
-    email: 'admin@demo.com',
-    password: 'demo',
+    get email() {
+      return requireEnv('E2E_ADMIN_EMAIL');
+    },
+    get password() {
+      return requireEnv('E2E_ADMIN_PASSWORD');
+    },
     name: 'Admin',
     role: 'admin',
   },
   user: {
-    email: 'user@test.com',
-    password: 'demo',
+    get email() {
+      return requireEnv('E2E_USER_EMAIL');
+    },
+    get password() {
+      return requireEnv('E2E_USER_PASSWORD');
+    },
     name: 'user',
     role: 'user',
   },

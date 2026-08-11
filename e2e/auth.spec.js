@@ -26,17 +26,9 @@ test.describe('Authentication', () => {
       await expect(page.locator('text=Admin')).toBeVisible();
     });
 
-    test('should login with any email using demo password', async ({ page, pages }) => {
-      await page.goto('/');
-      await pages.login.login('custom@test.com', 'demo');
-
-      // Should redirect to dashboard
-      await pages.dashboard.expectDashboard();
-    });
-
     test('should show error with invalid password', async ({ page, pages }) => {
       await page.goto('/');
-      await pages.login.login('admin@demo.com', 'wrongpassword');
+      await pages.login.login(testUsers.admin.email, 'wrongpassword');
 
       // Should stay on login page (or show error)
       // The page might reload or show inline error
@@ -90,8 +82,8 @@ test.describe('Authentication', () => {
     test('should support form submission with Enter key', async ({ page, pages }) => {
       await page.goto('/');
 
-      await page.locator('input[type="email"]').fill('admin@demo.com');
-      await page.locator('input[type="password"]').fill('demo');
+      await page.locator('input[type="email"]').fill(testUsers.admin.email);
+      await page.locator('input[type="password"]').fill(testUsers.admin.password);
       await page.keyboard.press('Enter');
 
       // Should redirect to dashboard
@@ -161,7 +153,7 @@ test.describe('Authentication', () => {
 
     test('regular user may not see Admin Panel link', async ({ page, pages }) => {
       await page.goto('/');
-      await pages.login.login('user@test.com', 'demo');
+      await pages.login.loginAsUser();
       await pages.dashboard.expectDashboard();
 
       // Regular user typically shouldn't see admin panel

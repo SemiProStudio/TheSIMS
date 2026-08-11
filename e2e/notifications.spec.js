@@ -469,7 +469,7 @@ extendedTest.describe('Notification Settings for Non-Admin', () => {
     await page.goto('/');
 
     // Login as regular user
-    await loginPage.login('user@test.com', 'demo');
+    await loginPage.loginAsUser();
     await dashboardPage.expectDashboard();
 
     // Navigate to notifications
