@@ -101,12 +101,14 @@ export default defineConfig({
     },
   ],
 
-  // Run your local dev server before starting the tests.
+  // Build and serve a PRODUCTION bundle for the tests.
   // --mode e2e makes Vite load .env.e2e, pointing the app at the DEDICATED
   // TEST Supabase project instead of production. Never run E2E against
-  // production. (--no-open suppresses vite.config's browser auto-open.)
+  // production. A prod build (not the dev server) because the dev server
+  // runs React StrictMode, whose intentional double-mounting races any
+  // interaction with freshly mounted forms — production has no StrictMode.
   webServer: {
-    command: 'npm run dev -- --mode e2e --no-open',
+    command: 'npm run build -- --mode e2e && npm run preview -- --port 3000 --strictPort',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,

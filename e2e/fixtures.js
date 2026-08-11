@@ -73,16 +73,30 @@ export class LoginPage {
     this.passwordInput = page.locator('input[type="password"]');
     this.submitButton = page.locator('button[type="submit"]');
     this.errorMessage = page.locator('[style*="danger"]');
-    this.demoModeBanner = page.locator('text=Demo Mode');
   }
 
   async goto() {
     await this.page.goto('/');
   }
 
+  // The login card can remount shortly after first paint (theme/context
+  // initialization), wiping controlled-input state mid-fill. Fill, verify
+  // both values stuck, and retry if the remount ate them.
+  async fillCredentials(email, password) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await this.emailInput.fill(email);
+      await this.passwordInput.fill(password);
+      if (
+        (await this.emailInput.inputValue()) === email &&
+        (await this.passwordInput.inputValue()) === password
+      ) {
+        break;
+      }
+    }
+  }
+
   async login(email, password) {
-    await this.emailInput.fill(email);
-    await this.passwordInput.fill(password);
+    await this.fillCredentials(email, password);
     await this.submitButton.click();
   }
 
@@ -104,7 +118,7 @@ export class LoginPage {
 export class DashboardPage {
   constructor(page) {
     this.page = page;
-    this.heading = page.locator('h1:has-text("Dashboard")');
+    this.heading = page.locator('h2:has-text("Dashboard")');
     this.sidebar = page.locator('[role="navigation"][aria-label="Main navigation"]');
     this.gearListLink = page.locator('button:has-text("Gear List")');
     this.packagesLink = page.locator('button:has-text("Packages")');
@@ -116,7 +130,10 @@ export class DashboardPage {
   }
 
   async expectDashboard() {
-    await expect(this.heading).toBeVisible({ timeout: 10000 });
+    // 30s: the FIRST app load after the dev server starts pays the cold
+    // Vite transform cost for the whole module graph (>10s); warm loads
+    // take ~1s. Matches navigationTimeout.
+    await expect(this.heading).toBeVisible({ timeout: 30000 });
   }
 
   async navigateTo(linkName) {
@@ -127,7 +144,7 @@ export class DashboardPage {
 export class GearListPage {
   constructor(page) {
     this.page = page;
-    this.heading = page.locator('h1:has-text("Gear List"), h1:has-text("Inventory")');
+    this.heading = page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")');
     this.searchInput = page.locator('input[placeholder*="Search"]');
     this.categoryFilter = page.locator('select').first();
     this.addButton = page.locator('button:has-text("Add Item")');
@@ -136,7 +153,7 @@ export class GearListPage {
   }
 
   async expectGearList() {
-    await expect(this.heading).toBeVisible({ timeout: 10000 });
+    await expect(this.heading).toBeVisible({ timeout: 30000 });
   }
 
   async search(query) {
@@ -217,7 +234,7 @@ export class CheckOutModal {
 export class ThemeSelectorPage {
   constructor(page) {
     this.page = page;
-    this.heading = page.locator('h1:has-text("Theme"), h2:has-text("Theme")');
+    this.heading = page.locator('h2:has-text("Theme")');
     this.themeCards = page.locator('[data-testid="theme-card"]');
     this.customThemeButton = page.locator('button:has-text("Custom")');
   }

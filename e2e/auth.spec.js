@@ -10,9 +10,6 @@ test.describe('Authentication', () => {
     test('should display login page on initial visit', async ({ page, pages }) => {
       await page.goto('/');
       await pages.login.expectLoginPage();
-
-      // Should show demo mode banner
-      await expect(pages.login.demoModeBanner).toBeVisible();
     });
 
     test('should login successfully with valid credentials', async ({ page, pages }) => {
@@ -22,27 +19,27 @@ test.describe('Authentication', () => {
       // Should redirect to dashboard
       await pages.dashboard.expectDashboard();
 
-      // Should show user info in sidebar
-      await expect(page.locator('text=Admin')).toBeVisible();
+      // Should show user info in sidebar ('Admin' appears in several places —
+      // section header, Admin Panel link, user footer — any confirms login)
+      await expect(page.locator('text=Admin').first()).toBeVisible();
     });
 
     test('should show error with invalid password', async ({ page, pages }) => {
       await page.goto('/');
       await pages.login.login(testUsers.admin.email, 'wrongpassword');
 
-      // Should stay on login page (or show error)
-      // The page might reload or show inline error
+      // Must stay on the login page — a rejected password never reaches the app
       await page.waitForTimeout(1000);
-
-      // Check if still on login page or error is shown
-      const loginVisible = await pages.login.emailInput.isVisible().catch(() => false);
-      if (loginVisible) {
-        await pages.login.expectLoginPage();
-      }
+      await pages.login.expectLoginPage();
+      await expect(pages.dashboard.heading).not.toBeVisible();
     });
 
     test('should have accessible login form', async ({ page }) => {
       await page.goto('/');
+
+      // Wait for the REAL login form: the static pre-React shell renders
+      // lookalike divs (no inputs, no labels) until React mounts
+      await expect(page.locator('input[type="email"]')).toBeVisible();
 
       // Check form has labels
       const emailLabel = page.locator('label:has-text("Email")');
@@ -71,20 +68,26 @@ test.describe('Authentication', () => {
       // Initially password type
       await expect(passwordInput).toHaveAttribute('type', 'password');
 
-      // Click toggle
-      await toggleButton.click();
-
-      // Should change to text
+      // Toggle — retry if the dev-only StrictMode remount resets the state
+      // right after the click (production has no StrictMode)
       const textInput = page.locator('input[autocomplete="current-password"]');
+      let toggled = false;
+      for (let i = 0; i < 3 && !toggled; i++) {
+        await toggleButton.click();
+        toggled = await textInput
+          .getAttribute('type')
+          .then((t) => t === 'text')
+          .catch(() => false);
+      }
       await expect(textInput).toHaveAttribute('type', 'text');
     });
 
     test('should support form submission with Enter key', async ({ page, pages }) => {
       await page.goto('/');
 
-      await page.locator('input[type="email"]').fill(testUsers.admin.email);
-      await page.locator('input[type="password"]').fill(testUsers.admin.password);
-      await page.keyboard.press('Enter');
+      // Remount-safe fill (see LoginPage.fillCredentials), then submit via Enter
+      await pages.login.fillCredentials(testUsers.admin.email, testUsers.admin.password);
+      await page.locator('input[type="password"]').press('Enter');
 
       // Should redirect to dashboard
       await pages.dashboard.expectDashboard();
@@ -123,21 +126,10 @@ test.describe('Authentication', () => {
       await pages.login.loginAsAdmin();
       await pages.dashboard.expectDashboard();
 
-      // Reload page
+      // Reload page — Supabase sessions persist in localStorage, so the user
+      // must land back on the dashboard, not the login page
       await page.reload();
-
-      // Should still be logged in (or redirect to login in demo mode)
-      // Demo mode might not persist, so we check both scenarios
-      await page.waitForTimeout(1000);
-
-      const dashboardVisible = await page
-        .locator('h1:has-text("Dashboard")')
-        .isVisible()
-        .catch(() => false);
-      const loginVisible = await pages.login.emailInput.isVisible().catch(() => false);
-
-      // Either still on dashboard or back to login is acceptable for demo mode
-      expect(dashboardVisible || loginVisible).toBeTruthy();
+      await pages.dashboard.expectDashboard();
     });
   });
 
@@ -151,21 +143,15 @@ test.describe('Authentication', () => {
       await expect(pages.dashboard.adminLink).toBeVisible();
     });
 
-    test('regular user may not see Admin Panel link', async ({ page, pages }) => {
+    test('regular user must NOT see Admin Panel link', async ({ page, pages }) => {
       await page.goto('/');
       await pages.login.loginAsUser();
       await pages.dashboard.expectDashboard();
 
-      // Regular user typically shouldn't see admin panel
-      // But this depends on role configuration
-      const adminLink = page.locator('button:has-text("Admin Panel")');
-
-      // Check if visible after a short wait
+      // role_user has every admin_* function hidden — the link appearing
+      // would be a permission regression
       await page.waitForTimeout(500);
-      const isVisible = await adminLink.isVisible().catch(() => false);
-
-      // Log result for debugging
-      console.log(`Admin Panel visible for user: ${isVisible}`);
+      await expect(page.locator('button:has-text("Admin Panel")')).not.toBeVisible();
     });
   });
 });
