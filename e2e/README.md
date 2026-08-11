@@ -2,6 +2,33 @@
 
 This directory contains end-to-end tests for the SIMS application using [Playwright](https://playwright.dev/).
 
+## ⚠️ Current status (honest assessment — 2026-08)
+
+**These tests cannot currently pass and are NOT run in CI.** Before relying on
+them, three things need fixing:
+
+1. **Auth is broken**: `fixtures.js` logs in as `admin@demo.com` / `demo` —
+   demo mode no longer exists in the app, and those users don't exist in the
+   production Supabase project. Running the suite requires either a dedicated
+   **test Supabase project** (seeded users + data, credentials via env vars)
+   or reintroducing a seeded demo mode. This is an infrastructure decision —
+   do NOT point E2E at the production project.
+2. **Soft-fail pattern**: ~160 assertions are wrapped in
+   `if (await x.isVisible())` — when the UI doesn't match, the test passes
+   with zero assertions instead of failing. Once auth works, these need to be
+   unwrapped into real assertions (expect the element, then assert on it).
+3. **No committed screenshot baselines**: the visual specs have never had
+   baselines checked in, so they generate-and-pass on first run.
+
+`visual-errors.spec.js` was deleted (it screenshotted hand-injected HTML
+replicas rather than real components). `test/integration.test.jsx` (unit-side,
+1,197 lines) was deleted for the same reason — it imported zero application
+code.
+
+Once a test environment exists, add an `e2e` job to `.github/workflows/ci.yml`
+using the GitHub Actions example below, with the test project's URL/key as
+repository secrets.
+
 ## Test Structure
 
 ```
