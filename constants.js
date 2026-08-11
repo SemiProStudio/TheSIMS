@@ -474,41 +474,42 @@ export const SCHEDULE_PERIODS = {
 };
 
 // Label format options
+// width/height are printed inches (rendered at 96 CSS px per inch for print)
 export const LABEL_FORMATS = [
   {
     id: 'small',
     name: 'Small - QR Only',
     width: 1,
     height: 1,
-    description: '300x300px at 300dpi (square)',
+    description: '1" × 1" square — QR only',
   },
   {
     id: 'medium',
     name: 'Medium - QR + Info',
     width: 2,
     height: 1,
-    description: '600x300px at 300dpi',
+    description: '2" × 1" — QR, ID, name, brand',
   },
   {
     id: 'large',
     name: 'Large - Full Details',
     width: 3,
     height: 2,
-    description: '900x600px at 300dpi',
+    description: '3" × 2" — QR + full item specs',
   },
   {
     id: 'brandingText',
     name: 'With Branding - Text',
     width: 3,
     height: 2.5,
-    description: '900x750px at 300dpi',
+    description: '3" × 2.5" — adds business contact info',
   },
   {
     id: 'brandingLogo',
     name: 'With Branding - Logo',
     width: 3,
     height: 2.5,
-    description: '900x750px at 300dpi',
+    description: '3" × 2.5" — adds business logo + contact info',
   },
 ];
 

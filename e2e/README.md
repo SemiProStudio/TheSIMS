@@ -76,13 +76,14 @@ e2e/
 ├── checkout.spec.js       # Check-out/check-in workflows, dashboard panels
 ├── reservations.spec.js   # Reservation creation via item detail
 ├── notifications.spec.js  # Notification settings
+├── qr-labels.spec.js      # Labels view, QR modal, scanner manual entry, ?item= deep link
 ├── accessibility.spec.js  # Themes, keyboard, ARIA, responsive
 ├── visual-pages.spec.js   # Full-page screenshots
 ├── visual-components.spec.js # Component screenshots
 └── visual-themes.spec.js  # Theme variation screenshots
 ```
 
-Current counts: **89 functional + 48 visual tests**, all strict — there are
+Current counts: **99 functional + 48 visual tests**, all strict — there are
 no `if (await x.isVisible())` soft-fail guards left anywhere in the suite.
 (The previous generation of these specs was riddled with them; most guarded
 bodies had never executed because their selectors matched nothing — the
@@ -187,3 +188,13 @@ Documented here so nobody "fixes" a test into hiding them again:
 - Editing from the item detail opens the compact `ItemModal`, not the
   full-page form; its save button stays disabled until every required
   field (specs, serial number) is present.
+- The `/?item=<id>` QR deep link must survive TWO URL rewrites at boot:
+  `NavigationContext` strips the query string as soon as the auth session
+  restores, and the service worker's first install triggers a full page
+  reload. `App.jsx` therefore stashes the param in `sessionStorage` at
+  module load and consumes it after login + first inventory load. Don't
+  "simplify" it back to reading `location.search` in an effect — that's
+  exactly what silently broke.
+- The camera scanners can't run in CI (no camera); scanner specs cover the
+  manual-entry path, which shares the lookup + quick-action code. The
+  jsQR decode loop itself lives in `hooks/useQRScanner.js`.

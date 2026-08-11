@@ -1679,3 +1679,18 @@ button:disabled,
     transform: translateY(0);
   }
 }
+
+/* Label format picker (LabelsView): real radio inputs for keyboard access,
+   visually hidden behind the custom circle indicator */
+.label-format-option input[type='radio'] {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.label-format-option input[type='radio']:focus-visible + .label-format-radio {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}

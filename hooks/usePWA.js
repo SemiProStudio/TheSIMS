@@ -186,10 +186,18 @@ export function usePWA() {
           setSwStatus('updated');
         }
 
-        // Handle controller change (after skipWaiting)
+        // Handle controller change (after skipWaiting).
+        // Only reload when a NEW worker takes over from a previous one (an
+        // update). On FIRST install the claim also fires controllerchange,
+        // but the page is already running fine — reloading then interrupts
+        // the user seconds after arrival (and used to bounce QR deep-link
+        // landings back to the dashboard).
+        let hadController = !!navigator.serviceWorker.controller;
         let refreshing = false;
         navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (refreshing) return;
+          const wasControlled = hadController;
+          hadController = true;
+          if (!wasControlled || refreshing) return;
           refreshing = true;
           window.location.reload();
         });

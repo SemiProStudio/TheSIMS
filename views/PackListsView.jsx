@@ -6,7 +6,6 @@
 
 import React, { memo, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import jsQR from 'jsqr';
 import {
   Plus,
   Trash2,
@@ -32,7 +31,6 @@ import { formatDate, generateId, getStatusColor } from '../utils';
 import {
   Badge,
   Card,
-  CardHeader,
   Button,
   SearchInput,
   EmptyState,
@@ -45,6 +43,9 @@ import { useToast } from '../contexts/ToastContext.js';
 
 import { error as logError } from '../lib/logger.js';
 import { openPrintWindow } from '../lib/printUtil.js';
+import { buildPackListExportHTML } from './packListExport.js';
+import { parseScannedCode } from '../lib/qrData.js';
+import { useQRScanner } from '../hooks/useQRScanner.js';
 
 function PackListsView({
   packLists,
@@ -582,91 +583,21 @@ function PackListsView({
       navigator.clipboard.writeText(text);
       addToast('Copied to clipboard!', 'success');
     } else {
-      const fs = { XS: 10, S: 12, M: 14, L: 16, XL: 18 }[exportFontSize];
       const listPackages = (selectedList.packages || [])
         .map((id) => packages.find((p) => p.id === id))
         .filter(Boolean);
 
-      // Group items by category if sorted by category
-      let tableContent = '';
-      const colCount = exportSort === 'category' ? 5 : 6;
-      if (exportSort === 'category') {
-        const byCategory = {};
-        items.forEach((item) => {
-          if (!byCategory[item.category]) byCategory[item.category] = [];
-          byCategory[item.category].push(item);
-        });
-
-        Object.entries(byCategory).forEach(([category, categoryItems]) => {
-          tableContent += `
-            <tr class="category-header"><td colspan="${colCount}"><strong>${category}</strong></td></tr>
-            ${categoryItems
-              .map(
-                (i) => `
-              <tr>
-                <td class="check">☐</td>
-                <td class="qty">${i.quantity}</td>
-                <td>${i.id}</td>
-                <td>${i.name}</td>
-                <td>${i.brand || ''}</td>
-              </tr>
-            `,
-              )
-              .join('')}
-          `;
-        });
-      } else {
-        tableContent = items
-          .map(
-            (i) => `
-          <tr>
-            <td class="check">☐</td>
-            <td class="qty">${i.quantity}</td>
-            <td>${i.id}</td>
-            <td>${i.name}</td>
-            <td>${i.brand || ''}</td>
-            <td>${i.category}</td>
-          </tr>
-        `,
-          )
-          .join('');
-      }
-
-      const categoryColumn = exportSort !== 'category' ? '<th>Category</th>' : '';
-      const packagesLine =
-        listPackages.length > 0 ? ` | Packages: ${listPackages.map((p) => p.name).join(', ')}` : '';
-
       openPrintWindow({
-        title: selectedList.name,
-        styles: `
-          body { font-family: system-ui; font-size: ${fs}px; padding: 20px; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
-          th { background: #f5f5f5; }
-          .qty { width: 60px; text-align: center; }
-          .check { width: 30px; }
-          .category-header {
-            background: #e8e8e8;
-            page-break-after: avoid;
-          }
-          .category-header td {
-            padding: 12px 8px;
-            border-bottom: 2px solid #ccc;
-          }
-          @media print {
-            .category-header { break-after: avoid; }
-            tr { break-inside: avoid; }
-          }
-        `,
-        body: `
-          <h1>${selectedList.name}</h1>
-          <p>Created: ${formatDate(selectedList.createdAt)} | Items: ${items.length}${packagesLine}</p>
-          <table>
-            <thead><tr><th class="check">✓</th><th class="qty">Qty</th><th>ID</th><th>Name</th><th>Brand</th>${categoryColumn}</tr></thead>
-            <tbody>${tableContent}</tbody>
-          </table>
-        `,
+        ...buildPackListExportHTML({
+          list: selectedList,
+          items,
+          listPackages,
+          exportSort,
+          exportFontSize,
+          formatDate,
+        }),
         delay: 0,
+        onBlocked: () => addToast('Print pop-up blocked — allow pop-ups for this site', 'error'),
       });
     }
     setShowExport(false);
@@ -1566,17 +1497,9 @@ function PackListsView({
 // auto-marks the item as packed, flashes a confirmation, and continues.
 // ============================================================================
 function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) {
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const streamRef = useRef(null);
-  const animationRef = useRef(null);
-
-  const [scanning, setScanning] = useState(false);
-  const [cameraError, setCameraError] = useState(null);
   const [scanLog, setScanLog] = useState([]); // { id, name, status: 'packed'|'already'|'not-found' }
   const [flashItem, setFlashItem] = useState(null); // briefly shows last scanned item
   const [manualCode, setManualCode] = useState('');
-  const lastScannedRef = useRef(null);
   const flashTimeoutRef = useRef(null);
 
   // Build lookup map of items in this pack list
@@ -1627,87 +1550,26 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
     [listItemMap, packedItems, onTogglePacked],
   );
 
-  // The requestAnimationFrame loop below is started once and re-schedules
-  // itself, permanently capturing the closures from the render where the
-  // camera started. Routing through a ref (reassigned every render) keeps the
-  // loop calling the CURRENT processCode — with fresh packedItems — instead of
-  // the stale one, which used to silently unmark all previous scans.
-  const processCodeRef = useRef(processCode);
-  processCodeRef.current = processCode;
-
-  // Start camera
-  const startScanning = async () => {
-    try {
-      setCameraError(null);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setScanning(true);
-        scanFrame();
-      }
-    } catch (err) {
-      logError('Camera error:', err);
-      setCameraError(
-        err.name === 'NotAllowedError'
-          ? 'Camera access denied. Please allow camera access and try again.'
-          : 'Could not access camera. Use manual entry below.',
-      );
-    }
-  };
-
-  // Stop camera
-  const stopScanning = useCallback(() => {
-    if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    if (streamRef.current) streamRef.current.getTracks().forEach((track) => track.stop());
-    setScanning(false);
-  }, []);
-
-  // Frame scanning loop
-  const scanFrame = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const qr = jsQR(imageData.data, imageData.width, imageData.height, {
-        inversionAttempts: 'dontInvert',
-      });
-
-      if (qr && qr.data && qr.data !== lastScannedRef.current) {
-        lastScannedRef.current = qr.data;
-        processCodeRef.current(qr.data);
-        // Reset dedup after 2s so the same code can be re-scanned
-        setTimeout(() => {
-          lastScannedRef.current = null;
-        }, 2000);
-      }
-    }
-    animationRef.current = requestAnimationFrame(scanFrame);
-  };
+  // Camera lifecycle, throttled decode, dedupe-with-rescan, and fresh-closure
+  // dispatch all live in the shared hook. parseScannedCode maps deep-link QR
+  // payloads (new labels encode /?item=<id> URLs) back to the item code.
+  const { videoRef, canvasRef, scanning, cameraError, startScanning, stopScanning } = useQRScanner({
+    onCode: (raw) => processCode(parseScannedCode(raw)),
+  });
 
   // Manual entry
   const handleManualEntry = useCallback(() => {
     if (!manualCode.trim()) return;
-    processCode(manualCode.trim());
+    processCode(parseScannedCode(manualCode));
     setManualCode('');
   }, [manualCode, processCode]);
 
-  // Cleanup
+  // Cleanup (the hook stops the camera on unmount)
   useEffect(() => {
     return () => {
-      stopScanning();
       if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
     };
-  }, [stopScanning]);
+  }, []);
 
   const flashBg =
     flashItem?.status === 'packed'
