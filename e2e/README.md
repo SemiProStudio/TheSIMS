@@ -39,11 +39,11 @@ rate-limits password grants per IP and a full parallel run exceeds it.
    with zero assertions instead of failing. The auth, inventory-view,
    add-item, checkout-modal, and mobile-nav paths have been unwrapped into
    strict assertions; the rest need the same treatment.
-2. **Screenshot baselines are local-only**: `e2e/*-snapshots/` are generated
-   per-platform (darwin locally) and not committed. In CI (linux) the visual
-   tests bootstrap their own baselines on first attempt and pass on retry —
-   committing CI-generated linux baselines would make them real regressions
-   checks.
+2. **Screenshot baselines are macOS-only**: `e2e/*-snapshots/` contains
+   committed darwin baselines, so visual regressions are caught in local
+   runs. In CI (linux) the visual tests bootstrap their own baselines on
+   first attempt and pass on retry — committing CI-generated linux
+   baselines would make them real regression checks there too.
 3. **Test-data hygiene**: specs that create data should clean up after
    themselves; reseed the test project from `supabase/seed.sql` when it
    drifts.
