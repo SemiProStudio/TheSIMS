@@ -139,7 +139,6 @@
 button:focus-visible,
 [role='button']:focus-visible,
 .btn:focus-visible,
-.btn-primary:focus-visible,
 .btn-secondary:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
@@ -193,7 +192,6 @@ a:focus-visible {
 }
 
 /* Sidebar navigation items */
-.sidebar-nav-item:focus-visible,
 .sidebar-nav-btn:focus-visible {
   outline: none;
   background: rgba(var(--primary-rgb), 0.2) !important;
@@ -208,18 +206,8 @@ a:focus-visible {
 }
 
 /* Tab buttons */
-.tab-button:focus-visible {
-  outline: none;
-  box-shadow:
-    inset 0 -2px 0 var(--primary),
-    0 0 0 3px rgba(var(--primary-rgb), 0.2);
-}
 
 /* Dropdown/Select trigger */
-.dropdown-trigger:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 0;
-}
 
 /* Modal close buttons */
 .modal-close:focus-visible {
@@ -230,31 +218,10 @@ a:focus-visible {
 }
 
 /* Calendar day buttons */
-.calendar-day:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: -2px;
-}
 
 /* Skip link (accessibility) */
-.skip-link:focus {
-  position: fixed;
-  top: 8px;
-  left: 8px;
-  z-index: 9999;
-  padding: 12px 24px;
-  background: var(--primary);
-  color: white;
-  border-radius: 4px;
-  text-decoration: none;
-  font-weight: 600;
-  box-shadow: var(--shadow-lg);
-}
 
 /* Focus trap indicator for modals */
-.focus-trap-indicator:focus-visible {
-  outline: 2px dashed var(--warning);
-  outline-offset: 4px;
-}
 
 /* Danger button focus - uses theme-customizable color */
 .btn-danger:focus-visible,
@@ -515,14 +482,6 @@ body {
 /* ============================================================================
    Utility: Hide scrollbar but keep functionality
    ============================================================================ */
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
 
 /* ============================================================================
    Utility: Flexbox helpers
@@ -530,39 +489,8 @@ body {
 .flex {
   display: flex;
 }
-.flex-col {
-  display: flex;
-  flex-direction: column;
-}
-.flex-center {
-  display: flex;
-  align-items: center;
-}
-.flex-between {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 .flex-wrap {
   flex-wrap: wrap;
-}
-.flex-1 {
-  flex: 1;
-}
-.gap-1 {
-  gap: 4px;
-}
-.gap-2 {
-  gap: 8px;
-}
-.gap-3 {
-  gap: 12px;
-}
-.gap-4 {
-  gap: 16px;
-}
-.gap-5 {
-  gap: 20px;
 }
 
 /* ============================================================================
@@ -571,20 +499,8 @@ body {
 .text-primary {
   color: var(--text-primary);
 }
-.text-secondary {
-  color: var(--text-secondary);
-}
 .text-muted {
   color: var(--text-muted);
-}
-.text-success {
-  color: var(--success);
-}
-.text-danger {
-  color: var(--danger);
-}
-.text-warning {
-  color: var(--warning);
 }
 
 /* ============================================================================
@@ -967,15 +883,6 @@ body {
 }
 
 /* Primary Success Button - use dark green for white text contrast */
-.btn-success {
-  background: linear-gradient(135deg, #4d7a54, #3d6144);
-  color: var(--text-primary);
-  border: none;
-}
-
-.btn-success:hover {
-  filter: brightness(1.1);
-}
 
 /* Small Button Modifier */
 .btn-sm {
@@ -1280,26 +1187,8 @@ input[type='date']::-moz-calendar-picker-indicator {
    ============================================================================ */
 
 /* Generic hover background - use with data-hover-bg attribute for custom colors */
-.hover-bg {
-  transition: background 150ms ease;
-}
-
-.hover-bg:hover {
-  background: color-mix(in srgb, var(--primary) 10%, transparent);
-}
 
 /* Hover with lift effect (translateY + shadow) */
-.hover-lift {
-  transition:
-    transform 150ms ease,
-    box-shadow 150ms ease,
-    border-color 150ms ease;
-}
-
-.hover-lift:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 20%, transparent);
-}
 
 /* Admin card hover - combines lift with border color change */
 .admin-card {
@@ -1388,64 +1277,11 @@ input[type='date']::-moz-calendar-picker-indicator {
    Transition Utilities
    ============================================================================ */
 
-.transition-none {
-  transition: none;
-}
-.transition-fast {
-  transition: all 150ms ease;
-}
-.transition-normal {
-  transition: all 250ms ease;
-}
-.transition-slow {
-  transition: all 350ms ease;
-}
-
-.transition-bg {
-  transition: background 150ms ease;
-}
-.transition-opacity {
-  transition: opacity 200ms ease;
-}
-.transition-transform {
-  transition: transform 150ms ease;
-}
-.transition-colors {
-  transition:
-    color 150ms ease,
-    background 150ms ease,
-    border-color 150ms ease;
-}
-
 /* Sidebar collapse transitions */
-.transition-sidebar {
-  transition:
-    opacity 200ms ease,
-    width 200ms ease;
-}
 
 /* ============================================================================
    Cursor Utilities
    ============================================================================ */
-
-.cursor-pointer {
-  cursor: pointer;
-}
-.cursor-default {
-  cursor: default;
-}
-.cursor-grab {
-  cursor: grab;
-}
-.cursor-grabbing {
-  cursor: grabbing;
-}
-.cursor-not-allowed {
-  cursor: not-allowed;
-}
-.cursor-text {
-  cursor: text;
-}
 
 /* Clickable elements - applies pointer cursor */
 .clickable {
@@ -1463,27 +1299,10 @@ input[type='date']::-moz-calendar-picker-indicator {
    ============================================================================ */
 
 /* Standard disabled opacity */
-.disabled-opacity:disabled,
-.disabled-opacity[aria-disabled='true'],
-.disabled-opacity.is-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 
 /* Disabled with pointer events none */
-.disabled-no-interact:disabled,
-.disabled-no-interact[aria-disabled='true'],
-.disabled-no-interact.is-disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
 
 /* Subtle disabled (0.7 opacity for less critical elements) */
-.disabled-subtle:disabled,
-.disabled-subtle[aria-disabled='true'],
-.disabled-subtle.is-disabled {
-  opacity: 0.7;
-}
 
 /* ============================================================================
    Interactive Element Base Styles
@@ -1511,67 +1330,24 @@ button:disabled,
   outline-offset: 2px;
 }
 
-.focus-ring-inset:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: -2px;
-}
-
 /* ============================================================================
    Selection State (for multi-select lists)
    ============================================================================ */
-
-.selectable {
-  transition: outline 150ms ease;
-}
-
-.selectable.is-selected {
-  outline: 2px solid var(--primary);
-  outline-offset: -2px;
-}
 
 /* ============================================================================
    Required Field Styling
    ============================================================================ */
 
 /* Required field indicator (red asterisk) - always visible */
-.required-indicator {
-  color: var(--danger) !important;
-  margin-left: 2px;
-  font-weight: 600;
-}
 
 /* Required field that is empty - shows red border */
 /* Using compound selectors for higher specificity */
-.input-required-empty,
-.input.input-required-empty,
-.select-required-empty,
-.select.select-required-empty {
-  border-color: var(--danger) !important;
-  box-shadow: 0 0 0 1px var(--danger) !important;
-}
 
 /* Maintain error styling on focus */
-.input-required-empty:focus,
-.input.input-required-empty:focus,
-.select-required-empty:focus,
-.select.select-required-empty:focus {
-  border-color: var(--danger) !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 20%, transparent) !important;
-}
 
 /* Required field label when empty - use higher specificity */
-.label-required-empty,
-.form-label.label-required-empty {
-  color: var(--danger) !important;
-}
 
 /* Helper text for required field errors */
-.required-error-text {
-  color: var(--danger);
-  font-size: 11px;
-  margin-top: 4px;
-  display: block;
-}
 
 /* ============================================================================
    Selection List Styles (for Pack Lists, Packages, etc.)
@@ -1695,25 +1471,6 @@ button:disabled,
   border-bottom: none;
 }
 
-.list-item-image {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
-.list-item-image-placeholder {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  background: rgba(var(--primary-rgb), 0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
 .list-item-content {
   flex: 1;
   min-width: 0;
@@ -1743,33 +1500,6 @@ button:disabled,
   flex-direction: column;
   height: 100%;
   min-height: 0;
-}
-
-.form-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
-}
-
-.form-section {
-  margin-bottom: 16px;
-}
-
-.form-section:last-child {
-  margin-bottom: 0;
-}
-
-.form-row {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-
-.form-field {
-  flex: 1;
-  min-width: 0;
 }
 
 /* ============================================================================
@@ -1803,15 +1533,6 @@ button:disabled,
    Two Panel Selection Layout
    ============================================================================ */
 
-.two-panel-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
 .selection-panel {
   display: flex;
   flex-direction: column;
@@ -1824,17 +1545,6 @@ button:disabled,
 /* ============================================================================
    Alert/Warning Styles
    ============================================================================ */
-
-.alert-warning {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px;
-  background: rgba(var(--status-needs-attention-rgb), 0.15);
-  border-radius: 6px;
-  color: var(--status-needs-attention);
-  margin-bottom: 16px;
-}
 
 /* ============================================================================
    Grid Card Layout
@@ -1861,22 +1571,6 @@ button:disabled,
 /* ============================================================================
    Page Header Styles
    ============================================================================ */
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.page-title {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 24px;
-  font-weight: 600;
-}
 
 /* ============================================================================
    Back Button Row
