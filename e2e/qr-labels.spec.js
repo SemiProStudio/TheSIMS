@@ -65,7 +65,7 @@ test.describe('Labels view', () => {
     expect(count).toBeGreaterThan(1); // LE1002 + the CA10* matches
   });
 
-  test('download produces an HTML file with QR images and item data', async ({ page }) => {
+  test('download produces a 300-DPI Cricut Print-Then-Cut PNG sheet', async ({ page }) => {
     await page.getByPlaceholder('Search items...').fill('LE1002');
     await page.locator('label', { hasText: 'LE1002' }).first().getByRole('checkbox').check();
     await expect(page.locator('img[src^="data:image/png"]').first()).toBeVisible({
@@ -73,15 +73,21 @@ test.describe('Labels view', () => {
     });
 
     const downloadPromise = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Download' }).click();
+    await page.getByRole('button', { name: 'Download PNG' }).click();
     const download = await downloadPromise;
 
-    expect(download.suggestedFilename()).toMatch(/^labels-medium-\d{4}-\d{2}-\d{2}\.html$/);
+    expect(download.suggestedFilename()).toMatch(
+      /^labels-medium-sheet1of1-\d{4}-\d{2}-\d{2}\.png$/,
+    );
 
-    const content = fs.readFileSync(await download.path(), 'utf-8');
-    expect(content).toContain('LE1002');
-    expect(content).toContain('data:image/png'); // embedded hi-res QR
-    expect(content).toContain('width:192px'); // 2in medium label at 96ppi
+    const buf = fs.readFileSync(await download.path());
+    // PNG signature + IHDR dimensions: 6.75in x 9.25in at 300 DPI
+    expect(buf.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+    expect(buf.readUInt32BE(16)).toBe(2025);
+    expect(buf.readUInt32BE(20)).toBe(2775);
+
+    // The Design Space sizing hint appears
+    await expect(page.getByText(/6\.75" × 9\.25"/)).toBeVisible();
   });
 });
 

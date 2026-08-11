@@ -12,10 +12,17 @@ import { LABEL_FORMATS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Card, CardHeader, Button, SearchInput, Badge, PageHeader } from '../components/ui.jsx';
 import { ItemLabel, renderLabelsHTML, qrDisplaySize } from '../components/ItemLabel.jsx';
+import {
+  buildLabelSheetSVGs,
+  rasterizeSheetToPNG,
+  CRICUT_PRINT_AREA,
+  SHEET_DPI,
+} from '../components/labelSheet.jsx';
 import { generateQRDataURL, useQRDataURL } from '../components/QRCode.jsx';
 import { buildItemQRData } from '../lib/qrData.js';
 import { useToast } from '../contexts/ToastContext.js';
 
+import { error as logError } from '../lib/logger.js';
 import { openPrintWindow } from '../lib/printUtil.js';
 
 // Pixels per printed inch used for the on-screen preview (print uses 96)
@@ -186,39 +193,49 @@ function LabelsView({ inventory, packages = [], user }) {
     });
   }, [getSelectedEntries, selectedFormat, selectionTab, buildLabelsHTML, addToast]);
 
+  // Download: 300-DPI PNG sheet(s) sized for Cricut Print Then Cut —
+  // transparent background, so Design Space contour-cuts each label.
   const handleDownload = useCallback(async () => {
     const items = getSelectedEntries();
     if (items.length === 0) return;
 
-    const labelsHTML = await buildLabelsHTML(
-      items,
-      selectedFormat,
-      selectionTab === 'kits',
-      selectionTab === 'packages',
-    );
+    try {
+      const qrSize = qrDisplaySize(selectedFormat, SHEET_DPI);
+      const qrDataURLs = await Promise.all(
+        items.map((item) => generateQRDataURL(buildItemQRData(item.id), qrSize)),
+      );
+      const { svgs, width, height } = await buildLabelSheetSVGs({
+        items,
+        format: selectedFormat,
+        user,
+        isKit: selectionTab === 'kits',
+        isPackage: selectionTab === 'packages',
+        getContainedItems,
+        qrDataURLs,
+      });
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Labels Export</title>
-          <style>${PRINT_STYLES}</style>
-        </head>
-        <body>${labelsHTML}</body>
-      </html>
-    `;
+      const date = new Date().toISOString().split('T')[0];
+      for (let i = 0; i < svgs.length; i++) {
+        const blob = await rasterizeSheetToPNG(svgs[i], width, height);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `labels-${selectedFormat.id}-sheet${i + 1}of${svgs.length}-${date}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
 
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `labels-${selectedFormat.id}-${new Date().toISOString().split('T')[0]}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [getSelectedEntries, selectedFormat, selectionTab, buildLabelsHTML]);
+      addToast(
+        `${svgs.length > 1 ? `${svgs.length} sheets` : 'Sheet'} downloaded — in Cricut Design Space, upload and set the image size to ${CRICUT_PRINT_AREA.width}" × ${CRICUT_PRINT_AREA.height}" for Print Then Cut`,
+        'success',
+      );
+    } catch (err) {
+      logError('Label sheet export failed:', err);
+      addToast('PNG export failed — try Chrome or Firefox (Safari cannot rasterize label sheets)', 'error');
+    }
+  }, [getSelectedEntries, selectedFormat, selectionTab, user, getContainedItems, addToast]);
 
   // Reset selection when changing tabs
   useEffect(() => {
@@ -241,7 +258,7 @@ function LabelsView({ inventory, packages = [], user }) {
               Print ({selectedItems.length})
             </Button>
             <Button onClick={handleDownload} disabled={selectedItems.length === 0} icon={Download}>
-              Download
+              Download PNG
             </Button>
           </div>
         }

@@ -113,6 +113,7 @@ export function ItemLabel({
   containedItems = [],
   ppi = 96,
   qrDataURL = '',
+  flat = false,
 }) {
   if (!item) return null;
 
@@ -130,7 +131,9 @@ export function ItemLabel({
     background: '#fff',
     borderRadius: s(8),
     padding: s(isSmall ? 8 : 12),
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    // flat: rasterized exports (Cricut sheets) must not carry a shadow — it
+    // becomes a gray halo around the cut contour
+    boxShadow: flat ? 'none' : '0 2px 8px rgba(0,0,0,0.1)',
     boxSizing: 'border-box',
     display: 'flex',
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
@@ -357,6 +360,8 @@ ItemLabel.propTypes = {
   ppi: PropTypes.number,
   /** Pre-generated QR data URL (see generateQRDataURL / useQRDataURL) */
   qrDataURL: PropTypes.string,
+  /** Drop the card shadow (rasterized exports like Cricut sheets) */
+  flat: PropTypes.bool,
 };
 
 /**
