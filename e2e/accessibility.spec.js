@@ -1,9 +1,26 @@
 // =============================================================================
 // E2E Tests - Theme and Accessibility
-// Tests for theme switching and WCAG compliance
+// Theme switching (user menu → Theme Selector) and WCAG-relevant behavior.
+// All tests here are read-only against the database; theme choices live in
+// localStorage, which is per-test-context and cannot leak.
 // =============================================================================
 
 import { test, expect } from './fixtures.js';
+
+// The Theme Selector is reached through the sidebar's user menu.
+async function openThemeSelector(page, pages) {
+  await pages.dashboard.openUserMenuItem('Theme');
+  await expect(page.locator('h2:has-text("Theme Selector")')).toBeVisible();
+}
+
+// A theme card is the preview button whose name element matches exactly
+// (plain hasText would confuse "Dark" with "Darker").
+function themeCard(page, themeName) {
+  return page
+    .getByRole('button')
+    .filter({ has: page.getByText(themeName, { exact: true }) })
+    .first();
+}
 
 test.describe('Theme System', () => {
   test.beforeEach(async ({ page, pages }) => {
@@ -11,212 +28,64 @@ test.describe('Theme System', () => {
     await pages.dashboard.expectDashboard();
   });
 
-  test.describe('Theme Selection', () => {
-    test('should navigate to theme selector', async ({ page }) => {
-      // Find user menu or theme button
-      const userMenuButton = page
-        .locator('button')
-        .filter({ hasText: /Admin|User|Profile/ })
-        .first();
-
-      if (await userMenuButton.isVisible()) {
-        await userMenuButton.click();
-        await page.waitForTimeout(300);
-      }
-
-      // Look for theme option
-      const themeOption = page.locator(
-        'button:has-text("Theme"), a:has-text("Theme"), [aria-label*="theme"]',
-      );
-
-      if (await themeOption.isVisible()) {
-        await themeOption.click();
-        await page.waitForTimeout(500);
-
-        // Should show theme selector
-        const themeHeading = page.locator('h2:has-text("Theme")');
-        await expect(themeHeading).toBeVisible();
-      }
-    });
-
-    test('should display available themes', async ({ page }) => {
-      // Navigate to theme selector
-      const userMenuButton = page
-        .locator('button')
-        .filter({ hasText: /Admin|User|Profile/ })
-        .first();
-      if (await userMenuButton.isVisible()) {
-        await userMenuButton.click();
-        await page.waitForTimeout(300);
-      }
-
-      const themeOption = page.locator('button:has-text("Theme")');
-      if (await themeOption.isVisible()) {
-        await themeOption.click();
-        await page.waitForTimeout(500);
-
-        // Should show multiple theme options
-        const themeCards = page
-          .locator('[data-testid="theme-card"], [role="button"]')
-          .filter({ hasText: /Dark|Light|Theme/ });
-        const count = await themeCards.count();
-
-        console.log(`Found ${count} theme options`);
-        expect(count).toBeGreaterThan(0);
-      }
-    });
-
-    test('should switch to light theme', async ({ page }) => {
-      // Navigate to theme selector
-      const userMenuButton = page
-        .locator('button')
-        .filter({ hasText: /Admin|User|Profile/ })
-        .first();
-      if (await userMenuButton.isVisible()) {
-        await userMenuButton.click();
-        await page.waitForTimeout(300);
-      }
-
-      const themeOption = page.locator('button:has-text("Theme")');
-      if (await themeOption.isVisible()) {
-        await themeOption.click();
-        await page.waitForTimeout(500);
-
-        // Select light theme
-        const lightTheme = page.locator('text=Light').first();
-        if (await lightTheme.isVisible()) {
-          await lightTheme.click();
-          await page.waitForTimeout(500);
-
-          // Background should change (light themes typically have lighter backgrounds)
-          const body = page.locator('body');
-          const bgColor = await body.evaluate((el) => window.getComputedStyle(el).backgroundColor);
-
-          console.log(`Background color after light theme: ${bgColor}`);
-        }
-      }
-    });
-
-    test('should switch to dark theme', async ({ page }) => {
-      // Navigate to theme selector
-      const userMenuButton = page
-        .locator('button')
-        .filter({ hasText: /Admin|User|Profile/ })
-        .first();
-      if (await userMenuButton.isVisible()) {
-        await userMenuButton.click();
-        await page.waitForTimeout(300);
-      }
-
-      const themeOption = page.locator('button:has-text("Theme")');
-      if (await themeOption.isVisible()) {
-        await themeOption.click();
-        await page.waitForTimeout(500);
-
-        // Select dark theme
-        const darkTheme = page.locator('text=Dark').first();
-        if (await darkTheme.isVisible()) {
-          await darkTheme.click();
-          await page.waitForTimeout(500);
-        }
-      }
-    });
-
-    test('should persist theme selection', async ({ page }) => {
-      // Navigate to theme selector and select a theme
-      const userMenuButton = page
-        .locator('button')
-        .filter({ hasText: /Admin|User|Profile/ })
-        .first();
-      if (await userMenuButton.isVisible()) {
-        await userMenuButton.click();
-        await page.waitForTimeout(300);
-      }
-
-      const themeOption = page.locator('button:has-text("Theme")');
-      if (await themeOption.isVisible()) {
-        await themeOption.click();
-        await page.waitForTimeout(500);
-
-        const lightTheme = page.locator('text=Light').first();
-        if (await lightTheme.isVisible()) {
-          await lightTheme.click();
-          await page.waitForTimeout(500);
-        }
-      }
-
-      // Reload page
-      await page.reload();
-      await page.waitForTimeout(1000);
-
-      // Theme should persist (check localStorage)
-      const savedTheme = await page.evaluate(() => localStorage.getItem('sims-theme'));
-      console.log(`Saved theme: ${savedTheme}`);
-    });
+  test('user menu opens the theme selector', async ({ page, pages }) => {
+    await openThemeSelector(page, pages);
   });
 
-  test.describe('Custom Theme Editor', () => {
-    test('should open custom theme editor', async ({ page }) => {
-      // Navigate to theme selector
-      const userMenuButton = page
-        .locator('button')
-        .filter({ hasText: /Admin|User|Profile/ })
-        .first();
-      if (await userMenuButton.isVisible()) {
-        await userMenuButton.click();
-        await page.waitForTimeout(300);
-      }
+  test('displays the available theme cards', async ({ page, pages }) => {
+    await openThemeSelector(page, pages);
 
-      const themeOption = page.locator('button:has-text("Theme")');
-      if (await themeOption.isVisible()) {
-        await themeOption.click();
-        await page.waitForTimeout(500);
+    // A sample of the built-in themes from themes-data.js must be present
+    for (const name of ['Dark', 'Light', 'Darker', 'Terminal', 'Pastel', 'Vibrant']) {
+      await expect(themeCard(page, name)).toBeVisible();
+    }
+  });
 
-        // Find custom theme option
-        const customTheme = page.locator('text=/Custom|Create/i');
-        if (await customTheme.isVisible()) {
-          await customTheme.click();
-          await page.waitForTimeout(500);
+  test('switches to the light theme', async ({ page, pages }) => {
+    await openThemeSelector(page, pages);
 
-          // Should show color picker or editor
-          const colorPicker = page.locator('input[type="color"], [data-testid="color-picker"]');
-          const editorHeading = page.locator('h2:has-text("Custom"), h2:has-text("Editor")');
+    await themeCard(page, 'Light').click();
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem('sims-theme')))
+      .toBe('light');
+  });
 
-          const hasEditor = (await colorPicker.isVisible()) || (await editorHeading.isVisible());
-          console.log(`Custom editor visible: ${hasEditor}`);
-        }
-      }
-    });
+  test('switches to the dark theme', async ({ page, pages }) => {
+    await openThemeSelector(page, pages);
 
-    test('should show contrast checker in custom theme editor', async ({ page }) => {
-      // Navigate to custom theme editor
-      const userMenuButton = page
-        .locator('button')
-        .filter({ hasText: /Admin|User|Profile/ })
-        .first();
-      if (await userMenuButton.isVisible()) {
-        await userMenuButton.click();
-        await page.waitForTimeout(300);
-      }
+    // Start from light so selecting dark is an actual change
+    await themeCard(page, 'Light').click();
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem('sims-theme')))
+      .toBe('light');
 
-      const themeOption = page.locator('button:has-text("Theme")');
-      if (await themeOption.isVisible()) {
-        await themeOption.click();
-        await page.waitForTimeout(500);
+    await themeCard(page, 'Dark').click();
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem('sims-theme')))
+      .toBe('dark');
+  });
 
-        const customTheme = page.locator('text=/Custom|Create/i');
-        if (await customTheme.isVisible()) {
-          await customTheme.click();
-          await page.waitForTimeout(500);
+  test('theme selection survives a reload', async ({ page, pages }) => {
+    await openThemeSelector(page, pages);
+    await themeCard(page, 'Light').click();
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem('sims-theme')))
+      .toBe('light');
 
-          // Look for accessibility/contrast checker
-          const contrastChecker = page.locator('text=/Accessibility|Contrast|WCAG/i');
-          const hasChecker = await contrastChecker.isVisible().catch(() => false);
+    await page.reload();
+    await pages.dashboard.expectDashboard();
+    expect(await page.evaluate(() => localStorage.getItem('sims-theme'))).toBe('light');
+  });
 
-          console.log(`Contrast checker visible: ${hasChecker}`);
-        }
-      }
-    });
+  test('custom theme editor opens with a contrast checker', async ({ page, pages }) => {
+    await openThemeSelector(page, pages);
+
+    // The custom theme card carries a dedicated "Customize Colors" button
+    await page.getByRole('button', { name: 'Customize Colors' }).first().click();
+
+    // Editor shows color inputs and the accessibility/contrast panel
+    await expect(page.locator('input[type="color"]').first()).toBeVisible();
+    await expect(page.getByText('Accessibility Check')).toBeVisible();
   });
 });
 
@@ -227,277 +96,168 @@ test.describe('Accessibility', () => {
   });
 
   test.describe('Keyboard Navigation', () => {
-    test('should be able to navigate with Tab key', async ({ page }) => {
-      // Press Tab and check focus moves
+    test('Tab moves focus through interactive elements', async ({ page }) => {
       await page.keyboard.press('Tab');
+      const first = await page.evaluate(() => document.activeElement?.tagName);
+      expect(['A', 'BUTTON', 'INPUT']).toContain(first);
 
-      const focusedElement = await page.evaluate(() => document.activeElement?.tagName);
-      expect(focusedElement).toBeTruthy();
-
-      // Continue tabbing
       for (let i = 0; i < 5; i++) {
         await page.keyboard.press('Tab');
       }
-
-      // Something should be focused
-      const stillFocused = await page.evaluate(() => document.activeElement?.tagName);
-      console.log(`Focused element after tabs: ${stillFocused}`);
+      const later = await page.evaluate(() => document.activeElement?.tagName);
+      expect(['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA']).toContain(later);
     });
 
-    test('should show visible focus indicators', async ({ page }) => {
-      // Tab to first interactive element
-      await page.keyboard.press('Tab');
+    test('focused elements show a visible focus indicator', async ({ page }) => {
+      // Focus a known control and check its computed focus styles
+      const button = page.locator('button:has-text("Gear List")');
+      await button.focus();
 
-      // Check for focus styles
-      const focusedElement = await page.evaluate(() => {
-        const el = document.activeElement;
-        if (!el) return null;
-
-        const styles = window.getComputedStyle(el);
-        return {
-          outline: styles.outline,
-          boxShadow: styles.boxShadow,
-          borderColor: styles.borderColor,
-        };
+      const styles = await button.evaluate((el) => {
+        const s = window.getComputedStyle(el);
+        return { outline: s.outlineStyle, boxShadow: s.boxShadow };
       });
-
-      console.log('Focus styles:', focusedElement);
-
-      // Should have some visible focus indicator
-      const hasVisibleFocus =
-        focusedElement &&
-        (focusedElement.outline !== 'none' || focusedElement.boxShadow !== 'none');
-
-      console.log(`Has visible focus indicator: ${hasVisibleFocus}`);
+      expect(styles.outline !== 'none' || styles.boxShadow !== 'none').toBeTruthy();
     });
 
-    test('should support Enter key for button activation', async ({ page, pages }) => {
-      // Tab to a navigation button
+    test('Enter activates a focused navigation button', async ({ page }) => {
       const gearListButton = page.locator('button:has-text("Gear List")');
       await gearListButton.focus();
-
-      // Press Enter
       await page.keyboard.press('Enter');
-      await page.waitForTimeout(500);
 
-      // Should navigate to Gear List
-      const heading = page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")');
-      await expect(heading).toBeVisible();
+      await expect(
+        page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")'),
+      ).toBeVisible();
     });
 
-    test('should support Escape key to close modals', async ({ page, pages }) => {
-      // Navigate to gear list and open a modal
+    test('Escape closes an open modal', async ({ page, pages }) => {
+      // The QR modal is read-only and always available on an item detail
       await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+      await pages.gearList.expectGearList();
+      await pages.gearList.openItem('CA1002', 'Canon EOS R5');
+      await pages.itemDetail.expectItemDetail();
 
-      const addButton = page.locator('button:has-text("Add Item"), button:has-text("Add")');
+      await page.getByRole('button', { name: 'QR Code', exact: true }).click();
+      const modal = page.locator('[role="dialog"]');
+      await expect(modal).toBeVisible();
 
-      if (await addButton.isVisible()) {
-        await addButton.click();
-        await page.waitForTimeout(500);
-
-        const modal = page.locator('[role="dialog"]');
-
-        if (await modal.isVisible()) {
-          // Press Escape
-          await page.keyboard.press('Escape');
-          await page.waitForTimeout(300);
-
-          // Modal should close
-          const modalClosed = !(await modal.isVisible());
-          console.log(`Modal closed with Escape: ${modalClosed}`);
-        }
-      }
+      await page.keyboard.press('Escape');
+      await expect(modal).toBeHidden();
     });
   });
 
   test.describe('ARIA Attributes', () => {
-    test('navigation should have proper ARIA labels', async ({ page }) => {
-      const nav = page.locator('[role="navigation"]');
-
-      if (await nav.isVisible()) {
-        const ariaLabel = await nav.getAttribute('aria-label');
-        console.log(`Navigation aria-label: ${ariaLabel}`);
-        expect(ariaLabel).toBeTruthy();
-      }
+    test('navigation landmark is labeled', async ({ page, pages }) => {
+      await expect(pages.dashboard.sidebar).toBeVisible();
+      await expect(pages.dashboard.sidebar).toHaveAttribute('aria-label', 'Main navigation');
     });
 
-    test('buttons should have accessible names', async ({ page }) => {
-      const buttons = page.locator('button');
+    test('sidebar buttons have accessible names', async ({ page, pages }) => {
+      const buttons = pages.dashboard.sidebar.locator('button');
       const count = await buttons.count();
+      expect(count).toBeGreaterThan(5);
 
-      let accessibleCount = 0;
-      for (let i = 0; i < Math.min(count, 10); i++) {
+      for (let i = 0; i < count; i++) {
         const button = buttons.nth(i);
-        const text = await button.textContent();
+        const text = (await button.textContent())?.trim();
         const ariaLabel = await button.getAttribute('aria-label');
-
-        if (text?.trim() || ariaLabel) {
-          accessibleCount++;
-        }
-      }
-
-      console.log(`${accessibleCount} of ${Math.min(count, 10)} buttons have accessible names`);
-      expect(accessibleCount).toBeGreaterThan(0);
-    });
-
-    test('modals should have dialog role', async ({ page, pages }) => {
-      await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
-
-      const addButton = page.locator('button:has-text("Add Item"), button:has-text("Add")');
-
-      if (await addButton.isVisible()) {
-        await addButton.click();
-        await page.waitForTimeout(500);
-
-        const modal = page.locator('[role="dialog"]');
-        const hasDialogRole = await modal.isVisible();
-
-        console.log(`Modal has dialog role: ${hasDialogRole}`);
-
-        if (hasDialogRole) {
-          const ariaModal = await modal.getAttribute('aria-modal');
-          console.log(`Modal has aria-modal: ${ariaModal}`);
-        }
+        expect(text || ariaLabel, `sidebar button #${i} needs an accessible name`).toBeTruthy();
       }
     });
 
-    test('form inputs should have labels', async ({ page, pages }) => {
+    test('modals expose dialog semantics', async ({ page, pages }) => {
       await pages.dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+      await pages.gearList.expectGearList();
+      await pages.gearList.openItem('CA1002', 'Canon EOS R5');
+      await pages.itemDetail.expectItemDetail();
 
-      const addButton = page.locator('button:has-text("Add Item"), button:has-text("Add")');
+      await page.getByRole('button', { name: 'QR Code', exact: true }).click();
+      const modal = page.locator('[role="dialog"]');
+      await expect(modal).toBeVisible();
+      await expect(modal).toHaveAttribute('aria-modal', 'true');
+    });
 
-      if (await addButton.isVisible()) {
-        await addButton.click();
-        await page.waitForTimeout(500);
+    test('check-out modal inputs are labeled', async ({ page, pages }) => {
+      await pages.dashboard.navigateTo('Gear List');
+      await pages.gearList.expectGearList();
+      await pages.gearList.openItem('CA1002', 'Canon EOS R5');
+      await pages.itemDetail.expectItemDetail();
 
-        const inputs = page.locator('input:not([type="hidden"]):not([type="checkbox"])');
-        const inputCount = await inputs.count();
+      await page.getByRole('button', { name: 'Check Out', exact: true }).click();
+      const modal = page.locator('[role="dialog"]');
+      await expect(modal).toBeVisible();
 
-        let labeledCount = 0;
-        for (let i = 0; i < Math.min(inputCount, 5); i++) {
-          const input = inputs.nth(i);
-          const id = await input.getAttribute('id');
-          const ariaLabel = await input.getAttribute('aria-label');
-          const ariaLabelledBy = await input.getAttribute('aria-labelledby');
-
-          if (id) {
-            const label = page.locator(`label[for="${id}"]`);
-            if (await label.isVisible()) {
-              labeledCount++;
-              continue;
-            }
-          }
-
-          if (ariaLabel || ariaLabelledBy) {
-            labeledCount++;
-          }
-        }
-
-        console.log(`${labeledCount} of ${Math.min(inputCount, 5)} inputs have labels`);
-      }
+      // Labeled sections/fields (visible <label> elements) plus explicitly
+      // aria-labeled controls
+      expect(await modal.locator('label').count()).toBeGreaterThanOrEqual(5);
+      await expect(modal.locator('[aria-label="Due date"]')).toBeVisible();
+      await expect(modal.locator('[aria-label="Client"]')).toBeVisible();
     });
   });
 
   test.describe('Screen Reader Support', () => {
-    test('should have live regions for dynamic content', async ({ page }) => {
-      const liveRegions = page.locator('[aria-live], [role="status"], [role="alert"]');
-      const count = await liveRegions.count();
+    test('page has a skip link and a main landmark', async ({ page }) => {
+      await expect(page.locator('main#main-content')).toBeVisible();
 
-      console.log(`Found ${count} live regions`);
+      const skipLink = page.locator('a[href="#main-content"]');
+      await expect(skipLink).toHaveCount(1);
+
+      // The skip link is the first tab stop from a fresh load
+      await page.reload();
+      await expect(page.locator('h2:has-text("Dashboard")')).toBeVisible({ timeout: 30000 });
+      await page.keyboard.press('Tab');
+      await expect(skipLink).toBeFocused();
     });
 
-    test('page should have main landmark', async ({ page }) => {
-      const main = page.locator('main, [role="main"]');
-      const hasMain = await main.isVisible().catch(() => false);
-
-      console.log(`Page has main landmark: ${hasMain}`);
-    });
-
-    test('headings should be in logical order', async ({ page }) => {
-      const headings = await page.evaluate(() => {
-        const h = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-        return Array.from(h).map((el) => ({
-          level: parseInt(el.tagName.charAt(1)),
-          text: el.textContent?.trim().substring(0, 50),
-        }));
-      });
-
-      console.log('Heading structure:', headings);
-
-      // Should have at least one h1
-      const hasH1 = headings.some((h) => h.level === 1);
-      console.log(`Has H1: ${hasH1}`);
+    test('headings start at h1 and include the page heading', async ({ page }) => {
+      // The sidebar brand renders the h1; views render h2 page titles
+      expect(await page.locator('h1').count()).toBeGreaterThanOrEqual(1);
+      await expect(page.locator('h2:has-text("Dashboard")')).toBeVisible();
     });
   });
 
   test.describe('Color and Contrast', () => {
-    test('focus ring should be visible', async ({ page }) => {
-      // Tab to an element
-      await page.keyboard.press('Tab');
-      await page.keyboard.press('Tab');
-
-      // Check focus ring CSS variable
-      const focusRingColor = await page.evaluate(() => {
-        return getComputedStyle(document.documentElement)
-          .getPropertyValue('--focus-ring-color')
-          .trim();
-      });
-
-      console.log(`Focus ring color: ${focusRingColor}`);
+    test('focus ring color is defined', async ({ page }) => {
+      const focusRingColor = await page.evaluate(() =>
+        getComputedStyle(document.documentElement).getPropertyValue('--focus-ring-color').trim(),
+      );
       expect(focusRingColor).toBeTruthy();
     });
 
-    test('text should have sufficient contrast', async ({ page }) => {
-      // Get primary text color and background
+    test('theme text and background variables are defined', async ({ page }) => {
       const colors = await page.evaluate(() => {
-        const body = document.body;
-        const styles = getComputedStyle(body);
         const root = getComputedStyle(document.documentElement);
-
         return {
           textPrimary: root.getPropertyValue('--text-primary').trim(),
           bgDark: root.getPropertyValue('--bg-dark').trim(),
         };
       });
-
-      console.log('Text colors:', colors);
-      // Colors should be defined
-      expect(colors.textPrimary || colors.bgDark).toBeTruthy();
+      expect(colors.textPrimary).toBeTruthy();
+      expect(colors.bgDark).toBeTruthy();
     });
   });
 
   test.describe('Responsive Design', () => {
-    test('should be usable on mobile viewport', async ({ page }) => {
+    test('mobile viewport shows the mobile header and content', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.waitForTimeout(500);
 
-      // Content should still be visible
-      const heading = page.locator('h1').first();
-      await expect(heading).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Open menu' })).toBeVisible();
+      await expect(page.locator('h2:has-text("Dashboard")')).toBeVisible();
 
-      // Interactive elements should be tappable (minimum 44x44)
-      const button = page.locator('button').first();
-      const box = await button.boundingBox();
-
-      if (box) {
-        console.log(`Button size: ${box.width}x${box.height}`);
-        // At least one dimension should be reasonably large
-        expect(box.width >= 30 || box.height >= 30).toBeTruthy();
-      }
+      // Tap targets stay reasonably sized
+      const box = await page.getByRole('button', { name: 'Open menu' }).boundingBox();
+      expect(box.width).toBeGreaterThanOrEqual(30);
+      expect(box.height).toBeGreaterThanOrEqual(30);
     });
 
-    test('should not have horizontal scroll on mobile', async ({ page }) => {
+    test('no horizontal scroll on mobile', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
-      await page.waitForTimeout(500);
+      await expect(page.locator('h2:has-text("Dashboard")')).toBeVisible();
 
-      const hasHorizontalScroll = await page.evaluate(() => {
-        return document.documentElement.scrollWidth > document.documentElement.clientWidth;
-      });
-
-      console.log(`Has horizontal scroll: ${hasHorizontalScroll}`);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow).toBeLessThanOrEqual(0);
     });
   });
 });

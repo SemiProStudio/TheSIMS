@@ -1,23 +1,23 @@
 // =============================================================================
 // E2E Tests - Inventory Management
-// Tests for item CRUD operations
+// CRUD, search/filter, and bulk-selection tests. Read-only tests use the
+// seeded dataset (20 items, ids CA/LE/LI/AU/SU...); mutating tests create
+// private "ZZZ E2E ..." items via db.js and remove them afterwards.
 // =============================================================================
 
 import { test, expect } from './fixtures.js';
+import { createTestItem, deleteTestItem, deleteItemsByExactName, E2E_PREFIX } from './db.js';
 
 test.describe('Inventory Management', () => {
   test.beforeEach(async ({ page, pages }) => {
     await page.goto('/');
     await pages.dashboard.expectDashboard();
-
-    // Navigate to Gear List
     await pages.dashboard.navigateTo('Gear List');
-    await page.waitForTimeout(1000);
+    await pages.gearList.expectGearList();
   });
 
   test.describe('View Items', () => {
     test('should display gear list', async ({ page, pages }) => {
-      // Should show gear list heading
       await expect(
         page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")'),
       ).toBeVisible();
@@ -27,18 +27,7 @@ test.describe('Inventory Management', () => {
       expect(await pages.gearList.itemRows.count()).toBeGreaterThan(0);
     });
 
-    test('should display item count', async ({ page }) => {
-      // Look for item count indicator
-      const countText = page.locator('text=/\\d+ items?/i');
-
-      if (await countText.isVisible()) {
-        const text = await countText.textContent();
-        expect(text).toMatch(/\d+/);
-      }
-    });
-
     test('should toggle between grid and list view', async ({ page, pages }) => {
-      // The view toggles are labeled buttons with aria-pressed state
       const gridButton = page.getByRole('button', { name: 'Grid view' });
       const listButton = page.getByRole('button', { name: 'List view' });
 
@@ -56,112 +45,65 @@ test.describe('Inventory Management', () => {
   });
 
   test.describe('Search and Filter', () => {
-    test('should filter items by search query', async ({ page }) => {
-      const searchInput = page.locator('input[placeholder*="Search"]');
-
-      if (await searchInput.isVisible()) {
-        // Get initial count
-        const initialCount = await page
-          .locator('[data-testid="item-card"], tr[role="row"]')
-          .count();
-
-        // Type search query
-        await searchInput.fill('Camera');
-        await page.waitForTimeout(500);
-
-        // Results should change (or stay same if all match)
-        const filteredCount = await page
-          .locator('[data-testid="item-card"], tr[role="row"]')
-          .count();
-
-        // Either fewer results or results contain search term
-        console.log(`Initial: ${initialCount}, Filtered: ${filteredCount}`);
-      }
+    test('search matches by unique id', async ({ pages }) => {
+      // Search matches name, brand, and id — a unique id returns one row
+      await pages.gearList.search('LE1002');
+      await expect(pages.gearList.itemRows).toHaveCount(1);
+      await expect(pages.gearList.itemRow('Canon RF 70-200mm f/2.8L IS')).toBeVisible();
     });
 
-    test('should filter items by category', async ({ page }) => {
-      const categorySelect = page.locator('select').first();
-
-      if (await categorySelect.isVisible()) {
-        // Select a specific category
-        const options = await categorySelect.locator('option').allTextContents();
-
-        if (options.length > 1) {
-          // Select second option (first is usually "All")
-          await categorySelect.selectOption({ index: 1 });
-          await page.waitForTimeout(500);
-        }
-      }
+    test('search narrows to the seeded lens set', async ({ pages }) => {
+      // The seed contains exactly five lenses with ids LE1001..LE1005
+      await pages.gearList.search('LE10');
+      await expect(pages.gearList.itemRows).toHaveCount(5);
     });
 
-    test('should filter items by status', async ({ page }) => {
-      // Find status filter (might be select or buttons)
-      const statusSelect = page.locator('select').nth(1);
-
-      if (await statusSelect.isVisible()) {
-        const options = await statusSelect.locator('option').allTextContents();
-
-        if (options.length > 1) {
-          await statusSelect.selectOption({ index: 1 });
-          await page.waitForTimeout(500);
-        }
-      }
+    test('category filter narrows results', async ({ page, pages }) => {
+      // Custom Select component: trigger button + role=option entries
+      await page.getByLabel('Filter by category').click();
+      await page.getByRole('option', { name: 'Lighting' }).click();
+      // Seed has exactly three Lighting items (LI1001..LI1003)
+      await expect(pages.gearList.itemRows).toHaveCount(3);
     });
 
-    test('should clear search', async ({ page }) => {
-      const searchInput = page.locator('input[placeholder*="Search"]');
+    test('status filter shows the empty state when nothing matches', async ({ page }) => {
+      // No seeded (or test-created) item is ever "missing"
+      await page.getByLabel('Filter by status').click();
+      await page.getByRole('option', { name: 'Missing' }).click();
+      await expect(page.getByText('No items found matching your criteria')).toBeVisible();
+    });
 
-      if (await searchInput.isVisible()) {
-        await searchInput.fill('test');
-        await page.waitForTimeout(300);
+    test('clearing the search restores the full list', async ({ pages }) => {
+      await pages.gearList.search('LE1002');
+      await expect(pages.gearList.itemRows).toHaveCount(1);
 
-        // Clear search
-        await searchInput.clear();
-        await page.waitForTimeout(300);
-
-        // Or click clear button if available
-        const clearButton = page.locator('button[aria-label*="Clear"], button:has-text("Clear")');
-        if (await clearButton.isVisible()) {
-          await clearButton.click();
-        }
-      }
+      await pages.gearList.clearSearch();
+      // Search is debounced (200ms) — poll instead of a one-shot count
+      await expect.poll(() => pages.gearList.itemRows.count()).toBeGreaterThan(5);
     });
   });
 
   test.describe('Item Detail', () => {
-    test('should view item details', async ({ page }) => {
-      // Click on first item
-      const firstItem = page.locator('[data-testid="item-card"], [role="row"]').first();
-
-      if (await firstItem.isVisible()) {
-        await firstItem.click();
-        await page.waitForTimeout(1000);
-
-        // Should show item detail (has Back button or specific content)
-        const backButton = page.locator('button:has-text("Back")');
-        const itemName = page.locator('h1, h2').first();
-
-        if (await backButton.isVisible()) {
-          await expect(itemName).toBeVisible();
-        }
-      }
+    test('opens the item detail from the list', async ({ page, pages }) => {
+      await pages.gearList.openItem('LE1001', 'Sony 24-70mm f/2.8 GM II');
+      await pages.itemDetail.expectItemDetail();
+      await expect(page.locator('h1').filter({ hasText: 'Sony 24-70mm f/2.8 GM II' })).toBeVisible();
+      await expect(page.getByText('LE1001').first()).toBeVisible();
     });
 
-    test('should display item information', async ({ page }) => {
-      // Click on first item
-      const firstItem = page.locator('[data-testid="item-card"], [role="row"]').first();
+    test('displays item information and actions', async ({ page, pages }) => {
+      await pages.gearList.openItem('AU1001', 'Sennheiser MKH 416');
+      await pages.itemDetail.expectItemDetail();
 
-      if (await firstItem.isVisible()) {
-        await firstItem.click();
-        await page.waitForTimeout(1000);
+      await expect(page.locator('h1').filter({ hasText: 'Sennheiser MKH 416' })).toBeVisible();
+      // Available item: admin sees Check Out, Edit, and QR actions
+      await expect(page.getByRole('button', { name: 'Check Out', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'QR Code', exact: true })).toBeVisible();
 
-        // Check for common item fields
-        const hasName = await page.locator('h1, h2').first().isVisible();
-        const hasCategory = await page.locator('text=/Camera|Lens|Audio|Lighting/').isVisible();
-        const hasStatus = await page.locator('text=/Available|Checked Out|Reserved/').isVisible();
-
-        console.log(`Name: ${hasName}, Category: ${hasCategory}, Status: ${hasStatus}`);
-      }
+      // Back returns to the gear list
+      await pages.itemDetail.goBack();
+      await pages.gearList.expectGearList();
     });
   });
 
@@ -191,176 +133,150 @@ test.describe('Inventory Management', () => {
       await expect(saveButton).toBeDisabled();
     });
 
-    test('should create new item', async ({ page }) => {
-      const addButton = page.locator('button:has-text("Add Item"), button:has-text("Add")');
+    test('creates a new item through the form', async ({ page, pages }) => {
+      const name = `${E2E_PREFIX} Created ${Date.now()}`;
+      try {
+        await page.locator('button:has-text("Add Item")').first().click();
+        await expect(page.locator('h2:has-text("Add New Item")')).toBeVisible();
 
-      if (await addButton.isVisible()) {
-        await addButton.click();
-        await page.waitForTimeout(500);
+        await page.locator('input[placeholder="e.g., Alpha a7 IV"]').fill(name);
+        await page.locator('input[placeholder="e.g., Sony"]').fill('E2E Test');
 
-        // Fill in item details
-        const nameInput = page.locator('input[id*="name"], input[placeholder*="Name"]').first();
-        const categorySelect = page.locator('select[id*="category"]').first();
-
-        if (await nameInput.isVisible()) {
-          const uniqueName = `Test Item ${Date.now()}`;
-          await nameInput.fill(uniqueName);
-
-          if (await categorySelect.isVisible()) {
-            await categorySelect.selectOption({ index: 1 });
-          }
-
-          // Save
-          const saveButton = page.locator('button:has-text("Save"), button[type="submit"]').last();
-          await saveButton.click();
-          await page.waitForTimeout(1000);
-
-          // Item should be created (modal closes or success message)
-          const modalClosed = !(await page.locator('[role="dialog"]').isVisible());
-          const successMessage = await page
-            .locator('text=/created|added|success/i')
-            .isVisible()
-            .catch(() => false);
-
-          console.log(`Modal closed: ${modalClosed}, Success message: ${successMessage}`);
+        // The default category (Cameras) declares three REQUIRED specs and
+        // a required serial number — save stays disabled until all are set
+        for (const spec of ['Sensor Type', 'Video Resolution', 'Mount Type']) {
+          await page.getByText(spec).locator('..').locator('input').fill('E2E');
         }
+        await page.locator('input[placeholder="Required"]').fill(`SN-E2E-${Date.now()}`);
+
+        // Save enables once name, brand, and required specs are present,
+        // then navigates back to the gear list
+        const saveButton = page.getByRole('button', { name: 'Add Item', exact: true }).last();
+        await expect(saveButton).toBeEnabled();
+        await saveButton.click();
+
+        await expect(page.getByText(`${name} added to inventory`)).toBeVisible();
+        await pages.gearList.expectGearList();
+
+        // The new item is findable
+        await pages.gearList.search(name);
+        await expect(pages.gearList.itemRow(name)).toBeVisible();
+      } finally {
+        await deleteItemsByExactName(name);
       }
     });
   });
+
+  // The app loads inventory into React state at boot — items created via
+  // the db helper AFTER the beforeEach navigation require a fresh load.
+  async function reloadIntoGearList(page, pages) {
+    await page.goto('/');
+    await pages.dashboard.expectDashboard();
+    await pages.dashboard.navigateTo('Gear List');
+    await pages.gearList.expectGearList();
+  }
 
   test.describe('Edit Item', () => {
-    test('should open edit form', async ({ page }) => {
-      // Click on first item to view details
-      const firstItem = page.locator('[data-testid="item-card"], [role="row"]').first();
+    test('opens the edit form with current values', async ({ page, pages }) => {
+      const name = `${E2E_PREFIX} EditOpen`;
+      const id = await createTestItem({ name });
+      try {
+        await reloadIntoGearList(page, pages);
+        await pages.gearList.openItem(id, name);
+        await pages.itemDetail.expectItemDetail();
+        await page.getByRole('button', { name: 'Edit', exact: true }).click();
 
-      if (await firstItem.isVisible()) {
-        await firstItem.click();
-        await page.waitForTimeout(1000);
-
-        // Find edit button
-        const editButton = page.locator('button:has-text("Edit")');
-
-        if (await editButton.isVisible()) {
-          await editButton.click();
-          await page.waitForTimeout(500);
-
-          // Should show edit form
-          const modal = page.locator('[role="dialog"]');
-          const nameInput = page.locator('input[id*="name"], input[placeholder*="Name"]');
-
-          const hasForm = (await modal.isVisible()) || (await nameInput.isVisible());
-          expect(hasForm).toBeTruthy();
-        }
+        // Editing from the detail page opens the compact ItemModal
+        const modal = page.locator('[role="dialog"]');
+        await expect(modal.getByText('Edit Item')).toBeVisible();
+        await expect(modal.locator('input[placeholder="e.g., Alpha a7 IV"]')).toHaveValue(name);
+      } finally {
+        await deleteTestItem(id);
       }
     });
 
-    test('should update item', async ({ page }) => {
-      // Click on first item
-      const firstItem = page.locator('[data-testid="item-card"], [role="row"]').first();
+    test('updates an item name', async ({ page, pages }) => {
+      const name = `${E2E_PREFIX} EditSave`;
+      const id = await createTestItem({ name });
+      try {
+        await reloadIntoGearList(page, pages);
+        await pages.gearList.openItem(id, name);
+        await pages.itemDetail.expectItemDetail();
+        await page.getByRole('button', { name: 'Edit', exact: true }).click();
 
-      if (await firstItem.isVisible()) {
-        await firstItem.click();
-        await page.waitForTimeout(1000);
+        const modal = page.locator('[role="dialog"]');
+        await expect(modal.getByText('Edit Item')).toBeVisible();
 
-        const editButton = page.locator('button:has-text("Edit")');
+        await modal.locator('input[placeholder="e.g., Alpha a7 IV"]').fill(`${name} Updated`);
+        await modal.getByRole('button', { name: 'Save Changes' }).click();
 
-        if (await editButton.isVisible()) {
-          await editButton.click();
-          await page.waitForTimeout(500);
-
-          // Modify item name
-          const nameInput = page.locator('input[id*="name"], input[placeholder*="Name"]').first();
-
-          if (await nameInput.isVisible()) {
-            const currentValue = await nameInput.inputValue();
-            await nameInput.fill(currentValue + ' Updated');
-
-            // Save
-            const saveButton = page
-              .locator('button:has-text("Save"), button[type="submit"]')
-              .last();
-            await saveButton.click();
-            await page.waitForTimeout(1000);
-          }
-        }
+        // The modal closes and the detail heading shows the new name
+        await expect(modal).toBeHidden();
+        await expect(page.locator('h1').filter({ hasText: `${name} Updated` })).toBeVisible({
+          timeout: 10000,
+        });
+      } finally {
+        await deleteTestItem(id);
       }
     });
   });
 
-  test.describe('Delete Item', () => {
-    test('should show delete confirmation', async ({ page }) => {
-      // Click on first item
-      const firstItem = page.locator('[data-testid="item-card"], [role="row"]').first();
+  test.describe('Bulk Selection', () => {
+    test('selects items and shows the selection toolbar', async ({ page, pages }) => {
+      const nameA = `${E2E_PREFIX} Bulk A`;
+      const nameB = `${E2E_PREFIX} Bulk B`;
+      const idA = await createTestItem({ name: nameA });
+      const idB = await createTestItem({ name: nameB });
+      try {
+        await reloadIntoGearList(page, pages);
+        await pages.gearList.search(E2E_PREFIX);
 
-      if (await firstItem.isVisible()) {
-        await firstItem.click();
-        await page.waitForTimeout(1000);
+        await page.getByRole('button', { name: 'Multiple Selection' }).click();
+        await pages.gearList.itemRow(nameA).click();
+        await expect(page.getByText(/1 of \d+ selected/)).toBeVisible();
+        await pages.gearList.itemRow(nameB).click();
+        await expect(page.getByText(/2 of \d+ selected/)).toBeVisible();
 
-        // Find delete button
-        const deleteButton = page.locator('button:has-text("Delete")');
-
-        if (await deleteButton.isVisible()) {
-          await deleteButton.click();
-          await page.waitForTimeout(500);
-
-          // Should show confirmation dialog
-          const confirmDialog = page.locator('[role="dialog"], [role="alertdialog"]');
-          const confirmText = page.locator('text=/confirm|sure|delete/i');
-
-          const hasConfirmation =
-            (await confirmDialog.isVisible()) || (await confirmText.isVisible());
-
-          // Cancel to not actually delete
-          const cancelButton = page.locator('button:has-text("Cancel"), button:has-text("No")');
-          if (await cancelButton.isVisible()) {
-            await cancelButton.click();
-          }
+        // Bulk action buttons appear with a selection
+        for (const action of ['Change Status', 'Update Location', 'Change Category', 'Delete']) {
+          await expect(page.getByRole('button', { name: action, exact: true })).toBeVisible();
         }
-      }
-    });
-  });
 
-  test.describe('Bulk Actions', () => {
-    test('should select multiple items', async ({ page }) => {
-      // Find checkboxes for item selection
-      const checkboxes = page.locator('input[type="checkbox"]');
-      const count = await checkboxes.count();
-
-      if (count > 1) {
-        // Select first few items
-        await checkboxes.nth(0).check();
-        await checkboxes.nth(1).check();
-        await page.waitForTimeout(300);
-
-        // Should show selection count or bulk actions
-        const selectionIndicator = page.locator('text=/\\d+ selected/i, text=/selected/i');
-        const bulkActionsButton = page.locator(
-          'button:has-text("Bulk"), button:has-text("Actions")',
-        );
-
-        const hasSelection = await selectionIndicator.isVisible().catch(() => false);
-        const hasBulkActions = await bulkActionsButton.isVisible().catch(() => false);
-
-        console.log(`Selection indicator: ${hasSelection}, Bulk actions: ${hasBulkActions}`);
+        await page.getByRole('button', { name: 'Exit Selection' }).click();
+        await expect(page.getByText(/of \d+ selected/)).toBeHidden();
+      } finally {
+        await deleteTestItem(idA);
+        await deleteTestItem(idB);
       }
     });
 
-    test('should have select all option', async ({ page }) => {
-      const selectAllCheckbox = page.locator(
-        'input[type="checkbox"][aria-label*="all"], th input[type="checkbox"]',
-      );
+    test('bulk delete asks for typed confirmation and cancel keeps the item', async ({
+      page,
+      pages,
+    }) => {
+      const name = `${E2E_PREFIX} Bulk Delete`;
+      const id = await createTestItem({ name });
+      try {
+        await reloadIntoGearList(page, pages);
+        await pages.gearList.search(E2E_PREFIX);
 
-      if (await selectAllCheckbox.isVisible()) {
-        await selectAllCheckbox.check();
-        await page.waitForTimeout(300);
+        await page.getByRole('button', { name: 'Multiple Selection' }).click();
+        await pages.gearList.itemRow(name).click();
+        await expect(page.getByText(/1 of \d+ selected/)).toBeVisible();
+        await page.getByRole('button', { name: 'Delete', exact: true }).click();
 
-        // All items should be selected
-        const checkboxes = page.locator(
-          'tbody input[type="checkbox"], [data-testid="item-checkbox"]',
-        );
-        const allChecked = await checkboxes.evaluateAll((cbs) => cbs.every((cb) => cb.checked));
+        // The bulk-delete modal demands typing DELETE before enabling
+        const modal = page.locator('[role="dialog"]');
+        await expect(modal.getByText('Delete Items')).toBeVisible();
+        await expect(modal.getByText('Type DELETE to confirm')).toBeVisible();
+        await expect(modal.getByRole('button', { name: /Delete \d+ Item/ })).toBeDisabled();
 
-        console.log(`All items checked: ${allChecked}`);
+        // Cancel out — the item must survive
+        await page.keyboard.press('Escape');
+        await expect(modal).toBeHidden();
+        await expect(pages.gearList.itemRow(name)).toBeVisible();
+      } finally {
+        await deleteTestItem(id);
       }
     });
   });

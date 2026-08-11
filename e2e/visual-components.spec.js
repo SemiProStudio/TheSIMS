@@ -1,10 +1,24 @@
 // =============================================================================
 // Visual Regression Tests - Components
-// Screenshot comparison tests for UI components
+// Screenshot comparison tests for UI components.
+//
+// READ-ONLY by design: these run in the 'chromium-visual' project AFTER all
+// functional tests finished and deleted their private data, so every
+// screenshot sees the pristine seeded dataset. Do not mutate database state
+// here — opening modals and toggling client-side view state is fine.
 // =============================================================================
 
 import { test, expect, componentSelectors } from './visual-utils.js';
-import { DashboardPage } from './fixtures.js';
+import { DashboardPage, GearListPage, ItemDetailPage } from './fixtures.js';
+
+async function gotoGearList(page) {
+  const dashboard = new DashboardPage(page);
+  const gearList = new GearListPage(page);
+  await dashboard.expectDashboard();
+  await dashboard.navigateTo('Gear List');
+  await gearList.expectGearList();
+  return gearList;
+}
 
 test.describe('Visual Regression - Components', () => {
   test.beforeEach(async ({ page }) => {
@@ -18,33 +32,24 @@ test.describe('Visual Regression - Components', () => {
   test.describe('Sidebar', () => {
     test('sidebar should match baseline', async ({ page }) => {
       const sidebar = page.locator(componentSelectors.sidebar);
-
-      if (await sidebar.isVisible()) {
-        await expect(sidebar).toHaveScreenshot('sidebar.png', {
-          maxDiffPixels: 100,
-        });
-      }
+      await expect(sidebar).toBeVisible();
+      await expect(sidebar).toHaveScreenshot('sidebar.png', {
+        maxDiffPixels: 100,
+      });
     });
 
     test('sidebar collapsed should match baseline', async ({ page }) => {
-      // Find collapse button
-      const collapseButton = page.locator(
-        'button[aria-label*="collapse"], button[aria-label*="toggle"]',
-      );
+      await page.getByRole('button', { name: 'Collapse sidebar' }).click();
+      // Width transition is 0.3s
+      await page.waitForTimeout(600);
 
-      if (await collapseButton.isVisible()) {
-        await collapseButton.click();
-        await page.waitForTimeout(500);
-
-        const sidebar = page.locator(componentSelectors.sidebar);
-        await expect(sidebar).toHaveScreenshot('sidebar-collapsed.png', {
-          maxDiffPixels: 100,
-        });
-      }
+      const sidebar = page.locator(componentSelectors.sidebar);
+      await expect(sidebar).toHaveScreenshot('sidebar-collapsed.png', {
+        maxDiffPixels: 100,
+      });
     });
 
     test('sidebar active item should match baseline', async ({ page }) => {
-      // Navigate to gear list
       const gearListButton = page.locator('button:has-text("Gear List")');
       await gearListButton.click();
       await page.waitForTimeout(500);
@@ -57,264 +62,162 @@ test.describe('Visual Regression - Components', () => {
   });
 
   test.describe('Modals', () => {
-    test('add item modal should match baseline', async ({ page }) => {
-      // Navigate to gear list
-      const dashboard = new DashboardPage(page);
-      await dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
-
-      // Open add modal
-      const addButton = page.locator('button:has-text("Add Item"), button:has-text("Add")');
-      if (await addButton.isVisible()) {
-        await addButton.click();
-        await page.waitForTimeout(500);
-
-        const modal = page.locator('[role="dialog"]');
-        if (await modal.isVisible()) {
-          await expect(modal).toHaveScreenshot('modal-add-item.png', {
-            maxDiffPixels: 200,
-          });
-        }
-      }
-    });
-
     test('check-out modal should match baseline', async ({ page }) => {
-      // Navigate to gear list
-      const dashboard = new DashboardPage(page);
-      await dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+      const gearList = await gotoGearList(page);
+      await gearList.openItem('CA1002', 'Canon EOS R5');
+      await new ItemDetailPage(page).expectItemDetail();
 
-      // Find an available item
-      const availableItem = page.locator('text=Available').first();
-      if (await availableItem.isVisible()) {
-        await availableItem.click();
-        await page.waitForTimeout(500);
+      await page.getByRole('button', { name: 'Check Out', exact: true }).click();
+      const modal = page.locator('[role="dialog"]');
+      await expect(modal).toBeVisible();
+      await page.waitForTimeout(300);
 
-        const checkOutButton = page.locator('button:has-text("Check Out")');
-        if (await checkOutButton.isVisible()) {
-          await checkOutButton.click();
-          await page.waitForTimeout(500);
-
-          const modal = page.locator('[role="dialog"]');
-          if (await modal.isVisible()) {
-            await expect(modal).toHaveScreenshot('modal-check-out.png', {
-              maxDiffPixels: 200,
-            });
-          }
-        }
-      }
+      await expect(modal).toHaveScreenshot('modal-check-out.png', {
+        maxDiffPixels: 200,
+      });
     });
 
-    test('confirm dialog should match baseline', async ({ page }) => {
-      // Navigate to gear list and try to delete
-      const dashboard = new DashboardPage(page);
-      await dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+    test('check-out validation errors should match baseline', async ({ page }) => {
+      const gearList = await gotoGearList(page);
+      await gearList.openItem('CA1005', 'Canon C70');
+      await new ItemDetailPage(page).expectItemDetail();
 
-      // Click on first item
-      const firstItem = page.locator('[data-testid="item-card"], [role="row"]').first();
-      if (await firstItem.isVisible()) {
-        await firstItem.click();
-        await page.waitForTimeout(500);
+      await page.getByRole('button', { name: 'Check Out', exact: true }).click();
+      const modal = page.locator('[role="dialog"]');
+      await expect(modal).toBeVisible();
 
-        const deleteButton = page.locator('button:has-text("Delete")');
-        if (await deleteButton.isVisible()) {
-          await deleteButton.click();
-          await page.waitForTimeout(500);
+      // Submit with the open requirements missing (borrower is prefilled
+      // with the current user) → validation messages render
+      await modal.getByRole('button', { name: 'Confirm Check Out' }).click();
+      await expect(modal.getByText('Due date is required')).toBeVisible();
+      await page.waitForTimeout(300);
 
-          const confirmDialog = page.locator('[role="dialog"], [role="alertdialog"]');
-          if (await confirmDialog.isVisible()) {
-            await expect(confirmDialog).toHaveScreenshot('confirm-dialog.png', {
-              maxDiffPixels: 100,
-            });
+      await expect(modal).toHaveScreenshot('form-validation-errors.png', {
+        maxDiffPixels: 200,
+      });
+    });
 
-            // Cancel to not delete
-            const cancelButton = page.locator('button:has-text("Cancel")');
-            if (await cancelButton.isVisible()) {
-              await cancelButton.click();
-            }
-          }
-        }
-      }
+    test('bulk delete confirmation should match baseline', async ({ page }) => {
+      const gearList = await gotoGearList(page);
+      await gearList.search('LE1005');
+
+      await page.getByRole('button', { name: 'Multiple Selection' }).click();
+      await gearList.itemRow('Canon RF 15-35mm f/2.8L IS').click();
+      await expect(page.getByText(/1 of \d+ selected/)).toBeVisible();
+      await page.getByRole('button', { name: 'Delete', exact: true }).click();
+
+      const modal = page.locator('[role="dialog"]');
+      await expect(modal.getByText('Delete Items')).toBeVisible();
+      await page.waitForTimeout(300);
+
+      await expect(modal).toHaveScreenshot('bulk-delete-dialog.png', {
+        maxDiffPixels: 100,
+      });
+
+      // Cancel — nothing is deleted (the confirm stays disabled anyway)
+      await page.keyboard.press('Escape');
+      await expect(modal).toBeHidden();
     });
   });
 
-  test.describe('Forms', () => {
-    test('form with validation errors should match baseline', async ({ page }) => {
-      // Navigate to gear list and open add form
-      const dashboard = new DashboardPage(page);
-      await dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+  test.describe('Pages', () => {
+    test('add item page should match baseline', async ({ page }) => {
+      await gotoGearList(page);
+      await page.locator('button:has-text("Add Item")').first().click();
+      await expect(page.locator('h2:has-text("Add New Item")')).toBeVisible();
+      await page.waitForTimeout(500);
 
-      const addButton = page.locator('button:has-text("Add Item"), button:has-text("Add")');
-      if (await addButton.isVisible()) {
-        await addButton.click();
-        await page.waitForTimeout(500);
-
-        // Try to submit empty form
-        const submitButton = page.locator(
-          '[role="dialog"] button:has-text("Save"), [role="dialog"] button[type="submit"]',
-        );
-        if (await submitButton.isVisible()) {
-          await submitButton.click();
-          await page.waitForTimeout(500);
-
-          // Check for validation errors
-          const modal = page.locator('[role="dialog"]');
-          if (await modal.isVisible()) {
-            await expect(modal).toHaveScreenshot('form-validation-errors.png', {
-              maxDiffPixels: 200,
-            });
-          }
-        }
-      }
+      await expect(page).toHaveScreenshot('add-item-page.png', {
+        maxDiffPixels: 300,
+      });
     });
   });
 
   test.describe('Buttons', () => {
     test('primary button should match baseline', async ({ page }) => {
-      const primaryButton = page
-        .locator('button')
-        .filter({ hasText: /Save|Submit|Add/ })
-        .first();
+      await gotoGearList(page);
+      const addButton = page.locator('button:has-text("Add Item")').first();
+      await expect(addButton).toBeVisible();
 
-      if (await primaryButton.isVisible()) {
-        await expect(primaryButton).toHaveScreenshot('button-primary.png', {
-          maxDiffPixels: 50,
-        });
-      }
+      await expect(addButton).toHaveScreenshot('button-primary.png', {
+        maxDiffPixels: 50,
+      });
     });
 
     test('button hover state should match baseline', async ({ page }) => {
       const button = page.locator('button:has-text("Gear List")');
+      await expect(button).toBeVisible();
+      await button.hover();
+      await page.waitForTimeout(200);
 
-      if (await button.isVisible()) {
-        await button.hover();
-        await page.waitForTimeout(200);
-
-        await expect(button).toHaveScreenshot('button-hover.png', {
-          maxDiffPixels: 50,
-        });
-      }
+      await expect(button).toHaveScreenshot('button-hover.png', {
+        maxDiffPixels: 50,
+      });
     });
 
     test('button focus state should match baseline', async ({ page }) => {
       const button = page.locator('button:has-text("Gear List")');
+      await expect(button).toBeVisible();
+      await button.focus();
+      await page.waitForTimeout(200);
 
-      if (await button.isVisible()) {
-        await button.focus();
-        await page.waitForTimeout(200);
-
-        await expect(button).toHaveScreenshot('button-focus.png', {
-          maxDiffPixels: 50,
-        });
-      }
+      await expect(button).toHaveScreenshot('button-focus.png', {
+        maxDiffPixels: 50,
+      });
     });
   });
 
   test.describe('Status Badges', () => {
-    test('status badges should match baseline', async ({ page }) => {
-      // Navigate to gear list
-      const dashboard = new DashboardPage(page);
-      await dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+    test('available badge should match baseline', async ({ page }) => {
+      await gotoGearList(page);
 
-      // Find status badges
       const availableBadge = page.locator('text=Available').first();
-      if (await availableBadge.isVisible()) {
-        await expect(availableBadge).toHaveScreenshot('badge-available.png', {
-          maxDiffPixels: 30,
-        });
-      }
-
-      const checkedOutBadge = page.locator('text=/Checked Out/i').first();
-      if (await checkedOutBadge.isVisible()) {
-        await expect(checkedOutBadge).toHaveScreenshot('badge-checked-out.png', {
-          maxDiffPixels: 30,
-        });
-      }
+      await expect(availableBadge).toBeVisible();
+      await expect(availableBadge).toHaveScreenshot('badge-available.png', {
+        maxDiffPixels: 30,
+      });
     });
   });
 
   test.describe('Cards', () => {
     test('item card should match baseline', async ({ page }) => {
-      // Navigate to gear list in grid view
-      const dashboard = new DashboardPage(page);
-      await dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+      const gearList = await gotoGearList(page);
 
-      // Ensure grid view
-      const gridButton = page.locator('button[aria-label*="grid"]');
-      if (await gridButton.isVisible()) {
-        await gridButton.click();
-        await page.waitForTimeout(500);
-      }
+      await page.getByRole('button', { name: 'Grid view' }).click();
+      await page.waitForTimeout(500);
 
-      const firstCard = page.locator('[data-testid="item-card"]').first();
-      if (await firstCard.isVisible()) {
-        await expect(firstCard).toHaveScreenshot('card-item.png', {
-          maxDiffPixels: 100,
-        });
-      }
-    });
-
-    test('dashboard stats card should match baseline', async ({ page }) => {
-      // Look for stats cards on dashboard
-      const statsCard = page.locator('[data-testid="stats-card"], .stats-card').first();
-
-      if (await statsCard.isVisible()) {
-        await expect(statsCard).toHaveScreenshot('card-stats.png', {
-          maxDiffPixels: 100,
-        });
-      }
+      const card = gearList.itemRow('Sony A7S III', 'available');
+      await expect(card).toBeVisible();
+      await expect(card).toHaveScreenshot('card-item.png', {
+        maxDiffPixels: 100,
+      });
     });
   });
 
-  test.describe('Tables', () => {
-    test('data table should match baseline', async ({ page }) => {
-      // Navigate to gear list in table view
-      const dashboard = new DashboardPage(page);
-      await dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+  test.describe('List View', () => {
+    test('gear list list-view should match baseline', async ({ page }) => {
+      await gotoGearList(page);
 
-      // Ensure list/table view
-      const listButton = page.locator('button[aria-label*="list"]');
-      if (await listButton.isVisible()) {
-        await listButton.click();
-        await page.waitForTimeout(500);
-      }
+      await page.getByRole('button', { name: 'List view' }).click();
+      await page.waitForTimeout(500);
 
-      const table = page.locator('table').first();
-      if (await table.isVisible()) {
-        await expect(table).toHaveScreenshot('table-data.png', {
-          maxDiffPixels: 300,
-        });
-      }
+      await expect(page).toHaveScreenshot('gear-list-list-view.png', {
+        maxDiffPixels: 300,
+      });
     });
   });
 
   test.describe('Empty States', () => {
     test('empty search results should match baseline', async ({ page }) => {
-      // Navigate to gear list
-      const dashboard = new DashboardPage(page);
-      await dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+      const gearList = await gotoGearList(page);
 
-      // Search for something that won't exist
-      const searchInput = page.locator('input[placeholder*="Search"]');
-      if (await searchInput.isVisible()) {
-        await searchInput.fill('xyznonexistent123');
-        await page.waitForTimeout(500);
+      await gearList.search('xyznonexistent123');
+      await expect(page.getByText('No items found matching your criteria')).toBeVisible();
 
-        // Capture empty state
-        const emptyState = page.locator('text=/No items|No results|Nothing found/i');
-        if (await emptyState.isVisible()) {
-          const mainContent = page.locator('main, [role="main"]');
-          await expect(mainContent).toHaveScreenshot('empty-state-search.png', {
-            maxDiffPixels: 200,
-          });
-        }
-      }
+      const mainContent = page.locator('main');
+      await expect(mainContent).toHaveScreenshot('empty-state-search.png', {
+        maxDiffPixels: 200,
+      });
     });
   });
 });

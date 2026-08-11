@@ -147,6 +147,23 @@ export class DashboardPage {
   async navigateTo(linkName) {
     await this.page.locator(`button:has-text("${linkName}")`).click();
   }
+
+  // The user section at the sidebar's bottom: avatar button opens a
+  // dropdown with "Profile Settings" / "Theme" / "Notification Settings" /
+  // "Sign Out".
+  get userMenuButton() {
+    return this.page.locator('.sidebar-user-section button').first();
+  }
+
+  async openUserMenu() {
+    await this.userMenuButton.click();
+    await expect(this.page.locator('.sidebar-user-menu')).toBeVisible();
+  }
+
+  async openUserMenuItem(itemText) {
+    await this.openUserMenu();
+    await this.page.locator('.sidebar-user-menu button', { hasText: itemText }).click();
+  }
 }
 
 export class GearListPage {
@@ -164,6 +181,20 @@ export class GearListPage {
 
   async expectGearList() {
     await expect(this.heading).toBeVisible({ timeout: 30000 });
+  }
+
+  // Row/card for one item — the accessible name is "<name> - <status>".
+  itemRow(name, status) {
+    return this.page.getByRole('button', { name: `${name} - ${status ?? ''}`.trimEnd() });
+  }
+
+  // Search by unique id (search matches name, brand, AND id), then open the
+  // single matching row. Deterministic regardless of sort order/pagination.
+  async openItem(id, name, status = 'available') {
+    await this.search(id);
+    const row = this.itemRow(name, status);
+    await expect(row).toBeVisible();
+    await row.click();
   }
 
   async search(query) {
@@ -305,6 +336,38 @@ export function getFutureDate(daysFromNow = 7) {
   const date = new Date();
   date.setDate(date.getDate() + daysFromNow);
   return date.toISOString().split('T')[0];
+}
+
+/**
+ * Pick a date in the custom DatePicker component (its input is readOnly —
+ * typing is impossible by design). Opens the calendar popup, advances the
+ * month if needed, and clicks the day button via its full aria-label
+ * ("Friday, August 15").
+ */
+export async function pickDate(page, inputLocator, daysFromNow) {
+  const target = new Date();
+  target.setDate(target.getDate() + daysFromNow);
+
+  await inputLocator.click();
+  const popup = page.locator('[aria-label="Choose date"]');
+  await expect(popup).toBeVisible();
+
+  const now = new Date();
+  const monthDiff =
+    (target.getFullYear() - now.getFullYear()) * 12 + (target.getMonth() - now.getMonth());
+  for (let i = 0; i < monthDiff; i++) {
+    await popup.getByRole('button', { name: 'Next month' }).click();
+  }
+
+  // Day buttons are labeled "Friday, August 15, 2026"
+  const dayLabel = target.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  await popup.getByRole('button', { name: dayLabel, exact: true }).first().click();
+  await expect(popup).toBeHidden();
 }
 
 export function getTodayDate() {

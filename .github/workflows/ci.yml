@@ -131,7 +131,9 @@ jobs:
 
       - name: Run E2E tests (chromium)
         if: steps.check.outputs.enabled == 'true'
-        run: npx playwright test --project=chromium
+        # chromium = functional specs, chromium-visual = screenshot specs
+        # (sequenced after chromium so DB mutations never flake screenshots)
+        run: npx playwright test --project=chromium --project=chromium-visual
 
       - name: Upload Playwright report
         if: always() && steps.check.outputs.enabled == 'true'

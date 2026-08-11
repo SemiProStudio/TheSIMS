@@ -3,13 +3,15 @@
 // Screenshot comparison tests for different theme variations
 // =============================================================================
 
-import { test, expect, setTheme, availableThemes } from './visual-utils.js';
-import { DashboardPage } from './fixtures.js';
+import { test, expect } from './visual-utils.js';
+import { DashboardPage, GearListPage } from './fixtures.js';
 
 test.describe('Visual Regression - Themes', () => {
   test.describe('Theme Variations', () => {
-    // Test each major theme
-    const themesToTest = ['dark', 'light', 'ocean', 'forest', 'sunset', 'neon'];
+    // Real theme ids from themes-data.js. The previous list (ocean/forest/
+    // sunset/neon) named themes that DON'T EXIST — every one of those
+    // baselines was just a screenshot of the fallback theme.
+    const themesToTest = ['dark', 'light', 'darker', 'terminal', 'pastel', 'vibrant'];
 
     for (const theme of themesToTest) {
       test(`${theme} theme dashboard should match baseline`, async ({ page }) => {
@@ -64,20 +66,19 @@ test.describe('Visual Regression - Themes', () => {
     test('dark theme modal should match baseline', async ({ page }) => {
       const dashboard = new DashboardPage(page);
       await dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+      const gearList = new GearListPage(page);
+      await gearList.expectGearList();
 
-      const addButton = page.locator('button:has-text("Add Item"), button:has-text("Add")');
-      if (await addButton.isVisible()) {
-        await addButton.click();
-        await page.waitForTimeout(500);
+      // Check-out modal on a fixed seeded item (read-only — never submitted)
+      await gearList.openItem('CA1007', 'Panasonic GH6');
+      await page.getByRole('button', { name: 'Check Out', exact: true }).click();
+      const modal = page.locator('[role="dialog"]');
+      await expect(modal).toBeVisible();
+      await page.waitForTimeout(300);
 
-        const modal = page.locator('[role="dialog"]');
-        if (await modal.isVisible()) {
-          await expect(modal).toHaveScreenshot('theme-dark-modal.png', {
-            maxDiffPixels: 200,
-          });
-        }
-      }
+      await expect(modal).toHaveScreenshot('theme-dark-modal.png', {
+        maxDiffPixels: 200,
+      });
     });
   });
 
@@ -108,20 +109,18 @@ test.describe('Visual Regression - Themes', () => {
     test('light theme modal should match baseline', async ({ page }) => {
       const dashboard = new DashboardPage(page);
       await dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+      const gearList = new GearListPage(page);
+      await gearList.expectGearList();
 
-      const addButton = page.locator('button:has-text("Add Item"), button:has-text("Add")');
-      if (await addButton.isVisible()) {
-        await addButton.click();
-        await page.waitForTimeout(500);
+      await gearList.openItem('CA1007', 'Panasonic GH6');
+      await page.getByRole('button', { name: 'Check Out', exact: true }).click();
+      const modal = page.locator('[role="dialog"]');
+      await expect(modal).toBeVisible();
+      await page.waitForTimeout(300);
 
-        const modal = page.locator('[role="dialog"]');
-        if (await modal.isVisible()) {
-          await expect(modal).toHaveScreenshot('theme-light-modal.png', {
-            maxDiffPixels: 200,
-          });
-        }
-      }
+      await expect(modal).toHaveScreenshot('theme-light-modal.png', {
+        maxDiffPixels: 200,
+      });
     });
   });
 
@@ -135,51 +134,15 @@ test.describe('Visual Regression - Themes', () => {
     });
 
     test('theme selector page should match baseline', async ({ page }) => {
-      // Navigate to theme selector
-      const userMenuButton = page
-        .locator('button')
-        .filter({ hasText: /Admin|User|Profile/ })
-        .first();
-      if (await userMenuButton.isVisible()) {
-        await userMenuButton.click();
-        await page.waitForTimeout(300);
-      }
+      // The Theme Selector lives behind the sidebar user menu
+      await page.locator('.sidebar-user-section button').first().click();
+      await page.locator('.sidebar-user-menu button', { hasText: 'Theme' }).click();
+      await expect(page.locator('h2:has-text("Theme Selector")')).toBeVisible();
+      await page.waitForTimeout(500);
 
-      const themeOption = page.locator('button:has-text("Theme")');
-      if (await themeOption.isVisible()) {
-        await themeOption.click();
-        await page.waitForTimeout(500);
-
-        await expect(page).toHaveScreenshot('theme-selector.png', {
-          maxDiffPixels: 300,
-        });
-      }
-    });
-
-    test('theme card grid should match baseline', async ({ page }) => {
-      // Navigate to theme selector
-      const userMenuButton = page
-        .locator('button')
-        .filter({ hasText: /Admin|User|Profile/ })
-        .first();
-      if (await userMenuButton.isVisible()) {
-        await userMenuButton.click();
-        await page.waitForTimeout(300);
-      }
-
-      const themeOption = page.locator('button:has-text("Theme")');
-      if (await themeOption.isVisible()) {
-        await themeOption.click();
-        await page.waitForTimeout(500);
-
-        // Capture theme cards
-        const themeGrid = page.locator('[data-testid="theme-grid"], .theme-grid').first();
-        if (await themeGrid.isVisible()) {
-          await expect(themeGrid).toHaveScreenshot('theme-cards.png', {
-            maxDiffPixels: 300,
-          });
-        }
-      }
+      await expect(page).toHaveScreenshot('theme-selector.png', {
+        maxDiffPixels: 300,
+      });
     });
   });
 
@@ -230,19 +193,20 @@ test.describe('Visual Regression - Themes', () => {
   });
 
   test.describe('High Contrast Themes', () => {
-    test('neon theme should have high contrast', async ({ page }) => {
+    test('black & white theme should match baseline', async ({ page }) => {
       await page.goto('/');
 
-      // Set neon theme
+      // 'blackwhite' is the real high-contrast theme (the old 'neon' id
+      // never existed and silently rendered the fallback theme)
       await page.evaluate(() => {
-        localStorage.setItem('sims-theme', 'neon');
+        localStorage.setItem('sims-theme', 'blackwhite');
       });
       await page.reload();
       await page.waitForTimeout(1000);
       // Let the theme-change toast dismiss before capturing (it skews diffs)
       await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
 
-      await expect(page).toHaveScreenshot('theme-neon-contrast.png', {
+      await expect(page).toHaveScreenshot('theme-blackwhite-contrast.png', {
         maxDiffPixels: 300,
       });
     });
