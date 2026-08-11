@@ -197,18 +197,12 @@ function Login({ loginForm, setLoginForm, onLogin, isLoading, error }) {
           <button
             type="submit"
             disabled={isLoading}
-            style={{
-              ...styles.btn,
-              width: '100%',
-              justifyContent: 'center',
-              padding: `${spacing[3]}px ${spacing[4]}px`,
-              opacity: isLoading ? 0.7 : 1,
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-            }}
+            className="btn btn-full"
+            style={{ padding: `${spacing[3]}px ${spacing[4]}px` }}
           >
             {isLoading ? (
               <>
-                <Spinner size={16} color="white" />
+                <Spinner size={16} color="var(--on-primary)" />
                 <span style={{ marginLeft: 8 }}>Signing in...</span>
               </>
             ) : (

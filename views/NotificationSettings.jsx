@@ -22,11 +22,14 @@ import { usePermissions } from '../contexts/PermissionsContext.js';
 import { error as logError } from '../lib/logger.js';
 
 // Toggle switch component
-const Toggle = memo(function Toggle({ checked, onChange, disabled = false }) {
+const Toggle = memo(function Toggle({ checked, onChange, disabled = false, label }) {
   return (
     <button
       onClick={() => !disabled && onChange(!checked)}
       disabled={disabled}
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
       style={{
         width: 44,
         height: 24,
@@ -109,7 +112,7 @@ const SettingRow = memo(function SettingRow({
           >
             {title}
           </span>
-          <Toggle checked={checked} onChange={onChange} disabled={disabled} />
+          <Toggle checked={checked} onChange={onChange} disabled={disabled} label={title} />
         </div>
         {description && (
           <p
@@ -353,6 +356,7 @@ function NotificationSettings({
           <Toggle
             checked={settings.email_enabled}
             onChange={(val) => updateSetting('email_enabled', val)}
+            label="Email Notifications"
           />
         </div>
       </Card>

@@ -182,12 +182,9 @@ const ReminderItem = memo(function ReminderItem({
             <button
               onClick={() => onComplete(reminder.id)}
               title="Mark complete"
-              style={{
-                ...styles.btn,
-                padding: spacing[1],
-                fontSize: typography.fontSize.xs,
-                background: colors.success,
-              }}
+              aria-label="Mark complete"
+              className="btn btn-sm"
+              style={{ background: colors.success, color: colors.onSuccess }}
             >
               ✓
             </button>

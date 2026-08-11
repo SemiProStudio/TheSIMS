@@ -303,24 +303,26 @@ describe('UnmatchedPairs', () => {
     expect(defaultProps.setShowUnmatched).toHaveBeenCalledWith(true);
   });
 
+  // The assignment dropdowns are the custom themed Select (a button trigger
+  // that opens a listbox), not native <select> elements
   it('should render dropdown for each unmatched pair', () => {
     render(<UnmatchedPairs {...defaultProps} />);
-    const selects = screen.getAllByRole('combobox');
-    expect(selects.length).toBe(2);
+    expect(screen.getByRole('button', { name: 'Assign Lens Type to field' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Assign Focus Motor to field' })).toBeInTheDocument();
   });
 
   it('should show spec options in dropdowns', () => {
     render(<UnmatchedPairs {...defaultProps} />);
-    const selects = screen.getAllByRole('combobox');
-    const options = within(selects[0]).getAllByRole('option');
+    fireEvent.click(screen.getByRole('button', { name: 'Assign Lens Type to field' }));
+    const options = screen.getAllByRole('option');
     // Default "— Assign to field —" + 3 spec options
     expect(options.length).toBe(4);
   });
 
-  it('should call onManualMapping when dropdown changes', () => {
+  it('should call onManualMapping when a field is chosen', () => {
     render(<UnmatchedPairs {...defaultProps} />);
-    const selects = screen.getAllByRole('combobox');
-    fireEvent.change(selects[0], { target: { value: 'Focal Length' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Assign Lens Type to field' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Focal Length' }));
     expect(defaultProps.onManualMapping).toHaveBeenCalledWith(0, 'Focal Length', 'Prime');
   });
 

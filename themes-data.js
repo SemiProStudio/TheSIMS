@@ -36,6 +36,9 @@ export const COLOR_KEYS = [
   '--danger-bg',
   '--success',
   '--warning',
+  '--on-primary',
+  '--on-danger',
+  '--on-success',
   '--focus-ring-color',
   '--focus-ring-color-danger',
   '--sidebar-item1',
@@ -168,9 +171,12 @@ export const DEFAULT_CUSTOM_THEME = {
   '--text-muted': 'rgba(226, 230, 234, 0.4)',
   '--border': 'rgba(93, 138, 168, 0.2)',
   '--border-light': 'rgba(93, 138, 168, 0.1)',
-  '--danger': '#b56b6b',
-  '--danger-bg': 'rgba(181, 107, 107, 0.1)',
+  '--danger': '#be7d7d', // brightened from #b56b6b for 4.5:1 error text on --bg-medium
+  '--danger-bg': 'rgba(190, 125, 125, 0.1)',
   '--success': '#6b9e78',
+  '--on-primary': '#ffffff',
+  '--on-danger': '#ffffff',
+  '--on-success': '#0b0d10',
   '--warning': '#b5a56b',
   '--focus-ring-color': '#8bb5cc',
   '--focus-ring-color-danger': '#d08080',
@@ -244,6 +250,9 @@ export const themes = {
       '--danger': '#dc2626',
       '--danger-bg': 'rgba(220, 38, 38, 0.1)',
       '--success': '#15803d',
+      '--on-primary': '#ffffff',
+      '--on-danger': '#ffffff',
+      '--on-success': '#ffffff',
       '--warning': '#a16207',
       '--sidebar-item1': '#2563eb',
       '--sidebar-item2': '#0891b2',
@@ -307,6 +316,9 @@ export const themes = {
       '--danger': '#888888',
       '--danger-bg': 'rgba(136, 136, 136, 0.1)',
       '--success': '#6e6e6e',
+      '--on-primary': '#ffffff',
+      '--on-danger': '#ffffff',
+      '--on-success': '#ffffff',
       '--warning': '#999999',
       '--sidebar-item1': '#777777',
       '--sidebar-item2': '#777777',
@@ -363,6 +375,9 @@ export const themes = {
       '--danger': '#c62828',
       '--danger-bg': 'rgba(198, 40, 40, 0.15)',
       '--success': '#2e7d32',
+      '--on-primary': '#ffffff',
+      '--on-danger': '#ffffff',
+      '--on-success': '#ffffff',
       '--warning': '#e65100',
       '--sidebar-item1': '#d32f2f',
       '--sidebar-item2': '#1565c0',
@@ -422,6 +437,9 @@ export const themes = {
       '--danger': '#e11d48',
       '--danger-bg': 'rgba(225, 29, 72, 0.1)',
       '--success': '#059669',
+      '--on-primary': '#ffffff',
+      '--on-danger': '#ffffff',
+      '--on-success': '#0b0d10',
       '--warning': '#8a6914',
       '--sidebar-item1': '#7c3aed',
       '--sidebar-item2': '#0891b2',
@@ -472,12 +490,15 @@ export const themes = {
       '--condition-poor': '#ffcc00',
       '--text-primary': '#00ff00',
       '--text-secondary': '#00cc00',
-      '--text-muted': '#009900',
+      '--text-muted': '#00a600', // brightened from #009900: must stay readable on the panel washes
       '--border': '#00ff00',
       '--border-light': '#004400',
       '--danger': '#ff0000',
       '--danger-bg': 'rgba(255, 0, 0, 0.1)',
       '--success': '#00ff00',
+      '--on-primary': '#0b0d10',
+      '--on-danger': '#ffffff',
+      '--on-success': '#0b0d10',
       '--warning': '#ffff00',
       '--sidebar-item1': '#00ff00',
       '--sidebar-item2': '#00ff66',
@@ -485,15 +506,18 @@ export const themes = {
       '--sidebar-item4': '#66ff00',
       '--sidebar-item5': '#00dd00',
       '--sidebar-item6': '#00cc00',
-      '--panel-stats': '#00ff00',
-      '--panel-search': '#00ff66',
-      '--panel-checkedout': '#00dd00',
-      '--panel-alerts': '#ffff00',
-      '--panel-reminders': '#00ffaa',
-      '--panel-lowstock': '#ff0000',
-      '--panel-reservations': '#66ff00',
-      '--panel-maintenance': '#00cc00',
-      '--panel-activity': '#33ff33',
+      /* Panel colors are used as 18–38% alpha washes BEHIND green text —
+         they must stay deep and dark or the neon text drowns. Deep CRT-glow
+         versions of the original neon hues: */
+      '--panel-stats': '#006600',
+      '--panel-search': '#006629',
+      '--panel-checkedout': '#005e00',
+      '--panel-alerts': '#666600',
+      '--panel-reminders': '#006644',
+      '--panel-lowstock': '#660000',
+      '--panel-reservations': '#296600',
+      '--panel-maintenance': '#005200',
+      '--panel-activity': '#146614',
       '--shadow-sm': '0 0 5px rgba(0, 255, 0, 0.3)',
       '--shadow-md': '0 0 10px rgba(0, 255, 0, 0.3)',
       '--shadow-lg': '0 0 20px rgba(0, 255, 0, 0.3)',
@@ -529,7 +553,7 @@ export const themes = {
       '--condition-excellent': '#222222',
       '--condition-good': '#444444',
       '--condition-fair': '#777777',
-      '--condition-poor': '#999999',
+      '--condition-poor': '#8d8d8d', // darkened from #999999 for 3:1 on the light card background
       '--text-primary': '#000000',
       '--text-secondary': '#333333',
       '--text-muted': '#6e6e6e',
@@ -538,6 +562,9 @@ export const themes = {
       '--danger': '#000000',
       '--danger-bg': 'rgba(0, 0, 0, 0.05)',
       '--success': '#333333',
+      '--on-primary': '#ffffff',
+      '--on-danger': '#ffffff',
+      '--on-success': '#ffffff',
       '--warning': '#666666',
       '--sidebar-item1': '#333333',
       '--sidebar-item2': '#444444',
@@ -594,6 +621,9 @@ export const themes = {
       '--danger': '#f15bb5',
       '--danger-bg': 'rgba(241, 91, 181, 0.15)',
       '--success': '#00f5d4',
+      '--on-primary': '#ffffff',
+      '--on-danger': '#ffffff',
+      '--on-success': '#0b0d10',
       '--warning': '#fee440',
       '--sidebar-item1': '#ff006e',
       '--sidebar-item2': '#00f5d4',
@@ -627,9 +657,9 @@ export const themes = {
       '--bg-light': '#404052',
       '--bg-card': '#363646',
       '--bg-card-solid': '#363646',
-      '--primary': '#ad919a',
+      '--primary': '#988088',
       '--primary-light': '#b8a1a8',
-      '--primary-dark': '#7d656b',
+      '--primary-dark': '#6e5960',
       '--accent1': '#7ec8b8',
       '--accent2': '#c9b896',
       '--accent3': '#8b7eb8',
@@ -650,9 +680,13 @@ export const themes = {
       '--text-muted': 'rgba(232, 228, 230, 0.45)',
       '--border': 'rgba(157, 129, 137, 0.25)',
       '--border-light': 'rgba(157, 129, 137, 0.12)',
-      '--danger': '#b87e8b',
-      '--danger-bg': 'rgba(184, 126, 139, 0.12)',
+      '--danger': '#c595a0', // brightened from #b87e8b for 4.5:1 error text on --bg-medium
+      '--danger-fill': '#b87e8b', // filled danger buttons keep the deeper rose (white label needs a dark fill)
+      '--danger-bg': 'rgba(197, 149, 160, 0.12)',
       '--success': '#7ec8b8',
+      '--on-primary': '#ffffff',
+      '--on-danger': '#ffffff',
+      '--on-success': '#0b0d10',
       '--warning': '#c9b896',
       '--sidebar-item1': '#ad919a',
       '--sidebar-item2': '#7ec8b8',
@@ -709,6 +743,9 @@ export const themes = {
       '--danger': '#a50000',
       '--danger-bg': 'rgba(165, 0, 0, 0.1)',
       '--success': '#1b7a1b',
+      '--on-primary': '#ffffff',
+      '--on-danger': '#ffffff',
+      '--on-success': '#ffffff',
       '--warning': '#9e5000',
       '--sidebar-item1': '#003d99',
       '--sidebar-item2': '#1b7a1b',
@@ -769,6 +806,9 @@ export const themes = {
       '--danger': '#8c0000',
       '--danger-bg': 'rgba(140, 0, 0, 0.1)',
       '--success': '#8d5600',
+      '--on-primary': '#ffffff',
+      '--on-danger': '#ffffff',
+      '--on-success': '#ffffff',
       '--warning': '#b33a00',
       '--sidebar-item1': '#bf360c',
       '--sidebar-item2': '#8d6e63',
@@ -827,6 +867,9 @@ export const themes = {
       '--danger': '#c62828',
       '--danger-bg': 'rgba(198, 40, 40, 0.1)',
       '--success': '#2e7d32',
+      '--on-primary': '#ffffff',
+      '--on-danger': '#ffffff',
+      '--on-success': '#ffffff',
       '--warning': '#e65100',
       '--sidebar-item1': '#c2185b',
       '--sidebar-item2': '#7b1fa2',
@@ -885,6 +928,9 @@ export const themes = {
       '--danger': '#c62828',
       '--danger-bg': 'rgba(198, 40, 40, 0.1)',
       '--success': '#2e7d32',
+      '--on-primary': '#ffffff',
+      '--on-danger': '#ffffff',
+      '--on-success': '#ffffff',
       '--warning': '#ad4e00',
       '--sidebar-item1': '#6d4c41',
       '--sidebar-item2': '#d84315',
@@ -925,6 +971,74 @@ export const themes = {
 };
 
 // Generate random theme colors
+// ============================================================================
+// On-color picker — chooses a readable label color (white or near-black)
+// for text rendered ON a colored fill (buttons, filled badges). Used by the
+// random theme generator and as a fallback for saved custom themes that
+// predate the --on-* variables. Handles #hex and hsl()/rgb() strings.
+// ============================================================================
+export const pickOnColor = (color, mixesTowardBlack = [100]) => {
+  const WHITE = [255, 255, 255];
+  const BLACK = [11, 13, 16]; // #0b0d10
+  const rgb = parseColorToRgb(color);
+  if (!rgb) return '#ffffff';
+  const contrast = (l1, l2) => (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  // The label must survive on every gradient stop the CSS renders (the .btn
+  // gradient mixes the base color toward black at fixed percentages), so
+  // evaluate each candidate against its WORST stop.
+  const worstFor = (candidate) =>
+    Math.min(
+      ...mixesTowardBlack.map((pct) => {
+        const fill = rgb.map((v) => (v * pct) / 100);
+        return contrast(relativeLuminance(candidate), relativeLuminance(fill));
+      }),
+    );
+  return worstFor(WHITE) >= worstFor(BLACK) ? '#ffffff' : '#0b0d10';
+};
+
+// Gradient stops used by the .btn / .btn-danger CSS in index.css — keep in
+// sync with those rules and with test/theme-contrast.test.js
+export const PRIMARY_FILL_MIXES = [88, 62];
+export const DANGER_FILL_MIXES = [78, 58];
+
+function parseColorToRgb(c) {
+  if (typeof c !== 'string') return null;
+  c = c.trim();
+  const hex = c.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hex) {
+    let h = hex[1];
+    if (h.length === 3) h = h.split('').map((x) => x + x).join('');
+    return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+  }
+  const rgb = c.match(/^rgba?\(([^)]+)\)$/);
+  if (rgb) return rgb[1].split(',').slice(0, 3).map((x) => parseFloat(x));
+  const hsl = c.match(/^hsla?\(([^)]+)\)$/);
+  if (hsl) {
+    const [h, s, l] = hsl[1].split(',').map((x) => parseFloat(x));
+    return hslToRgb(h, s / 100, l / 100);
+  }
+  return null;
+}
+
+function hslToRgb(h, s, l) {
+  h = ((h % 360) + 360) % 360;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  const [r, g, b] =
+    h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] :
+    h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return [r + m, g + m, b + m].map((v) => Math.round(v * 255));
+}
+
+function relativeLuminance([r, g, b]) {
+  const f = (v) => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+
 export const generateRandomTheme = () => {
   const randomColor = () =>
     `hsl(${Math.random() * 360}, ${60 + Math.random() * 40}%, ${30 + Math.random() * 40}%)`;
@@ -933,13 +1047,19 @@ export const generateRandomTheme = () => {
   const randomDark = () =>
     `hsl(${Math.random() * 360}, ${40 + Math.random() * 30}%, ${10 + Math.random() * 15}%)`;
 
+  // On-colors must be computed from the generated fills so button labels
+  // stay readable no matter what the dice rolled
+  const primary = randomColor();
+  const danger = randomColor();
+  const success = randomColor();
+
   return {
     '--bg-dark': randomDark(),
     '--bg-medium': randomDark(),
     '--bg-light': randomDark(),
     '--bg-card': randomDark(),
     '--bg-card-solid': randomDark(),
-    '--primary': randomColor(),
+    '--primary': primary,
     '--primary-light': randomColor(),
     '--primary-dark': randomColor(),
     '--accent1': randomColor(),
@@ -962,10 +1082,13 @@ export const generateRandomTheme = () => {
     '--text-muted': randomColor(),
     '--border': randomColor(),
     '--border-light': randomColor(),
-    '--danger': randomColor(),
+    '--danger': danger,
     '--danger-bg': randomColor(),
-    '--success': randomColor(),
+    '--success': success,
     '--warning': randomColor(),
+    '--on-primary': pickOnColor(primary, PRIMARY_FILL_MIXES),
+    '--on-danger': pickOnColor(danger, DANGER_FILL_MIXES),
+    '--on-success': pickOnColor(success),
     '--sidebar-item1': randomColor(),
     '--sidebar-item2': randomColor(),
     '--sidebar-item3': randomColor(),

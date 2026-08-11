@@ -633,11 +633,7 @@ export const ConfirmDialog = memo(function ConfirmDialog({
           <button
             onClick={onConfirm}
             type="button"
-            style={{
-              ...styles.btn,
-              padding: `${spacing[2]}px ${spacing[4]}px`,
-              background: danger ? colors.danger : colors.primary,
-            }}
+            className={danger ? 'btn btn-danger' : 'btn'}
           >
             {confirmText}
           </button>

@@ -185,15 +185,7 @@ const Note = memo(function Note({ note, depth = 0, onReply, onDelete, user, pane
               }}
               autoFocus
             />
-            <button
-              onClick={handleSubmitReply}
-              disabled={!replyText.trim()}
-              style={{
-                ...styles.btn,
-                padding: spacing[2],
-                opacity: replyText.trim() ? 1 : 0.5,
-              }}
-            >
+            <button onClick={handleSubmitReply} disabled={!replyText.trim()} className="btn btn-sm">
               Reply
             </button>
           </div>
@@ -264,15 +256,7 @@ function NotesSection({ notes = [], onAddNote, onReply, onDelete, user, panelCol
               fontSize: typography.fontSize.sm,
             }}
           />
-          <button
-            onClick={handleSubmitNote}
-            disabled={!newNoteText.trim()}
-            style={{
-              ...styles.btn,
-              padding: spacing[2],
-              opacity: newNoteText.trim() ? 1 : 0.5,
-            }}
-          >
+          <button onClick={handleSubmitNote} disabled={!newNoteText.trim()} className="btn">
             <Plus size={16} />
           </button>
         </div>

@@ -324,14 +324,7 @@ function KitSection({
         icon={item.isKit ? Layers : Package}
         action={
           item.isKit ? (
-            <button
-              onClick={() => setShowAddPanel(true)}
-              style={{
-                ...styles.btn,
-                padding: spacing[1],
-                fontSize: typography.fontSize.xs,
-              }}
-            >
+            <button onClick={() => setShowAddPanel(true)} className="btn btn-sm">
               <Plus size={14} />
             </button>
           ) : null

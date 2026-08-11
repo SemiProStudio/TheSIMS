@@ -1,7 +1,36 @@
 <!doctype html>
-<html lang="en" style="background-color: #1a1d21">
+<html lang="en" style="background-color: var(--shell-bg, #1a1d21)">
   <head>
     <meta charset="UTF-8" />
+    <!-- Pre-React shell palette: defaults to the dark theme; the inline
+         script below restores the ACTIVE theme's colors (persisted by
+         ThemeContext as 'sims-shell-colors') before first paint, so
+         light-theme users no longer get a dark flash. -->
+    <style>
+      :root {
+        --shell-bg: #1a1d21;
+        --shell-card: #2a2f36;
+        --shell-text: #e2e6ea;
+        --shell-primary: #5d8aa8;
+        --shell-on-primary: #ffffff;
+      }
+    </style>
+    <script>
+      try {
+        var shellColors = JSON.parse(localStorage.getItem('sims-shell-colors') || 'null');
+        if (shellColors) {
+          var rootStyle = document.documentElement.style;
+          if (shellColors.bg) rootStyle.setProperty('--shell-bg', shellColors.bg);
+          if (shellColors.card) rootStyle.setProperty('--shell-card', shellColors.card);
+          if (shellColors.text) rootStyle.setProperty('--shell-text', shellColors.text);
+          if (shellColors.primary) rootStyle.setProperty('--shell-primary', shellColors.primary);
+          if (shellColors.onPrimary)
+            rootStyle.setProperty('--shell-on-primary', shellColors.onPrimary);
+        }
+      } catch (e) {
+        /* corrupted storage — keep dark defaults */
+      }
+    </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta
@@ -43,7 +72,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   </head>
-  <body style="background-color: #1a1d21; margin: 0">
+  <body style="background-color: var(--shell-bg); margin: 0">
     <noscript>
       <div
         style="
@@ -57,13 +86,13 @@
         <p>SIMS requires JavaScript to run. Please enable JavaScript in your browser settings.</p>
       </div>
     </noscript>
-    <div id="root" style="background-color: #1a1d21; min-height: 100vh">
+    <div id="root" style="background-color: var(--shell-bg); min-height: 100vh">
       <!-- Static login shell — pixel-matched to React's Login card.
            React.createRoot().render() replaces this seamlessly. -->
       <div
         style="
           min-height: 100vh;
-          background: #1a1d21;
+          background: var(--shell-bg);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -75,10 +104,10 @@
       >
         <div
           style="
-            background: #2a2f36;
+            background: var(--shell-card);
             backdrop-filter: blur(10px);
             border-radius: 12px;
-            border: 1px solid rgba(93, 138, 168, 0.2);
+            border: 1px solid color-mix(in srgb, var(--shell-primary) 20%, transparent);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
             padding: 32px;
             width: 100%;
@@ -102,8 +131,8 @@
               style="border-radius: 12px; object-fit: cover"
             />
             <div>
-              <div style="font-size: 24px; font-weight: 700; color: #e2e6ea; margin: 0">SIMS</div>
-              <div style="font-size: 12px; color: rgba(226, 230, 234, 0.4)">
+              <div style="font-size: 24px; font-weight: 700; color: var(--shell-text); margin: 0">SIMS</div>
+              <div style="font-size: 12px; color: color-mix(in srgb, var(--shell-text) 45%, transparent)">
                 Studio Inventory Management System
               </div>
             </div>
@@ -115,7 +144,7 @@
                 font-weight: 600;
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
-                color: rgba(226, 230, 234, 0.4);
+                color: color-mix(in srgb, var(--shell-text) 45%, transparent);
                 margin-bottom: 6px;
               "
             >
@@ -124,8 +153,8 @@
             <div
               style="
                 height: 40px;
-                background: rgba(106, 154, 184, 0.12);
-                border: 1px solid rgba(93, 138, 168, 0.2);
+                background: color-mix(in srgb, var(--shell-primary) 12%, transparent);
+                border: 1px solid color-mix(in srgb, var(--shell-primary) 20%, transparent);
                 border-radius: 8px;
               "
             ></div>
@@ -137,7 +166,7 @@
                 font-weight: 600;
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
-                color: rgba(226, 230, 234, 0.4);
+                color: color-mix(in srgb, var(--shell-text) 45%, transparent);
                 margin-bottom: 6px;
               "
             >
@@ -146,8 +175,8 @@
             <div
               style="
                 height: 40px;
-                background: rgba(106, 154, 184, 0.12);
-                border: 1px solid rgba(93, 138, 168, 0.2);
+                background: color-mix(in srgb, var(--shell-primary) 12%, transparent);
+                border: 1px solid color-mix(in srgb, var(--shell-primary) 20%, transparent);
                 border-radius: 8px;
               "
             ></div>
@@ -155,12 +184,12 @@
           <div
             style="
               height: 42px;
-              background: #5d8aa8;
+              background: var(--shell-primary);
               border-radius: 8px;
               display: flex;
               align-items: center;
               justify-content: center;
-              color: white;
+              color: var(--shell-on-primary);
               font-weight: 600;
               font-size: 14px;
             "
@@ -170,7 +199,7 @@
           <div
             style="
               text-align: center;
-              color: rgba(226, 230, 234, 0.4);
+              color: color-mix(in srgb, var(--shell-text) 45%, transparent);
               font-size: 12px;
               margin-top: 24px;
             "

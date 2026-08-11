@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, Check, X as XIcon } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../../theme.js';
 import { BasicInfoRow } from './BasicInfoRow.jsx';
+import { Select } from '../../components/Select.jsx';
 import { FieldRow } from './FieldRow.jsx';
 
 export function ResultsPanel({
@@ -122,30 +123,17 @@ export function ResultsPanel({
         >
           <span style={{ fontWeight: 600, color: colors.textPrimary }}>Category</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
-            <select
+            <Select
               value={categoryOverride !== null ? categoryOverride : parseResult.category || ''}
               onChange={(e) => setCategoryOverride(e.target.value || null)}
-              style={{
-                ...styles.select,
-                fontSize: typography.fontSize.sm,
-                padding: `2px ${spacing[2]}px`,
-                paddingRight: `${spacing[5]}px`,
-                minHeight: 'auto',
-                flex: 1,
-                minWidth: 0,
-                color:
-                  categoryOverride || parseResult.category
-                    ? colors.textSecondary
-                    : withOpacity(colors.textMuted, 40),
-              }}
-            >
-              <option value="">Not detected</option>
-              {availableCategories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: 'Not detected' },
+                ...availableCategories.map((cat) => ({ value: cat, label: cat })),
+              ]}
+              compact
+              style={{ flex: 1, minWidth: 0 }}
+              aria-label="Category"
+            />
             {categoryOverride !== null && categoryOverride !== parseResult.category && (
               <button
                 onClick={() => setCategoryOverride(null)}

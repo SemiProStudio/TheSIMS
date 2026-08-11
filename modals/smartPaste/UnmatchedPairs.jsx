@@ -4,7 +4,8 @@
 // ============================================================================
 
 import { ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
-import { colors, styles, spacing, typography, withOpacity } from '../../theme.js';
+import { colors, spacing, typography, withOpacity } from '../../theme.js';
+import { Select } from '../../components/Select.jsx';
 
 export function UnmatchedPairs({
   unmatchedPairs,
@@ -92,25 +93,16 @@ export function UnmatchedPairs({
               >
                 <span style={{ fontWeight: 600, color: colors.textSecondary }}>{pair.key}</span>
                 <span style={{ color: withOpacity(colors.textMuted, 70) }}>{pair.value}</span>
-                <select
+                <Select
                   value={mappedTo || ''}
                   onChange={(e) => onManualMapping(i, e.target.value, pair.value)}
-                  style={{
-                    ...styles.select,
-                    fontSize: typography.fontSize.xs,
-                    padding: `2px ${spacing[1]}px`,
-                    paddingRight: `${spacing[5]}px`,
-                    minHeight: 'auto',
-                    color: mappedTo ? colors.primary : colors.textMuted,
-                  }}
-                >
-                  <option value="">— Assign to field —</option>
-                  {unmappedSpecOptions.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: '— Assign to field —' },
+                    ...unmappedSpecOptions.map((name) => ({ value: name, label: name })),
+                  ]}
+                  compact
+                  aria-label={`Assign ${pair.key} to field`}
+                />
               </div>
             );
           })}

@@ -56,6 +56,12 @@ export const colors = {
   success: 'var(--success)',
   warning: 'var(--warning)',
 
+  // Label colors for text rendered ON colored fills (buttons, filled badges).
+  // Per-theme values chosen for WCAG 4.5:1 — see test/theme-contrast.test.js
+  onPrimary: 'var(--on-primary)',
+  onDanger: 'var(--on-danger)',
+  onSuccess: 'var(--on-success)',
+
   // Focus ring (accessibility)
   focusRing: 'var(--focus-ring-color)',
 };
@@ -189,20 +195,10 @@ export const styles = {
   },
 
   // Primary button
-  btn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: spacing[2],
-    background: `linear-gradient(135deg, ${colors.primary}, ${colors.primaryDark})`,
-    color: colors.textPrimary,
-    border: 'none',
-    padding: `${spacing[2]}px ${spacing[4]}px`,
-    borderRadius: borderRadius.lg,
-    cursor: 'pointer',
-    fontWeight: typography.fontWeight.medium,
-    fontSize: typography.fontSize.sm,
-    transition: transitions.fast,
-  },
+  // Primary buttons: use the `.btn` CSS class (index.css) — its gradient and
+  // --on-primary label are contrast-checked per theme. A duplicate inline
+  // `btn` style with a --text-primary label used to live here; it failed
+  // WCAG in every theme (invisible in Terminal) and was removed.
 
   // Secondary button
   btnSec: {
