@@ -15,6 +15,7 @@ import {
 import { colors } from './theme.js';
 import { findById, sanitizeCSVCell } from './utils';
 import { openPrintWindow } from './lib/printUtil.js';
+import { escapeHtml } from './lib/escapeHtml.js';
 import { useTheme } from './contexts/ThemeContext.js';
 import { PermissionsProvider } from './contexts/PermissionsContext.jsx';
 import { useAuth } from './contexts/AuthContext.js';
@@ -49,6 +50,16 @@ import Sidebar from './components/Sidebar.jsx';
 import MobileHeader from './components/MobileHeader.jsx';
 import AppViews from './AppViews.jsx';
 import AppModals from './AppModals.jsx';
+
+// QR deep link (/?item=<id>): captured at module load, BEFORE anything can
+// rewrite the URL — NavigationContext strips the query string once the auth
+// session restores, and the service worker's first install reloads the page.
+// sessionStorage carries the pending item across that reload.
+const DEEPLINK_STORAGE_KEY = 'sims-deeplink-item';
+{
+  const itemParam = new URLSearchParams(window.location.search).get('item');
+  if (itemParam) sessionStorage.setItem(DEEPLINK_STORAGE_KEY, itemParam);
+}
 
 export default function App() {
   // ============================================================================
@@ -272,6 +283,26 @@ export default function App() {
       setSelectedItem,
     ],
   );
+
+  // QR deep link: printed labels encode /?item=<id> so a phone's native
+  // camera app lands directly on the item. Handled once, after login and the
+  // first inventory load (see the module-scope capture above).
+  const [pendingDeepLinkItem, setPendingDeepLinkItem] = useState(() =>
+    sessionStorage.getItem(DEEPLINK_STORAGE_KEY),
+  );
+  useEffect(() => {
+    if (!pendingDeepLinkItem || !isLoggedIn || inventory.length === 0) return;
+    setPendingDeepLinkItem(null);
+    sessionStorage.removeItem(DEEPLINK_STORAGE_KEY);
+    if (findById(inventory, pendingDeepLinkItem)) {
+      navigateToItem(pendingDeepLinkItem);
+    } else {
+      addToast(`No item found for code "${pendingDeepLinkItem}"`, 'error');
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.delete('item');
+    window.history.replaceState({}, '', url);
+  }, [pendingDeepLinkItem, isLoggedIn, inventory, navigateToItem, addToast]);
 
   const navigateToReservation = useCallback(
     (reservation, item, backContext = null) => {
@@ -527,10 +558,7 @@ export default function App() {
       const items = selectedIds.length
         ? inventory.filter((i) => selectedIds.includes(i.id))
         : inventory;
-      const escHtml = (str) =>
-        str == null
-          ? ''
-          : String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const escHtml = escapeHtml;
       const columnLabels = {
         id: 'ID',
         name: 'Name',
@@ -617,6 +645,7 @@ export default function App() {
           .join('');
         openPrintWindow({
           title: 'Inventory Export',
+          onBlocked: () => addToast('Print pop-up blocked — allow pop-ups for this site', 'error'),
           styles: `
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 24px; }
@@ -635,7 +664,7 @@ export default function App() {
         });
       }
     },
-    [inventory, selectedIds, currentUser],
+    [inventory, selectedIds, currentUser, addToast],
   );
 
   const saveNotificationPreferences = useCallback(

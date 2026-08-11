@@ -169,6 +169,32 @@ describe('openPrintWindow', () => {
     consoleSpy.mockRestore();
   });
 
+  it('should escape HTML in the title', () => {
+    const mockWindow = {
+      addEventListener: vi.fn(),
+      print: vi.fn(),
+    };
+    vi.spyOn(window, 'open').mockReturnValue(mockWindow);
+
+    // jsdom's Blob has no .text(); capture the HTML at construction instead
+    let capturedHtml;
+    const OrigBlob = global.Blob;
+    const blobSpy = vi.spyOn(global, 'Blob').mockImplementation(function (parts, opts) {
+      capturedHtml = parts.join('');
+      return new OrigBlob(parts, opts);
+    });
+
+    openPrintWindow({
+      title: '<script>alert(1)</script>',
+      styles: '',
+      body: '<p>content</p>',
+    });
+    blobSpy.mockRestore();
+
+    expect(capturedHtml).not.toContain('<script>alert(1)</script>');
+    expect(capturedHtml).toContain('<title>&lt;script&gt;alert(1)&lt;/script&gt;</title>');
+  });
+
   it('should include title, styles, and body in the generated HTML', () => {
     const mockWindow = {
       addEventListener: vi.fn(),

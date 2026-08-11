@@ -3,15 +3,14 @@
 // Camera-based QR code scanning with quick checkout/checkin actions
 // ============================================================================
 
-import { memo, useState, useRef, useEffect } from 'react';
+import { memo, useState } from 'react';
 import PropTypes from 'prop-types';
-import jsQR from 'jsqr';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { getStatusColor } from '../utils';
 import { Badge, Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
-
-import { error as logError } from '../lib/logger.js';
+import { useQRScanner } from '../hooks/useQRScanner.js';
+import { parseScannedCode } from '../lib/qrData.js';
 
 export const QRScannerModal = memo(function QRScannerModal({
   inventory,
@@ -20,116 +19,52 @@ export const QRScannerModal = memo(function QRScannerModal({
   onQuickCheckin,
   onClose,
 }) {
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const streamRef = useRef(null);
-  const animationRef = useRef(null);
-
-  const [scanning, setScanning] = useState(false);
-  const [error, setError] = useState(null);
+  const [lookupError, setLookupError] = useState(null);
   const [lastScanned, setLastScanned] = useState(null);
   const [manualCode, setManualCode] = useState('');
   const [foundItem, setFoundItem] = useState(null);
 
-  // Start camera and scanning
-  const startScanning = async () => {
-    try {
-      setError(null);
-      setFoundItem(null);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
-      });
-
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        setScanning(true);
-        scanFrame();
-      }
-    } catch (err) {
-      logError('Camera error:', err);
-      setError(
-        err.name === 'NotAllowedError'
-          ? 'Camera access denied. Please allow camera access and try again.'
-          : 'Could not access camera. Try entering the code manually below.',
-      );
-    }
-  };
-
-  // Stop camera
-  const stopScanning = () => {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-    }
-    setScanning(false);
-  };
-
-  // Scan video frame for QR codes
-  const scanFrame = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
-
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = decodeQRFromImageData(imageData);
-
-      if (code && code !== lastScanned) {
-        setLastScanned(code);
-        handleCodeFound(code);
-      }
-    }
-
-    animationRef.current = requestAnimationFrame(scanFrame);
-  };
-
-  // Decode QR code from canvas image data using jsQR
-  const decodeQRFromImageData = (imageData) => {
-    const code = jsQR(imageData.data, imageData.width, imageData.height, {
-      inversionAttempts: 'dontInvert',
-    });
-    return code ? code.data : null;
-  };
-
-  // Handle found code
-  const handleCodeFound = (code) => {
-    const item = inventory.find(
+  const findByCode = (code) =>
+    inventory.find(
       (i) =>
         i.id.toLowerCase() === code.toLowerCase() ||
         i.serialNumber?.toLowerCase() === code.toLowerCase(),
     );
 
-    if (item) {
-      stopScanning();
-      setFoundItem(item);
-    }
+  // Camera lifecycle, throttled decode, and dedupe live in the shared hook;
+  // the onCode callback always sees current props/state.
+  const { videoRef, canvasRef, scanning, cameraError, startScanning, stopScanning } = useQRScanner({
+    onCode: (raw) => {
+      const code = parseScannedCode(raw);
+      setLastScanned(code);
+      const item = findByCode(code);
+      if (item) {
+        stopScanning();
+        setFoundItem(item);
+        setLookupError(null);
+      } else {
+        // Keep scanning — the dedupe window lets the user re-aim and retry.
+        setLookupError(`No item found for code "${code}"`);
+      }
+    },
+  });
+
+  const handleStartCamera = () => {
+    setLookupError(null);
+    setFoundItem(null);
+    startScanning();
   };
 
-  // Handle manual code entry
+  // Handle manual code entry (accepts bare IDs, serials, or pasted deep links)
   const handleManualLookup = () => {
     if (!manualCode.trim()) return;
 
-    const item = inventory.find(
-      (i) =>
-        i.id.toLowerCase() === manualCode.trim().toLowerCase() ||
-        i.serialNumber?.toLowerCase() === manualCode.trim().toLowerCase(),
-    );
-
+    const item = findByCode(parseScannedCode(manualCode));
     if (item) {
       setFoundItem(item);
-      setError(null);
+      setLookupError(null);
     } else {
-      setError(`No item found with code "${manualCode}"`);
+      setLookupError(`No item found with code "${manualCode}"`);
     }
   };
 
@@ -140,10 +75,7 @@ export const QRScannerModal = memo(function QRScannerModal({
     setLastScanned(null);
   };
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => stopScanning();
-  }, []);
+  const error = cameraError || lookupError;
 
   const isCheckedOut = foundItem?.status === 'checked-out';
   const isAvailable = foundItem?.status === 'available';
@@ -444,7 +376,7 @@ export const QRScannerModal = memo(function QRScannerModal({
 
             {/* Camera control button */}
             {!scanning ? (
-              <Button fullWidth onClick={startScanning} style={{ marginBottom: spacing[4] }}>
+              <Button fullWidth onClick={handleStartCamera} style={{ marginBottom: spacing[4] }}>
                 Start Camera
               </Button>
             ) : (
@@ -465,14 +397,17 @@ export const QRScannerModal = memo(function QRScannerModal({
                 paddingTop: spacing[4],
               }}
             >
-              <label style={styles.label}>Or enter code manually</label>
+              <label style={styles.label} htmlFor="qr-manual-code">
+                Or enter code manually
+              </label>
               <div style={{ display: 'flex', gap: spacing[2] }}>
                 <input
+                  id="qr-manual-code"
                   type="text"
                   value={manualCode}
                   onChange={(e) => {
                     setManualCode(e.target.value);
-                    setError(null);
+                    setLookupError(null);
                   }}
                   onKeyDown={(e) => e.key === 'Enter' && handleManualLookup()}
                   placeholder="Item ID or Serial Number"
