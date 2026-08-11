@@ -6,10 +6,8 @@
 import { test, expect, getFutureDate } from './fixtures.js';
 
 test.describe('Check-Out/Check-In Workflow', () => {
-  // Login before each test
   test.beforeEach(async ({ page, pages }) => {
     await page.goto('/');
-    await pages.login.loginAsAdmin();
     await pages.dashboard.expectDashboard();
   });
 
@@ -39,9 +37,7 @@ test.describe('Check-Out/Check-In Workflow', () => {
           await expect(modal).toBeVisible();
 
           // Should have borrower name field
-          const borrowerInput = page.locator(
-            'input[id*="borrower"], input[placeholder*="Borrower"], input[placeholder*="Name"]',
-          );
+          const borrowerInput = page.locator('input[placeholder="Who is taking this item?"]');
           await expect(borrowerInput).toBeVisible();
         }
       }
@@ -64,19 +60,17 @@ test.describe('Check-Out/Check-In Workflow', () => {
           await checkOutButton.click();
           await page.waitForTimeout(500);
 
-          // Try to submit without filling required fields
+          // Try to submit without filling required fields — the checkout must
+          // NOT go through: either the button is disabled or the modal stays
+          // open with the item still available
           const submitButton = page.locator('[role="dialog"] button:has-text("Check Out")');
+          await expect(submitButton).toBeVisible();
 
-          if (await submitButton.isVisible()) {
+          if (await submitButton.isEnabled()) {
             await submitButton.click();
             await page.waitForTimeout(500);
-
-            // Should show error or modal should still be open
-            const errorMessage = page.locator('text=/required/i, [role="alert"]');
-            const modalStillOpen = await page.locator('[role="dialog"]').isVisible();
-
-            expect((await errorMessage.isVisible()) || modalStillOpen).toBeTruthy();
           }
+          await expect(page.locator('[role="dialog"]')).toBeVisible();
         }
       }
     });
@@ -159,15 +153,15 @@ test.describe('Check-Out/Check-In Workflow', () => {
 
           console.log(`Quick date options found: ${count}`);
 
-          if (count > 0) {
-            // Click one option
-            await quickDateOptions.first().click();
+          // The modal always renders quick options (End of day / Tomorrow /
+          // 3 days / 1 week / 2 weeks)
+          expect(count).toBeGreaterThan(0);
 
-            // Date input should be populated
-            const dueDateInput = page.locator('input[type="date"]').first();
-            const value = await dueDateInput.inputValue();
-            expect(value).toBeTruthy();
-          }
+          // Click one option — the custom DatePicker input must populate
+          await quickDateOptions.first().click();
+          const dueDateInput = page.locator('input[placeholder="Select due date"]').first();
+          const value = await dueDateInput.inputValue();
+          expect(value).toBeTruthy();
         }
       }
     });

@@ -2,6 +2,57 @@
 
 This directory contains end-to-end tests for the SIMS application using [Playwright](https://playwright.dev/).
 
+## ⚠️ Current status (2026-08)
+
+**The suite runs against a dedicated test Supabase project** (`thesims-test`,
+ref `bbfkqabkqugszuogavjn`) — never production. The test project carries the
+same migrations as production plus `supabase/seed.sql` sample data.
+
+**Local setup:**
+
+1. Copy `.env.e2e.example` to `.env.e2e` (gitignored) and fill in the test
+   project URL/anon key and the E2E user credentials.
+2. `npm run test:e2e` — Playwright starts the dev server with
+   `vite --mode e2e`, which loads `.env.e2e` and points the app at the test
+   project.
+
+**CI:** the `e2e` job in `.github/workflows/ci.yml` runs on chromium and
+skips cleanly unless these repository secrets are configured
+(Settings → Secrets and variables → Actions):
+
+- `E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY` — the test project
+- `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD` — admin test user
+- `E2E_USER_EMAIL`, `E2E_USER_PASSWORD` — standard test user
+
+**Auth architecture**: `auth.setup.js` logs in ONCE per run (as admin and as
+the standard user) and saves storage states to `e2e/.auth/` (gitignored);
+every spec starts already authenticated as admin via the project config.
+Specs needing a logged-out page (`auth.spec.js`, login-page visual blocks)
+or the standard user override `storageState` locally with `test.use()`.
+Do NOT add per-test `login()` calls — besides being slow, Supabase
+rate-limits password grants per IP and a full parallel run exceeds it.
+
+**Remaining known debt** (inherited from the original suite):
+
+1. **Soft-fail pattern**: ~140 assertions are still wrapped in
+   `if (await x.isVisible())` — when the UI doesn't match, the test passes
+   with zero assertions instead of failing. The auth, inventory-view,
+   add-item, checkout-modal, and mobile-nav paths have been unwrapped into
+   strict assertions; the rest need the same treatment.
+2. **Screenshot baselines are local-only**: `e2e/*-snapshots/` are generated
+   per-platform (darwin locally) and not committed. In CI (linux) the visual
+   tests bootstrap their own baselines on first attempt and pass on retry —
+   committing CI-generated linux baselines would make them real regressions
+   checks.
+3. **Test-data hygiene**: specs that create data should clean up after
+   themselves; reseed the test project from `supabase/seed.sql` when it
+   drifts.
+
+`visual-errors.spec.js` was deleted (it screenshotted hand-injected HTML
+replicas rather than real components). `test/integration.test.jsx` (unit-side,
+1,197 lines) was deleted for the same reason — it imported zero application
+code.
+
 ## Test Structure
 
 ```

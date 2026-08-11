@@ -3,13 +3,11 @@
 // Tests for item CRUD operations
 // =============================================================================
 
-import { test, expect, testItems, getFutureDate } from './fixtures.js';
+import { test, expect } from './fixtures.js';
 
 test.describe('Inventory Management', () => {
-  // Login before each test
   test.beforeEach(async ({ page, pages }) => {
     await page.goto('/');
-    await pages.login.loginAsAdmin();
     await pages.dashboard.expectDashboard();
 
     // Navigate to Gear List
@@ -18,20 +16,15 @@ test.describe('Inventory Management', () => {
   });
 
   test.describe('View Items', () => {
-    test('should display gear list', async ({ page }) => {
+    test('should display gear list', async ({ page, pages }) => {
       // Should show gear list heading
       await expect(
-        page.locator('h1:has-text("Gear List"), h1:has-text("Inventory")'),
+        page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")'),
       ).toBeVisible();
 
-      // Should show some items or empty state
-      const hasItems = (await page.locator('[data-testid="item-card"], [role="row"]').count()) > 0;
-      const hasEmptyState = await page
-        .locator('text=No items')
-        .isVisible()
-        .catch(() => false);
-
-      expect(hasItems || hasEmptyState).toBeTruthy();
+      // The seeded test project always has inventory — rows must render
+      await expect(pages.gearList.itemRows.first()).toBeVisible();
+      expect(await pages.gearList.itemRows.count()).toBeGreaterThan(0);
     });
 
     test('should display item count', async ({ page }) => {
@@ -44,20 +37,21 @@ test.describe('Inventory Management', () => {
       }
     });
 
-    test('should toggle between grid and list view', async ({ page }) => {
-      // Find view toggle buttons
-      const gridButton = page.locator('button[aria-label*="grid"], button:has(svg[class*="grid"])');
-      const listButton = page.locator('button[aria-label*="list"], button:has(svg[class*="list"])');
+    test('should toggle between grid and list view', async ({ page, pages }) => {
+      // The view toggles are labeled buttons with aria-pressed state
+      const gridButton = page.getByRole('button', { name: 'Grid view' });
+      const listButton = page.getByRole('button', { name: 'List view' });
 
-      if ((await gridButton.isVisible()) && (await listButton.isVisible())) {
-        // Click list view
-        await listButton.click();
-        await page.waitForTimeout(300);
+      await expect(gridButton).toBeVisible();
+      await expect(listButton).toBeVisible();
 
-        // Click grid view
-        await gridButton.click();
-        await page.waitForTimeout(300);
-      }
+      await listButton.click();
+      await expect(listButton).toHaveAttribute('aria-pressed', 'true');
+      await expect(pages.gearList.itemRows.first()).toBeVisible();
+
+      await gridButton.click();
+      await expect(gridButton).toHaveAttribute('aria-pressed', 'true');
+      await expect(pages.gearList.itemRows.first()).toBeVisible();
     });
   });
 
@@ -173,50 +167,28 @@ test.describe('Inventory Management', () => {
 
   test.describe('Add Item', () => {
     test('should open add item form', async ({ page }) => {
-      // Find add button
-      const addButton = page.locator('button:has-text("Add Item"), button:has-text("Add")');
+      const addButton = page.locator('button:has-text("Add Item")').first();
+      await expect(addButton).toBeVisible();
+      await addButton.click();
 
-      if (await addButton.isVisible()) {
-        await addButton.click();
-        await page.waitForTimeout(500);
-
-        // Should show add form/modal
-        const modal = page.locator('[role="dialog"]');
-        const form = page.locator('form');
-        const nameInput = page.locator('input[id*="name"], input[placeholder*="Name"]');
-
-        const hasForm =
-          (await modal.isVisible()) || (await form.isVisible()) || (await nameInput.isVisible());
-        expect(hasForm).toBeTruthy();
-      }
+      // Add Item is a full page (ItemFormPage), not a modal
+      await expect(page.locator('h2:has-text("Add New Item")')).toBeVisible();
     });
 
     test('should validate required fields', async ({ page }) => {
-      const addButton = page.locator('button:has-text("Add Item"), button:has-text("Add")');
+      const addButton = page.locator('button:has-text("Add Item")').first();
+      await expect(addButton).toBeVisible();
+      await addButton.click();
 
-      if (await addButton.isVisible()) {
-        await addButton.click();
-        await page.waitForTimeout(500);
+      await expect(page.locator('h2:has-text("Add New Item")')).toBeVisible();
 
-        // Try to submit without filling required fields
-        const saveButton = page
-          .locator('button:has-text("Save"), button:has-text("Add Item"), button[type="submit"]')
-          .last();
-
-        if (await saveButton.isVisible()) {
-          await saveButton.click();
-          await page.waitForTimeout(500);
-
-          // Should show validation error or required indicator
-          const errorMessage = page.locator('text=/required/i, [role="alert"]');
-          const hasError = await errorMessage.isVisible().catch(() => false);
-
-          // Or form should still be open
-          const formStillOpen = await page.locator('[role="dialog"], form').isVisible();
-
-          expect(hasError || formStillOpen).toBeTruthy();
-        }
-      }
+      // The app gates submission by DISABLING save until required fields are
+      // filled — with an empty form the save button must be disabled
+      const saveButton = page
+        .locator('button:has-text("Save"), button:has-text("Add Item"), button[type="submit"]')
+        .last();
+      await expect(saveButton).toBeVisible();
+      await expect(saveButton).toBeDisabled();
     });
 
     test('should create new item', async ({ page }) => {

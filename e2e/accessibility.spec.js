@@ -6,10 +6,8 @@
 import { test, expect } from './fixtures.js';
 
 test.describe('Theme System', () => {
-  // Login before each test
   test.beforeEach(async ({ page, pages }) => {
     await page.goto('/');
-    await pages.login.loginAsAdmin();
     await pages.dashboard.expectDashboard();
   });
 
@@ -36,7 +34,7 @@ test.describe('Theme System', () => {
         await page.waitForTimeout(500);
 
         // Should show theme selector
-        const themeHeading = page.locator('h1:has-text("Theme"), h2:has-text("Theme")');
+        const themeHeading = page.locator('h2:has-text("Theme")');
         await expect(themeHeading).toBeVisible();
       }
     });
@@ -182,7 +180,7 @@ test.describe('Theme System', () => {
 
           // Should show color picker or editor
           const colorPicker = page.locator('input[type="color"], [data-testid="color-picker"]');
-          const editorHeading = page.locator('h1:has-text("Custom"), h2:has-text("Editor")');
+          const editorHeading = page.locator('h2:has-text("Custom"), h2:has-text("Editor")');
 
           const hasEditor = (await colorPicker.isVisible()) || (await editorHeading.isVisible());
           console.log(`Custom editor visible: ${hasEditor}`);
@@ -223,10 +221,8 @@ test.describe('Theme System', () => {
 });
 
 test.describe('Accessibility', () => {
-  // Login before each test
   test.beforeEach(async ({ page, pages }) => {
     await page.goto('/');
-    await pages.login.loginAsAdmin();
     await pages.dashboard.expectDashboard();
   });
 
@@ -285,7 +281,7 @@ test.describe('Accessibility', () => {
       await page.waitForTimeout(500);
 
       // Should navigate to Gear List
-      const heading = page.locator('h1:has-text("Gear List"), h1:has-text("Inventory")');
+      const heading = page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")');
       await expect(heading).toBeVisible();
     });
 

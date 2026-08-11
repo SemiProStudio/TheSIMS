@@ -4,7 +4,7 @@
 // =============================================================================
 
 import { test, expect, setTheme, availableThemes } from './visual-utils.js';
-import { LoginPage, DashboardPage } from './fixtures.js';
+import { DashboardPage } from './fixtures.js';
 
 test.describe('Visual Regression - Themes', () => {
   test.describe('Theme Variations', () => {
@@ -13,10 +13,7 @@ test.describe('Visual Regression - Themes', () => {
 
     for (const theme of themesToTest) {
       test(`${theme} theme dashboard should match baseline`, async ({ page }) => {
-        // Login first
-        const loginPage = new LoginPage(page);
         await page.goto('/');
-        await loginPage.loginAsAdmin();
 
         const dashboard = new DashboardPage(page);
         await dashboard.expectDashboard();
@@ -28,6 +25,8 @@ test.describe('Visual Regression - Themes', () => {
 
         await page.reload();
         await page.waitForTimeout(1000);
+        // Let the theme-change toast dismiss before capturing (it skews diffs)
+        await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
 
         // Take screenshot
         await expect(page).toHaveScreenshot(`theme-${theme}-dashboard.png`, {
@@ -40,9 +39,7 @@ test.describe('Visual Regression - Themes', () => {
 
   test.describe('Dark Theme', () => {
     test.beforeEach(async ({ page }) => {
-      const loginPage = new LoginPage(page);
       await page.goto('/');
-      await loginPage.loginAsAdmin();
 
       // Set dark theme
       await page.evaluate(() => {
@@ -50,6 +47,8 @@ test.describe('Visual Regression - Themes', () => {
       });
       await page.reload();
       await page.waitForTimeout(1000);
+      // Let the theme-change toast dismiss before capturing (it skews diffs)
+      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
     });
 
     test('dark theme gear list should match baseline', async ({ page }) => {
@@ -84,9 +83,7 @@ test.describe('Visual Regression - Themes', () => {
 
   test.describe('Light Theme', () => {
     test.beforeEach(async ({ page }) => {
-      const loginPage = new LoginPage(page);
       await page.goto('/');
-      await loginPage.loginAsAdmin();
 
       // Set light theme
       await page.evaluate(() => {
@@ -94,6 +91,8 @@ test.describe('Visual Regression - Themes', () => {
       });
       await page.reload();
       await page.waitForTimeout(1000);
+      // Let the theme-change toast dismiss before capturing (it skews diffs)
+      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
     });
 
     test('light theme gear list should match baseline', async ({ page }) => {
@@ -128,9 +127,7 @@ test.describe('Visual Regression - Themes', () => {
 
   test.describe('Theme Selector', () => {
     test.beforeEach(async ({ page }) => {
-      const loginPage = new LoginPage(page);
       await page.goto('/');
-      await loginPage.loginAsAdmin();
 
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();
@@ -188,9 +185,7 @@ test.describe('Visual Regression - Themes', () => {
 
   test.describe('Focus Ring Styling', () => {
     test('focus ring should be visible in dark theme', async ({ page }) => {
-      const loginPage = new LoginPage(page);
       await page.goto('/');
-      await loginPage.loginAsAdmin();
 
       // Set dark theme
       await page.evaluate(() => {
@@ -198,6 +193,8 @@ test.describe('Visual Regression - Themes', () => {
       });
       await page.reload();
       await page.waitForTimeout(1000);
+      // Let the theme-change toast dismiss before capturing (it skews diffs)
+      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
 
       // Tab to a button
       const button = page.locator('button:has-text("Gear List")');
@@ -210,9 +207,7 @@ test.describe('Visual Regression - Themes', () => {
     });
 
     test('focus ring should be visible in light theme', async ({ page }) => {
-      const loginPage = new LoginPage(page);
       await page.goto('/');
-      await loginPage.loginAsAdmin();
 
       // Set light theme
       await page.evaluate(() => {
@@ -220,6 +215,8 @@ test.describe('Visual Regression - Themes', () => {
       });
       await page.reload();
       await page.waitForTimeout(1000);
+      // Let the theme-change toast dismiss before capturing (it skews diffs)
+      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
 
       // Tab to a button
       const button = page.locator('button:has-text("Gear List")');
@@ -234,9 +231,7 @@ test.describe('Visual Regression - Themes', () => {
 
   test.describe('High Contrast Themes', () => {
     test('neon theme should have high contrast', async ({ page }) => {
-      const loginPage = new LoginPage(page);
       await page.goto('/');
-      await loginPage.loginAsAdmin();
 
       // Set neon theme
       await page.evaluate(() => {
@@ -244,6 +239,8 @@ test.describe('Visual Regression - Themes', () => {
       });
       await page.reload();
       await page.waitForTimeout(1000);
+      // Let the theme-change toast dismiss before capturing (it skews diffs)
+      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
 
       await expect(page).toHaveScreenshot('theme-neon-contrast.png', {
         maxDiffPixels: 300,
@@ -263,9 +260,7 @@ test.describe('Visual Regression - Responsive Themes', () => {
     test(`dark theme on ${viewport.name} should match baseline`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
 
-      const loginPage = new LoginPage(page);
       await page.goto('/');
-      await loginPage.loginAsAdmin();
 
       // Set dark theme
       await page.evaluate(() => {
@@ -273,6 +268,8 @@ test.describe('Visual Regression - Responsive Themes', () => {
       });
       await page.reload();
       await page.waitForTimeout(1000);
+      // Let the theme-change toast dismiss before capturing (it skews diffs)
+      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
 
       await expect(page).toHaveScreenshot(`theme-dark-${viewport.name}.png`, {
         maxDiffPixels: 300,
@@ -282,9 +279,7 @@ test.describe('Visual Regression - Responsive Themes', () => {
     test(`light theme on ${viewport.name} should match baseline`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
 
-      const loginPage = new LoginPage(page);
       await page.goto('/');
-      await loginPage.loginAsAdmin();
 
       // Set light theme
       await page.evaluate(() => {
@@ -292,6 +287,8 @@ test.describe('Visual Regression - Responsive Themes', () => {
       });
       await page.reload();
       await page.waitForTimeout(1000);
+      // Let the theme-change toast dismiss before capturing (it skews diffs)
+      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
 
       await expect(page).toHaveScreenshot(`theme-light-${viewport.name}.png`, {
         maxDiffPixels: 300,

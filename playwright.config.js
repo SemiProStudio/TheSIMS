@@ -3,7 +3,24 @@
 // End-to-end testing for SIMS application
 // =============================================================================
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
+
+// Load .env.e2e (test-project credentials + E2E user logins) into process.env
+// so both this config's webServer and the specs can read them. CI has no
+// .env.e2e file — it supplies the same variables as repository secrets.
+// Values already present in the environment win over the file.
+const envFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '.env.e2e');
+if (fs.existsSync(envFile)) {
+  for (const line of fs.readFileSync(envFile, 'utf8').split('\n')) {
+    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+    if (match && !(match[1] in process.env)) {
+      process.env[match[1]] = match[2];
+    }
+  }
+}
 
 export default defineConfig({
   // Test directory
@@ -29,8 +46,8 @@ export default defineConfig({
 
   // Shared settings for all projects
   use: {
-    // Base URL for the app
-    baseURL: 'http://localhost:5173',
+    // Base URL for the app (vite dev server — vite.config.js sets port 3000)
+    baseURL: 'http://localhost:3000',
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -59,35 +76,54 @@ export default defineConfig({
     timeout: 5000,
   },
 
-  // Configure projects for major browsers
+  // Configure projects for major browsers.
+  // 'setup' logs in once per run (e2e/auth.setup.js) and saves storage
+  // states; the browser projects start every test already authenticated as
+  // the admin user. Specs that need a logged-out page (auth.spec.js, the
+  // login-page visual block) or the standard user override storageState
+  // locally via test.use().
   projects: [
     {
+      name: 'setup',
+      testMatch: /auth\.setup\.js/,
+    },
+    {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['setup'],
     },
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: { ...devices['Desktop Firefox'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['setup'],
     },
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: { ...devices['Desktop Safari'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['setup'],
     },
     // Mobile viewports
     {
       name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
+      use: { ...devices['Pixel 5'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['setup'],
     },
     {
       name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
+      use: { ...devices['iPhone 12'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['setup'],
     },
   ],
 
-  // Run your local dev server before starting the tests
+  // Build and serve a PRODUCTION bundle for the tests.
+  // --mode e2e makes Vite load .env.e2e, pointing the app at the DEDICATED
+  // TEST Supabase project instead of production. Never run E2E against
+  // production. A prod build (not the dev server) because the dev server
+  // runs React StrictMode, whose intentional double-mounting races any
+  // interaction with freshly mounted forms — production has no StrictMode.
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    command: 'npm run build -- --mode e2e && npm run preview -- --port 3000 --strictPort',
+    url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

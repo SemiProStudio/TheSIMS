@@ -8,16 +8,46 @@ import { test as base, expect } from '@playwright/test';
 // Test Data
 // =============================================================================
 
+// Test users live in the DEDICATED TEST Supabase project (thesims-test).
+// Credentials come from the environment: .env.e2e locally (loaded by
+// playwright.config.js), repository secrets in CI. See e2e/README.md.
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `${name} is not set. E2E tests need the test-project credentials from ` +
+        `.env.e2e (copy .env.e2e.example) or CI secrets — see e2e/README.md.`,
+    );
+  }
+  return value;
+}
+
+// Saved storage states written by auth.setup.js — every non-auth spec reuses
+// these sessions instead of logging in per test (Supabase rate-limits
+// password grants per IP; 146 fresh logins per run blew straight through it).
+export const STORAGE_STATE = {
+  admin: 'e2e/.auth/admin.json',
+  user: 'e2e/.auth/user.json',
+};
+
 export const testUsers = {
   admin: {
-    email: 'admin@demo.com',
-    password: 'demo',
+    get email() {
+      return requireEnv('E2E_ADMIN_EMAIL');
+    },
+    get password() {
+      return requireEnv('E2E_ADMIN_PASSWORD');
+    },
     name: 'Admin',
     role: 'admin',
   },
   user: {
-    email: 'user@test.com',
-    password: 'demo',
+    get email() {
+      return requireEnv('E2E_USER_EMAIL');
+    },
+    get password() {
+      return requireEnv('E2E_USER_PASSWORD');
+    },
     name: 'user',
     role: 'user',
   },
@@ -51,16 +81,30 @@ export class LoginPage {
     this.passwordInput = page.locator('input[type="password"]');
     this.submitButton = page.locator('button[type="submit"]');
     this.errorMessage = page.locator('[style*="danger"]');
-    this.demoModeBanner = page.locator('text=Demo Mode');
   }
 
   async goto() {
     await this.page.goto('/');
   }
 
+  // The login card can remount shortly after first paint (theme/context
+  // initialization), wiping controlled-input state mid-fill. Fill, verify
+  // both values stuck, and retry if the remount ate them.
+  async fillCredentials(email, password) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await this.emailInput.fill(email);
+      await this.passwordInput.fill(password);
+      if (
+        (await this.emailInput.inputValue()) === email &&
+        (await this.passwordInput.inputValue()) === password
+      ) {
+        break;
+      }
+    }
+  }
+
   async login(email, password) {
-    await this.emailInput.fill(email);
-    await this.passwordInput.fill(password);
+    await this.fillCredentials(email, password);
     await this.submitButton.click();
   }
 
@@ -82,7 +126,7 @@ export class LoginPage {
 export class DashboardPage {
   constructor(page) {
     this.page = page;
-    this.heading = page.locator('h1:has-text("Dashboard")');
+    this.heading = page.locator('h2:has-text("Dashboard")');
     this.sidebar = page.locator('[role="navigation"][aria-label="Main navigation"]');
     this.gearListLink = page.locator('button:has-text("Gear List")');
     this.packagesLink = page.locator('button:has-text("Packages")');
@@ -94,7 +138,10 @@ export class DashboardPage {
   }
 
   async expectDashboard() {
-    await expect(this.heading).toBeVisible({ timeout: 10000 });
+    // 30s: the FIRST app load after the dev server starts pays the cold
+    // Vite transform cost for the whole module graph (>10s); warm loads
+    // take ~1s. Matches navigationTimeout.
+    await expect(this.heading).toBeVisible({ timeout: 30000 });
   }
 
   async navigateTo(linkName) {
@@ -105,16 +152,18 @@ export class DashboardPage {
 export class GearListPage {
   constructor(page) {
     this.page = page;
-    this.heading = page.locator('h1:has-text("Gear List"), h1:has-text("Inventory")');
+    this.heading = page.locator('h2:has-text("Gear List"), h2:has-text("Inventory")');
     this.searchInput = page.locator('input[placeholder*="Search"]');
     this.categoryFilter = page.locator('select').first();
     this.addButton = page.locator('button:has-text("Add Item")');
-    this.itemCards = page.locator('[data-testid="item-card"]');
-    this.itemRows = page.locator('[role="row"], [data-testid="item-row"]');
+    // Items render as buttons labeled "<name> - <status>" in BOTH view modes
+    this.itemRows = page.getByRole('button', {
+      name: / - (available|checked-out|reserved|needs-attention|missing|overdue|low-stock)/,
+    });
   }
 
   async expectGearList() {
-    await expect(this.heading).toBeVisible({ timeout: 10000 });
+    await expect(this.heading).toBeVisible({ timeout: 30000 });
   }
 
   async search(query) {
@@ -156,8 +205,8 @@ export class CheckOutModal {
   constructor(page) {
     this.page = page;
     this.modal = page.locator('[role="dialog"]');
-    this.borrowerInput = page.locator('input[id*="borrower"], input[placeholder*="Borrower"]');
-    this.dueDateInput = page.locator('input[type="date"]');
+    this.borrowerInput = page.locator('input[placeholder="Who is taking this item?"]');
+    this.dueDateInput = page.locator('input[placeholder="Select due date"]');
     this.projectInput = page.locator('input[id*="project"], input[placeholder*="Project"]');
     this.acknowledgeCheckbox = page.locator('input[type="checkbox"]');
     this.submitButton = page.locator('button:has-text("Check Out")');
@@ -195,7 +244,7 @@ export class CheckOutModal {
 export class ThemeSelectorPage {
   constructor(page) {
     this.page = page;
-    this.heading = page.locator('h1:has-text("Theme"), h2:has-text("Theme")');
+    this.heading = page.locator('h2:has-text("Theme")');
     this.themeCards = page.locator('[data-testid="theme-card"]');
     this.customThemeButton = page.locator('button:has-text("Custom")');
   }
@@ -214,13 +263,11 @@ export class ThemeSelectorPage {
 // =============================================================================
 
 export const test = base.extend({
-  // Fixture that provides a logged-in page
+  // Fixture that provides a logged-in page. The project's storageState
+  // (written by auth.setup.js) already carries the admin session — just
+  // load the app and wait for the dashboard.
   authenticatedPage: async ({ page }, use) => {
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.loginAsAdmin();
-
-    // Wait for dashboard to load
+    await page.goto('/');
     const dashboard = new DashboardPage(page);
     await dashboard.expectDashboard();
 

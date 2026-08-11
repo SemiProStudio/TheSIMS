@@ -21,10 +21,12 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+.env.e2e
 
 # Test artifacts
 coverage/
 test-results/
 playwright-report/
+e2e/.auth/
 .vercel
 .env*.local

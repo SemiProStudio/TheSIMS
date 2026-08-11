@@ -3,7 +3,7 @@
 // Tests for notification settings and email notification flow
 // =============================================================================
 
-import { test, expect, LoginPage, DashboardPage, testUsers, getFutureDate } from './fixtures.js';
+import { test, expect, DashboardPage, STORAGE_STATE, getFutureDate } from './fixtures.js';
 
 // =============================================================================
 // Notification Page Object
@@ -122,7 +122,6 @@ extendedTest.describe('Notification Settings Navigation', () => {
     'should navigate to notification settings from sidebar',
     async ({ page, pages, notificationPage }) => {
       await page.goto('/');
-      await pages.login.loginAsAdmin();
       await pages.dashboard.expectDashboard();
 
       // Click on notification settings in sidebar
@@ -140,7 +139,6 @@ extendedTest.describe('Notification Settings Navigation', () => {
     'should close notification settings with close button',
     async ({ page, pages, notificationPage }) => {
       await page.goto('/');
-      await pages.login.loginAsAdmin();
       await pages.dashboard.expectDashboard();
 
       // Navigate to notifications
@@ -166,7 +164,6 @@ extendedTest.describe('Notification Settings Navigation', () => {
 extendedTest.describe('Notification Settings UI', () => {
   extendedTest.beforeEach(async ({ page, pages }) => {
     await page.goto('/');
-    await pages.login.loginAsAdmin();
     await pages.dashboard.expectDashboard();
   });
 
@@ -219,7 +216,6 @@ extendedTest.describe('Notification Settings UI', () => {
 extendedTest.describe('Notification Settings Interactions', () => {
   extendedTest.beforeEach(async ({ page, pages }) => {
     await page.goto('/');
-    await pages.login.loginAsAdmin();
     await pages.dashboard.expectDashboard();
   });
 
@@ -285,7 +281,6 @@ extendedTest.describe('Notification Settings Interactions', () => {
 extendedTest.describe('Checkout Email Notifications (Demo Mode)', () => {
   extendedTest.beforeEach(async ({ page, pages }) => {
     await page.goto('/');
-    await pages.login.loginAsAdmin();
     await pages.dashboard.expectDashboard();
   });
 
@@ -342,7 +337,6 @@ extendedTest.describe('Checkout Email Notifications (Demo Mode)', () => {
 extendedTest.describe('Reservation Email Notifications (Demo Mode)', () => {
   extendedTest.beforeEach(async ({ page, pages }) => {
     await page.goto('/');
-    await pages.login.loginAsAdmin();
     await pages.dashboard.expectDashboard();
   });
 
@@ -412,7 +406,6 @@ extendedTest.describe('Reservation Email Notifications (Demo Mode)', () => {
 extendedTest.describe('Notification Settings Accessibility', () => {
   extendedTest.beforeEach(async ({ page, pages }) => {
     await page.goto('/');
-    await pages.login.loginAsAdmin();
     await pages.dashboard.expectDashboard();
   });
 
@@ -462,14 +455,13 @@ extendedTest.describe('Notification Settings Accessibility', () => {
 // =============================================================================
 
 extendedTest.describe('Notification Settings for Non-Admin', () => {
+  // Reuse the standard user's saved session instead of the default admin one
+  extendedTest.use({ storageState: STORAGE_STATE.user });
+
   extendedTest('should not show admin section for regular users', async ({ page }) => {
-    const loginPage = new LoginPage(page);
     const dashboardPage = new DashboardPage(page);
 
     await page.goto('/');
-
-    // Login as regular user
-    await loginPage.login('user@test.com', 'demo');
     await dashboardPage.expectDashboard();
 
     // Navigate to notifications
@@ -493,7 +485,6 @@ extendedTest.describe('Notification Settings for Non-Admin', () => {
 extendedTest.describe('Notification Settings Error Handling', () => {
   extendedTest.beforeEach(async ({ page, pages }) => {
     await page.goto('/');
-    await pages.login.loginAsAdmin();
     await pages.dashboard.expectDashboard();
   });
 
