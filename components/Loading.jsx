@@ -1,6 +1,8 @@
 // =============================================================================
 // Loading Components
 // Spinners, skeletons, and loading indicators
+// Colors come from the theme CSS variables (index.css :root provides dark
+// fallbacks for anything rendered before ThemeContext applies a theme).
 // =============================================================================
 
 import React from 'react';
@@ -8,7 +10,7 @@ import React from 'react';
 // =============================================================================
 // SPINNER
 // =============================================================================
-export function Spinner({ size = 40, color = '#6366f1', className = '' }) {
+export function Spinner({ size = 40, color = 'var(--primary)', className = '' }) {
   return (
     <svg
       className={className}
@@ -84,7 +86,7 @@ export function Skeleton({
         width,
         height,
         borderRadius,
-        backgroundColor: '#334155',
+        backgroundColor: 'var(--bg-light)',
         animation: 'pulse 2s ease-in-out infinite',
       }}
     >
@@ -185,7 +187,7 @@ export function ButtonLoading({ size = 16, color = 'currentColor' }) {
 // =============================================================================
 // PROGRESS BAR
 // =============================================================================
-export function ProgressBar({ progress = 0, color = '#6366f1' }) {
+export function ProgressBar({ progress = 0, color = 'var(--primary)' }) {
   return (
     <div style={styles.progressContainer}>
       <div
@@ -246,14 +248,14 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     height: '100vh',
-    backgroundColor: '#1a1a2e',
-    color: '#94a3b8',
+    backgroundColor: 'var(--bg-dark)',
+    color: 'var(--text-muted)',
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   message: {
     marginTop: '16px',
     fontSize: '16px',
-    color: '#94a3b8',
+    color: 'var(--text-muted)',
   },
   content: {
     display: 'flex',
@@ -261,20 +263,20 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '40px',
-    color: '#94a3b8',
+    color: 'var(--text-muted)',
   },
   contentMessage: {
     marginTop: '12px',
     fontSize: '14px',
-    color: '#64748b',
+    color: 'var(--text-muted)',
   },
   skeletonCard: {
-    backgroundColor: '#16213e',
+    backgroundColor: 'var(--bg-medium)',
     borderRadius: '12px',
     padding: '16px',
   },
   skeletonTable: {
-    backgroundColor: '#16213e',
+    backgroundColor: 'var(--bg-medium)',
     borderRadius: '8px',
     padding: '16px',
   },
@@ -282,14 +284,14 @@ const styles = {
     display: 'flex',
     gap: '16px',
     paddingBottom: '12px',
-    borderBottom: '1px solid #334155',
+    borderBottom: '1px solid var(--border)',
     marginBottom: '12px',
   },
   skeletonTableRow: {
     display: 'flex',
     gap: '16px',
     padding: '12px 0',
-    borderBottom: '1px solid #1e293b',
+    borderBottom: '1px solid var(--border-light)',
   },
   skeletonList: {
     display: 'flex',
@@ -300,19 +302,19 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     padding: '12px',
-    backgroundColor: '#16213e',
+    backgroundColor: 'var(--bg-medium)',
     borderRadius: '8px',
   },
   inline: {
     display: 'inline-flex',
     alignItems: 'center',
-    color: '#94a3b8',
+    color: 'var(--text-muted)',
     fontSize: '14px',
   },
   progressContainer: {
     width: '100%',
     height: '4px',
-    backgroundColor: '#334155',
+    backgroundColor: 'var(--bg-light)',
     borderRadius: '2px',
     overflow: 'hidden',
   },
@@ -331,7 +333,7 @@ const styles = {
     zIndex: 1000,
   },
   modalLoadingBox: {
-    backgroundColor: '#16213e',
+    backgroundColor: 'var(--bg-medium)',
     borderRadius: '12px',
     padding: '32px 48px',
     display: 'flex',
@@ -342,7 +344,7 @@ const styles = {
   modalLoadingText: {
     marginTop: '16px',
     fontSize: '14px',
-    color: '#94a3b8',
+    color: 'var(--text-muted)',
   },
   viewLoading: {
     display: 'flex',
@@ -355,7 +357,7 @@ const styles = {
   viewLoadingText: {
     marginTop: '16px',
     fontSize: '14px',
-    color: '#64748b',
+    color: 'var(--text-muted)',
   },
 };
 

@@ -18,8 +18,9 @@ export default function UpdateBanner() {
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 10000,
-        background: '#1a1a2e',
-        color: '#e0e0e0',
+        background: 'var(--bg-card-solid)',
+        color: 'var(--text-primary)',
+        border: '1px solid var(--border)',
         padding: '10px 20px',
         borderRadius: 8,
         boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
@@ -31,20 +32,7 @@ export default function UpdateBanner() {
       }}
     >
       <span>A new version is available.</span>
-      <button
-        onClick={updateServiceWorker}
-        style={{
-          background: '#4f8cff',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 6,
-          padding: '6px 14px',
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: 'pointer',
-          whiteSpace: 'nowrap',
-        }}
-      >
+      <button onClick={updateServiceWorker} className="btn btn-sm" style={{ whiteSpace: 'nowrap' }}>
         Update now
       </button>
     </div>

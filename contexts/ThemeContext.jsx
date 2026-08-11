@@ -3,7 +3,14 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { themes, generateRandomTheme, DEFAULT_CUSTOM_THEME } from '../themes-data.js';
+import {
+  themes,
+  generateRandomTheme,
+  DEFAULT_CUSTOM_THEME,
+  pickOnColor,
+  PRIMARY_FILL_MIXES,
+  DANGER_FILL_MIXES,
+} from '../themes-data.js';
 import { announce } from '../utils/accessibility.js';
 import ThemeContext from './ThemeContext.js';
 
@@ -89,6 +96,18 @@ export function ThemeProvider({ children }) {
       colors['--focus-ring-color-danger'] = colors['--danger'];
     }
 
+    // Ensure fill/on-colors (button label colors) are set — saved custom
+    // themes from before the --on-* variables won't carry them. Every theme
+    // must define --danger-fill (even when it equals --danger): applyTheme
+    // only sets the keys present, so an undefined key would leak the
+    // previous theme's value.
+    if (!colors['--danger-fill']) colors['--danger-fill'] = colors['--danger'];
+    if (!colors['--on-primary'])
+      colors['--on-primary'] = pickOnColor(colors['--primary'], PRIMARY_FILL_MIXES);
+    if (!colors['--on-danger'])
+      colors['--on-danger'] = pickOnColor(colors['--danger-fill'], DANGER_FILL_MIXES);
+    if (!colors['--on-success']) colors['--on-success'] = pickOnColor(colors['--success']);
+
     // Apply all color variables
     Object.entries(colors).forEach(([property, value]) => {
       root.style.setProperty(property, value);
@@ -118,6 +137,24 @@ export function ThemeProvider({ children }) {
     }
 
     localStorage.setItem('sims-theme', theme.id);
+
+    // Persist the handful of colors the static pre-React shell (index.html)
+    // needs, so the first paint matches the active theme instead of always
+    // flashing the dark palette
+    try {
+      localStorage.setItem(
+        'sims-shell-colors',
+        JSON.stringify({
+          bg: colors['--bg-dark'],
+          card: colors['--bg-light'],
+          text: colors['--text-primary'],
+          primary: colors['--primary'],
+          onPrimary: colors['--on-primary'],
+        }),
+      );
+    } catch {
+      /* private mode etc. — shell falls back to dark */
+    }
 
     // Announce theme change to screen readers
     if (shouldAnnounce) {

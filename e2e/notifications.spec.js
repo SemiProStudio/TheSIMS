@@ -8,20 +8,10 @@
 
 import { test, expect, DashboardPage, STORAGE_STATE } from './fixtures.js';
 
-// The Toggle component is a bare styled <button> with no accessible name
-// (a real a11y gap — worth fixing in the app). Until then, locate a row's
-// toggle structurally: the row title <span> and the toggle share a parent.
+// Toggles are proper switches (role="switch", aria-checked, named after
+// their row title).
 function rowToggle(page, rowTitle) {
-  return page.getByText(rowTitle, { exact: true }).locator('..').locator('button').last();
-}
-
-// The master email toggle sits one level deeper in its card.
-function masterToggle(page) {
-  return page
-    .getByText('Email Notifications', { exact: true })
-    .locator('../..')
-    .locator('button')
-    .last();
+  return page.getByRole('switch', { name: rowTitle });
 }
 
 async function openNotificationSettings(page, pages) {
@@ -89,8 +79,11 @@ test.describe('Notification Settings', () => {
     const saveButton = page.getByRole('button', { name: /Save Preferences|Saving\.\.\./ });
     await expect(saveButton).toBeDisabled();
 
-    // Change something → dirty indicator + enabled save
-    await rowToggle(page, 'Overdue notifications').click();
+    // Change something → switch state flips, dirty indicator + enabled save
+    const toggle = rowToggle(page, 'Overdue notifications');
+    const before = await toggle.getAttribute('aria-checked');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-checked', before === 'true' ? 'false' : 'true');
     await expect(page.getByText('You have unsaved changes')).toBeVisible();
     await expect(saveButton).toBeEnabled();
 
@@ -100,7 +93,8 @@ test.describe('Notification Settings', () => {
 
     // Restore the original value the same way (round-trip also re-verifies
     // the save path with the opposite value)
-    await rowToggle(page, 'Overdue notifications').click();
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-checked', before);
     await expect(saveButton).toBeEnabled();
     await saveButton.click();
     await expect(saveButton).toBeDisabled({ timeout: 10000 });

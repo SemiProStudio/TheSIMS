@@ -49,8 +49,12 @@
   --border-light: rgba(93, 138, 168, 0.1);
 
   /* Semantic */
-  --danger: #b56b6b;
-  --danger-bg: rgba(181, 107, 107, 0.1);
+  --danger: #be7d7d;
+  --danger-fill: #be7d7d;
+  --on-primary: #ffffff;
+  --on-danger: #ffffff;
+  --on-success: #0b0d10;
+  --danger-bg: rgba(190, 125, 125, 0.1);
   --success: #6b9e78;
   --warning: #b5a56b;
 
@@ -795,8 +799,17 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  color: #1a1d21; /* Dark text for better contrast on colored buttons */
+  /* The gradient is constructed from --primary (mixed toward black) instead
+     of using --primary-dark directly: the 88%/62% mix is what guarantees the
+     per-theme --on-primary label clears WCAG 4.5:1 on BOTH gradient ends in
+     every built-in theme. Don't swap in --primary-dark without re-running
+     test/theme-contrast.test.js. */
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary) 88%, black),
+    color-mix(in srgb, var(--primary) 62%, black)
+  );
+  color: var(--on-primary);
   border: none;
   padding: 10px 16px;
   border-radius: 10px;
@@ -871,10 +884,16 @@ body {
   border-color: var(--danger);
 }
 
-/* Primary Danger (filled) - use dark red for white text contrast */
+/* Primary Danger (filled) — theme-aware: the fill is --danger mixed toward
+   black (78%/58%), which keeps the per-theme --on-danger label ≥ 4.5:1 in
+   every built-in theme regardless of how light the theme's danger color is */
 .btn.btn-danger {
-  background: linear-gradient(135deg, #9e5555, #7d4444);
-  color: var(--text-primary);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--danger-fill) 78%, black),
+    color-mix(in srgb, var(--danger-fill) 58%, black)
+  );
+  color: var(--on-danger);
   border: none;
 }
 

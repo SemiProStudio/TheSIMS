@@ -6,10 +6,11 @@
 import { memo, useState, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Clock, Filter } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
+import { colors, spacing, borderRadius, typography } from '../theme.js';
 import { formatDateTime } from '../utils';
 import { useData } from '../contexts/DataContext.js';
 import { Badge, Card, EmptyState, PageHeader, SearchInput } from '../components/ui.jsx';
+import { Select } from '../components/Select.jsx';
 
 // Event type → color mapping for meaningful badge differentiation
 const EVENT_COLORS = {
@@ -142,26 +143,22 @@ export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
             <Filter size={16} style={{ color: colors.textMuted }} />
-            <select
+            <Select
               value={selectedType}
               onChange={(e) => {
                 setSelectedType(e.target.value);
                 setVisibleCount(ITEMS_PER_PAGE);
               }}
-              style={{
-                ...styles.input,
-                width: 'auto',
-                minWidth: 160,
-                padding: `${spacing[1]}px ${spacing[2]}px`,
-              }}
-            >
-              <option value="">All Events ({auditLog.length})</option>
-              {eventTypes.map((type) => (
-                <option key={type} value={type}>
-                  {formatEventType(type)} ({auditLog.filter((e) => e.type === type).length})
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: '', label: `All Events (${auditLog.length})` },
+                ...eventTypes.map((type) => ({
+                  value: type,
+                  label: `${formatEventType(type)} (${auditLog.filter((e) => e.type === type).length})`,
+                })),
+              ]}
+              style={{ minWidth: 160 }}
+              aria-label="Filter by event type"
+            />
           </div>
           {(searchQuery || selectedType) && (
             <span style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
