@@ -423,6 +423,12 @@ body {
     grid-template-columns: 1fr;
     gap: 16px;
   }
+
+  /* Labels: when the grid stacks, keep the item list first — otherwise the
+     preview panel grows on every selection and pushes the list down */
+  .labels-layout > .labels-settings {
+    order: 2;
+  }
 }
 
 /* ============================================================================

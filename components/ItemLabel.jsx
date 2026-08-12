@@ -29,6 +29,36 @@ export function qrDisplaySize(format, ppi = 96) {
   return (qrBaseSize(format) * ppi) / 96;
 }
 
+/**
+ * QR position inside a label, in 96ppi-baseline px. Mirrors the flex layout
+ * below (padding / row-centering). The sheet exporter needs this because
+ * WebKit refuses to load <img> subresources (even data: URLs) inside a
+ * foreignObject that is being rasterized — so sheet QRs are drawn onto the
+ * canvas at these offsets instead of being part of the SVG.
+ */
+export function qrOffset(format) {
+  if (format.id === 'small') return { x: 8, y: 8 };
+  if (format.id === 'medium') {
+    // Row layout: QR vertically centered within the padded content box
+    return { x: 12, y: 12 + (format.height * 96 - 24 - qrBaseSize(format)) / 2 };
+  }
+  return { x: 12, y: 12 }; // header row, top-left
+}
+
+// Average glyph width as a fraction of the font size for the label font
+// stack — the basis for fitting text by SHRINKING the font instead of
+// truncating with an ellipsis. Deterministic (no DOM measurement), so the
+// preview, print, and PNG paths all compute identical sizes.
+const AVG_GLYPH_WIDTH = 0.52;
+
+/** Font size (96ppi-baseline px) at which `text` fits `maxWidth`, shrinking
+ *  from `base` down to a readability floor. */
+export function fitFontSize(text, maxWidth, base, min = 5) {
+  const len = String(text ?? '').length;
+  if (!len) return base;
+  return Math.max(min, Math.min(base, maxWidth / (len * AVG_GLYPH_WIDTH)));
+}
+
 // Collect the specs shown on large/branding labels: standard fields first,
 // then up to 3 custom specs, 6 total.
 function getItemSpecs(item) {
@@ -61,7 +91,12 @@ function getProfileFields(user) {
   return fields;
 }
 
-function QRImage({ qrDataURL, size }) {
+function QRImage({ qrDataURL, size, spacer = false }) {
+  // Sheet exports draw the QR onto the canvas after rasterization (WebKit
+  // won't load foreignObject <img>s) — reserve the space, render nothing.
+  if (spacer) {
+    return <div style={{ width: size, height: size, flexShrink: 0 }} />;
+  }
   if (!qrDataURL) {
     return (
       <div
@@ -96,12 +131,14 @@ function QRImage({ qrDataURL, size }) {
 QRImage.propTypes = {
   qrDataURL: PropTypes.string,
   size: PropTypes.number.isRequired,
+  spacer: PropTypes.bool,
 };
 
-const ellipsis = {
+// Single-line clip WITHOUT an ellipsis: fitFontSize shrinks text to fit, so
+// nothing should ever be cut — this is only a guard for pathological input.
+const clip = {
   whiteSpace: 'nowrap',
   overflow: 'hidden',
-  textOverflow: 'ellipsis',
 };
 
 export function ItemLabel({
@@ -125,6 +162,13 @@ export function ItemLabel({
   const height = isSmall ? width : s(format.height * 96);
   const qrSize = s(qrBaseSize(format));
 
+  // Text fitting: available widths at the 96ppi baseline (pre-scale). All
+  // font sizes below run through fitFontSize so long values shrink to fit
+  // rather than truncate.
+  const pad = isSmall ? 8 : 12;
+  const innerW = format.width * 96 - pad * 2; // full-width text sections
+  const besideQrW = innerW - qrBaseSize(format) - 12; // text beside the QR
+
   const card = {
     width,
     height,
@@ -143,7 +187,7 @@ export function ItemLabel({
   if (isSmall) {
     return (
       <div style={{ ...card, alignItems: 'center', justifyContent: 'center' }}>
-        <QRImage qrDataURL={qrDataURL} size={qrSize} />
+        <QRImage qrDataURL={qrDataURL} size={qrSize} spacer={flat} />
       </div>
     );
   }
@@ -152,15 +196,31 @@ export function ItemLabel({
   if (format.id === 'medium') {
     return (
       <div style={{ ...card, gap: s(12), alignItems: 'center' }}>
-        <QRImage qrDataURL={qrDataURL} size={qrSize} />
+        <QRImage qrDataURL={qrDataURL} size={qrSize} spacer={flat} />
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          <div style={{ fontSize: s(14), fontWeight: 'bold', color: '#000', marginBottom: s(4) }}>
+          <div
+            style={{
+              fontSize: s(fitFontSize(item.id, besideQrW, 14)),
+              fontWeight: 'bold',
+              color: '#000',
+              marginBottom: s(4),
+            }}
+          >
             {item.id}
           </div>
-          <div style={{ fontSize: s(13), color: '#333', marginBottom: s(2), ...ellipsis }}>
+          <div
+            style={{
+              fontSize: s(fitFontSize(item.name, besideQrW, 13)),
+              color: '#333',
+              marginBottom: s(2),
+              ...clip,
+            }}
+          >
             {item.name}
           </div>
-          <div style={{ fontSize: s(11), color: '#666' }}>{item.brand}</div>
+          <div style={{ fontSize: s(fitFontSize(item.brand, besideQrW, 11)), color: '#666' }}>
+            {item.brand}
+          </div>
         </div>
       </div>
     );
@@ -171,7 +231,7 @@ export function ItemLabel({
   const headerNameSize = format.id === 'large' ? 14 : 12;
   const header = (
     <div style={{ display: 'flex', gap: s(12), marginBottom: s(8) }}>
-      <QRImage qrDataURL={qrDataURL} size={qrSize} />
+      <QRImage qrDataURL={qrDataURL} size={qrSize} spacer={flat} />
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {(isKit || isPackage) && (
           <div
@@ -186,15 +246,32 @@ export function ItemLabel({
           </div>
         )}
         <div
-          style={{ fontSize: s(headerIdSize), fontWeight: 'bold', color: '#000', marginBottom: s(2) }}
+          style={{
+            fontSize: s(fitFontSize(item.id, besideQrW, headerIdSize)),
+            fontWeight: 'bold',
+            color: '#000',
+            marginBottom: s(2),
+          }}
         >
           {item.id}
         </div>
-        <div style={{ fontSize: s(headerNameSize), color: '#333', marginBottom: s(2), ...ellipsis }}>
+        <div
+          style={{
+            fontSize: s(fitFontSize(item.name, besideQrW, headerNameSize)),
+            color: '#333',
+            marginBottom: s(2),
+            ...clip,
+          }}
+        >
           {item.name}
         </div>
         {!isKit && !isPackage && (
-          <div style={{ fontSize: s(format.id === 'large' ? 12 : 11), color: '#666' }}>
+          <div
+            style={{
+              fontSize: s(fitFontSize(item.brand, besideQrW, format.id === 'large' ? 12 : 11)),
+              color: '#666',
+            }}
+          >
             {item.brand}
           </div>
         )}
@@ -205,6 +282,12 @@ export function ItemLabel({
   // Kit/Package format — header + contained item list
   if (format.id === 'kit' || format.id === 'package') {
     const itemsList = containedItems || [];
+    const shownItems = itemsList.slice(0, 8);
+    // One uniform size for the whole list (the longest line decides), so
+    // rows don't render at ragged mixed sizes
+    const listFontSize = shownItems.length
+      ? Math.min(...shownItems.map((i) => fitFontSize(`• ${i.id} - ${i.name}`, innerW, 9)))
+      : 9;
     return (
       <div style={{ ...card, flexDirection: 'column' }}>
         {header}
@@ -219,9 +302,9 @@ export function ItemLabel({
           >
             Contains ({itemsList.length} items):
           </div>
-          <div style={{ fontSize: s(9), color: '#333', lineHeight: 1.4 }}>
-            {itemsList.slice(0, 8).map((i) => (
-              <div key={i.id} style={ellipsis}>
+          <div style={{ fontSize: s(listFontSize), color: '#333', lineHeight: 1.4 }}>
+            {shownItems.map((i) => (
+              <div key={i.id} style={clip}>
                 • {i.id} - {i.name}
               </div>
             ))}
@@ -237,6 +320,14 @@ export function ItemLabel({
   }
 
   const itemSpecs = getItemSpecs(item);
+  // Two-column spec grids: uniform size across cells, longest entry decides
+  const specCellW = (innerW - 12) / 2;
+  const specFontSize = (base) =>
+    itemSpecs.length
+      ? Math.min(
+          ...itemSpecs.map((spec) => fitFontSize(`${spec.label}: ${spec.value}`, specCellW, base)),
+        )
+      : base;
 
   // Large format — header + full specs grid
   if (format.id === 'large') {
@@ -250,13 +341,13 @@ export function ItemLabel({
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
               gap: `${s(4)}px ${s(12)}px`,
-              fontSize: s(10),
+              fontSize: s(specFontSize(10)),
               borderTop: '1px solid #eee',
               paddingTop: s(8),
             }}
           >
             {itemSpecs.map((spec) => (
-              <div key={spec.label} style={{ overflow: 'hidden' }}>
+              <div key={spec.label} style={{ overflow: 'hidden', ...clip }}>
                 <span style={{ color: '#999' }}>{spec.label}: </span>
                 <span style={{ color: '#333' }}>{spec.value}</span>
               </div>
@@ -272,6 +363,11 @@ export function ItemLabel({
     const profileFields = getProfileFields(user);
     const showLogo =
       format.id === 'brandingLogo' && user?.profile?.logo && user?.profile?.showFields?.logo;
+    // Logo width is intrinsic (height-constrained) — reserve ~2:1 for it
+    const fieldsW = innerW - (showLogo ? 64 : 0);
+    const fieldFontSize = profileFields.length
+      ? Math.min(...profileFields.map((field) => fitFontSize(field, fieldsW, 9)))
+      : 9;
 
     return (
       <div style={{ ...card, flexDirection: 'column' }}>
@@ -282,12 +378,12 @@ export function ItemLabel({
               display: 'grid',
               gridTemplateColumns: 'repeat(2, 1fr)',
               gap: `${s(4)}px ${s(12)}px`,
-              fontSize: s(9),
+              fontSize: s(specFontSize(9)),
               marginBottom: s(8),
             }}
           >
             {itemSpecs.slice(0, 4).map((spec) => (
-              <div key={spec.label} style={{ overflow: 'hidden' }}>
+              <div key={spec.label} style={{ overflow: 'hidden', ...clip }}>
                 <span style={{ color: '#999' }}>{spec.label}: </span>
                 <span style={{ color: '#333' }}>{spec.value}</span>
               </div>
@@ -308,11 +404,17 @@ export function ItemLabel({
             <img src={user.profile.logo} alt="" style={{ height: s(28), objectFit: 'contain' }} />
           ) : null}
           <div
-            style={{ flex: 1, overflow: 'hidden', fontSize: s(9), color: '#666', lineHeight: 1.4 }}
+            style={{
+              flex: 1,
+              overflow: 'hidden',
+              fontSize: s(fieldFontSize),
+              color: '#666',
+              lineHeight: 1.4,
+            }}
           >
             {profileFields.length > 0 ? (
               profileFields.map((field) => (
-                <div key={field} style={ellipsis}>
+                <div key={field} style={clip}>
                   {field}
                 </div>
               ))
@@ -330,10 +432,20 @@ export function ItemLabel({
   // Fallback — QR + id/name
   return (
     <div style={{ ...card, gap: s(12), alignItems: 'center' }}>
-      <QRImage qrDataURL={qrDataURL} size={s(60)} />
+      <QRImage qrDataURL={qrDataURL} size={s(60)} spacer={flat} />
       <div style={{ flex: 1, overflow: 'hidden' }}>
-        <div style={{ fontSize: s(14), fontWeight: 'bold', color: '#000' }}>{item.id}</div>
-        <div style={{ fontSize: s(12), color: '#333' }}>{item.name}</div>
+        <div
+          style={{
+            fontSize: s(fitFontSize(item.id, besideQrW, 14)),
+            fontWeight: 'bold',
+            color: '#000',
+          }}
+        >
+          {item.id}
+        </div>
+        <div style={{ fontSize: s(fitFontSize(item.name, besideQrW, 12)), color: '#333', ...clip }}>
+          {item.name}
+        </div>
       </div>
     </div>
   );

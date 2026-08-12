@@ -86,6 +86,28 @@ test.describe('Labels view', () => {
     expect(buf.readUInt32BE(16)).toBe(2025);
     expect(buf.readUInt32BE(20)).toBe(2775);
 
+    // The QR must actually be IN the pixels. QRs are composited onto the
+    // canvas after SVG rasterization (WebKit ignores foreignObject <img>s);
+    // if that compositing step regresses, the sheet is text-only and the
+    // near-black pixel count collapses to ~4k.
+    const blackPixels = await page.evaluate(async (b64) => {
+      const img = new Image();
+      img.src = `data:image/png;base64,${b64}`;
+      await img.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let black = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i + 3] > 200 && d[i] < 60 && d[i + 1] < 60 && d[i + 2] < 60) black++;
+      }
+      return black;
+    }, buf.toString('base64'));
+    expect(blackPixels).toBeGreaterThan(12000); // one medium QR ≈ 18-24k
+
     // The Design Space sizing hint appears
     await expect(page.getByText(/6\.75" × 9\.25"/)).toBeVisible();
   });

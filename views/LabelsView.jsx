@@ -6,7 +6,7 @@
 // preview is proportionally exact and escaping is handled by React.
 // ============================================================================
 
-import { memo, useState, useEffect, useMemo, useCallback } from 'react';
+import { memo, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Printer, Download, Check } from 'lucide-react';
 import { LABEL_FORMATS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
@@ -25,8 +25,17 @@ import { useToast } from '../contexts/ToastContext.js';
 import { error as logError } from '../lib/logger.js';
 import { openPrintWindow } from '../lib/printUtil.js';
 
-// Pixels per printed inch used for the on-screen preview (print uses 96)
+// Pixels per printed inch used for the on-screen preview (print uses 96).
+// This is a MAXIMUM: the preview scales down to fit its container, so wide
+// formats never overflow the panel (or shove the item list far down when
+// the layout stacks on narrow windows).
 const PREVIEW_PPI = 150;
+
+/** Preview ppi that fits the label into the container width. */
+function fitPreviewPpi(containerWidth, format) {
+  if (!containerWidth) return PREVIEW_PPI;
+  return Math.min(PREVIEW_PPI, Math.floor(containerWidth / format.width));
+}
 
 const PRINT_STYLES = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -124,9 +133,24 @@ function LabelsView({ inventory, packages = [], user }) {
     return inventory.find((i) => i.id === id);
   }, [selectedItems, selectionTab, inventory, packages]);
 
+  // Track the preview panel's content width so the label can scale to fit
+  // (jsdom has no ResizeObserver — tests fall back to the full PREVIEW_PPI)
+  const previewBoxRef = useRef(null);
+  const [previewWidth, setPreviewWidth] = useState(0);
+  useEffect(() => {
+    const el = previewBoxRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver((entries) => {
+      setPreviewWidth(entries[0].contentRect.width);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const previewPpi = fitPreviewPpi(previewWidth, selectedFormat);
   const previewQRDataURL = useQRDataURL(
     previewItem ? buildItemQRData(previewItem.id) : '',
-    qrDisplaySize(selectedFormat, PREVIEW_PPI),
+    qrDisplaySize(selectedFormat, previewPpi),
   );
 
   // Available formats based on selection tab
@@ -204,7 +228,7 @@ function LabelsView({ inventory, packages = [], user }) {
       const qrDataURLs = await Promise.all(
         items.map((item) => generateQRDataURL(buildItemQRData(item.id), qrSize)),
       );
-      const { svgs, width, height } = await buildLabelSheetSVGs({
+      const { svgs, qrDraws, width, height } = await buildLabelSheetSVGs({
         items,
         format: selectedFormat,
         user,
@@ -216,7 +240,7 @@ function LabelsView({ inventory, packages = [], user }) {
 
       const date = new Date().toISOString().split('T')[0];
       for (let i = 0; i < svgs.length; i++) {
-        const blob = await rasterizeSheetToPNG(svgs[i], width, height);
+        const blob = await rasterizeSheetToPNG(svgs[i], width, height, qrDraws[i]);
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -233,7 +257,7 @@ function LabelsView({ inventory, packages = [], user }) {
       );
     } catch (err) {
       logError('Label sheet export failed:', err);
-      addToast('PNG export failed — try Chrome or Firefox (Safari cannot rasterize label sheets)', 'error');
+      addToast('PNG export failed — please try again (or use Chrome/Firefox)', 'error');
     }
   }, [getSelectedEntries, selectedFormat, selectionTab, user, getContainedItems, addToast]);
 
@@ -264,16 +288,26 @@ function LabelsView({ inventory, packages = [], user }) {
         }
       />
 
-      <div className="responsive-sidebar-first" style={{ display: 'grid', gap: spacing[5] }}>
-        {/* Settings Panel */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
+      <div
+        className="responsive-sidebar-first labels-layout"
+        style={{ display: 'grid', gap: spacing[5] }}
+      >
+        {/* Settings Panel — ordered after the item list when the grid stacks
+            (see .labels-layout in index.css) so the growing preview doesn't
+            push the list down on every selection */}
+        <div
+          className="labels-settings"
+          style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}
+        >
           {/* Format Selection */}
           <Card padding={false} style={{ overflow: 'hidden' }}>
             <CardHeader title="Label Format" />
             <div
               role="radiogroup"
               aria-label="Label format"
-              style={{ padding: spacing[4], maxHeight: 400, overflowY: 'auto' }}
+              // No height clamp: the old 400px cap cut off the sixth option
+              // (the extra kit/package format) on the Kits and Packages tabs
+              style={{ padding: spacing[4] }}
             >
               {availableFormats.map((format) => (
                 <label
@@ -344,13 +378,16 @@ function LabelsView({ inventory, packages = [], user }) {
           <Card padding={false}>
             <CardHeader title="Preview" />
             <div
+              ref={previewBoxRef}
               style={{
                 padding: spacing[4],
                 display: 'flex',
                 justifyContent: 'center',
                 background: colors.bgLight,
                 minHeight: 150,
-                overflow: 'auto',
+                // The label is scaled to fit (fitPreviewPpi), so nothing can
+                // overflow here — centered overflow would clip unreachably
+                overflow: 'hidden',
               }}
             >
               {previewItem ? (
@@ -365,7 +402,7 @@ function LabelsView({ inventory, packages = [], user }) {
                       ? getContainedItems(previewItem, selectionTab === 'packages')
                       : []
                   }
-                  ppi={PREVIEW_PPI}
+                  ppi={previewPpi}
                   qrDataURL={previewQRDataURL}
                 />
               ) : (
@@ -383,13 +420,28 @@ function LabelsView({ inventory, packages = [], user }) {
           </Card>
         </div>
 
-        {/* Items Selection */}
-        <Card padding={false} style={{ overflow: 'hidden', minWidth: 0 }}>
+        {/* Items Selection.
+            alignSelf 'start' + flex column: the card hugs its content instead
+            of stretching to the (taller) settings column — stretching left a
+            dead zone under the list while rows were cut off at a fixed 450px.
+            The list itself now fills the card up to the viewport bottom. */}
+        <Card
+          padding={false}
+          style={{
+            overflow: 'hidden',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignSelf: 'start',
+            maxHeight: 'max(360px, calc(100vh - 130px))',
+          }}
+        >
           {/* Tab Bar */}
           <div
             style={{
               display: 'flex',
               borderBottom: `1px solid ${colors.borderLight}`,
+              flexShrink: 0,
             }}
           >
             {[
@@ -424,7 +476,13 @@ function LabelsView({ inventory, packages = [], user }) {
           </div>
 
           {/* Search and Select All */}
-          <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
+          <div
+            style={{
+              padding: spacing[4],
+              borderBottom: `1px solid ${colors.borderLight}`,
+              flexShrink: 0,
+            }}
+          >
             <div
               style={{
                 display: 'flex',
@@ -472,8 +530,8 @@ function LabelsView({ inventory, packages = [], user }) {
             />
           </div>
 
-          {/* Items List */}
-          <div style={{ maxHeight: 450, overflowY: 'auto' }}>
+          {/* Items List — fills the rest of the card, no fixed clamp */}
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             {filteredItems.length === 0 ? (
               <div style={{ padding: spacing[6], textAlign: 'center', color: colors.textMuted }}>
                 No {selectionTab} found

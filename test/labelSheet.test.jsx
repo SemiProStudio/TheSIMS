@@ -81,7 +81,59 @@ describe('buildLabelSheetSVGs', () => {
     expect(svgs[0]).not.toContain('<rect'); // no background fill
     expect(svgs[0]).not.toContain('box-shadow:0'); // flat labels
     expect(svgs[0]).toContain('xmlns="http://www.w3.org/1999/xhtml"'); // valid foreignObject
-    expect(svgs[0]).toContain(QR);
+  });
+
+  it('keeps QR images OUT of the SVG and returns canvas draw positions instead', async () => {
+    // WebKit refuses to load <img> subresources inside a rasterized
+    // foreignObject — QRs must be composited onto the canvas afterwards
+    const items = [item('A1'), item('A2')];
+    const { svgs, qrDraws } = await buildLabelSheetSVGs({
+      items,
+      format: fmt('medium'),
+      qrDataURLs: [QR, QR],
+    });
+    expect(svgs[0]).not.toContain('<img'); // flat labels render QR spacers
+    expect(svgs[0]).not.toContain(QR);
+
+    expect(qrDraws).toHaveLength(svgs.length);
+    expect(qrDraws[0]).toHaveLength(2);
+    for (const draw of qrDraws[0]) {
+      expect(draw.dataURL).toBe(QR);
+      expect(draw.size).toBe(Math.round((70 * SHEET_DPI) / 96)); // medium QR = 70px @96ppi
+      expect(draw.x).toBeGreaterThan(0);
+      expect(draw.y).toBeGreaterThan(0);
+    }
+    // Second label sits one column to the right — same y, shifted x
+    expect(qrDraws[0][1].y).toBe(qrDraws[0][0].y);
+    expect(qrDraws[0][1].x).toBeGreaterThan(qrDraws[0][0].x);
+  });
+
+  it('positions the small-format QR at the label padding offset', async () => {
+    const { qrDraws } = await buildLabelSheetSVGs({
+      items: [item('A1')],
+      format: fmt('small'),
+      qrDataURLs: [QR],
+    });
+    // Layout: 5 cols of 1" labels, offsetX=0.475in → left=143px; QR pads 8px
+    // @96ppi → 25px @300dpi. Same math vertically (offsetY=0.525in → 158px).
+    expect(qrDraws[0][0]).toEqual({
+      dataURL: QR,
+      x: 143 + 25,
+      y: 158 + 25,
+      size: 250, // 80px @96ppi × 300/96
+    });
+  });
+
+  it('spreads qrDraws across sheets exactly like the labels', async () => {
+    const items = Array.from({ length: 25 }, (_, i) => item(`IT${i}`));
+    const { qrDraws } = await buildLabelSheetSVGs({
+      items,
+      format: fmt('medium'),
+      qrDataURLs: items.map((_, i) => `${QR}${i}`),
+    });
+    expect(qrDraws[0]).toHaveLength(21);
+    expect(qrDraws[1]).toHaveLength(4);
+    expect(qrDraws[1][0].dataURL).toBe(`${QR}21`); // sheet 2 starts at item 22
   });
 
   it('renders label content at 300ppi (labels scale up from the 96ppi baseline)', async () => {

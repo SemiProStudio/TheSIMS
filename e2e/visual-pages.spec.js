@@ -190,6 +190,40 @@ test.describe('Visual Regression - Pages', () => {
     });
   });
 
+  test.describe('Labels', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.goto('/');
+
+      const dashboard = new DashboardPage(page);
+      await dashboard.expectDashboard();
+      await dashboard.navigateTo('Labels');
+      await expect(page.locator('h2:has-text("Labels")')).toBeVisible();
+      await page.waitForTimeout(500);
+    });
+
+    test('labels view should match baseline', async ({ page }) => {
+      await expect(page).toHaveScreenshot('labels-view.png', {
+        maxDiffPixels: 300,
+      });
+    });
+
+    test('labels view with a selected preview should match baseline', async ({ page }) => {
+      // Pins the pane-fill fix (no dead zone under the item list) and the
+      // preview scaling (wide formats fit the panel instead of clipping)
+      await page.getByText('With Branding - Text', { exact: true }).click();
+      await page.getByPlaceholder('Search items...').fill('LE1002');
+      await page.locator('label', { hasText: 'LE1002' }).first().getByRole('checkbox').check();
+      await expect(page.locator('img[src^="data:image/png"]').first()).toBeVisible({
+        timeout: 10000,
+      });
+      await page.waitForTimeout(400);
+
+      await expect(page).toHaveScreenshot('labels-view-preview.png', {
+        maxDiffPixels: 300,
+      });
+    });
+  });
+
   test.describe('Packages', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/');
