@@ -72,61 +72,64 @@ export function useCheckoutHandlers({
           project: project,
           dueBack: dueDate,
         });
-
-        if (selectedItem?.id === itemId) {
-          setSelectedItem((prev) => ({
-            ...prev,
-            status: STATUS.CHECKED_OUT,
-            checkedOutTo: borrowerName,
-            checkedOutDate: checkedOutDate,
-            dueBack: dueDate,
-            checkoutProject: project,
-            checkoutProjectType: projectType,
-            checkoutCount: (prev.checkoutCount || 0) + 1,
-          }));
-        }
-
-        addAuditLog({
-          type: 'item_checkout',
-          description: `${checkoutItem?.name || itemId} checked out to ${borrowerName}`,
-          user: currentUser?.name || 'Unknown',
-          itemId: itemId,
-        });
-
-        addChangeLog({
-          type: 'checkout',
-          itemId: itemId,
-          itemType: 'item',
-          itemName: checkoutItem?.name || itemId,
-          description: `Checked out to ${borrowerName} for ${project || 'unspecified project'}`,
-          changes: [
-            { field: 'status', oldValue: STATUS.AVAILABLE, newValue: STATUS.CHECKED_OUT },
-            { field: 'checkedOutTo', newValue: borrowerName },
-            { field: 'dueBack', newValue: dueDate },
-          ],
-        });
-
-        if (borrowerEmail && dataContext?.sendCheckoutEmail) {
-          dataContext
-            .sendCheckoutEmail({
-              borrowerEmail,
-              borrowerName,
-              item: checkoutItem || { id: itemId, name: itemId },
-              checkoutDate: checkedOutDate,
-              dueDate,
-              project,
-            })
-            .catch((err) => logError('Email send failed:', err));
-        }
-
-        addToast(`${checkoutItem?.name || 'Item'} checked out to ${borrowerName}`, 'success');
       } catch (err) {
+        // Keep the modal open with the form intact — closing it here made a
+        // failed checkout look like a dead button with the item unchanged
         logError('Checkout process failed:', err);
         addToast('Checkout failed: ' + (err.message || 'Please try again.'), 'error');
-      } finally {
-        closeModal();
-        setCheckoutItem(null);
+        return;
       }
+
+      if (selectedItem?.id === itemId) {
+        setSelectedItem((prev) => ({
+          ...prev,
+          status: STATUS.CHECKED_OUT,
+          checkedOutTo: borrowerName,
+          checkedOutDate: checkedOutDate,
+          dueBack: dueDate,
+          checkoutProject: project,
+          checkoutProjectType: projectType,
+          checkoutCount: (prev.checkoutCount || 0) + 1,
+        }));
+      }
+
+      addAuditLog({
+        type: 'item_checkout',
+        description: `${checkoutItem?.name || itemId} checked out to ${borrowerName}`,
+        user: currentUser?.name || 'Unknown',
+        itemId: itemId,
+      });
+
+      addChangeLog({
+        type: 'checkout',
+        itemId: itemId,
+        itemType: 'item',
+        itemName: checkoutItem?.name || itemId,
+        description: `Checked out to ${borrowerName} for ${project || 'unspecified project'}`,
+        changes: [
+          { field: 'status', oldValue: STATUS.AVAILABLE, newValue: STATUS.CHECKED_OUT },
+          { field: 'checkedOutTo', newValue: borrowerName },
+          { field: 'dueBack', newValue: dueDate },
+        ],
+      });
+
+      if (borrowerEmail && dataContext?.sendCheckoutEmail) {
+        dataContext
+          .sendCheckoutEmail({
+            borrowerEmail,
+            borrowerName,
+            item: checkoutItem || { id: itemId, name: itemId },
+            checkoutDate: checkedOutDate,
+            dueDate,
+            project,
+          })
+          .catch((err) => logError('Email send failed:', err));
+      }
+
+      addToast(`${checkoutItem?.name || 'Item'} checked out to ${borrowerName}`, 'success');
+
+      closeModal();
+      setCheckoutItem(null);
     },
     [
       currentUser,
@@ -156,10 +159,13 @@ export function useCheckoutHandlers({
         returnDate,
       } = checkinData;
 
-      try {
-        const currentItem = inventory.find((i) => i.id === itemId);
-        const newStatus = damageReported ? STATUS.NEEDS_ATTENTION : STATUS.AVAILABLE;
+      const currentItem = inventory.find((i) => i.id === itemId);
+      const newStatus = damageReported ? STATUS.NEEDS_ATTENTION : STATUS.AVAILABLE;
+      // Borrower details must be captured before check-in clears them
+      const borrowerName = currentItem?.checkedOutTo;
+      const checkoutClientId = currentItem?.checkoutClientId;
 
+      try {
         await dataContext.checkInItem(itemId, {
           returnedBy,
           userId: currentUser?.id,
@@ -169,68 +175,80 @@ export function useCheckoutHandlers({
           damageReported,
           damageDescription,
         });
-
-        if (selectedItem?.id === itemId) {
-          setSelectedItem((prev) => ({
-            ...prev,
-            status: newStatus,
-            condition: condition,
-            checkedOutTo: null,
-            checkedOutDate: null,
-            dueBack: null,
-            checkoutProject: null,
-          }));
-        }
-
-        addAuditLog({
-          type: 'item_checkin',
-          description: `${checkinItemData?.name || itemId} returned by ${returnedBy}${damageReported ? ' (damage reported)' : ''}`,
-          user: currentUser?.name || 'Unknown',
-          itemId: itemId,
-        });
-
-        addChangeLog({
-          type: 'checkin',
-          itemId: itemId,
-          itemType: 'item',
-          itemName: checkinItemData?.name || itemId,
-          description: `Returned by ${returnedBy}${conditionChanged ? ` (condition: ${conditionAtCheckout} → ${condition})` : ''}`,
-          changes: [
-            {
-              field: 'status',
-              oldValue: STATUS.CHECKED_OUT,
-              newValue: damageReported ? STATUS.NEEDS_ATTENTION : STATUS.AVAILABLE,
-            },
-            { field: 'returnedBy', newValue: returnedBy },
-            ...(conditionChanged
-              ? [{ field: 'condition', oldValue: conditionAtCheckout, newValue: condition }]
-              : []),
-          ],
-        });
-
-        const lastCheckout = currentItem?.checkoutHistory
-          ?.filter((h) => h.type === 'checkout')
-          .pop();
-        const borrowerEmail = lastCheckout?.borrowerEmail;
-        if (borrowerEmail && dataContext?.sendCheckinEmail) {
-          dataContext
-            .sendCheckinEmail({
-              borrowerEmail,
-              borrowerName: returnedBy,
-              item: checkinItemData || currentItem || { id: itemId, name: itemId },
-              returnDate,
-            })
-            .catch((err) => logError('Email send failed:', err));
-        }
-
-        addToast(`${checkinItemData?.name || 'Item'} checked in successfully`, 'success');
       } catch (err) {
+        // Keep the modal open with the notes/damage description intact —
+        // closing it here made a failed check-in look like a dead button
+        // and threw away everything the user typed
         logError('Checkin process failed:', err);
         addToast('Check-in failed: ' + (err.message || 'Please try again.'), 'error');
-      } finally {
-        closeModal();
-        setCheckinItemData(null);
+        return;
       }
+
+      if (selectedItem?.id === itemId) {
+        setSelectedItem((prev) => ({
+          ...prev,
+          status: newStatus,
+          condition: condition,
+          checkedOutTo: null,
+          checkedOutDate: null,
+          dueBack: null,
+          checkoutProject: null,
+        }));
+      }
+
+      addAuditLog({
+        type: 'item_checkin',
+        description: `${checkinItemData?.name || itemId} returned by ${returnedBy}${damageReported ? ' (damage reported)' : ''}`,
+        user: currentUser?.name || 'Unknown',
+        itemId: itemId,
+      });
+
+      addChangeLog({
+        type: 'checkin',
+        itemId: itemId,
+        itemType: 'item',
+        itemName: checkinItemData?.name || itemId,
+        description: `Returned by ${returnedBy}${conditionChanged ? ` (condition: ${conditionAtCheckout} → ${condition})` : ''}`,
+        changes: [
+          {
+            field: 'status',
+            oldValue: STATUS.CHECKED_OUT,
+            newValue: damageReported ? STATUS.NEEDS_ATTENTION : STATUS.AVAILABLE,
+          },
+          { field: 'returnedBy', newValue: returnedBy },
+          ...(conditionChanged
+            ? [{ field: 'condition', oldValue: conditionAtCheckout, newValue: condition }]
+            : []),
+        ],
+      });
+
+      // Return-confirmation email. checkout_history stores no email address,
+      // so the old lookup (checkoutHistory → borrowerEmail) never found one
+      // and the email silently never sent. Resolve the recipient the way
+      // checkout derived it: the linked client first, then a user record
+      // matching the borrower's name.
+      let borrowerEmail = null;
+      if (checkoutClientId && dataContext?.getClientById) {
+        borrowerEmail = (await dataContext.getClientById(checkoutClientId))?.email || null;
+      }
+      if (!borrowerEmail && borrowerName) {
+        borrowerEmail =
+          (dataContext?.users || []).find((u) => u.name === borrowerName)?.email || null;
+      }
+      if (borrowerEmail && dataContext?.sendCheckinEmail) {
+        dataContext
+          .sendCheckinEmail({
+            borrowerEmail,
+            borrowerName: borrowerName || returnedBy,
+            item: checkinItemData || currentItem || { id: itemId, name: itemId },
+            returnDate,
+          })
+          .catch((err) => logError('Email send failed:', err));
+      }
+
+      addToast(`${checkinItemData?.name || 'Item'} checked in successfully`, 'success');
+      closeModal();
+      setCheckinItemData(null);
     },
     [
       currentUser,
