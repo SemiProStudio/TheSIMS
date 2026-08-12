@@ -219,6 +219,20 @@ export function DataProvider({ children }) {
     return lazyLoad('clients', () => clientsService.getAll(), setClients, setClientsLoaded);
   }, [clientsLoaded, lazyLoad]);
 
+  // Fetch one client directly — callers that need a client mid-flow (e.g.
+  // resolving the borrower email during check-in) can't rely on the lazy
+  // clients list being loaded, and a state update wouldn't reach their
+  // in-flight closure anyway.
+  const getClientById = useCallback(async (id) => {
+    if (!id) return null;
+    try {
+      return await clientsService.getById(id);
+    } catch (err) {
+      logError('Failed to fetch client:', err);
+      return null;
+    }
+  }, []);
+
   const ensureAuditLog = useCallback(async () => {
     if (auditLogLoaded) return;
     return lazyLoad(
@@ -1204,6 +1218,7 @@ export function DataProvider({ children }) {
 
       // Lazy-load functions — call these before accessing the data
       ensureClients,
+      getClientById,
       ensureAuditLog,
       ensurePackLists,
 
@@ -1308,6 +1323,7 @@ export function DataProvider({ children }) {
       loadData,
       refreshStaleData,
       ensureClients,
+      getClientById,
       ensureAuditLog,
       ensurePackLists,
       updateItem,
