@@ -253,4 +253,24 @@ test.describe('Visual Regression - Pages', () => {
       });
     });
   });
+
+  test.describe('Pack Lists', () => {
+    test('pack lists overview should match baseline', async ({ page }) => {
+      await page.goto('/');
+
+      const dashboard = new DashboardPage(page);
+      await dashboard.expectDashboard();
+      await dashboard.navigateTo('Pack Lists');
+      await expect(page.locator('h2:has-text("Pack Lists")')).toBeVisible();
+      // The lazy load must settle — the seeded test DB has no pack lists, so
+      // the stable state is the empty state, never the loading indicator
+      await expect(page.locator('text=Loading pack lists...')).toHaveCount(0);
+      await expect(page.locator('text=No Pack Lists Yet')).toBeVisible();
+      await page.waitForTimeout(500);
+
+      await expect(page).toHaveScreenshot('pack-lists-overview.png', {
+        maxDiffPixels: 300,
+      });
+    });
+  });
 });

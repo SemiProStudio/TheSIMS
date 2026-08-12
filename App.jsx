@@ -151,6 +151,7 @@ export default function App() {
     setSelectedReservationItem,
     setItemBackContext,
     setReservationBackView,
+    bumpNavigationNonce,
   } = useNavigationContext();
 
   const { setSearchQuery, setCategoryFilter, setStatusFilter, setScheduleDate, selectedIds } =
@@ -394,6 +395,10 @@ export default function App() {
         );
       }
       setCurrentView(viewId);
+      // Re-clicking the current view's nav entry produces no state change
+      // above — the nonce is the render signal that lets Packages/Pack Lists
+      // reset their internal subviews back to the overview
+      bumpNavigationNonce();
     },
     [
       setActiveModal,
@@ -404,6 +409,7 @@ export default function App() {
       setSelectedPackList,
       setScheduleDate,
       setCurrentView,
+      bumpNavigationNonce,
     ],
   );
 

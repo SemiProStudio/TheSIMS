@@ -1211,6 +1211,7 @@ export function DataProvider({ children }) {
       specs,
       auditLog,
       auditLogLoaded,
+      packListsLoaded,
 
       // Refresh functions
       refreshData: loadData,
@@ -1320,6 +1321,7 @@ export function DataProvider({ children }) {
       specs,
       auditLog,
       auditLogLoaded,
+      packListsLoaded,
       loadData,
       refreshStaleData,
       ensureClients,

@@ -25,6 +25,7 @@ import {
   X,
   RotateCcw,
   ArrowUpDown,
+  AlertTriangle,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, generateId, getStatusColor } from '../utils';
@@ -40,6 +41,8 @@ import {
 import { Select } from '../components/Select.jsx';
 import { useData } from '../contexts/DataContext.js';
 import { useToast } from '../contexts/ToastContext.js';
+import { usePermissions } from '../contexts/PermissionsContext.js';
+import { ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
 
 import { error as logError } from '../lib/logger.js';
 import { openPrintWindow } from '../lib/printUtil.js';
@@ -58,15 +61,21 @@ function PackListsView({
   currentUser,
   initialSelectedList = null,
   onListSelect,
+  resetNonce = 0,
 }) {
   const ctxData = useData();
   const dataContext = propDataContext || ctxData;
-  const { ensurePackLists } = ctxData;
+  const ensurePackLists = ctxData?.ensurePackLists;
   const { addToast } = useToast();
+  const { canEdit } = usePermissions();
+  const canEditPackLists = canEdit('pack_lists');
+  // Lazy data starts as [] — without this flag the view can't tell "still
+  // fetching" from "user has no pack lists" and shows a misleading empty state
+  const packListsLoaded = dataContext?.packListsLoaded !== false;
 
   // Lazy-load pack lists on mount
   useEffect(() => {
-    ensurePackLists();
+    ensurePackLists?.();
   }, [ensurePackLists]);
   const [selectedListInternal, setSelectedListInternal] = useState(initialSelectedList);
   const [isSaving, setIsSaving] = useState(false);
@@ -88,11 +97,11 @@ function PackListsView({
     [onListSelect],
   );
 
-  // Sync with initialSelectedList prop changes
+  // Sync with initialSelectedList prop changes — including null, so a parent
+  // reset (sidebar navigation clears its selection) actually closes the detail
+  // view instead of being silently ignored
   React.useEffect(() => {
-    if (initialSelectedList) {
-      setSelectedListInternal(initialSelectedList);
-    }
+    setSelectedListInternal(initialSelectedList ?? null);
   }, [initialSelectedList]);
 
   // Alias for internal use
@@ -201,10 +210,13 @@ function PackListsView({
   const getPackageSelectionState = useCallback(
     (pkgId) => {
       const pkg = packages.find((p) => p.id === pkgId);
-      if (!pkg || !pkg.items || pkg.items.length === 0) return 'none';
+      if (!pkg) return 'none';
 
-      // If explicitly selected as a package
+      // Explicit selection wins BEFORE the empty check — otherwise an empty
+      // package reports 'none' forever and its toggle can only ever re-add it
       if (selectedPackageIds.includes(pkgId)) return 'full';
+
+      if (!pkg.items || pkg.items.length === 0) return 'none';
 
       // Check if items are individually selected
       const selectedCount = pkg.items.filter((id) => selectedItemIds.includes(id)).length;
@@ -305,6 +317,24 @@ function PackListsView({
     setEditingList(null);
   }, []);
 
+  // Sidebar re-clicks bump resetNonce: same-view navigation must land on the
+  // overview, matching how navigating to any other view discards these
+  // subviews (they're component state, so they don't survive an unmount
+  // either). Guarded by a ref so only a genuine nonce change resets — not
+  // identity churn in the callback deps.
+  const lastResetNonceRef = useRef(resetNonce);
+  useEffect(() => {
+    if (lastResetNonceRef.current === resetNonce) return;
+    lastResetNonceRef.current = resetNonce;
+    resetForm();
+    setShowCreate(false);
+    setShowNamePrompt(false);
+    setNamePromptPrevName(null);
+    setShowExport(false);
+    setShowScanToPack(false);
+    setSelectedList(null);
+  }, [resetNonce, resetForm, setSelectedList]);
+
   // Cancel create/edit - return to pack list detail if editing
   const handleCancel = useCallback(() => {
     if (editingList) {
@@ -390,18 +420,21 @@ function PackListsView({
     [setSelectedList],
   );
 
-  // Save pack list (create or update)
+  // Save pack list (create or update) — persist-first: the DB write must
+  // succeed before local state, the audit log, or navigation change. On
+  // failure the form stays open with the user's selections intact.
   const handleSave = useCallback(async () => {
     if (!listName.trim() || selectedItemIds.length === 0 || isSaving) return;
 
     setIsSaving(true);
     try {
+      const items = selectedItemIds.map((id) => ({
+        id,
+        quantity: itemQuantities[id] || 1,
+      }));
+
       if (editingList) {
         // Build clean update payload — only fields the DB accepts
-        const items = selectedItemIds.map((id) => ({
-          id,
-          quantity: itemQuantities[id] || 1,
-        }));
         const updatePayload = {
           name: listName.trim(),
           packages: [...selectedPackageIds],
@@ -410,19 +443,19 @@ function PackListsView({
           updated_at: new Date().toISOString(),
         };
 
-        // Persist to Supabase via DataContext
         if (dataContext?.updatePackList) {
           try {
             await dataContext.updatePackList(editingList.id, updatePayload);
           } catch (err) {
             logError('Failed to update pack list:', err);
-            dataContext.patchPackList(editingList.id, updatePayload);
+            addToast('Failed to save pack list — nothing was changed', 'error');
+            return;
           }
         } else {
+          // No persistence available (local-only mode)
           dataContext.patchPackList(editingList.id, updatePayload);
         }
 
-        // Log update
         if (addAuditLog) {
           addAuditLog({
             type: 'pack_list_updated',
@@ -440,51 +473,38 @@ function PackListsView({
         const newList = {
           name: listName.trim(),
           packages: [...selectedPackageIds],
-          items: selectedItemIds.map((id) => ({
-            id,
-            quantity: itemQuantities[id] || 1,
-          })),
+          items,
+          created_by_id: currentUser?.id || null,
+          created_by_name: currentUser?.name || null,
         };
 
-        // Persist to Supabase via DataContext
+        let createdList;
         if (dataContext?.createPackList) {
           try {
-            const createdList = await dataContext.createPackList(newList);
-
-            // Log creation
-            if (addAuditLog) {
-              addAuditLog({
-                type: 'pack_list_created',
-                description: `Pack list "${createdList.name}" created with ${selectedItemIds.length} items`,
-                user: currentUser?.name || 'Unknown',
-                packListId: createdList.id,
-              });
-            }
-
-            resetForm();
-            setShowCreate(false);
-            setSelectedList(createdList);
+            createdList = await dataContext.createPackList(newList);
           } catch (err) {
             logError('Failed to create pack list:', err);
+            addToast('Failed to create pack list — nothing was saved', 'error');
+            return;
           }
         } else {
-          // Fallback for no DB - generate local ID
-          const localList = { ...newList, id: generateId(), createdAt: new Date().toISOString() };
-          dataContext.addLocalPackList(localList);
-
-          if (addAuditLog) {
-            addAuditLog({
-              type: 'pack_list_created',
-              description: `Pack list "${localList.name}" created with ${selectedItemIds.length} items`,
-              user: currentUser?.name || 'Unknown',
-              packListId: localList.id,
-            });
-          }
-
-          resetForm();
-          setShowCreate(false);
-          setSelectedList(localList);
+          // No persistence available (local-only mode)
+          createdList = { ...newList, id: generateId(), createdAt: new Date().toISOString() };
+          dataContext.addLocalPackList(createdList);
         }
+
+        if (addAuditLog) {
+          addAuditLog({
+            type: 'pack_list_created',
+            description: `Pack list "${createdList.name}" created with ${selectedItemIds.length} items`,
+            user: currentUser?.name || 'Unknown',
+            packListId: createdList.id,
+          });
+        }
+
+        resetForm();
+        setShowCreate(false);
+        setSelectedList(createdList);
       }
     } finally {
       setIsSaving(false);
@@ -501,49 +521,61 @@ function PackListsView({
     setSelectedList,
     dataContext,
     isSaving,
+    addToast,
   ]);
 
-  // Delete pack list with audit logging
+  // Delete pack list — persist-first with audit logging. A failed DB delete
+  // keeps the list and the confirmation dialog (retry affordance) instead of
+  // hiding a row that will resurrect on the next reload.
+  const isDeletingRef = useRef(false);
   const handleDelete = useCallback(
     async (id) => {
-      const list = packLists.find((pl) => pl.id === id);
+      if (isDeletingRef.current) return;
+      isDeletingRef.current = true;
+      try {
+        const list = packLists.find((pl) => pl.id === id);
 
-      // Persist to Supabase via DataContext
-      if (dataContext?.deletePackList) {
-        try {
-          await dataContext.deletePackList(id);
-        } catch (err) {
-          logError('Failed to delete pack list:', err);
+        if (dataContext?.deletePackList) {
+          try {
+            await dataContext.deletePackList(id);
+          } catch (err) {
+            logError('Failed to delete pack list:', err);
+            addToast('Failed to delete pack list — try again', 'error');
+            return;
+          }
+        } else {
+          // No persistence available (local-only mode)
           dataContext.removeLocalPackList(id);
         }
-      } else {
-        dataContext.removeLocalPackList(id);
-      }
 
-      // Log deletion
-      if (addAuditLog && list) {
-        addAuditLog({
-          type: 'pack_list_deleted',
-          description: `Pack list "${list.name}" deleted`,
-          user: currentUser?.name || 'Unknown',
-          packListId: id,
-        });
-      }
+        if (addAuditLog && list) {
+          addAuditLog({
+            type: 'pack_list_deleted',
+            description: `Pack list "${list.name}" deleted`,
+            user: currentUser?.name || 'Unknown',
+            packListId: id,
+          });
+        }
 
-      if (selectedList?.id === id) setSelectedList(null);
-      setConfirmDelete({ isOpen: false, id: null, name: '' });
+        if (selectedList?.id === id) setSelectedList(null);
+        setConfirmDelete({ isOpen: false, id: null, name: '' });
+      } finally {
+        isDeletingRef.current = false;
+      }
     },
-    [selectedList, setSelectedList, addAuditLog, currentUser, packLists, dataContext],
+    [selectedList, setSelectedList, addAuditLog, currentUser, packLists, dataContext, addToast],
   );
 
-  // Get items for a pack list
+  // Get items for a pack list. `quantity` becomes the REQUESTED quantity;
+  // the inventory stock level is preserved as `stockQuantity` so shortfall
+  // checks can compare the two.
   const getListItems = useCallback(
     (list) => {
       return (list.items || [])
         .map((entry) => {
           const item = inventory.find((i) => i.id === (entry.id || entry));
           if (!item) return null;
-          return { ...item, quantity: entry.quantity || 1 };
+          return { ...item, quantity: entry.quantity || 1, stockQuantity: item.quantity };
         })
         .filter(Boolean);
     },
@@ -580,8 +612,12 @@ function PackListsView({
 
     if (exportFormat === 'clipboard') {
       const text = items.map((i) => `${i.quantity}x\t${i.id}\t${i.name}\t${i.category}`).join('\n');
-      navigator.clipboard.writeText(text);
-      addToast('Copied to clipboard!', 'success');
+      // writeText can reject (Safari focus/permission rules) — only claim
+      // success when the promise resolves
+      navigator.clipboard.writeText(text).then(
+        () => addToast('Copied to clipboard!', 'success'),
+        () => addToast('Could not copy to clipboard — try again', 'error'),
+      );
     } else {
       const listPackages = (selectedList.packages || [])
         .map((id) => packages.find((p) => p.id === id))
@@ -628,10 +664,12 @@ function PackListsView({
   // from the render it started in, silently unmarking every previous scan —
   // always compound on current state. Persists via a single-row update rather
   // than rewriting the whole child table.
+  // Returns true when the toggle persisted (or no persistence exists), false
+  // when it was rolled back — the scan overlay uses this to correct its log.
   const handleTogglePacked = useCallback(
     async (itemId) => {
       const current = selectedListRef.current;
-      if (!current) return;
+      if (!current) return false;
       const packedItems = current.packedItems || [];
       const isPacked = packedItems.includes(itemId);
       const newPackedItems = isPacked
@@ -663,19 +701,19 @@ function PackListsView({
             dataContext.patchPackList(current.id, { packedItems: revertedPacked });
           }
           addToast('Failed to save packed state — try again', 'error');
+          return false;
         }
       }
+      return true;
     },
     [setSelectedList, dataContext, addToast],
   );
 
-  // Reset all packed items
+  // Reset all packed items — persist-first: only clear local state (and
+  // toast success) after the DB accepted the reset
   const [confirmReset, setConfirmReset] = useState(false);
   const handleResetPacked = useCallback(async () => {
     if (!selectedList) return;
-    const updatedList = { ...selectedList, packedItems: [] };
-    setSelectedList(updatedList);
-    dataContext.patchPackList(selectedList.id, { packedItems: [] });
 
     if (dataContext?.updatePackList) {
       try {
@@ -686,9 +724,15 @@ function PackListsView({
         });
       } catch (err) {
         logError('Failed to reset packed items:', err);
+        addToast('Failed to reset packed state — nothing was changed', 'error');
+        setConfirmReset(false);
+        return;
       }
     }
 
+    const updatedList = { ...selectedList, packedItems: [] };
+    setSelectedList(updatedList);
+    dataContext.patchPackList(selectedList.id, { packedItems: [] });
     setConfirmReset(false);
     addToast('Pack list selections cleared', 'success');
   }, [selectedList, setSelectedList, dataContext, addToast]);
@@ -952,6 +996,13 @@ function PackListsView({
                   const isSelected = selectedItemIds.includes(item.id);
                   const itemPackages = getItemPackages(item.id);
                   const showQuantity = hasQuantityTracking(item);
+                  const requestedQty = itemQuantities[item.id] || 1;
+                  // item.quantity here is the raw inventory stock level
+                  const hasShortfall =
+                    showQuantity &&
+                    isSelected &&
+                    typeof item.quantity === 'number' &&
+                    requestedQty > item.quantity;
 
                   return (
                     <div
@@ -989,8 +1040,23 @@ function PackListsView({
                             min="1"
                             value={itemQuantities[item.id] || 1}
                             onChange={(e) => handleQuantityChange(item.id, e.target.value)}
-                            style={styles.input}
+                            aria-label={`Quantity for ${item.name}`}
+                            style={{
+                              ...styles.input,
+                              borderColor: hasShortfall ? colors.warning : undefined,
+                            }}
                           />
+                          {hasShortfall && (
+                            <span
+                              style={{
+                                color: colors.warning,
+                                fontSize: typography.fontSize.xs,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              only {item.quantity} in stock
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1018,6 +1084,22 @@ function PackListsView({
     const packProgress =
       listItems.length > 0 ? Math.round((packedCount / listItems.length) * 100) : 0;
 
+    // Fulfillability: items that can't simply be pulled off the shelf, and
+    // quantity-tracked items where the list asks for more than is in stock
+    const unavailableItems = listItems.filter((i) => i.status && i.status !== 'available');
+    const shortfallItems = listItems.filter(
+      (i) =>
+        hasQuantityTracking(i) &&
+        typeof i.stockQuantity === 'number' &&
+        i.quantity > i.stockQuantity,
+    );
+    const unavailableByStatus = unavailableItems.reduce((acc, i) => {
+      acc[i.status] = (acc[i.status] || 0) + 1;
+      return acc;
+    }, {});
+    const fulfillabilityIssues = unavailableItems.length + shortfallItems.length;
+    const createdByName = selectedList.createdByName || selectedList.created_by_name;
+
     return (
       <div className="view-container">
         <div className="detail-header">
@@ -1028,36 +1110,88 @@ function PackListsView({
             <div className="detail-header-info">
               <h2>{selectedList.name}</h2>
               <div className="detail-header-meta">
-                Created {formatDate(selectedList.createdAt)} • {listItems.length} items
+                Created {formatDate(selectedList.createdAt)}
+                {createdByName && ` by ${createdByName}`} • {listItems.length} items
                 {listPackages.length > 0 && ` • ${listPackages.length} packages`}
               </div>
             </div>
           </div>
           <div className="detail-header-actions">
-            <Button onClick={() => setShowScanToPack(true)} icon={ScanLine}>
-              Scan to Pack
-            </Button>
-            <Button variant="secondary" onClick={() => handleStartEdit(selectedList)} icon={Edit2}>
-              Edit
-            </Button>
+            {canEditPackLists && (
+              <Button onClick={() => setShowScanToPack(true)} icon={ScanLine}>
+                Scan to Pack
+              </Button>
+            )}
+            {canEditPackLists && (
+              <Button
+                variant="secondary"
+                onClick={() => handleStartEdit(selectedList)}
+                icon={Edit2}
+              >
+                Edit
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => setShowExport(true)} icon={Download}>
               Export / Print
             </Button>
-            {packedCount > 0 && (
+            {canEditPackLists && packedCount > 0 && (
               <Button variant="secondary" onClick={() => setConfirmReset(true)} icon={RotateCcw}>
                 Reset
               </Button>
             )}
-            <button
-              className="btn-icon danger"
-              onClick={() =>
-                setConfirmDelete({ isOpen: true, id: selectedList.id, name: selectedList.name })
-              }
-            >
-              <Trash2 size={16} />
-            </button>
+            {canEditPackLists && (
+              <button
+                className="btn-icon danger"
+                aria-label={`Delete ${selectedList.name}`}
+                onClick={() =>
+                  setConfirmDelete({ isOpen: true, id: selectedList.id, name: selectedList.name })
+                }
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
           </div>
         </div>
+
+        {!canEditPackLists && <ViewOnlyBanner functionId="pack_lists" />}
+
+        {/* Fulfillability warning — surfaced before anyone drives to the job */}
+        {fulfillabilityIssues > 0 && (
+          <div
+            role="status"
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: spacing[2],
+              background: withOpacity(colors.warning, 12),
+              border: `1px solid ${withOpacity(colors.warning, 50)}`,
+              borderRadius: borderRadius.md,
+              padding: spacing[3],
+              marginBottom: spacing[4],
+              color: colors.textPrimary,
+              fontSize: typography.fontSize.sm,
+            }}
+          >
+            <AlertTriangle
+              size={16}
+              color={colors.warning}
+              style={{ flexShrink: 0, marginTop: 2 }}
+            />
+            <div>
+              <strong>
+                {fulfillabilityIssues} item{fulfillabilityIssues === 1 ? '' : 's'} on this list may
+                not be available.
+              </strong>{' '}
+              {Object.entries(unavailableByStatus)
+                .map(([status, count]) => `${count} ${status.replace(/-/g, ' ')}`)
+                .join(', ')}
+              {shortfallItems.length > 0 &&
+                `${unavailableItems.length > 0 ? '; ' : ''}${shortfallItems
+                  .map((i) => `${i.name} needs ${i.quantity} but only ${i.stockQuantity} in stock`)
+                  .join(', ')}`}
+            </div>
+          </div>
+        )}
 
         {/* Pack progress bar */}
         {listItems.length > 0 && (
@@ -1183,8 +1317,19 @@ function PackListsView({
                       e.stopPropagation();
                       handleTogglePacked(item.id);
                     }}
-                    title={isPacked ? 'Mark as unpacked' : 'Mark as packed'}
-                    style={{ color: isPacked ? colors.success : colors.textMuted }}
+                    disabled={!canEditPackLists}
+                    title={
+                      !canEditPackLists
+                        ? 'View only'
+                        : isPacked
+                          ? 'Mark as unpacked'
+                          : 'Mark as packed'
+                    }
+                    aria-label={`${isPacked ? 'Mark as unpacked' : 'Mark as packed'}: ${item.name}`}
+                    style={{
+                      color: isPacked ? colors.success : colors.textMuted,
+                      opacity: canEditPackLists ? 1 : 0.4,
+                    }}
                   >
                     {isPacked ? <CheckSquare size={20} /> : <Square size={20} />}
                   </button>
@@ -1378,6 +1523,7 @@ function PackListsView({
             isOpen={confirmReset}
             title="Reset Pack List"
             message={`Clear all ${packedCount} packed selections? Items will be marked as unpacked.`}
+            confirmText="Reset"
             onConfirm={handleResetPacked}
             onCancel={() => setConfirmReset(false)}
           />
@@ -1395,11 +1541,15 @@ function PackListsView({
       <PageHeader
         title="Pack Lists"
         action={
-          <Button onClick={handleStartCreate} icon={Plus}>
-            Create Pack List
-          </Button>
+          canEditPackLists ? (
+            <Button onClick={handleStartCreate} icon={Plus}>
+              Create Pack List
+            </Button>
+          ) : null
         }
       />
+
+      {!canEditPackLists && <ViewOnlyBanner functionId="pack_lists" />}
 
       <div style={{ marginBottom: spacing[4], maxWidth: 300 }}>
         <SearchInput
@@ -1412,7 +1562,14 @@ function PackListsView({
 
       <div style={{ borderBottom: `1px solid ${colors.border}`, marginBottom: spacing[4] }} />
 
-      {filteredPackLists.length === 0 ? (
+      {!packListsLoaded && packLists.length === 0 ? (
+        <div
+          role="status"
+          style={{ textAlign: 'center', padding: spacing[8], color: colors.textMuted }}
+        >
+          Loading pack lists...
+        </div>
+      ) : filteredPackLists.length === 0 ? (
         <EmptyState
           icon={Box}
           title={packLists.length === 0 ? 'No Pack Lists Yet' : 'No Pack Lists Found'}
@@ -1429,6 +1586,7 @@ function PackListsView({
             const listPackages = (list.packages || [])
               .map((id) => packages.find((p) => p.id === id))
               .filter(Boolean);
+            const cardCreatedBy = list.createdByName || list.created_by_name;
 
             return (
               <Card key={list.id} onClick={() => setSelectedList(list)} className="card-clickable">
@@ -1448,15 +1606,18 @@ function PackListsView({
                   >
                     {list.name}
                   </h3>
-                  <button
-                    className="btn-icon danger"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setConfirmDelete({ isOpen: true, id: list.id, name: list.name });
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {canEditPackLists && (
+                    <button
+                      className="btn-icon danger"
+                      aria-label={`Delete ${list.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmDelete({ isOpen: true, id: list.id, name: list.name });
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
                 <div
                   style={{
@@ -1473,6 +1634,7 @@ function PackListsView({
                 </div>
                 <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
                   Created {formatDate(list.createdAt)}
+                  {cardCreatedBy && ` by ${cardCreatedBy}`}
                 </div>
               </Card>
             );
@@ -1533,14 +1695,25 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
         );
         setFlashItem({ name: item.name, status: 'already' });
       } else {
-        onTogglePacked(item.id);
+        const ts = Date.now();
+        // Optimistic log entry; flipped to 'failed' if the persist rolls back
+        // so the history never claims an item is packed when it isn't
         setScanLog((prev) =>
-          [{ id: item.id, name: item.name, status: 'packed', ts: Date.now() }, ...prev].slice(
-            0,
-            50,
-          ),
+          [{ id: item.id, name: item.name, status: 'packed', ts }, ...prev].slice(0, 50),
         );
         setFlashItem({ name: item.name, status: 'packed' });
+        Promise.resolve(onTogglePacked(item.id)).then((ok) => {
+          if (ok === false) {
+            setScanLog((prev) =>
+              prev.map((entry) =>
+                entry.ts === ts && entry.id === item.id ? { ...entry, status: 'failed' } : entry,
+              ),
+            );
+            setFlashItem({ name: item.name, status: 'failed' });
+            if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+            flashTimeoutRef.current = setTimeout(() => setFlashItem(null), 1500);
+          }
+        });
       }
 
       // Clear flash after 1.5s
@@ -1737,7 +1910,9 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
                       ? '✓ Packed!'
                       : flashItem.status === 'already'
                         ? '✓ Already Packed'
-                        : '✗ Not in List'}
+                        : flashItem.status === 'failed'
+                          ? '✗ Save Failed — Rescan'
+                          : '✗ Not in List'}
                   </div>
                   <div style={{ fontSize: typography.fontSize.sm, marginTop: 4, opacity: 0.8 }}>
                     {flashItem.name}
@@ -1858,7 +2033,9 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
                         ? 'Packed'
                         : entry.status === 'already'
                           ? 'Already packed'
-                          : 'Not in list'}
+                          : entry.status === 'failed'
+                            ? 'Save failed — rescan'
+                            : 'Not in list'}
                     </span>
                   </div>
                 ))}
@@ -1889,6 +2066,8 @@ PackListsView.propTypes = {
   currentUser: PropTypes.object,
   initialSelectedList: PropTypes.object,
   onListSelect: PropTypes.func,
+  /** Bumped by the app shell on sidebar navigation — resets to the overview */
+  resetNonce: PropTypes.number,
 };
 
 export default memo(PackListsView);

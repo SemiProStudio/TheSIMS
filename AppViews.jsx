@@ -96,6 +96,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     setItemBackContext,
     reservationBackView,
     setReservationBackView,
+    navigationNonce,
   } = useNavigationContext();
 
   const {
@@ -328,6 +329,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             onAddNote={packageNoteHandlers.add}
             onReplyNote={packageNoteHandlers.reply}
             onDeleteNote={packageNoteHandlers.delete}
+            resetNonce={navigationNonce}
           />
         </Suspense>
       )}
@@ -346,6 +348,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               currentUser={currentUser}
               initialSelectedList={selectedPackList}
               onListSelect={setSelectedPackList}
+              resetNonce={navigationNonce}
             />
           </Suspense>
         )}
