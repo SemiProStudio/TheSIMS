@@ -52,7 +52,9 @@ export default defineConfig({
   // Dev server
   server: {
     port: 3000,
-    open: true,
+    // No auto-open: launching the OS default browser interrupts whoever is
+    // at the machine; open localhost:3000 (or the IDE preview) manually.
+    open: false,
     cors: true,
   },
 

@@ -42,7 +42,10 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
 
   // Reporter to use
-  reporter: [['html', { outputFolder: 'playwright-report' }], ['list']],
+  // open: 'never' — the default ('on-failure') launches the OS default
+  // browser (Safari) after any failed local run. View the report on demand
+  // with `npx playwright show-report` instead.
+  reporter: [['html', { outputFolder: 'playwright-report', open: 'never' }], ['list']],
 
   // Shared settings for all projects
   use: {
