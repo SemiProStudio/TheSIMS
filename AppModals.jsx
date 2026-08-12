@@ -351,11 +351,18 @@ export default memo(function AppModals({ handlers, currentUser }) {
             existingEmails={users.map((u) => u.email.toLowerCase())}
             roles={roles}
             onSave={async (newUser) => {
-              // Persist via Supabase Auth signUp — the handle_new_user trigger
-              // creates the public users row automatically
-              if (auth?.signUp && newUser.password) {
+              // Persist via Supabase Auth on an ISOLATED client — signUp on
+              // the shared client returns a session for the NEW user (when
+              // email confirmation is off) and silently replaced the admin's
+              // own login with the account they just created.
+              if (auth?.adminCreateUser && newUser.password) {
                 try {
-                  await auth.signUp(newUser.email, newUser.password, newUser.name, newUser.roleId);
+                  const { needsEmailConfirmation } = await auth.adminCreateUser(
+                    newUser.email,
+                    newUser.password,
+                    newUser.name,
+                    newUser.roleId,
+                  );
 
                   // Optimistic local update (only after auth succeeds)
                   addLocalUser(newUser);
@@ -367,7 +374,12 @@ export default memo(function AppModals({ handlers, currentUser }) {
                   });
 
                   closeModal();
-                  addToast(`User "${newUser.name}" created successfully`, 'success');
+                  addToast(
+                    needsEmailConfirmation
+                      ? `User "${newUser.name}" created — they must confirm their email before signing in`
+                      : `User "${newUser.name}" created successfully`,
+                    'success',
+                  );
 
                   // Refresh users to get the DB-created record with real UUID
                   if (refreshData) await refreshData();

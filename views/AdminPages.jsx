@@ -495,8 +495,9 @@ export const ItemFormPage = memo(function ItemFormPage({
 // Edit Specifications Page
 // ============================================================================
 
-export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
+export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showConfirm }) {
   const [editSpecs, setEditSpecs] = useState(structuredClone(specs));
+  const [dirty, setDirty] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(Object.keys(specs)[0] || '');
   const [searchFilter, setSearchFilter] = useState('');
   const [showOnlyRequired, setShowOnlyRequired] = useState(false);
@@ -557,6 +558,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
         i === index ? { ...field, [key]: value } : field,
       ),
     }));
+    setDirty(true);
   };
 
   const [duplicateError, setDuplicateError] = useState('');
@@ -592,6 +594,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
     setSearchFilter('');
     setShowOnlyRequired(false);
     setNewlyAddedIndex(newIndex);
+    setDirty(true);
   };
 
   const handleCancelAdd = () => {
@@ -606,6 +609,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
       [selectedCategory]: prev[selectedCategory].filter((_, i) => i !== index),
     }));
     if (newlyAddedIndex === index) setNewlyAddedIndex(null);
+    setDirty(true);
   };
 
   // Drag handlers
@@ -649,6 +653,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
       return { ...prev, [selectedCategory]: arr };
     });
     setDragOverIndex(null);
+    setDirty(true);
   };
 
   const toggleAllRequired = (value) => {
@@ -656,6 +661,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
       ...prev,
       [selectedCategory]: prev[selectedCategory].map((field) => ({ ...field, required: value })),
     }));
+    setDirty(true);
   };
 
   const currentSpecs = editSpecs[selectedCategory] || [];
@@ -686,12 +692,31 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack }) {
     onBack();
   };
 
+  // Leaving with unsaved edits silently discarded them — confirm first
+  const handleBack = () => {
+    if (!dirty) {
+      onBack();
+      return;
+    }
+    if (showConfirm) {
+      showConfirm({
+        title: 'Discard Changes?',
+        message: 'You have unsaved specification changes. Leave without saving?',
+        confirmText: 'Discard',
+        variant: 'danger',
+        onConfirm: onBack,
+      });
+    } else {
+      onBack();
+    }
+  };
+
   return (
     <>
       <PageHeader
         title="Edit Specifications"
         subtitle="Define the specification fields for each equipment category"
-        onBack={onBack}
+        onBack={handleBack}
         backLabel="Back to Admin"
         action={
           <Button onClick={handleSave} icon={Save} disabled={hasDuplicates}>
@@ -1046,19 +1071,28 @@ export const CategoriesPage = memo(function CategoriesPage({
   categorySettings,
   onSave,
   onBack,
+  showConfirm,
 }) {
-  const [editCategories, setEditCategories] = useState([...categories]);
-  const [editSettings, setEditSettings] = useState(structuredClone(categorySettings || {}));
-  const [editSpecs, setEditSpecs] = useState(structuredClone(specs));
+  // Rows carry a STABLE key (the original category name, or a synthetic key
+  // for added rows). The old implementation keyed rows AND the specs/settings
+  // maps by the live name: every rename keystroke remounted the row (losing
+  // input focus after one character), and renaming a category onto another
+  // one's name clobbered that category's specs in the edit buffer. Keys never
+  // change while editing; names are remapped only at save.
+  const [rows, setRows] = useState(() =>
+    categories.map((name) => ({ key: name, name, isNew: false })),
+  );
+  const [specsByKey, setSpecsByKey] = useState(() => structuredClone(specs));
+  const [settingsByKey, setSettingsByKey] = useState(() => structuredClone(categorySettings || {}));
+  const [dirty, setDirty] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [categoryError, setCategoryError] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
-  // Track category renames: { oldName → newName } so items can be updated
-  const [categoryRenames, setCategoryRenames] = useState({});
   const addInputRef = useRef(null);
   const dragNodeRef = useRef(null);
+  const newKeyCounter = useRef(0);
 
   useEffect(() => {
     if (showAddForm && addInputRef.current) {
@@ -1066,99 +1100,68 @@ export const CategoriesPage = memo(function CategoriesPage({
     }
   }, [showAddForm]);
 
-  const getCategoryCount = (category) => inventory.filter((i) => i.category === category).length;
+  // Items still reference the ORIGINAL name until save — count by the key
+  // for existing rows so an unsaved rename doesn't zero the guard
+  const getCategoryCount = (row) =>
+    inventory.filter((i) => i.category === (row.isNew ? row.name : row.key)).length;
 
   const handleAddCategory = () => {
     const name = newCategoryName.trim();
     if (!name) return;
-    if (editCategories.some((c) => c.toLowerCase() === name.toLowerCase())) {
+    if (rows.some((r) => r.name.trim().toLowerCase() === name.toLowerCase())) {
       setCategoryError(`"${name}" already exists`);
       return;
     }
 
     setCategoryError('');
-    setEditCategories((prev) => [...prev, name]);
-    setEditSpecs((prev) => ({ ...prev, [name]: [] }));
-    setEditSettings((prev) => ({ ...prev, [name]: { ...DEFAULT_NEW_CATEGORY_SETTINGS } }));
+    newKeyCounter.current += 1;
+    const key = `__new_${newKeyCounter.current}__`;
+    setRows((prev) => [...prev, { key, name, isNew: true }]);
+    setSpecsByKey((prev) => ({ ...prev, [key]: [] }));
+    setSettingsByKey((prev) => ({ ...prev, [key]: { ...DEFAULT_NEW_CATEGORY_SETTINGS } }));
     setNewCategoryName('');
     setShowAddForm(false);
+    setDirty(true);
   };
 
-  const handleRemoveCategory = (category) => {
-    const count = getCategoryCount(category);
+  const handleRemoveCategory = (row) => {
+    const count = getCategoryCount(row);
     if (count > 0) {
       setCategoryError(
-        `Cannot delete "${category}" — it has ${count} item(s). Reassign items first.`,
+        `Cannot delete "${row.name}" — it has ${count} item(s). Reassign items first.`,
       );
       return;
     }
-    setEditCategories((prev) => prev.filter((c) => c !== category));
-    setEditSpecs((prev) => {
-      const copy = { ...prev };
-      delete copy[category];
-      return copy;
-    });
-    setEditSettings((prev) => {
-      const copy = { ...prev };
-      delete copy[category];
-      return copy;
-    });
+    setRows((prev) => prev.filter((r) => r.key !== row.key));
+    setDirty(true);
   };
 
-  const handleRenameCategory = (oldName, newName) => {
-    if (!newName.trim()) return;
-    // Allow typing — duplicate check is visual only (blocks save)
-    setEditCategories((prev) => prev.map((c) => (c === oldName ? newName : c)));
-    setEditSpecs((prev) => {
-      const copy = { ...prev };
-      if (oldName !== newName) {
-        copy[newName] = copy[oldName] || [];
-        delete copy[oldName];
-      }
-      return copy;
-    });
-    setEditSettings((prev) => {
-      const copy = { ...prev };
-      if (oldName !== newName) {
-        copy[newName] = copy[oldName] || { ...DEFAULT_NEW_CATEGORY_SETTINGS };
-        delete copy[oldName];
-      }
-      return copy;
-    });
-    // Track rename: find the original name that maps to oldName
-    if (oldName !== newName) {
-      setCategoryRenames((prev) => {
-        const updated = { ...prev };
-        // Check if oldName is itself a rename target (chained renames)
-        const originalName = Object.keys(updated).find((k) => updated[k] === oldName);
-        if (originalName) {
-          // Update the existing chain: original → newName
-          updated[originalName] = newName;
-        } else if (categories.includes(oldName)) {
-          // oldName is an original category name
-          updated[oldName] = newName;
-        }
-        return updated;
-      });
-    }
+  const handleRenameCategory = (key, newName) => {
+    // Plain name update — specs/settings stay keyed by the stable key, so
+    // nothing is moved (or clobbered) until save
+    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, name: newName } : r)));
+    setDirty(true);
   };
 
   const hasDuplicateCategories = useMemo(() => {
-    const names = editCategories.map((c) => c.trim().toLowerCase()).filter(Boolean);
+    const names = rows.map((r) => r.name.trim().toLowerCase()).filter(Boolean);
     return names.length !== new Set(names).size;
-  }, [editCategories]);
+  }, [rows]);
+
+  const hasEmptyNames = useMemo(() => rows.some((r) => !r.name.trim()), [rows]);
 
   const isDuplicateCategory = (name, index) => {
     const trimmed = name.trim().toLowerCase();
     if (!trimmed) return false;
-    return editCategories.some((c, i) => i !== index && c.trim().toLowerCase() === trimmed);
+    return rows.some((r, i) => i !== index && r.name.trim().toLowerCase() === trimmed);
   };
 
-  const handleSettingChange = (category, setting, value) => {
-    setEditSettings((prev) => ({
+  const handleSettingChange = (key, setting, value) => {
+    setSettingsByKey((prev) => ({
       ...prev,
-      [category]: { ...(prev[category] || {}), [setting]: value },
+      [key]: { ...(prev[key] || {}), [setting]: value },
     }));
+    setDirty(true);
   };
 
   // Drag handlers
@@ -1195,19 +1198,54 @@ export const CategoriesPage = memo(function CategoriesPage({
       return;
     }
 
-    setEditCategories((prev) => {
+    setRows((prev) => {
       const arr = [...prev];
       const [draggedItem] = arr.splice(draggedIndex, 1);
       arr.splice(targetIndex, 0, draggedItem);
       return arr;
     });
     setDragOverIndex(null);
+    setDirty(true);
   };
 
   const handleSave = () => {
-    if (hasDuplicateCategories) return;
-    onSave(editCategories, editSpecs, editSettings, categoryRenames);
+    if (hasDuplicateCategories || hasEmptyNames) return;
+    // Remap the stable-keyed edit state to final names, and report renames
+    // (original → new) so items and DB rows can follow
+    const newCategories = [];
+    const newSpecs = {};
+    const newSettings = {};
+    const categoryRenames = {};
+    rows.forEach((row) => {
+      const name = row.name.trim();
+      newCategories.push(name);
+      newSpecs[name] = specsByKey[row.key] || [];
+      newSettings[name] = settingsByKey[row.key] || { ...DEFAULT_NEW_CATEGORY_SETTINGS };
+      if (!row.isNew && row.key !== name) {
+        categoryRenames[row.key] = name;
+      }
+    });
+    onSave(newCategories, newSpecs, newSettings, categoryRenames);
     onBack();
+  };
+
+  // Leaving with unsaved edits silently discarded them — confirm first
+  const handleBack = () => {
+    if (!dirty) {
+      onBack();
+      return;
+    }
+    if (showConfirm) {
+      showConfirm({
+        title: 'Discard Changes?',
+        message: 'You have unsaved category changes. Leave without saving?',
+        confirmText: 'Discard',
+        variant: 'danger',
+        onConfirm: onBack,
+      });
+    } else {
+      onBack();
+    }
   };
 
   return (
@@ -1215,10 +1253,14 @@ export const CategoriesPage = memo(function CategoriesPage({
       <PageHeader
         title="Edit Categories"
         subtitle="Manage equipment categories and their settings"
-        onBack={onBack}
+        onBack={handleBack}
         backLabel="Back to Admin"
         action={
-          <Button onClick={handleSave} icon={Save} disabled={hasDuplicateCategories}>
+          <Button
+            onClick={handleSave}
+            icon={Save}
+            disabled={hasDuplicateCategories || hasEmptyNames}
+          >
             {hasDuplicateCategories ? 'Fix Duplicates' : 'Save Changes'}
           </Button>
         }
@@ -1310,14 +1352,15 @@ export const CategoriesPage = memo(function CategoriesPage({
 
           {/* Categories List */}
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-            {editCategories.map((category, index) => {
-              const count = getCategoryCount(category);
-              const settings = editSettings[category] || {};
+            {rows.map((row, index) => {
+              const category = row.name;
+              const count = getCategoryCount(row);
+              const settings = settingsByKey[row.key] || {};
               const isDragOver = dragOverIndex === index;
 
               return (
                 <div
-                  key={category}
+                  key={row.key}
                   draggable
                   onDragStart={(e) => handleDragStart(e, index)}
                   onDragEnd={handleDragEnd}
@@ -1353,7 +1396,8 @@ export const CategoriesPage = memo(function CategoriesPage({
                       <input
                         type="text"
                         value={category}
-                        onChange={(e) => handleRenameCategory(category, e.target.value)}
+                        onChange={(e) => handleRenameCategory(row.key, e.target.value)}
+                        aria-label={`Category name (${row.isNew ? 'new' : row.key})`}
                         style={{
                           ...styles.input,
                           width: '100%',
@@ -1380,7 +1424,7 @@ export const CategoriesPage = memo(function CategoriesPage({
                       color={count > 0 ? colors.primary : colors.textMuted}
                     />
                     <button
-                      onClick={() => handleRemoveCategory(category)}
+                      onClick={() => handleRemoveCategory(row)}
                       disabled={count > 0}
                       style={{
                         background: 'none',
@@ -1420,7 +1464,7 @@ export const CategoriesPage = memo(function CategoriesPage({
                         type="checkbox"
                         checked={settings.trackQuantity || false}
                         onChange={(e) =>
-                          handleSettingChange(category, 'trackQuantity', e.target.checked)
+                          handleSettingChange(row.key, 'trackQuantity', e.target.checked)
                         }
                         style={{ accentColor: colors.primary }}
                       />
@@ -1440,7 +1484,7 @@ export const CategoriesPage = memo(function CategoriesPage({
                         type="checkbox"
                         checked={settings.trackSerialNumbers !== false}
                         onChange={(e) =>
-                          handleSettingChange(category, 'trackSerialNumbers', e.target.checked)
+                          handleSettingChange(row.key, 'trackSerialNumbers', e.target.checked)
                         }
                         style={{ accentColor: colors.primary }}
                       />
@@ -1459,7 +1503,7 @@ export const CategoriesPage = memo(function CategoriesPage({
                           value={settings.lowStockThreshold || 0}
                           onChange={(e) =>
                             handleSettingChange(
-                              category,
+                              row.key,
                               'lowStockThreshold',
                               parseInt(e.target.value) || 0,
                             )

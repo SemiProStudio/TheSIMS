@@ -8,14 +8,14 @@ import { lazy, Suspense, memo } from 'react';
 import { VIEWS, MODALS, STATUS } from './constants.js';
 import { error as logError } from './lib/logger.js';
 import { useToast } from './contexts/ToastContext.js';
-import { rolesService, locationsService, usersService } from './lib/services.js';
+import { locationsService } from './lib/services.js';
+import { useAdminHandlers } from './hooks/handlers/useAdminHandlers.js';
 import { useNavigationContext } from './contexts/NavigationContext.js';
 import { useFilterContext } from './contexts/FilterContext.js';
 import { useModalContext } from './contexts/ModalContext.js';
 import { useData } from './contexts/DataContext.js';
 import { PermissionGate } from './contexts/PermissionsContext.jsx';
 import { ViewLoading } from './components/Loading.jsx';
-import { generateId } from './utils';
 
 // Core (eagerly loaded)
 import Dashboard from './views/Dashboard.jsx';
@@ -138,11 +138,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     updateCategories,
     updateSpecs,
     patchInventoryItem,
-    patchUser,
-    removeLocalUser,
-    patchRole,
-    addLocalRole,
-    removeLocalRole,
     replaceLocations,
   } = dataContext;
 
@@ -190,6 +185,15 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     resetReservationForm,
     openModal,
   } = handlers;
+
+  // Users & roles admin operations — persist-first with correct ordering
+  const { saveRole, deleteRole, assignUsersToRole, changeUserRole, deleteUser } = useAdminHandlers({
+    users,
+    roles,
+    currentUser,
+    dataContext,
+    addAuditLog,
+  });
 
   return (
     <div style={{ flex: 1, minHeight: 0 }}>
@@ -472,6 +476,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           <Suspense fallback={<ViewLoading message="Loading Specs Editor..." />}>
             <SpecsPage
               specs={specs}
+              showConfirm={showConfirm}
               onSave={async (newSpecs, fieldRenames = {}) => {
                 try {
                   await updateSpecs(newSpecs);
@@ -537,9 +542,12 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               inventory={inventory}
               specs={specs}
               categorySettings={categorySettings}
+              showConfirm={showConfirm}
               onSave={async (newCategories, newSpecs, newSettings, categoryRenames = {}) => {
                 try {
-                  await updateCategories(newCategories, newSettings);
+                  // Renames go to the service so category rows keep their id,
+                  // prefix, and spec rows (previously delete+recreate)
+                  await updateCategories(newCategories, newSettings, categoryRenames);
                   await updateSpecs(newSpecs);
                 } catch (err) {
                   // updateCategories/updateSpecs already reverted local state
@@ -616,31 +624,18 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           <Suspense fallback={<ViewLoading message="Loading Users..." />}>
             <UsersPanel
               users={users}
+              roles={roles}
               currentUserId={currentUser?.id}
               onAddUser={() => openModal(MODALS.ADD_USER)}
+              onChangeRole={changeUserRole}
               onDeleteUser={(userId) => {
                 const userToDelete = users.find((u) => u.id === userId);
                 showConfirm({
                   title: 'Delete User',
-                  message:
-                    'Are you sure you want to delete this user? This action cannot be undone.',
+                  message: `Remove "${userToDelete?.name || userId}" from SIMS? Their sign-in account must also be disabled in Supabase to fully revoke access. This cannot be undone here.`,
                   confirmText: 'Delete',
                   variant: 'danger',
-                  onConfirm: async () => {
-                    removeLocalUser(userId);
-                    addAuditLog({
-                      type: 'user_deleted',
-                      description: `User deleted: ${userToDelete?.name || userId}`,
-                      user: currentUser?.name || 'Unknown',
-                      itemId: userId,
-                    });
-                    try {
-                      await usersService.delete(userId);
-                    } catch (err) {
-                      logError('Failed to delete user:', err);
-                      addToast('Failed to delete user', 'error');
-                    }
-                  },
+                  onConfirm: () => deleteUser(userId),
                 });
               }}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
@@ -766,7 +761,8 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             <LocationsManager
               locations={locations}
               inventory={inventory}
-              onSave={async (newLocations) => {
+              showConfirm={showConfirm}
+              onSave={async (newLocations, pathRenames = []) => {
                 replaceLocations(newLocations);
                 try {
                   await locationsService.syncAll(newLocations);
@@ -778,6 +774,32 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                 } catch (err) {
                   logError('Failed to save locations:', err);
                   addToast('Failed to save locations', 'error');
+                  return;
+                }
+                // Items store locations as plain strings — renames (of a
+                // node OR any ancestor) must be applied to items or their
+                // locations silently orphan. Legacy strings use " - " as
+                // the separator; both forms match, and updates write the
+                // canonical " > " form.
+                for (const { from, to } of pathRenames) {
+                  const legacyFrom = from.split(' > ').join(' - ');
+                  const affectedItems = inventory.filter(
+                    (i) => i.location === from || i.location === legacyFrom,
+                  );
+                  for (const item of affectedItems) {
+                    try {
+                      await dataContext.updateItem(item.id, { location: to });
+                    } catch (err) {
+                      logError(`Failed to update location for item ${item.id}:`, err);
+                    }
+                  }
+                  if (affectedItems.length > 0) {
+                    addAuditLog({
+                      type: 'location_renamed',
+                      description: `Location renamed: "${from}" → "${to}" (${affectedItems.length} items updated)`,
+                      user: currentUser?.name || 'Unknown',
+                    });
+                  }
                 }
               }}
               onClose={() => setCurrentView(VIEWS.ADMIN)}
@@ -807,98 +829,9 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               roles={roles}
               users={users}
               showConfirm={showConfirm}
-              onSaveRole={async (roleData) => {
-                const existing = roles.find((r) => r.id === roleData.id);
-                if (existing) {
-                  // Update existing role
-                  patchRole(roleData.id, roleData);
-                  try {
-                    await rolesService.update(roleData.id, {
-                      name: roleData.name,
-                      description: roleData.description || '',
-                      permissions: roleData.permissions || {},
-                    });
-                    addAuditLog({
-                      type: 'role_updated',
-                      description: `Role updated: ${roleData.name}`,
-                      user: currentUser?.name || 'Unknown',
-                    });
-                  } catch (err) {
-                    logError('Failed to update role:', err);
-                    addToast('Failed to update role', 'error');
-                  }
-                } else {
-                  // Create new role
-                  const newRole = { ...roleData, id: roleData.id || `role_${generateId()}` };
-                  addLocalRole(newRole);
-                  try {
-                    await rolesService.create({
-                      id: newRole.id,
-                      name: newRole.name,
-                      description: newRole.description || '',
-                      is_system: false,
-                      permissions: newRole.permissions || {},
-                    });
-                    addAuditLog({
-                      type: 'role_created',
-                      description: `Role created: ${newRole.name}`,
-                      user: currentUser?.name || 'Unknown',
-                    });
-                  } catch (err) {
-                    logError('Failed to create role:', err);
-                    addToast('Failed to create role', 'error');
-                  }
-                }
-              }}
-              onDeleteRole={async (roleId) => {
-                const deletedRole = roles.find((r) => r.id === roleId);
-                removeLocalRole(roleId);
-                users
-                  .filter((u) => u.roleId === roleId)
-                  .forEach((u) => patchUser(u.id, { roleId: 'role_user' }));
-                try {
-                  await rolesService.delete(roleId);
-                  const affectedUsers = users.filter(
-                    (u) => u.roleId === roleId || u.role_id === roleId,
-                  );
-                  for (const u of affectedUsers) {
-                    await usersService.updateRole(u.id, 'role_user');
-                  }
-                  addAuditLog({
-                    type: 'role_deleted',
-                    description: `Role deleted: ${deletedRole?.name || roleId}`,
-                    user: currentUser?.name || 'Unknown',
-                  });
-                } catch (err) {
-                  logError('Failed to delete role:', err);
-                  addToast('Failed to delete role', 'error');
-                }
-              }}
-              onAssignUsers={async (roleId, userIds) => {
-                const selectedSet = new Set(userIds);
-                // Find users previously assigned to this role who were deselected
-                const previouslyAssigned = (users || []).filter(
-                  (u) => u.roleId === roleId || u.role_id === roleId,
-                );
-                const unassignedUsers = previouslyAssigned.filter((u) => !selectedSet.has(u.id));
-
-                // Assign selected users to this role
-                userIds.forEach((userId) => patchUser(userId, { roleId }));
-                // Unassign removed users (reset to default user role)
-                unassignedUsers.forEach((u) => patchUser(u.id, { roleId: 'role_user' }));
-
-                try {
-                  for (const userId of userIds) {
-                    await usersService.updateRole(userId, roleId);
-                  }
-                  for (const u of unassignedUsers) {
-                    await usersService.updateRole(u.id, 'role_user');
-                  }
-                } catch (err) {
-                  logError('Failed to assign users:', err);
-                  addToast('Failed to assign users to role', 'error');
-                }
-              }}
+              onSaveRole={saveRole}
+              onDeleteRole={deleteRole}
+              onAssignUsers={assignUsersToRole}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />
           </Suspense>

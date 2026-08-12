@@ -133,6 +133,13 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Admin-initiated user creation on an isolated client — never replaces the
+  // current (admin) session. Throws on failure.
+  const adminCreateUser = useCallback(async (email, password, name, roleId) => {
+    setError(null);
+    return auth.adminCreateUser(email, password, name, roleId);
+  }, []);
+
   // =============================================================================
   // Sign Out
   // =============================================================================
@@ -220,6 +227,7 @@ export function AuthProvider({ children }) {
       // Methods
       signIn,
       signUp,
+      adminCreateUser,
       signOut,
       resetPassword,
       updatePassword,
@@ -233,6 +241,7 @@ export function AuthProvider({ children }) {
       error,
       signIn,
       signUp,
+      adminCreateUser,
       signOut,
       resetPassword,
       updatePassword,

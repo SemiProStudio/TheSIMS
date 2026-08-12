@@ -25,6 +25,30 @@ import { flattenLocations } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 
+// The legacy path separator: older item location strings use "A - B" while
+// the location picker writes "A > B". Both are matched when propagating
+// renames; updates write the canonical " > " form.
+export const LEGACY_SEPARATOR = ' - ';
+
+/**
+ * Diff two location trees by node id and report every full-path change —
+ * renaming a parent yields one entry per affected descendant too. Items
+ * store locations as plain strings, so these renames must be applied to
+ * items or their locations silently orphan.
+ * @returns {Array<{from: string, to: string}>}
+ */
+export function computeLocationPathRenames(originalTree, editedTree) {
+  const before = new Map(flattenLocations(originalTree).map((l) => [l.id, l.fullPath]));
+  const renames = [];
+  flattenLocations(editedTree).forEach((l) => {
+    const oldPath = before.get(l.id);
+    if (oldPath && oldPath !== l.fullPath) {
+      renames.push({ from: oldPath, to: l.fullPath });
+    }
+  });
+  return renames;
+}
+
 // Get icon for location type
 const getLocationIcon = (type) => {
   switch (type) {
@@ -59,7 +83,9 @@ const LocationTreeItem = memo(function LocationTreeItem({
   const Icon = getLocationIcon(location.type);
   const hasChildren = location.children && location.children.length > 0;
   const isExpanded = expandedIds.has(location.id);
-  const itemCount = itemCounts[location.id] || 0;
+  const itemCount = itemCounts.direct[location.id] || 0;
+  // Deletion removes the whole subtree — guard on descendants' items too
+  const blockingCount = itemCounts.subtree[location.id] || 0;
 
   return (
     <div>
@@ -161,14 +187,18 @@ const LocationTreeItem = memo(function LocationTreeItem({
           </button>
           <button
             onClick={() => onDelete(location)}
-            title={itemCount > 0 ? `Cannot delete - ${itemCount} items` : 'Delete location'}
-            disabled={itemCount > 0}
+            title={
+              blockingCount > 0
+                ? `Cannot delete - ${blockingCount} item(s) here or in sub-locations`
+                : 'Delete location'
+            }
+            disabled={blockingCount > 0}
             style={{
               ...styles.btnSec,
               padding: spacing[1],
-              color: itemCount > 0 ? colors.textMuted : colors.danger,
-              opacity: itemCount > 0 ? 0.5 : 1,
-              cursor: itemCount > 0 ? 'not-allowed' : 'pointer',
+              color: blockingCount > 0 ? colors.textMuted : colors.danger,
+              opacity: blockingCount > 0 ? 0.5 : 1,
+              cursor: blockingCount > 0 ? 'not-allowed' : 'pointer',
             }}
           >
             <Trash2 size={14} />
@@ -292,24 +322,27 @@ const LocationEditForm = memo(function LocationEditForm({
 });
 
 // Main Locations Manager component
-function LocationsManager({ locations, inventory, onSave, onClose }) {
+function LocationsManager({ locations, inventory, onSave, onClose, showConfirm }) {
   const [editLocations, setEditLocations] = useState(structuredClone(locations));
   const [expandedIds, setExpandedIds] = useState(new Set(['loc-studio-a', 'loc-studio-b']));
   const [editingLocation, setEditingLocation] = useState(null);
   const [parentForNew, setParentForNew] = useState(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [dirty, setDirty] = useState(false);
 
-  // Count items per location
+  // Count items per location. Item locations are plain strings in either the
+  // canonical "A > B" form or the legacy "A - B" form — index both, exactly.
+  // (The old fuzzy substring matching double-counted and mismatched.)
   const itemCounts = useMemo(() => {
     const counts = {};
 
-    // Build a map of location name to ID for fuzzy matching
-    const locationNameToId = {};
+    const pathToId = {};
     const processLocation = (loc, parentPath = '') => {
-      const fullPath = parentPath ? `${parentPath} - ${loc.name}` : loc.name;
-      locationNameToId[loc.name.toLowerCase()] = loc.id;
-      locationNameToId[fullPath.toLowerCase()] = loc.id;
+      const fullPath = parentPath ? `${parentPath} > ${loc.name}` : loc.name;
+      pathToId[loc.name.toLowerCase()] = loc.id;
+      pathToId[fullPath.toLowerCase()] = loc.id;
+      pathToId[fullPath.split(' > ').join(LEGACY_SEPARATOR).toLowerCase()] = loc.id;
       counts[loc.id] = 0;
       if (loc.children) {
         loc.children.forEach((child) => processLocation(child, fullPath));
@@ -317,25 +350,27 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
     };
     editLocations.forEach((loc) => processLocation(loc));
 
-    // Count items by matching location strings
     inventory.forEach((item) => {
       if (item.location) {
-        const locLower = item.location.toLowerCase();
-        // Try exact match first
-        if (locationNameToId[locLower]) {
-          counts[locationNameToId[locLower]]++;
-        } else {
-          // Try partial match
-          Object.keys(locationNameToId).forEach((key) => {
-            if (locLower.includes(key) || key.includes(locLower)) {
-              counts[locationNameToId[key]]++;
-            }
-          });
-        }
+        const id = pathToId[item.location.toLowerCase()];
+        if (id !== undefined) counts[id]++;
       }
     });
 
-    return counts;
+    // Subtree totals: deleting a location removes its whole subtree, so the
+    // guard must consider descendants' items, not just direct ones
+    const subtree = {};
+    const totalFor = (loc) => {
+      let total = counts[loc.id] || 0;
+      (loc.children || []).forEach((child) => {
+        total += totalFor(child);
+      });
+      subtree[loc.id] = total;
+      return total;
+    };
+    editLocations.forEach(totalFor);
+
+    return { direct: counts, subtree };
   }, [editLocations, inventory]);
 
   // Toggle expand/collapse
@@ -374,7 +409,7 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
 
   // Delete location
   const handleDelete = (location) => {
-    if ((itemCounts[location.id] || 0) > 0) return;
+    if ((itemCounts.subtree[location.id] || 0) > 0) return;
 
     const deleteFromTree = (locations) => {
       return locations.reduce((acc, loc) => {
@@ -390,6 +425,7 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
     };
 
     setEditLocations((prev) => deleteFromTree(prev));
+    setDirty(true);
   };
 
   // Save location (add or edit)
@@ -438,6 +474,7 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
     setEditingLocation(null);
     setIsAddingNew(false);
     setParentForNew(null);
+    setDirty(true);
   };
 
   // Cancel editing
@@ -476,10 +513,30 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
     return flattenLocations(editLocations);
   }, [editLocations]);
 
-  // Save all changes
+  // Save all changes — include full-path renames so items can follow
   const handleSaveAll = () => {
-    onSave(editLocations);
+    const pathRenames = computeLocationPathRenames(locations, editLocations);
+    onSave(editLocations, pathRenames);
     if (onClose) onClose();
+  };
+
+  // Leaving with unsaved edits silently discarded them — confirm first
+  const handleClose = () => {
+    if (!dirty) {
+      onClose?.();
+      return;
+    }
+    if (showConfirm) {
+      showConfirm({
+        title: 'Discard Changes?',
+        message: 'You have unsaved location changes. Leave without saving?',
+        confirmText: 'Discard',
+        variant: 'danger',
+        onConfirm: () => onClose?.(),
+      });
+    } else {
+      onClose?.();
+    }
   };
 
   return (
@@ -487,7 +544,7 @@ function LocationsManager({ locations, inventory, onSave, onClose }) {
       <PageHeader
         title="Manage Locations"
         subtitle="Organize storage in a hierarchy"
-        onBack={onClose}
+        onBack={handleClose}
         backLabel="Back to Admin"
         action={
           <Button onClick={handleSaveAll} icon={Save}>
