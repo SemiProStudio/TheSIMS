@@ -8,7 +8,7 @@
 // preview and print paths (ppi=300), rasterized via an SVG foreignObject.
 // ============================================================================
 
-import { ItemLabel } from './ItemLabel.jsx';
+import { ItemLabel, qrOffset, qrDisplaySize } from './ItemLabel.jsx';
 
 export const SHEET_DPI = 300;
 // Cricut Print-Then-Cut printable area inside the registration box (Letter)
@@ -65,15 +65,32 @@ export async function buildLabelSheetSVGs({
   const width = px(CRICUT_PRINT_AREA.width);
   const height = px(CRICUT_PRINT_AREA.height);
 
+  // QR geometry: labels render `flat`, which replaces the QR <img> with an
+  // empty spacer — WebKit refuses to load foreignObject <img> subresources
+  // when rasterizing, so QRs are instead drawn straight onto the canvas by
+  // rasterizeSheetToPNG at the positions computed here (identical result in
+  // every browser).
+  const qrOff = qrOffset(format);
+  const qrPx = Math.round(qrDisplaySize(format, SHEET_DPI));
+  const qrScale = SHEET_DPI / 96;
+
   const svgs = [];
+  const qrDraws = [];
   for (let start = 0; start < items.length; start += layout.perSheet) {
     const slice = items.slice(start, start + layout.perSheet);
+    const sheetDraws = [];
     const cells = slice
       .map((item, i) => {
         const col = i % layout.cols;
         const row = Math.floor(i / layout.cols);
         const left = px(layout.offsetX + col * (layout.labelW + LABEL_GAP_IN));
         const top = px(layout.offsetY + row * (layout.labelH + LABEL_GAP_IN));
+        sheetDraws.push({
+          dataURL: qrDataURLs[start + i],
+          x: left + Math.round(qrOff.x * qrScale),
+          y: top + Math.round(qrOff.y * qrScale),
+          size: qrPx,
+        });
         // flat: no drop shadow — a rasterized shadow becomes a gray halo that
         // confuses Design Space's contour detection and prints as fuzz
         const markup = renderToStaticMarkup(
@@ -101,17 +118,18 @@ export async function buildLabelSheetSVGs({
         `<div xmlns="http://www.w3.org/1999/xhtml" style="position:relative;width:${width}px;height:${height}px">${cells}</div>` +
         `</foreignObject></svg>`,
     );
+    qrDraws.push(sheetDraws);
   }
 
-  return { svgs, width, height, perSheet: layout.perSheet };
+  return { svgs, qrDraws, width, height, perSheet: layout.perSheet };
 }
 
 /**
- * Rasterize a sheet SVG to a PNG blob. Browser-only. Throws on failure —
- * notably Safari, whose canvas is tainted by foreignObject SVGs; callers
- * surface that as a "use Chrome/Firefox" message.
+ * Rasterize a sheet SVG to a PNG blob, then composite the QR codes on top
+ * (see buildLabelSheetSVGs — the SVG itself deliberately contains no QR
+ * images). Browser-only. Throws on genuine rasterization failure.
  */
-export async function rasterizeSheetToPNG(svg, width, height) {
+export async function rasterizeSheetToPNG(svg, width, height, qrDraws = []) {
   const img = new Image();
   img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   await img.decode();
@@ -119,7 +137,16 @@ export async function rasterizeSheetToPNG(svg, width, height) {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  canvas.getContext('2d').drawImage(img, 0, 0);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+
+  for (const draw of qrDraws) {
+    if (!draw?.dataURL) continue;
+    const qrImg = new Image();
+    qrImg.src = draw.dataURL;
+    await qrImg.decode();
+    ctx.drawImage(qrImg, draw.x, draw.y, draw.size, draw.size);
+  }
 
   return await new Promise((resolve, reject) => {
     try {

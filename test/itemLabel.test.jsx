@@ -8,7 +8,13 @@
 
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { ItemLabel, renderLabelsHTML, qrDisplaySize } from '../components/ItemLabel.jsx';
+import {
+  ItemLabel,
+  renderLabelsHTML,
+  qrDisplaySize,
+  qrOffset,
+  fitFontSize,
+} from '../components/ItemLabel.jsx';
 import { LABEL_FORMATS } from '../constants.js';
 
 const fmt = (id) => LABEL_FORMATS.find((f) => f.id === id);
@@ -234,5 +240,65 @@ describe('qrDisplaySize', () => {
     expect(qrDisplaySize(fmt('medium'), 96)).toBe(70);
     expect(qrDisplaySize(fmt('large'), 96)).toBe(60);
     expect(qrDisplaySize(fmt('small'), 150)).toBe(125);
+  });
+});
+
+describe('qrOffset (canvas compositing positions for sheet export)', () => {
+  it('matches the flex layout per format at the 96ppi baseline', () => {
+    expect(qrOffset(fmt('small'))).toEqual({ x: 8, y: 8 }); // centered, pad 8
+    // medium: row-centered in the padded 1in-tall content box
+    expect(qrOffset(fmt('medium'))).toEqual({ x: 12, y: 13 });
+    expect(qrOffset(fmt('large'))).toEqual({ x: 12, y: 12 }); // header top-left
+    expect(qrOffset(fmt('brandingText'))).toEqual({ x: 12, y: 12 });
+  });
+});
+
+describe('fitFontSize (text shrinks to fit — no ellipsis)', () => {
+  it('keeps short text at the base size', () => {
+    expect(fitFontSize('CA1001', 100, 14)).toBe(14);
+  });
+
+  it('shrinks long text proportionally to fit the width', () => {
+    const size = fitFontSize('Blackmagic URSA Mini Pro 12K OLPF', 86, 13);
+    expect(size).toBeLessThan(13);
+    expect(size).toBeGreaterThanOrEqual(5);
+    // Estimated width at the fitted size must not exceed the max width
+    expect('Blackmagic URSA Mini Pro 12K OLPF'.length * size * 0.52).toBeLessThanOrEqual(86.001);
+  });
+
+  it('never goes below the readability floor', () => {
+    expect(fitFontSize('x'.repeat(500), 50, 13)).toBe(5);
+  });
+
+  it('is applied in rendered output: long names get a smaller font', () => {
+    const short = render(
+      <ItemLabel item={{ ...item, name: 'Cam' }} format={fmt('medium')} ppi={96} qrDataURL={QR} />,
+    ).container;
+    const long = render(
+      <ItemLabel
+        item={{ ...item, name: 'Blackmagic URSA Mini Pro 12K with OLPF option' }}
+        format={fmt('medium')}
+        ppi={96}
+        qrDataURL={QR}
+      />,
+    ).container;
+    const nameSize = (c, text) =>
+      parseFloat(
+        [...c.querySelectorAll('div')].find((el) => el.textContent === text)?.style.fontSize,
+      );
+    expect(nameSize(short, 'Cam')).toBe(13);
+    expect(nameSize(long, 'Blackmagic URSA Mini Pro 12K with OLPF option')).toBeLessThan(13);
+  });
+
+  it('labels no longer truncate with an ellipsis anywhere', async () => {
+    for (const format of LABEL_FORMATS) {
+      const html = await renderLabelsHTML({
+        items: [{ ...item, name: 'An Extremely Long Item Name That Used To Get Cut Off' }],
+        format,
+        user: brandingUser,
+        qrDataURLs: [QR],
+      });
+      expect(html).not.toContain('text-overflow');
+    }
   });
 });
