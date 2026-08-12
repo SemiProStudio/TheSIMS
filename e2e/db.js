@@ -132,10 +132,7 @@ export async function addTestReminder(itemId, { title, dueInDays = 0, completed 
 }
 
 /** Attach a maintenance record to a private item (dashboard fixtures). */
-export async function addTestMaintenance(
-  itemId,
-  { type, status = 'scheduled', inDays = 3 } = {},
-) {
+export async function addTestMaintenance(itemId, { type, status = 'scheduled', inDays = 3 } = {}) {
   const db = await adminDb();
   const { error } = await db.from('maintenance_records').insert({
     item_id: itemId,
@@ -193,6 +190,15 @@ export async function cleanupTestData() {
   await db.from('clients').delete().ilike('name', `${E2E_PREFIX}%`);
   await db.from('pack_lists').delete().ilike('name', `${E2E_PREFIX}%`);
   await db.from('packages').delete().ilike('name', `${E2E_PREFIX}%`);
+
+  // E2E-created roles: users.role_id is a plain FK, so any user a crashed
+  // run left on an E2E role must be reset before the role can be deleted
+  const { data: e2eRoles } = await db.from('roles').select('id').ilike('name', `${E2E_PREFIX}%`);
+  const roleIds = (e2eRoles || []).map((r) => r.id);
+  if (roleIds.length > 0) {
+    await db.from('users').update({ role_id: 'role_user' }).in('role_id', roleIds);
+    await db.from('roles').delete().in('id', roleIds);
+  }
 
   // E2E-created saved filter views left in user profiles (gear list persists
   // them per-user; a crashed run can strand one, which changes the Saved

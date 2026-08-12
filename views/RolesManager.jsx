@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { APP_FUNCTIONS, PERMISSION_LEVELS } from '../constants.js';
-import { Button, Card, Badge } from '../components/ui.jsx';
+import { Button, Card, Badge, PageHeader } from '../components/ui.jsx';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '../modals/ModalBase.jsx';
 import { generateId } from '../utils';
 
@@ -331,6 +331,12 @@ const RoleCard = memo(function RoleCard({ role, onEdit, onDelete, onAssign, user
   );
 });
 
+// Permissions that can never be lowered on the Administrator system role —
+// otherwise two clicks ("All Hide" + Save) could lock every admin out of
+// user & role management with no in-app way back.
+export const LOCKED_ADMIN_PERMISSIONS = ['admin_users', 'admin_roles'];
+const ADMIN_ROLE_ID = 'role_admin';
+
 // Role editor component
 const RoleEditor = memo(function RoleEditor({ role, onSave, onCancel }) {
   const [name, setName] = useState(role?.name || '');
@@ -345,27 +351,43 @@ const RoleEditor = memo(function RoleEditor({ role, onSave, onCancel }) {
 
   const isEdit = !!role?.id;
   const isSystem = role?.isSystem;
+  const isAdminRole = role?.id === ADMIN_ROLE_ID;
 
-  const handlePermissionChange = useCallback((funcId, level) => {
-    setPermissions((prev) => ({ ...prev, [funcId]: level }));
-  }, []);
+  const isLockedPermission = (funcId) => isAdminRole && LOCKED_ADMIN_PERMISSIONS.includes(funcId);
+
+  const handlePermissionChange = useCallback(
+    (funcId, level) => {
+      if (isAdminRole && LOCKED_ADMIN_PERMISSIONS.includes(funcId)) return;
+      setPermissions((prev) => ({ ...prev, [funcId]: level }));
+    },
+    [isAdminRole],
+  );
 
   const handleSave = () => {
     if (!name.trim()) return;
+
+    // Belt and braces: even if state was tampered with, the Administrator
+    // role always keeps Edit on the lockout-critical functions
+    const safePermissions = { ...permissions };
+    if (isAdminRole) {
+      LOCKED_ADMIN_PERMISSIONS.forEach((funcId) => {
+        safePermissions[funcId] = PERMISSION_LEVELS.EDIT;
+      });
+    }
 
     onSave({
       id: role?.id || `role_${generateId()}`,
       name: name.trim(),
       description: description.trim(),
       isSystem: role?.isSystem || false,
-      permissions,
+      permissions: safePermissions,
     });
   };
 
   const setAllPermissions = (level) => {
     const newPerms = {};
     Object.values(APP_FUNCTIONS).forEach((func) => {
-      newPerms[func.id] = level;
+      newPerms[func.id] = isLockedPermission(func.id) ? PERMISSION_LEVELS.EDIT : level;
     });
     setPermissions(newPerms);
   };
@@ -541,13 +563,24 @@ const RoleEditor = memo(function RoleEditor({ role, onSave, onCancel }) {
             {group.funcs.map((funcId) => {
               const func = Object.values(APP_FUNCTIONS).find((f) => f.id === funcId);
               if (!func) return null;
+              const locked = isLockedPermission(func.id);
               return (
                 <FunctionPermissionRow
                   key={func.id}
-                  func={func}
-                  currentPermission={permissions[func.id] || PERMISSION_LEVELS.HIDE}
+                  func={
+                    locked
+                      ? {
+                          ...func,
+                          description:
+                            'Locked to Edit — administrators can never lose access to user & role management',
+                        }
+                      : func
+                  }
+                  currentPermission={
+                    locked ? PERMISSION_LEVELS.EDIT : permissions[func.id] || PERMISSION_LEVELS.HIDE
+                  }
                   onChange={handlePermissionChange}
-                  disabled={false}
+                  disabled={locked}
                 />
               );
             })}
@@ -661,7 +694,7 @@ function RolesManager({
   onDeleteRole,
   onAssignUsers,
   showConfirm,
-  onBack: _onBack,
+  onBack,
 }) {
   const [editingRole, setEditingRole] = useState(null);
   const [assigningRole, setAssigningRole] = useState(null);
@@ -716,31 +749,17 @@ function RolesManager({
 
   return (
     <>
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: spacing[6],
-        }}
-      >
-        <div>
-          <h2 style={{ margin: 0, color: colors.textPrimary }}>Roles & Permissions</h2>
-          <p
-            style={{
-              margin: `${spacing[1]}px 0 0`,
-              color: colors.textMuted,
-              fontSize: typography.fontSize.sm,
-            }}
-          >
-            Create and manage user roles with granular permission control
-          </p>
-        </div>
-        <Button onClick={handleCreateNew} icon={Plus}>
-          Create Role
-        </Button>
-      </div>
+      <PageHeader
+        title="Roles & Permissions"
+        subtitle="Create and manage user roles with granular permission control"
+        onBack={onBack}
+        backLabel="Back to Admin"
+        action={
+          <Button onClick={handleCreateNew} icon={Plus}>
+            Create Role
+          </Button>
+        }
+      />
 
       {/* Permission Legend */}
       <Card style={{ marginBottom: spacing[4], padding: spacing[3] }}>

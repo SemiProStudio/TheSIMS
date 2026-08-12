@@ -3,7 +3,7 @@
 // Manages package templates - create, edit, view packages
 // ============================================================================
 
-import { memo, useState, useCallback, useMemo, useEffect } from 'react';
+import { memo, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   Plus,
   Package,
@@ -89,25 +89,41 @@ function PackagesView({
 
   // Pack lists load lazily — needed here so the delete confirmation can warn
   // when a package is referenced by pack lists
+  const ensurePackLists = dataContext?.ensurePackLists;
   useEffect(() => {
-    dataContext?.ensurePackLists?.();
-  }, [dataContext]);
+    ensurePackLists?.();
+  }, [ensurePackLists]);
+
+  // Latest selected package for async callbacks (see notes hydration below)
+  const selectedPackageRef = useRef(selectedPackage);
+  selectedPackageRef.current = selectedPackage;
 
   // Packages arrive from getAll() without notes (notes === undefined);
-  // hydrate them once per package when its detail opens
+  // hydrate them once per package when its detail opens.
+  //
+  // The effect MUST key on primitives (id + loaded flag), not object
+  // identities: loadPackageNotes patches the packages collection, which
+  // regenerates the DataContext value — depending on `dataContext` or
+  // `selectedPackage` made the cleanup cancel each fetch as its own result
+  // arrived, refetching in an endless loop with the panel stuck on
+  // "Loading notes...".
+  const loadPackageNotes = dataContext?.loadPackageNotes;
+  const selectedPackageId = selectedPackage?.id;
+  const notesLoaded = selectedPackage ? selectedPackage.notes !== undefined : true;
   useEffect(() => {
-    const pkgId = selectedPackage?.id;
-    if (!pkgId || selectedPackage.notes !== undefined || !dataContext?.loadPackageNotes) return;
+    if (!selectedPackageId || notesLoaded || !loadPackageNotes) return undefined;
     let cancelled = false;
-    dataContext.loadPackageNotes(pkgId).then((notes) => {
-      if (!cancelled) {
-        setSelectedPackage({ ...selectedPackage, notes });
+    loadPackageNotes(selectedPackageId).then((notes) => {
+      if (cancelled) return;
+      const current = selectedPackageRef.current;
+      if (current?.id === selectedPackageId && current.notes === undefined) {
+        setSelectedPackage({ ...current, notes });
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [selectedPackage, dataContext, setSelectedPackage]);
+  }, [selectedPackageId, notesLoaded, loadPackageNotes, setSelectedPackage]);
 
   // Check if an item has quantity tracking
   const hasQuantityTracking = useCallback(

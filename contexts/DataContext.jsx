@@ -984,13 +984,13 @@ export function DataProvider({ children }) {
   // =============================================================================
 
   const updateCategories = useCallback(
-    async (newCategories, newSettings = {}) => {
+    async (newCategories, newSettings = {}, renames = {}) => {
       const prevCategories = categories;
       const prevSettings = categorySettings;
       setCategories(newCategories);
       setCategorySettings(newSettings);
       try {
-        await categoriesService.syncAll(newCategories, newSettings);
+        await categoriesService.syncAll(newCategories, newSettings, renames);
       } catch (err) {
         logError('Failed to save categories:', err);
         setCategories(prevCategories);
