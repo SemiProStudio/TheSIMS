@@ -322,10 +322,10 @@ export default function App() {
   );
 
   const navigateToFilteredSearch = useCallback(
-    (catFilter, statFilter) => {
+    (catFilter, statFilter, query = '') => {
       setCategoryFilter(catFilter);
       setStatusFilter(statFilter);
-      setSearchQuery('');
+      setSearchQuery(query);
       setCurrentView(VIEWS.GEAR_LIST);
     },
     [setCategoryFilter, setStatusFilter, setSearchQuery, setCurrentView],

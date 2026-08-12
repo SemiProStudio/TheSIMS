@@ -1,6 +1,9 @@
 // ============================================================================
 // Dashboard Component
-// Supports collapsible sections with user-customizable order and visibility
+// Supports collapsible sections with user-customizable order and visibility.
+// Reminders and pending maintenance arrive with the Tier 2 data load (merged
+// into inventory items by DataContext); Recent Activity is driven by the
+// real audit log (lazy-loaded on mount).
 // ============================================================================
 
 import { memo, useState, useMemo, useEffect } from 'react';
@@ -21,6 +24,9 @@ import {
   Wrench,
   Activity,
   Bookmark,
+  Hourglass,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { STATUS, DASHBOARD_SECTIONS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
@@ -49,6 +55,18 @@ const PANEL_COLORS = {
   recentActivity: 'var(--panel-activity)',
 };
 
+// Audit-log event types shown in Recent Activity, with their icons
+const ACTIVITY_EVENT_ICONS = {
+  item_checkout: LogOut,
+  item_checkin: LogIn,
+  item_created: Plus,
+  item_deleted: Trash2,
+  bulk_delete: Trash2,
+  maintenance_added: Wrench,
+  maintenance_updated: Wrench,
+  maintenance_status_changed: Wrench,
+};
+
 // Shared empty state style
 const emptyStateStyle = {
   padding: spacing[4],
@@ -58,7 +76,8 @@ const emptyStateStyle = {
   margin: 0,
 };
 
-// Shared list item style builder
+// Shared list row style builder. Rows render as <button> for keyboard access,
+// so button defaults are reset here.
 const listItemStyle = (panelColor) => ({
   display: 'flex',
   alignItems: 'center',
@@ -69,7 +88,26 @@ const listItemStyle = (panelColor) => ({
   marginBottom: spacing[2],
   background: withOpacity(panelColor, 15),
   border: `1px solid ${withOpacity(panelColor, 40)}`,
+  width: '100%',
+  boxSizing: 'border-box',
+  textAlign: 'left',
+  font: 'inherit',
+  color: 'inherit',
 });
+
+// Loading placeholder used while Tier 2 data is on its way
+const TierLoading = ({ label }) => (
+  <span
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing[2],
+    }}
+  >
+    <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> {label}
+  </span>
+);
 
 function Dashboard({
   inventory = [],
@@ -79,6 +117,7 @@ function Dashboard({
   onViewReservation,
   onFilteredView,
   onViewAlerts,
+  onViewOverdue,
   onViewLowStock,
   onViewReservations,
   onViewCheckedOut,
@@ -86,10 +125,32 @@ function Dashboard({
   onToggleCollapse,
 }) {
   const [quickSearch, setQuickSearch] = useState('');
-  const { tier2Loaded } = useData();
+  const { tier2Loaded, auditLog, auditLogLoaded, ensureAuditLog } = useData();
 
   // Permissions
   const { canEdit: _canEdit } = usePermissions();
+
+  // Recent Activity reads the real audit log (latest 100, lazy-loaded)
+  useEffect(() => {
+    ensureAuditLog();
+  }, [ensureAuditLog]);
+
+  // "Today" for overdue/due-date math. Refreshed when the tab regains
+  // visibility and hourly, so a dashboard left open past midnight doesn't
+  // keep yesterday's overdue calculations.
+  const [today, setToday] = useState(getTodayISO);
+  useEffect(() => {
+    const refresh = () => setToday(getTodayISO());
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    const interval = setInterval(refresh, 60 * 60 * 1000);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Local state for collapsed sections (for immediate UI response)
   const [collapsedSections, setCollapsedSections] = useState(() => {
@@ -130,6 +191,14 @@ function Dashboard({
     }
   };
 
+  // The Maintenance stat card scrolls to (and expands) the maintenance panel
+  const revealMaintenancePanel = () => {
+    setCollapsedSections((prev) => (prev.maintenance ? { ...prev, maintenance: false } : prev));
+    document
+      .getElementById('dash-section-maintenance')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   // Get sections sorted by order
   const sectionOrder = useMemo(() => {
     const getOrder = (sectionId) => {
@@ -141,18 +210,8 @@ function Dashboard({
       const pref = layoutPrefs?.sections?.[sectionId];
       return pref?.visible !== false;
     };
-    const sections = [
-      'stats',
-      'quickSearch',
-      'checkedOut',
-      'alerts',
-      'reminders',
-      'lowStock',
-      'reservations',
-      'maintenance',
-      'recentActivity',
-    ];
-    return sections
+    return Object.values(DASHBOARD_SECTIONS)
+      .map((s) => s.id)
       .filter((id) => isVisible(id))
       .map((id) => ({ id, order: getOrder(id) }))
       .sort((a, b) => a.order - b.order)
@@ -161,8 +220,6 @@ function Dashboard({
 
   // Computed stats — single-pass over inventory for performance
   const stats = useMemo(() => {
-    const today = getTodayISO();
-
     let available = 0;
     let reserved = 0;
     const alerts = [];
@@ -171,7 +228,6 @@ function Dashboard({
     const dueReminders = [];
     const lowStockItems = [];
     const pendingMaintenance = [];
-    const activityEvents = [];
 
     for (const item of inventory) {
       // Status counts
@@ -221,26 +277,6 @@ function Dashboard({
           }
         }
       }
-
-      // Recent activity events
-      if (item.status === STATUS.CHECKED_OUT && item.checkedOutDate) {
-        activityEvents.push({
-          id: `${item.id}-checkout`,
-          type: 'checkout',
-          item,
-          date: item.checkedOutDate,
-          who: item.checkedOutTo || 'Unknown',
-        });
-      }
-      if (item.lastCheckedIn) {
-        activityEvents.push({
-          id: `${item.id}-checkin`,
-          type: 'checkin',
-          item,
-          date: item.lastCheckedIn,
-          who: item.lastCheckedInBy || 'Unknown',
-        });
-      }
     }
 
     // Sort only the collected arrays (much smaller than full inventory)
@@ -258,9 +294,6 @@ function Dashboard({
       return a.scheduledDate.localeCompare(b.scheduledDate);
     });
 
-    activityEvents.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    const recentActivity = activityEvents.slice(0, 8);
-
     return {
       total: inventory.length,
       available,
@@ -272,32 +305,77 @@ function Dashboard({
       lowStockItems,
       checkedOutItems,
       pendingMaintenance,
-      recentActivity,
     };
-  }, [inventory, categorySettings]);
+  }, [inventory, categorySettings, today]);
 
-  // Upcoming reservations
+  // Recent activity from the audit log; falls back to state-derived events
+  // while the log is still loading.
+  const recentActivity = useMemo(() => {
+    if (auditLogLoaded && auditLog.length > 0) {
+      return auditLog
+        .filter((e) => ACTIVITY_EVENT_ICONS[e.type])
+        .slice(0, 8)
+        .map((e) => ({
+          id: e.id,
+          type: e.type,
+          description: e.description,
+          who: e.user || 'System',
+          date: e.timestamp,
+          itemId: e.itemId,
+        }));
+    }
+    // Fallback: synthesize from current item state
+    const events = [];
+    for (const item of inventory) {
+      if (item.status === STATUS.CHECKED_OUT && item.checkedOutDate) {
+        events.push({
+          id: `${item.id}-checkout`,
+          type: 'item_checkout',
+          description: `${item.name} checked out to ${item.checkedOutTo || 'Unknown'}`,
+          who: item.checkedOutTo || 'Unknown',
+          date: item.checkedOutDate,
+          itemId: item.id,
+        });
+      }
+      if (item.lastCheckedIn) {
+        events.push({
+          id: `${item.id}-checkin`,
+          type: 'item_checkin',
+          description: `${item.name} returned by ${item.lastCheckedInBy || 'Unknown'}`,
+          who: item.lastCheckedInBy || 'Unknown',
+          date: item.lastCheckedIn,
+          itemId: item.id,
+        });
+      }
+    }
+    events.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    return events.slice(0, 8);
+  }, [auditLog, auditLogLoaded, inventory]);
+
+  // Upcoming AND ongoing reservations: anything that hasn't ended yet.
+  // (Cancelled reservations are excluded server-side; the status check is
+  // defense in depth for locally-mutated state.)
   const upcomingReservations = useMemo(() => {
     return inventory
       .flatMap((i) => (i.reservations || []).map((r) => ({ ...r, item: i })))
-      .filter((r) => r.start >= getTodayISO())
-      .sort((a, b) => new Date(a.start) - new Date(b.start))
+      .filter((r) => r.status !== 'cancelled' && (r.end || r.start) >= today)
+      .sort((a, b) => (a.start || '').localeCompare(b.start || ''))
       .slice(0, 6);
-  }, [inventory]);
+  }, [inventory, today]);
 
-  // Quick search results
-  const searchResults = useMemo(() => {
+  // Quick search results (name, ID, brand, serial number)
+  const allSearchResults = useMemo(() => {
     if (!quickSearch.trim()) return [];
     const q = quickSearch.toLowerCase();
-    return inventory
-      .filter(
-        (item) =>
-          item.name.toLowerCase().includes(q) ||
-          item.id.toLowerCase().includes(q) ||
-          item.brand.toLowerCase().includes(q),
-      )
-      .slice(0, 5);
+    return inventory.filter(
+      (item) =>
+        (item.name || '').toLowerCase().includes(q) ||
+        (item.id || '').toLowerCase().includes(q) ||
+        (item.brand || '').toLowerCase().includes(q) ||
+        (item.serialNumber || '').toLowerCase().includes(q),
+    );
   }, [inventory, quickSearch]);
+  const searchResults = allSearchResults.slice(0, 5);
 
   // Render sections
   const renderSection = (sectionId) => {
@@ -343,10 +421,17 @@ function Dashboard({
                 onClick={() => onFilteredView('all', STATUS.CHECKED_OUT)}
               />
               <StatCard
+                icon={Hourglass}
+                value={stats.overdue.length}
+                label="Overdue"
+                color={colors.danger}
+                onClick={onViewOverdue}
+              />
+              <StatCard
                 icon={Bookmark}
                 value={stats.reserved}
                 label="Reserved"
-                color={colors.reserved || PANEL_COLORS.reservations}
+                color={colors.reserved}
                 onClick={() => onFilteredView('all', STATUS.RESERVED)}
               />
               <StatCard
@@ -361,6 +446,7 @@ function Dashboard({
                 value={stats.pendingMaintenance.length}
                 label="Maintenance"
                 color={PANEL_COLORS.maintenance}
+                onClick={revealMaintenancePanel}
               />
             </div>
           </CollapsibleSection>
@@ -376,17 +462,27 @@ function Dashboard({
             collapsed={isCollapsed('quickSearch')}
             onToggleCollapse={() => toggleCollapse('quickSearch')}
           >
-            <SearchInput
-              value={quickSearch}
-              onChange={setQuickSearch}
-              onClear={() => setQuickSearch('')}
-              placeholder="Search by name, ID, or brand..."
-            />
+            <div
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchResults.length > 0) {
+                  onViewItem(searchResults[0].id);
+                }
+              }}
+            >
+              <SearchInput
+                value={quickSearch}
+                onChange={setQuickSearch}
+                onClear={() => setQuickSearch('')}
+                placeholder="Search by name, ID, brand, or serial..."
+              />
+            </div>
 
             {searchResults.length > 0 && (
               <div style={{ marginTop: spacing[3] }}>
                 {searchResults.map((item) => (
-                  <div
+                  <button
+                    type="button"
+                    className="dash-row"
                     key={item.id}
                     onClick={() => onViewItem(item.id)}
                     style={listItemStyle(PANEL_COLORS.search)}
@@ -402,6 +498,7 @@ function Dashboard({
                         justifyContent: 'center',
                         color: colors.textMuted,
                         fontSize: typography.fontSize.xs,
+                        flexShrink: 0,
                       }}
                     >
                       {item.image ? (
@@ -439,8 +536,24 @@ function Dashboard({
                       </div>
                     </div>
                     <Badge text={item.status} color={getStatusColor(item.status)} />
-                  </div>
+                  </button>
                 ))}
+                {allSearchResults.length > searchResults.length && (
+                  <button
+                    type="button"
+                    className="dash-row"
+                    onClick={() => onFilteredView('all', 'all', quickSearch)}
+                    style={{
+                      ...listItemStyle(PANEL_COLORS.search),
+                      justifyContent: 'center',
+                      color: colors.textPrimary,
+                      fontSize: typography.fontSize.sm,
+                    }}
+                  >
+                    View all {allSearchResults.length} results
+                    <ChevronRight size={16} color={colors.textMuted} />
+                  </button>
+                )}
               </div>
             )}
 
@@ -483,14 +596,15 @@ function Dashboard({
             padding={false}
           >
             {stats.checkedOutItems.length === 0 ? (
-              <div style={emptyStateStyle}>All items are available</div>
+              <div style={emptyStateStyle}>Nothing is checked out</div>
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 300, overflowY: 'auto' }}>
                 {stats.checkedOutItems.slice(0, 8).map((item) => {
-                  const today = getTodayISO();
                   const isOverdue = item.dueBack && item.dueBack < today;
                   return (
-                    <div
+                    <button
+                      type="button"
+                      className="dash-row"
                       key={item.id}
                       onClick={() => onViewItem(item.id)}
                       style={listItemStyle(PANEL_COLORS.checkedOut)}
@@ -515,12 +629,12 @@ function Dashboard({
                           }}
                         >
                           {item.checkedOutTo || 'Unknown'}
-                          {item.dueBack ? ` \u2022 Due ${formatDate(item.dueBack)}` : ''}
+                          {item.dueBack ? ` • Due ${formatDate(item.dueBack)}` : ''}
                         </div>
                       </div>
                       {isOverdue && <Badge text="Overdue" color={colors.danger} size="xs" />}
                       <ChevronRight size={16} color={colors.textMuted} />
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -563,7 +677,9 @@ function Dashboard({
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
                 {stats.alerts.map((item) => (
-                  <div
+                  <button
+                    type="button"
+                    className="dash-row"
                     key={item.id}
                     onClick={() => onViewItem(item.id)}
                     style={listItemStyle(PANEL_COLORS.alerts)}
@@ -578,7 +694,7 @@ function Dashboard({
                       </div>
                     </div>
                     <ChevronRight size={16} color={colors.textMuted} />
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -599,11 +715,15 @@ function Dashboard({
             padding={false}
           >
             {stats.dueReminders.length === 0 ? (
-              <div style={emptyStateStyle}>No due reminders</div>
+              <div style={emptyStateStyle}>
+                {!tier2Loaded ? <TierLoading label="Loading reminders..." /> : 'No due reminders'}
+              </div>
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
                 {stats.dueReminders.map((reminder) => (
-                  <div
+                  <button
+                    type="button"
+                    className="dash-row"
                     key={reminder.id}
                     onClick={() => onViewItem(reminder.item.id)}
                     style={listItemStyle(PANEL_COLORS.reminders)}
@@ -620,7 +740,7 @@ function Dashboard({
                       </div>
                     </div>
                     <ChevronRight size={16} color={colors.textMuted} />
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -662,7 +782,9 @@ function Dashboard({
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 200, overflowY: 'auto' }}>
                 {stats.lowStockItems.map((item) => (
-                  <div
+                  <button
+                    type="button"
+                    className="dash-row"
                     key={item.id}
                     onClick={() => onViewItem(item.id)}
                     style={listItemStyle(PANEL_COLORS.lowStock)}
@@ -684,7 +806,7 @@ function Dashboard({
                     </div>
                     <Badge text={item.category} color={PANEL_COLORS.lowStock} size="xs" />
                     <ChevronRight size={16} color={colors.textMuted} />
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -731,10 +853,7 @@ function Dashboard({
                   }}
                 >
                   {!tier2Loaded ? (
-                    <>
-                      <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading
-                      reservations...
-                    </>
+                    <TierLoading label="Loading reservations..." />
                   ) : (
                     'No upcoming reservations'
                   )}
@@ -747,52 +866,120 @@ function Dashboard({
                     gap: spacing[3],
                   }}
                 >
-                  {upcomingReservations.map((r) => (
-                    <div
-                      key={r.id}
-                      onClick={() =>
-                        onViewReservation ? onViewReservation(r, r.item) : onViewItem(r.item.id)
-                      }
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: spacing[3],
-                        padding: spacing[3],
-                        borderRadius: borderRadius.md,
-                        background: withOpacity(PANEL_COLORS.reservations, 15),
-                        border: `1px solid ${withOpacity(PANEL_COLORS.reservations, 40)}`,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <div
+                  {upcomingReservations.map((r) => {
+                    const isActive = r.start <= today;
+                    const dateLabel =
+                      r.end && r.end !== r.start
+                        ? `${formatDate(r.start)} – ${formatDate(r.end)}`
+                        : formatDate(r.start);
+                    return (
+                      <button
+                        type="button"
+                        className="dash-row"
+                        key={r.id}
+                        onClick={() =>
+                          onViewReservation ? onViewReservation(r, r.item) : onViewItem(r.item.id)
+                        }
                         style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: borderRadius.sm,
-                          background: withOpacity(PANEL_COLORS.reservations, 25),
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: colors.textMuted,
-                          fontSize: typography.fontSize.xs,
-                          flexShrink: 0,
+                          ...listItemStyle(PANEL_COLORS.reservations),
+                          marginBottom: 0,
                         }}
                       >
-                        {r.item.image ? (
-                          <img
-                            src={r.item.image}
-                            alt=""
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: borderRadius.sm,
+                            background: withOpacity(PANEL_COLORS.reservations, 25),
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: colors.textMuted,
+                            fontSize: typography.fontSize.xs,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {r.item.image ? (
+                            <img
+                              src={r.item.image}
+                              alt=""
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                borderRadius: borderRadius.sm,
+                              }}
+                            />
+                          ) : (
+                            'No img'
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
                             style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                              borderRadius: borderRadius.sm,
+                              fontSize: typography.fontSize.sm,
+                              color: colors.textPrimary,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
                             }}
-                          />
-                        ) : (
-                          'img'
+                          >
+                            {r.item.name}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: typography.fontSize.xs,
+                              color: PANEL_COLORS.reservations,
+                            }}
+                          >
+                            {r.project ? `${r.project} • ` : ''}
+                            {dateLabel}
+                          </div>
+                        </div>
+                        {isActive && (
+                          <Badge text="Active" color={PANEL_COLORS.reservations} size="xs" />
                         )}
-                      </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </CollapsibleSection>
+        );
+
+      case 'maintenance':
+        return (
+          <div key="maintenance" id="dash-section-maintenance">
+            <CollapsibleSection
+              title="Upcoming Maintenance"
+              icon={Wrench}
+              badge={stats.pendingMaintenance.length || null}
+              badgeColor={PANEL_COLORS.maintenance}
+              headerColor={PANEL_COLORS.maintenance}
+              collapsed={isCollapsed('maintenance')}
+              onToggleCollapse={() => toggleCollapse('maintenance')}
+              padding={false}
+            >
+              {stats.pendingMaintenance.length === 0 ? (
+                <div style={emptyStateStyle}>
+                  {!tier2Loaded ? (
+                    <TierLoading label="Loading maintenance..." />
+                  ) : (
+                    'No scheduled maintenance'
+                  )}
+                </div>
+              ) : (
+                <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
+                  {stats.pendingMaintenance.slice(0, 6).map((record) => (
+                    <button
+                      type="button"
+                      className="dash-row"
+                      key={record.id}
+                      onClick={() => onViewItem(record.item.id)}
+                      style={listItemStyle(PANEL_COLORS.maintenance)}
+                    >
+                      <Wrench size={16} color={PANEL_COLORS.maintenance} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div
                           style={{
@@ -803,101 +990,36 @@ function Dashboard({
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {r.item.name}
+                          {record.item.name}
                         </div>
                         <div
                           style={{
                             fontSize: typography.fontSize.xs,
-                            color: PANEL_COLORS.reservations,
+                            color: PANEL_COLORS.maintenance,
                           }}
                         >
-                          {r.project ? `${r.project} \u2022 ` : ''}
-                          {formatDate(r.start)}
+                          {record.type || 'Maintenance'}
+                          {record.scheduledDate
+                            ? ` • ${formatDate(record.scheduledDate)}`
+                            : ''}
                         </div>
                       </div>
-                    </div>
+                      <Badge
+                        text={record.status === 'in-progress' ? 'In Progress' : 'Scheduled'}
+                        color={
+                          record.status === 'in-progress'
+                            ? colors.warning
+                            : PANEL_COLORS.maintenance
+                        }
+                        size="xs"
+                      />
+                      <ChevronRight size={16} color={colors.textMuted} />
+                    </button>
                   ))}
                 </div>
               )}
-            </div>
-          </CollapsibleSection>
-        );
-
-      case 'maintenance':
-        return (
-          <CollapsibleSection
-            key="maintenance"
-            title="Upcoming Maintenance"
-            icon={Wrench}
-            badge={stats.pendingMaintenance.length || null}
-            badgeColor={PANEL_COLORS.maintenance}
-            headerColor={PANEL_COLORS.maintenance}
-            collapsed={isCollapsed('maintenance')}
-            onToggleCollapse={() => toggleCollapse('maintenance')}
-            padding={false}
-          >
-            {stats.pendingMaintenance.length === 0 ? (
-              <div style={emptyStateStyle}>
-                {!tier2Loaded ? (
-                  <span
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: spacing[2],
-                    }}
-                  >
-                    <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Loading
-                    maintenance...
-                  </span>
-                ) : (
-                  'No scheduled maintenance'
-                )}
-              </div>
-            ) : (
-              <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
-                {stats.pendingMaintenance.slice(0, 6).map((record) => (
-                  <div
-                    key={record.id}
-                    onClick={() => onViewItem(record.item.id)}
-                    style={listItemStyle(PANEL_COLORS.maintenance)}
-                  >
-                    <Wrench size={16} color={PANEL_COLORS.maintenance} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: typography.fontSize.sm,
-                          color: colors.textPrimary,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {record.item.name}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: typography.fontSize.xs,
-                          color: PANEL_COLORS.maintenance,
-                        }}
-                      >
-                        {record.type || 'Maintenance'}
-                        {record.scheduledDate ? ` \u2022 ${formatDate(record.scheduledDate)}` : ''}
-                      </div>
-                    </div>
-                    <Badge
-                      text={record.status === 'in-progress' ? 'In Progress' : 'Scheduled'}
-                      color={
-                        record.status === 'in-progress' ? colors.warning : PANEL_COLORS.maintenance
-                      }
-                      size="xs"
-                    />
-                    <ChevronRight size={16} color={colors.textMuted} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CollapsibleSection>
+            </CollapsibleSection>
+          </div>
         );
 
       case 'recentActivity':
@@ -912,50 +1034,53 @@ function Dashboard({
             onToggleCollapse={() => toggleCollapse('recentActivity')}
             padding={false}
           >
-            {stats.recentActivity.length === 0 ? (
-              <div style={emptyStateStyle}>No recent activity</div>
+            {recentActivity.length === 0 ? (
+              <div style={emptyStateStyle}>
+                {!auditLogLoaded ? <TierLoading label="Loading activity..." /> : 'No recent activity'}
+              </div>
             ) : (
               <div style={{ padding: spacing[4], maxHeight: 300, overflowY: 'auto' }}>
-                {stats.recentActivity.map((event) => (
-                  <div
-                    key={event.id}
-                    onClick={() => onViewItem(event.item.id)}
-                    style={listItemStyle(PANEL_COLORS.recentActivity)}
-                  >
-                    {event.type === 'checkout' ? (
-                      <LogOut size={16} color={PANEL_COLORS.recentActivity} />
-                    ) : (
-                      <LogIn size={16} color={PANEL_COLORS.recentActivity} />
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: typography.fontSize.sm,
-                          color: colors.textPrimary,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {event.item.name}
+                {recentActivity.map((event) => {
+                  const EventIcon = ACTIVITY_EVENT_ICONS[event.type] || Activity;
+                  const canOpen = event.itemId && inventory.some((i) => i.id === event.itemId);
+                  const Row = canOpen ? 'button' : 'div';
+                  return (
+                    <Row
+                      type={canOpen ? 'button' : undefined}
+                      className={canOpen ? 'dash-row' : undefined}
+                      key={event.id}
+                      onClick={canOpen ? () => onViewItem(event.itemId) : undefined}
+                      style={{
+                        ...listItemStyle(PANEL_COLORS.recentActivity),
+                        ...(canOpen ? {} : { cursor: 'default' }),
+                      }}
+                    >
+                      <EventIcon size={16} color={PANEL_COLORS.recentActivity} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: typography.fontSize.sm,
+                            color: colors.textPrimary,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {event.description}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: typography.fontSize.xs,
+                            color: PANEL_COLORS.recentActivity,
+                          }}
+                        >
+                          {event.who} &bull; {formatDate(event.date)}
+                        </div>
                       </div>
-                      <div
-                        style={{
-                          fontSize: typography.fontSize.xs,
-                          color: PANEL_COLORS.recentActivity,
-                        }}
-                      >
-                        {event.type === 'checkout' ? 'Checked out to' : 'Returned by'} {event.who}{' '}
-                        &bull; {formatDate(event.date)}
-                      </div>
-                    </div>
-                    <Badge
-                      text={event.type === 'checkout' ? 'Out' : 'In'}
-                      color={event.type === 'checkout' ? colors.checkedOut : colors.available}
-                      size="xs"
-                    />
-                  </div>
-                ))}
+                      {canOpen && <ChevronRight size={16} color={colors.textMuted} />}
+                    </Row>
+                  );
+                })}
               </div>
             )}
           </CollapsibleSection>

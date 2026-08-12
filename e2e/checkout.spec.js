@@ -235,7 +235,9 @@ test.describe('Dashboard Panels', () => {
     await page.goto('/');
     await pages.dashboard.expectDashboard();
 
-    await page.locator('input[placeholder="Search by name, ID, or brand..."]').fill('Sony FX6');
+    await page
+      .locator('input[placeholder="Search by name, ID, brand, or serial..."]')
+      .fill('Sony FX6');
     const result = page.getByText('Sony FX6').first();
     await expect(result).toBeVisible();
     await result.click();

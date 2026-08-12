@@ -3,7 +3,7 @@
 // Reusable, composable UI components
 // ============================================================================
 
-import { memo, forwardRef, useState, useCallback, useRef, useEffect } from 'react';
+import { memo, forwardRef, useState, useCallback, useRef, useEffect, useId } from 'react';
 import PropTypes from 'prop-types';
 import { ArrowLeft } from 'lucide-react';
 import { colors, styles, borderRadius, spacing, typography, withOpacity } from '../theme.js';
@@ -281,6 +281,7 @@ export const CollapsibleSection = memo(function CollapsibleSection({
   headerColor,
 }) {
   const accentColor = headerColor || colors.primary;
+  const contentId = useId();
 
   return (
     <div
@@ -292,7 +293,8 @@ export const CollapsibleSection = memo(function CollapsibleSection({
         ...style,
       }}
     >
-      {/* Header - clickable to toggle, hover handled by CSS */}
+      {/* Header — the whole bar is a pointer hit-area; the inner button is
+          the keyboard/AT control (real button, aria-expanded) */}
       <div
         className="collapsible-header"
         onClick={onToggleCollapse}
@@ -309,28 +311,53 @@ export const CollapsibleSection = memo(function CollapsibleSection({
           borderLeft: `4px solid ${accentColor}`,
         }}
       >
-        {Icon && <Icon size={16} color={accentColor} />}
-        <strong style={{ color: colors.textPrimary, flex: 1 }}>{title}</strong>
-        {badge !== undefined && badge !== null && (
-          <span
-            style={{
-              background: withAlpha(accentColor, 0.5),
-              color: colors.textPrimary,
-              padding: '2px 8px',
-              borderRadius: borderRadius.full,
-              fontSize: typography.fontSize.xs,
-              fontWeight: typography.fontWeight.medium,
-            }}
-          >
-            {badge}
-          </span>
-        )}
+        <button
+          type="button"
+          className="collapsible-toggle"
+          aria-expanded={!collapsed}
+          aria-controls={contentId}
+          onClick={(e) => {
+            e.stopPropagation(); // header onClick would toggle a second time
+            onToggleCollapse?.();
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: spacing[2],
+            flex: 1,
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+            font: 'inherit',
+            color: 'inherit',
+            textAlign: 'left',
+          }}
+        >
+          {Icon && <Icon size={16} color={accentColor} />}
+          <strong style={{ color: colors.textPrimary, flex: 1 }}>{title}</strong>
+          {badge !== undefined && badge !== null && (
+            <span
+              style={{
+                background: withAlpha(accentColor, 0.5),
+                color: colors.textPrimary,
+                padding: '2px 8px',
+                borderRadius: borderRadius.full,
+                fontSize: typography.fontSize.xs,
+                fontWeight: typography.fontWeight.medium,
+              }}
+            >
+              {badge}
+            </span>
+          )}
+        </button>
         {action && <div onClick={(e) => e.stopPropagation()}>{action}</div>}
       </div>
 
       {/* Content - shown when not collapsed */}
       {!collapsed && (
         <div
+          id={contentId}
           style={{
             padding: padding ? spacing[4] : 0,
             background: withAlpha(accentColor, 0.3),
@@ -418,8 +445,12 @@ export const StatCard = memo(function StatCard({
   color = colors.primary,
   onClick,
 }) {
+  // Clickable stat cards are real buttons (keyboard + AT reachable)
+  const Tag = onClick ? 'button' : 'div';
   return (
-    <div
+    <Tag
+      type={onClick ? 'button' : undefined}
+      className={onClick ? 'stat-card-button' : undefined}
       onClick={onClick}
       style={{
         padding: spacing[5],
@@ -428,6 +459,7 @@ export const StatCard = memo(function StatCard({
         border: `1px solid ${colors.border}`,
         background: colors.bgLight,
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        font: 'inherit',
         ...(onClick && { cursor: 'pointer' }),
       }}
     >
@@ -466,7 +498,7 @@ export const StatCard = memo(function StatCard({
       >
         {label}
       </div>
-    </div>
+    </Tag>
   );
 });
 
