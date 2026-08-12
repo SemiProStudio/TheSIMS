@@ -186,6 +186,25 @@ export async function cleanupTestData() {
   await db.from('clients').delete().ilike('name', `${E2E_PREFIX}%`);
   await db.from('pack_lists').delete().ilike('name', `${E2E_PREFIX}%`);
 
+  // E2E-created saved filter views left in user profiles (gear list persists
+  // them per-user; a crashed run can strand one, which changes the Saved
+  // Views trigger label whenever its filters match)
+  const { data: userRows } = await db.from('users').select('id, profile');
+  for (const row of userRows || []) {
+    const views = row.profile?.savedFilterViews;
+    if (Array.isArray(views) && views.some((v) => v.name?.startsWith(E2E_PREFIX))) {
+      await db
+        .from('users')
+        .update({
+          profile: {
+            ...row.profile,
+            savedFilterViews: views.filter((v) => !v.name?.startsWith(E2E_PREFIX)),
+          },
+        })
+        .eq('id', row.id);
+    }
+  }
+
   // Seed items a crashed run left checked out to an E2E borrower
   await db
     .from('inventory')

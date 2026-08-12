@@ -8,6 +8,7 @@ import { VIEWS, MODALS } from './constants.js';
 import { generateItemCode } from './utils';
 import { error as logError } from './lib/logger.js';
 import { useNavigationContext } from './contexts/NavigationContext.js';
+import { useFilterContext } from './contexts/FilterContext.js';
 import { useModalContext } from './contexts/ModalContext.js';
 import { useData } from './contexts/DataContext.js';
 import { useAuth } from './contexts/AuthContext.js';
@@ -69,6 +70,8 @@ export default memo(function AppModals({ handlers, currentUser }) {
   // Read state from contexts
   const { selectedItem, setSelectedItem, selectedReservationItem, setCurrentView } =
     useNavigationContext();
+
+  const { selectedIds } = useFilterContext();
 
   const {
     activeModal,
@@ -211,7 +214,13 @@ export default memo(function AppModals({ handlers, currentUser }) {
         )}
 
         {activeModal === MODALS.EXPORT && (
-          <ExportModal onExport={exportData} onClose={closeModal} user={currentUser} />
+          <ExportModal
+            onExport={exportData}
+            onClose={closeModal}
+            user={currentUser}
+            selectionCount={selectedIds.length}
+            totalCount={inventory.length}
+          />
         )}
 
         {activeModal === MODALS.PROFILE && (
