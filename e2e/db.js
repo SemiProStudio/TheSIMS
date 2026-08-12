@@ -66,6 +66,11 @@ function isoDate(daysFromToday = 0) {
 
 let seq = 0;
 
+// Two parallel Playwright workers calling createTestItem within the same
+// millisecond used to mint identical ids (timestamp + per-process seq) and
+// hit inventory_pkey. Fold the worker's pid in so ids differ across workers.
+const WORKER_TOKEN = (process.pid % 1296).toString(36).toUpperCase().padStart(2, '0');
+
 /**
  * Insert a private inventory item for one test. Returns its id.
  * The name MUST start with E2E_PREFIX (enforced) so cleanup can find it.
@@ -76,7 +81,7 @@ export async function createTestItem({ name, status = 'available', columns = {} 
   }
   const db = await adminDb();
   seq += 1;
-  const id = `ZZE2E${Date.now().toString(36).toUpperCase()}${seq}`;
+  const id = `ZZE2E${Date.now().toString(36).slice(-6).toUpperCase()}${WORKER_TOKEN}${seq}`;
   const { error } = await db.from('inventory').insert({
     id,
     name,
@@ -181,10 +186,13 @@ export async function cleanupTestData() {
     await db.from('inventory').delete().in('id', ids);
   }
 
-  // Reservations/clients/pack lists created against seed items
+  // Reservations/clients/pack lists/packages created against seed items.
+  // package_items / package_notes / pack_list_packages all cascade on
+  // package delete, so removing the package row is enough.
   await db.from('reservations').delete().ilike('project', `${E2E_PREFIX}%`);
   await db.from('clients').delete().ilike('name', `${E2E_PREFIX}%`);
   await db.from('pack_lists').delete().ilike('name', `${E2E_PREFIX}%`);
+  await db.from('packages').delete().ilike('name', `${E2E_PREFIX}%`);
 
   // E2E-created saved filter views left in user profiles (gear list persists
   // them per-user; a crashed run can strand one, which changes the Saved

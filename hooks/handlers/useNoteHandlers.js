@@ -65,6 +65,21 @@ export function useNoteHandlers({
         }));
       };
 
+      // DB persistence per entity type (reservation notes are JSONB on the
+      // reservation row and persist through the reservation update path)
+      const persistNote =
+        entityType === 'item'
+          ? dataContext?.addItemNote
+          : entityType === 'package'
+            ? dataContext?.addPackageNote
+            : null;
+      const persistNoteDelete =
+        entityType === 'item'
+          ? dataContext?.deleteItemNote
+          : entityType === 'package'
+            ? dataContext?.deletePackageNote
+            : null;
+
       return {
         add: async (text) => {
           const entity = getEntity();
@@ -84,8 +99,8 @@ export function useNoteHandlers({
           updateCollection(entity.id, () => updatedNotes);
           setEntity((prev) => ({ ...prev, notes: updatedNotes }));
 
-          if (entityType === 'item' && dataContext?.addItemNote) {
-            const dbResult = await dataContext.addItemNote(entity.id, note);
+          if (persistNote) {
+            const dbResult = await persistNote(entity.id, note);
             if (dbResult?.id && dbResult.id !== tempId) {
               const swapId = (notes) => replaceNoteId(notes, tempId, dbResult.id);
               updateCollection(entity.id, swapId);
@@ -113,8 +128,8 @@ export function useNoteHandlers({
           updateCollection(entity.id, () => updatedNotes);
           setEntity((prev) => ({ ...prev, notes: updatedNotes }));
 
-          if (entityType === 'item' && dataContext?.addItemNote) {
-            const dbResult = await dataContext.addItemNote(entity.id, reply);
+          if (persistNote) {
+            const dbResult = await persistNote(entity.id, reply);
             if (dbResult?.id && dbResult.id !== tempId) {
               const swapId = (notes) => replaceNoteId(notes, tempId, dbResult.id);
               updateCollection(entity.id, swapId);
@@ -142,8 +157,8 @@ export function useNoteHandlers({
           updateCollection(entity.id, () => updatedNotes);
           setEntity((prev) => ({ ...prev, notes: updatedNotes }));
 
-          if (entityType === 'item' && dataContext?.deleteItemNote) {
-            dataContext.deleteItemNote(noteId);
+          if (persistNoteDelete) {
+            persistNoteDelete(noteId);
           }
         },
       };

@@ -167,6 +167,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     openMaintenanceModal,
     openMaintenanceEditModal,
     itemNoteHandlers,
+    packageNoteHandlers,
     clientNoteHandlers,
     reservationNoteHandlers,
     addReminder,
@@ -182,6 +183,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     addRequiredAccessories,
     removeRequiredAccessory,
     addItemToPackage,
+    reservePackage,
     updateMaintenanceStatus,
     addAuditLog,
     resetItemForm,
@@ -309,6 +311,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         <Suspense fallback={<ViewLoading message="Loading Packages..." />}>
           <PackagesView
             packages={packages}
+            packLists={packLists}
             dataContext={dataContext}
             inventory={inventory}
             categorySettings={categorySettings}
@@ -317,6 +320,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             currentUser={currentUser}
             initialSelectedPackage={selectedPackage}
             onPackageSelect={setSelectedPackage}
+            onReserve={reservePackage}
+            onAddNote={packageNoteHandlers.add}
+            onReplyNote={packageNoteHandlers.reply}
+            onDeleteNote={packageNoteHandlers.delete}
           />
         </Suspense>
       )}
@@ -470,7 +477,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                   await updateSpecs(newSpecs);
                 } catch (err) {
                   // updateSpecs already reverted local state
-                  addToast('Failed to save specs: ' + (err.message || 'Please try again.'), 'error');
+                  addToast(
+                    'Failed to save specs: ' + (err.message || 'Please try again.'),
+                    'error',
+                  );
                   return;
                 }
                 addAuditLog({

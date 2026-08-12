@@ -522,17 +522,18 @@ export default function App() {
     showConfirm,
   });
 
-  const { itemNoteHandlers, reservationNoteHandlers, clientNoteHandlers } = useNoteHandlers({
-    selectedItem,
-    setSelectedItem,
-    selectedPackage,
-    setSelectedPackage,
-    selectedReservation,
-    setSelectedReservation,
-    selectedReservationItem,
-    dataContext,
-    currentUser,
-  });
+  const { itemNoteHandlers, packageNoteHandlers, reservationNoteHandlers, clientNoteHandlers } =
+    useNoteHandlers({
+      selectedItem,
+      setSelectedItem,
+      selectedPackage,
+      setSelectedPackage,
+      selectedReservation,
+      setSelectedReservation,
+      selectedReservationItem,
+      dataContext,
+      currentUser,
+    });
 
   const { addReminder, completeReminder, uncompleteReminder, deleteReminder } = useReminderHandlers(
     {
@@ -550,6 +551,20 @@ export default function App() {
     addChangeLog,
     dataContext,
   });
+
+  // Reserve every item in a package at once: prefill the multi-item
+  // reservation form and open the Add Reservation modal. packageItems are the
+  // package's items already resolved against inventory (deleted refs dropped).
+  const reservePackage = useCallback(
+    (pkg, packageItems) => {
+      resetReservationForm();
+      const itemIds = packageItems.map((i) => i.id);
+      // Queued after the reset, so the updater receives the empty form
+      setReservationForm((prev) => ({ ...prev, itemIds, itemId: itemIds[0] || '' }));
+      openModal(MODALS.ADD_RESERVATION);
+    },
+    [resetReservationForm, setReservationForm, openModal],
+  );
 
   // ============================================================================
   // Remaining Handlers
@@ -743,6 +758,7 @@ export default function App() {
       openMaintenanceModal,
       openMaintenanceEditModal,
       itemNoteHandlers,
+      packageNoteHandlers,
       clientNoteHandlers,
       reservationNoteHandlers,
       addReminder,
@@ -752,6 +768,7 @@ export default function App() {
       openEditReservation,
       deleteReservation,
       saveReservation,
+      reservePackage,
       setItemAsKit,
       addItemsToKit,
       removeItemFromKit,
@@ -789,6 +806,7 @@ export default function App() {
       openMaintenanceModal,
       openMaintenanceEditModal,
       itemNoteHandlers,
+      packageNoteHandlers,
       clientNoteHandlers,
       reservationNoteHandlers,
       addReminder,
@@ -798,6 +816,7 @@ export default function App() {
       openEditReservation,
       deleteReservation,
       saveReservation,
+      reservePackage,
       setItemAsKit,
       addItemsToKit,
       removeItemFromKit,

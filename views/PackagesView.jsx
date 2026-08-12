@@ -4,7 +4,17 @@
 // ============================================================================
 
 import { memo, useState, useCallback, useMemo, useEffect } from 'react';
-import { Plus, Package, Trash2, ChevronRight, Edit2, AlertTriangle, Lightbulb } from 'lucide-react';
+import {
+  Plus,
+  Package,
+  Trash2,
+  ChevronRight,
+  Edit2,
+  AlertTriangle,
+  Lightbulb,
+  CalendarPlus,
+  MessageSquare,
+} from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
 import { formatMoney, getStatusColor } from '../utils';
 import {
@@ -20,6 +30,7 @@ import {
 import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from '../modals/ModalBase.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
+import NotesSection from '../components/NotesSection.jsx';
 import { useData } from '../contexts/DataContext.js';
 import { useToast } from '../contexts/ToastContext.js';
 
@@ -27,6 +38,7 @@ import { error as logError } from '../lib/logger.js';
 
 function PackagesView({
   packages,
+  packLists = [],
   dataContext: propDataContext,
   inventory,
   categorySettings = {},
@@ -35,6 +47,10 @@ function PackagesView({
   currentUser,
   initialSelectedPackage = null,
   onPackageSelect,
+  onReserve,
+  onAddNote,
+  onReplyNote,
+  onDeleteNote,
 }) {
   const ctxData = useData();
   const dataContext = propDataContext || ctxData;
@@ -71,6 +87,28 @@ function PackagesView({
     }
   }, [initialSelectedPackage]);
 
+  // Pack lists load lazily — needed here so the delete confirmation can warn
+  // when a package is referenced by pack lists
+  useEffect(() => {
+    dataContext?.ensurePackLists?.();
+  }, [dataContext]);
+
+  // Packages arrive from getAll() without notes (notes === undefined);
+  // hydrate them once per package when its detail opens
+  useEffect(() => {
+    const pkgId = selectedPackage?.id;
+    if (!pkgId || selectedPackage.notes !== undefined || !dataContext?.loadPackageNotes) return;
+    let cancelled = false;
+    dataContext.loadPackageNotes(pkgId).then((notes) => {
+      if (!cancelled) {
+        setSelectedPackage({ ...selectedPackage, notes });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPackage, dataContext, setSelectedPackage]);
+
   // Check if an item has quantity tracking
   const hasQuantityTracking = useCallback(
     (item) => {
@@ -91,9 +129,19 @@ function PackagesView({
       (pkg) =>
         pkg.name.toLowerCase().includes(q) ||
         pkg.id.toLowerCase().includes(q) ||
-        (pkg.description && pkg.description.toLowerCase().includes(q)),
+        (pkg.description && pkg.description.toLowerCase().includes(q)) ||
+        (pkg.category && pkg.category.toLowerCase().includes(q)),
     );
   }, [packages, packageSearch]);
+
+  // Category suggestions for the details form — existing package categories
+  // plus inventory categories, so names stay consistent instead of drifting
+  const categoryOptions = useMemo(() => {
+    const cats = new Set();
+    packages.forEach((pkg) => pkg.category && cats.add(pkg.category));
+    inventory.forEach((item) => item.category && cats.add(item.category));
+    return Array.from(cats).sort();
+  }, [packages, inventory]);
 
   // Get unique categories from inventory for filter dropdown
   const availableCategories = useMemo(() => {
@@ -166,7 +214,9 @@ function PackagesView({
   const calculateValue = useCallback((items, quantities = {}) => {
     return items.reduce((sum, item) => {
       const qty = quantities[item.id] || 1;
-      return sum + (item.currentValue || 0) * qty;
+      // Same fallback as the gear list: purchase price stands in for items
+      // without an appraised current value
+      return sum + (item.currentValue ?? item.purchasePrice ?? 0) * qty;
     }, 0);
   }, []);
 
@@ -174,9 +224,32 @@ function PackagesView({
     return items.reduce((sum, item) => sum + (quantities[item.id] || 1), 0);
   }, []);
 
-  const allItemsAvailable = useCallback((items) => {
-    return items.every((item) => item.status === 'available');
-  }, []);
+  // Everything that can make a package not ready to go out as a unit:
+  // unavailable items, quantities above stock, and refs to deleted items
+  const getPackageIssues = useCallback(
+    (pkg) => {
+      const items = getPackageItems(pkg);
+      const quantities = pkg.itemQuantities || {};
+      const missing = (pkg.items?.length || 0) - items.length;
+      const unavailable = items.filter((item) => item.status !== 'available');
+      const shortfalls = items
+        .filter(
+          (item) => hasQuantityTracking(item) && (quantities[item.id] || 1) > (item.quantity ?? 1),
+        )
+        .map((item) => ({
+          item,
+          needed: quantities[item.id] || 1,
+          inStock: item.quantity ?? 1,
+        }));
+      return {
+        missing,
+        unavailable,
+        shortfalls,
+        hasIssues: missing > 0 || unavailable.length > 0 || shortfalls.length > 0,
+      };
+    },
+    [getPackageItems, hasQuantityTracking],
+  );
 
   // Reset form
   const resetForm = useCallback(() => {
@@ -197,16 +270,18 @@ function PackagesView({
     setShowDetailsPrompt(true);
   }, [resetForm]);
 
-  // Handle details prompt submission
+  // Handle details prompt submission (create and edit both pass through here)
   const handleDetailsSubmit = useCallback(() => {
     const trimmedName = formName.trim();
     if (!trimmedName) {
       setNameError('Package name is required');
       return;
     }
-    // Check for duplicate name (case-insensitive)
+    // Check for duplicate name (case-insensitive), ignoring the package
+    // currently being edited so renames and unchanged names both pass
     const isDuplicate = packages.some(
-      (pkg) => pkg.name.toLowerCase() === trimmedName.toLowerCase(),
+      (pkg) =>
+        pkg.id !== editingPackage?.id && pkg.name.toLowerCase() === trimmedName.toLowerCase(),
     );
     if (isDuplicate) {
       setNameError('A package with this name already exists');
@@ -214,22 +289,28 @@ function PackagesView({
     }
     setShowDetailsPrompt(false);
     setShowCreate(true);
-  }, [formName, packages]);
+  }, [formName, packages, editingPackage]);
 
-  // Open edit mode - go straight to item selection (details already exist)
-  const handleStartEdit = useCallback(
-    (pkg) => {
-      setFormName(pkg.name);
-      setFormDescription(pkg.description || '');
-      setFormCategory(pkg.category || '');
-      setFormItems([...pkg.items]);
-      setFormItemQuantities({ ...(pkg.itemQuantities || {}) });
-      setEditingPackage(pkg);
-      setShowCreate(true);
-      setSelectedPackage(null);
-    },
-    [setSelectedPackage],
-  );
+  // Open edit mode — details first (name/description/category are editable
+  // too), then on to item selection
+  const handleStartEdit = useCallback((pkg) => {
+    setFormName(pkg.name);
+    setFormDescription(pkg.description || '');
+    setFormCategory(pkg.category || '');
+    setFormItems([...pkg.items]);
+    setFormItemQuantities({ ...(pkg.itemQuantities || {}) });
+    setEditingPackage(pkg);
+    setNameError('');
+    setShowDetailsPrompt(true);
+  }, []);
+
+  // Close the details prompt without saving — in edit mode the detail view
+  // is still selected underneath, so this simply returns to it
+  const handleDetailsCancel = useCallback(() => {
+    setShowDetailsPrompt(false);
+    setEditingPackage(null);
+    resetForm();
+  }, [resetForm]);
 
   // Cancel create/edit - return to package detail if editing
   const handleCancel = useCallback(() => {
@@ -413,27 +494,47 @@ function PackagesView({
     setConfirmDelete({ isOpen: true, id: pkg.id, name: pkg.name });
   }, []);
 
+  // Pack lists that reference the package queued for deletion — surfaced in
+  // the confirmation so removing it from those lists isn't a surprise
+  const referencingPackLists = useMemo(() => {
+    if (!confirmDelete.id) return [];
+    return (packLists || []).filter((list) => (list.packages || []).includes(confirmDelete.id));
+  }, [packLists, confirmDelete.id]);
+
+  const deleteMessage = useMemo(() => {
+    const base = `Are you sure you want to delete "${confirmDelete.name}"? This action cannot be undone.`;
+    if (referencingPackLists.length === 0) return base;
+    const names = referencingPackLists.map((list) => list.name);
+    const shown = names.slice(0, 3).join(', ');
+    const more = names.length > 3 ? ` and ${names.length - 3} more` : '';
+    const plural = referencingPackLists.length === 1 ? 'pack list' : 'pack lists';
+    return `${base} This package is used by ${referencingPackLists.length} ${plural} (${shown}${more}) and will be removed from ${referencingPackLists.length === 1 ? 'it' : 'them'}.`;
+  }, [confirmDelete.name, referencingPackLists]);
+
   const handleDeleteConfirm = useCallback(async () => {
     const { id, name } = confirmDelete;
 
     if (dataContext?.deletePackage) {
       try {
         await dataContext.deletePackage(id);
-        addToast('Package deleted', 'success');
-        addAuditLog?.({
-          type: 'package_deleted',
-          itemId: id,
-          itemType: 'package',
-          itemName: name,
-          userId: currentUser?.id,
-          userName: currentUser?.name,
-          description: `Deleted package "${name}"`,
-        });
       } catch (err) {
+        // Keep the package in local state — removing it here would show a
+        // successful delete that never happened server-side
         logError('Failed to delete package:', err);
         addToast('Failed to delete package', 'error');
-        dataContext.removeLocalPackage(id);
+        setConfirmDelete({ isOpen: false, id: null, name: '' });
+        return;
       }
+      addToast('Package deleted', 'success');
+      addAuditLog?.({
+        type: 'package_deleted',
+        itemId: id,
+        itemType: 'package',
+        itemName: name,
+        userId: currentUser?.id,
+        userName: currentUser?.name,
+        description: `Deleted package "${name}"`,
+      });
     } else {
       dataContext.removeLocalPackage(id);
     }
@@ -448,15 +549,28 @@ function PackagesView({
       if (!selectedPackage) return;
       const newItems = [...selectedPackage.items, itemId];
       const updatedPkg = { ...selectedPackage, items: newItems };
+      const accessory = inventory.find((i) => i.id === itemId);
 
       // Optimistic local update
       dataContext.patchPackage(selectedPackage.id, { items: newItems });
       setSelectedPackage(updatedPkg);
 
+      const logAccessoryAdd = () =>
+        addAuditLog?.({
+          type: 'package_updated',
+          itemId: selectedPackage.id,
+          itemType: 'package',
+          itemName: selectedPackage.name,
+          userId: currentUser?.id,
+          userName: currentUser?.name,
+          description: `Added ${accessory?.name || itemId} to package "${selectedPackage.name}"`,
+        });
+
       // Persist to DB
       if (dataContext?.updatePackage) {
         try {
           await dataContext.updatePackage(selectedPackage.id, { items: newItems });
+          logAccessoryAdd();
         } catch (err) {
           logError('Failed to add suggested accessory:', err);
           addToast('Failed to save — change may not persist', 'warning');
@@ -464,9 +578,19 @@ function PackagesView({
           dataContext.patchPackage(selectedPackage.id, { items: selectedPackage.items });
           setSelectedPackage(selectedPackage);
         }
+      } else {
+        logAccessoryAdd();
       }
     },
-    [selectedPackage, setSelectedPackage, dataContext, addToast],
+    [
+      selectedPackage,
+      setSelectedPackage,
+      dataContext,
+      addToast,
+      addAuditLog,
+      currentUser,
+      inventory,
+    ],
   );
 
   // Handle viewing item with proper back context
@@ -492,19 +616,10 @@ function PackagesView({
       <>
         <PageHeader title="Packages" />
 
-        <Modal
-          isOpen
-          onClose={() => {
-            setShowDetailsPrompt(false);
-            resetForm();
-          }}
-        >
+        <Modal isOpen onClose={handleDetailsCancel}>
           <ModalHeader
-            title="New Package"
-            onClose={() => {
-              setShowDetailsPrompt(false);
-              resetForm();
-            }}
+            title={editingPackage ? 'Edit Package Details' : 'New Package'}
+            onClose={handleDetailsCancel}
           />
           <div style={{ padding: spacing[4] }}>
             <div style={{ marginBottom: spacing[4] }}>
@@ -551,14 +666,23 @@ function PackagesView({
             </div>
 
             <div style={{ marginBottom: spacing[4] }}>
-              <label style={styles.label}>Category</label>
+              <label style={styles.label} htmlFor="package-category-input">
+                Category
+              </label>
               <input
+                id="package-category-input"
                 type="text"
                 value={formCategory}
                 onChange={(e) => setFormCategory(e.target.value)}
                 placeholder="e.g., Cameras, Audio, Lighting"
+                list="package-category-options"
                 style={styles.input}
               />
+              <datalist id="package-category-options">
+                {categoryOptions.map((cat) => (
+                  <option key={cat} value={cat} />
+                ))}
+              </datalist>
             </div>
           </div>
           <div
@@ -569,13 +693,7 @@ function PackagesView({
               justifyContent: 'flex-end',
             }}
           >
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setShowDetailsPrompt(false);
-                resetForm();
-              }}
-            >
+            <Button variant="secondary" onClick={handleDetailsCancel}>
               Cancel
             </Button>
             <Button onClick={handleDetailsSubmit} disabled={isNameEmpty}>
@@ -697,6 +815,10 @@ function PackagesView({
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => handleToggleItem(item.id)}
+                      // Without this, a click directly on the checkbox also
+                      // bubbles to the row's onClick and toggles twice (no-op)
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Select ${item.name}`}
                       style={{ accentColor: colors.primary }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -774,7 +896,7 @@ function PackagesView({
     const packageItems = getPackageItems(selectedPackage);
     const pkgQuantities = selectedPackage.itemQuantities || {};
     const packageValue = calculateValue(packageItems, pkgQuantities);
-    const allAvailable = allItemsAvailable(packageItems);
+    const issues = getPackageIssues(selectedPackage);
     const suggestedAccessories = getSuggestedAccessories(selectedPackage);
 
     return (
@@ -786,6 +908,14 @@ function PackagesView({
           backLabel="Back to Packages"
           action={
             <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
+              {onReserve && packageItems.length > 0 && (
+                <Button
+                  onClick={() => onReserve(selectedPackage, packageItems)}
+                  icon={CalendarPlus}
+                >
+                  Reserve
+                </Button>
+              )}
               <Button
                 variant="secondary"
                 onClick={() => handleStartEdit(selectedPackage)}
@@ -827,11 +957,12 @@ function PackagesView({
           </p>
         )}
 
-        {!allAvailable && (
+        {issues.hasIssues && (
           <div
+            role="status"
             style={{
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               gap: spacing[2],
               padding: spacing[3],
               marginBottom: spacing[4],
@@ -842,8 +973,31 @@ function PackagesView({
               fontSize: typography.fontSize.sm,
             }}
           >
-            <AlertTriangle size={16} />
-            <span>Some items in this package are not available</span>
+            <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[1] }}>
+              {issues.unavailable.length > 0 && (
+                <span>
+                  Not available:{' '}
+                  {issues.unavailable
+                    .slice(0, 3)
+                    .map((item) => item.name)
+                    .join(', ')}
+                  {issues.unavailable.length > 3 && ` and ${issues.unavailable.length - 3} more`}
+                </span>
+              )}
+              {issues.shortfalls.map(({ item, needed, inStock }) => (
+                <span key={item.id}>
+                  {item.name}: package needs {needed}, only {inStock} in stock
+                </span>
+              ))}
+              {issues.missing > 0 && (
+                <span>
+                  {issues.missing} item{issues.missing === 1 ? '' : 's'} in this package no longer
+                  exist{issues.missing === 1 ? 's' : ''} in inventory — edit the package to remove
+                  {issues.missing === 1 ? ' it' : ' them'}
+                </span>
+              )}
+            </div>
           </div>
         )}
 
@@ -864,12 +1018,33 @@ function PackagesView({
               icon={Package}
             />
             <div style={{ flex: 1, overflowY: 'auto' }}>
+              {packageItems.length === 0 && (
+                <div
+                  style={{
+                    padding: spacing[4],
+                    textAlign: 'center',
+                    color: colors.textMuted,
+                    fontSize: typography.fontSize.sm,
+                  }}
+                >
+                  This package has no items — use Edit to add some.
+                </div>
+              )}
               {packageItems.map((item) => {
                 const qty = pkgQuantities[item.id];
                 return (
                   <div
                     key={item.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View ${item.name}`}
                     onClick={() => handleViewItem(item.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleViewItem(item.id);
+                      }
+                    }}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -958,8 +1133,17 @@ function PackagesView({
                     }}
                   >
                     <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`View ${item.name}`}
                       style={{ flex: 1, cursor: 'pointer' }}
                       onClick={() => handleViewItem(item.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleViewItem(item.id);
+                        }
+                      }}
                     >
                       <div
                         style={{
@@ -989,10 +1173,37 @@ function PackagesView({
           )}
         </div>
 
+        {/* Notes */}
+        <Card padding={false} style={{ marginTop: spacing[4] }}>
+          <CardHeader
+            title={`Notes${selectedPackage.notes?.length ? ` (${selectedPackage.notes.length})` : ''}`}
+            icon={MessageSquare}
+          />
+          {selectedPackage.notes === undefined ? (
+            <div
+              style={{
+                padding: spacing[4],
+                color: colors.textMuted,
+                fontSize: typography.fontSize.sm,
+              }}
+            >
+              Loading notes...
+            </div>
+          ) : (
+            <NotesSection
+              notes={selectedPackage.notes}
+              onAddNote={onAddNote}
+              onReply={onReplyNote}
+              onDelete={onDeleteNote}
+              user={currentUser}
+            />
+          )}
+        </Card>
+
         <ConfirmDialog
           isOpen={confirmDelete.isOpen}
           title="Delete Package"
-          message={`Are you sure you want to delete "${confirmDelete.name}"? This action cannot be undone.`}
+          message={deleteMessage}
           onConfirm={handleDeleteConfirm}
           onCancel={() => setConfirmDelete({ isOpen: false, id: null, name: '' })}
         />
@@ -1053,7 +1264,7 @@ function PackagesView({
           {filteredPackages.map((pkg) => {
             const packageItems = getPackageItems(pkg);
             const packageValue = calculateValue(packageItems, pkg.itemQuantities || {});
-            const allAvailable = allItemsAvailable(packageItems);
+            const issues = getPackageIssues(pkg);
             return (
               <Card
                 key={pkg.id}
@@ -1079,7 +1290,24 @@ function PackagesView({
                       {pkg.name}
                     </h3>
                   </div>
-                  {!allAvailable && <AlertTriangle size={16} color={colors.checkedOut} />}
+                  {issues.hasIssues && (
+                    <AlertTriangle
+                      size={16}
+                      color={colors.checkedOut}
+                      aria-label="Package has availability issues"
+                    >
+                      <title>
+                        {[
+                          issues.unavailable.length > 0 &&
+                            `${issues.unavailable.length} not available`,
+                          issues.shortfalls.length > 0 && `${issues.shortfalls.length} over stock`,
+                          issues.missing > 0 && `${issues.missing} missing from inventory`,
+                        ]
+                          .filter(Boolean)
+                          .join(' • ')}
+                      </title>
+                    </AlertTriangle>
+                  )}
                 </div>
                 <div
                   style={{
