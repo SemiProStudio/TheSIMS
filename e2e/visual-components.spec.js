@@ -92,6 +92,16 @@ test.describe('Visual Regression - Components', () => {
       await expect(modal.getByText('Due date is required')).toBeVisible();
       await page.waitForTimeout(300);
 
+      // The failed submit scrolls the first invalid field into view and the
+      // final scroll offset is timing-dependent — this baseline used to flake
+      // between two scroll states. Pin every scrollable to the top so the
+      // capture is deterministic.
+      await modal.evaluate((el) => {
+        el.scrollTop = 0;
+        for (const div of el.querySelectorAll('div')) div.scrollTop = 0;
+      });
+      await page.waitForTimeout(200);
+
       await expect(modal).toHaveScreenshot('form-validation-errors.png', {
         maxDiffPixels: 200,
       });

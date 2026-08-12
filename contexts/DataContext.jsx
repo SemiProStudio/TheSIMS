@@ -13,6 +13,7 @@ import {
   itemRemindersService,
   clientsService,
   packagesService,
+  packageNotesService,
   packListsService,
   categoriesService,
   specsService,
@@ -313,9 +314,7 @@ export function DataProvider({ children }) {
         return next.map((item) => {
           const reservations = item.reservations || [];
           const pruned = reservations.filter((r) => currentReservationIds.has(r.id));
-          return pruned.length === reservations.length
-            ? item
-            : { ...item, reservations: pruned };
+          return pruned.length === reservations.length ? item : { ...item, reservations: pruned };
         });
       });
 
@@ -824,6 +823,49 @@ export function DataProvider({ children }) {
   }, []);
 
   // =============================================================================
+  // PACKAGE NOTES OPERATIONS
+  // =============================================================================
+
+  // getAll() doesn't join notes (only getById does), so packages start with
+  // notes === undefined; the detail view calls this once to hydrate them.
+  const loadPackageNotes = useCallback(async (packageId) => {
+    try {
+      const notes = await packageNotesService.getByPackageId(packageId);
+      setPackages((prev) => prev.map((pkg) => (pkg.id === packageId ? { ...pkg, notes } : pkg)));
+      return notes;
+    } catch (err) {
+      logError('Failed to load package notes:', err);
+      return [];
+    }
+  }, []);
+
+  const addPackageNote = useCallback(async (packageId, note) => {
+    try {
+      const dbNote = {
+        // Don't pass id - let DB generate UUID
+        package_id: packageId,
+        user_name: note.user,
+        text: note.text,
+        parent_id: note.parentId || null,
+        deleted: false,
+      };
+      const result = await packageNotesService.create(dbNote);
+      return result; // Returns record with real UUID
+    } catch (err) {
+      logError('Failed to save package note:', err);
+      return null;
+    }
+  }, []);
+
+  const deletePackageNote = useCallback(async (noteId) => {
+    try {
+      await packageNotesService.softDelete(noteId);
+    } catch (err) {
+      logError('Failed to delete package note:', err);
+    }
+  }, []);
+
+  // =============================================================================
   // PACK LISTS OPERATIONS
   // =============================================================================
 
@@ -1218,6 +1260,9 @@ export function DataProvider({ children }) {
       createPackage,
       updatePackage,
       deletePackage,
+      loadPackageNotes,
+      addPackageNote,
+      deletePackageNote,
 
       // Pack List Operations
       createPackList,
@@ -1285,6 +1330,9 @@ export function DataProvider({ children }) {
       createPackage,
       updatePackage,
       deletePackage,
+      loadPackageNotes,
+      addPackageNote,
+      deletePackageNote,
       createPackList,
       updatePackList,
       deletePackList,

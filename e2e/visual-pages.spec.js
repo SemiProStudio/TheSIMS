@@ -189,4 +189,34 @@ test.describe('Visual Regression - Pages', () => {
       });
     });
   });
+
+  test.describe('Packages', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.goto('/');
+
+      const dashboard = new DashboardPage(page);
+      await dashboard.expectDashboard();
+      await dashboard.navigateTo('Packages');
+      await expect(page.locator('h2:has-text("Packages")')).toBeVisible();
+      await page.waitForTimeout(500);
+    });
+
+    test('packages list should match baseline', async ({ page }) => {
+      await expect(page).toHaveScreenshot('packages-list.png', {
+        maxDiffPixels: 300,
+      });
+    });
+
+    test('package detail should match baseline', async ({ page }) => {
+      await page.getByText('Corporate Video Kit').first().click();
+      await expect(page.locator('h2:has-text("Corporate Video Kit")')).toBeVisible();
+      // Notes hydrate lazily — wait for the section to settle before capture
+      await expect(page.getByText('No notes yet')).toBeVisible();
+      await page.waitForTimeout(300);
+
+      await expect(page).toHaveScreenshot('package-detail.png', {
+        maxDiffPixels: 300,
+      });
+    });
+  });
 });
