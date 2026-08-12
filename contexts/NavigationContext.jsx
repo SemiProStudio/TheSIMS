@@ -44,6 +44,12 @@ export function NavigationProvider({
   const [selectedReservationItem, setSelectedReservationItem] = useState(null);
   const [itemBackContext, setItemBackContext] = useState(null);
   const [reservationBackView, setReservationBackView] = useState(null);
+  // Bumped on every sidebar/menu navigation. Views that keep sub-views in
+  // component state (Packages, Pack Lists) watch it so re-clicking the
+  // current view's nav entry resets to the overview — a same-value
+  // setCurrentView/setSelected*(null) alone produces no render signal.
+  const [navigationNonce, setNavigationNonce] = useState(0);
+  const bumpNavigationNonce = useCallback(() => setNavigationNonce((n) => n + 1), []);
 
   // Track if navigation is from popstate (browser back/forward)
   const isPopstateNav = useRef(false);
@@ -109,16 +115,20 @@ export function NavigationProvider({
   // Navigation Handlers
   // ============================================================================
 
-  const navigate = useCallback((viewId) => {
-    setCurrentView(viewId);
-    window.scrollTo(0, 0);
-    const mainContent = document.getElementById('main-content');
-    if (mainContent) mainContent.scrollTop = 0;
+  const navigate = useCallback(
+    (viewId) => {
+      setCurrentView(viewId);
+      window.scrollTo(0, 0);
+      const mainContent = document.getElementById('main-content');
+      if (mainContent) mainContent.scrollTop = 0;
 
-    if (viewId === VIEWS.GEAR_LIST) setSelectedItem(null);
-    else if (viewId === VIEWS.PACKAGES) setSelectedPackage(null);
-    else if (viewId === VIEWS.PACK_LISTS) setSelectedPackList(null);
-  }, []);
+      if (viewId === VIEWS.GEAR_LIST) setSelectedItem(null);
+      else if (viewId === VIEWS.PACKAGES) setSelectedPackage(null);
+      else if (viewId === VIEWS.PACK_LISTS) setSelectedPackList(null);
+      bumpNavigationNonce();
+    },
+    [bumpNavigationNonce],
+  );
 
   const navigateToItem = useCallback((item, backContext = null) => {
     setSelectedItem(item);
@@ -201,6 +211,7 @@ export function NavigationProvider({
       itemBackContext,
       reservationBackView,
       isDetailView,
+      navigationNonce,
 
       // Setters
       setCurrentView,
@@ -220,6 +231,7 @@ export function NavigationProvider({
       navigateToReservation,
       goBack,
       resetNavigation,
+      bumpNavigationNonce,
     }),
     [
       currentView,
@@ -231,6 +243,7 @@ export function NavigationProvider({
       itemBackContext,
       reservationBackView,
       isDetailView,
+      navigationNonce,
       navigate,
       navigateToItem,
       navigateToPackage,
@@ -238,6 +251,7 @@ export function NavigationProvider({
       navigateToReservation,
       goBack,
       resetNavigation,
+      bumpNavigationNonce,
     ],
   );
 

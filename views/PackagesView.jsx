@@ -51,6 +51,7 @@ function PackagesView({
   onAddNote,
   onReplyNote,
   onDeleteNote,
+  resetNonce = 0,
 }) {
   const ctxData = useData();
   const dataContext = propDataContext || ctxData;
@@ -80,11 +81,11 @@ function PackagesView({
     [onPackageSelect],
   );
 
-  // Sync with initialSelectedPackage prop changes
+  // Sync with initialSelectedPackage prop changes — including null, so a
+  // parent reset (sidebar navigation clears its selection) actually closes
+  // the detail view instead of being silently ignored
   useEffect(() => {
-    if (initialSelectedPackage) {
-      setSelectedPackageInternal(initialSelectedPackage);
-    }
+    setSelectedPackageInternal(initialSelectedPackage ?? null);
   }, [initialSelectedPackage]);
 
   // Pack lists load lazily — needed here so the delete confirmation can warn
@@ -278,6 +279,22 @@ function PackagesView({
     setItemCategoryFilter('all');
     setNameError('');
   }, []);
+
+  // Sidebar re-clicks bump resetNonce: same-view navigation must land on the
+  // overview, matching how navigating to any other view discards these
+  // subviews (they're component state, so they don't survive an unmount
+  // either). Guarded by a ref so only a genuine nonce change resets — not
+  // identity churn in the callback deps.
+  const lastResetNonceRef = useRef(resetNonce);
+  useEffect(() => {
+    if (lastResetNonceRef.current === resetNonce) return;
+    lastResetNonceRef.current = resetNonce;
+    resetForm();
+    setShowCreate(false);
+    setShowDetailsPrompt(false);
+    setEditingPackage(null);
+    setSelectedPackage(null);
+  }, [resetNonce, resetForm, setSelectedPackage]);
 
   // Open create mode - show details prompt first
   const handleStartCreate = useCallback(() => {

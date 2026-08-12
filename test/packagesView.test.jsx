@@ -322,3 +322,21 @@ describe('Item selection checkboxes', () => {
     expect(checkbox).toBeChecked();
   });
 });
+
+describe('navigation resets', () => {
+  it('returns to the overview when resetNonce changes (sidebar re-click)', () => {
+    const { props, view } = renderPackages({ initialSelectedPackage: pkg3, resetNonce: 0 });
+    expect(screen.getByRole('heading', { level: 2, name: 'Kit C' })).toBeInTheDocument();
+
+    view.rerender(<PackagesView {...props} resetNonce={1} />);
+    expect(screen.queryByRole('heading', { level: 2, name: 'Kit C' })).not.toBeInTheDocument();
+  });
+
+  it('closes the detail view when initialSelectedPackage is cleared to null', () => {
+    const { props, view } = renderPackages({ initialSelectedPackage: pkg3 });
+    expect(screen.getByRole('heading', { level: 2, name: 'Kit C' })).toBeInTheDocument();
+
+    view.rerender(<PackagesView {...props} initialSelectedPackage={null} />);
+    expect(screen.queryByRole('heading', { level: 2, name: 'Kit C' })).not.toBeInTheDocument();
+  });
+});
