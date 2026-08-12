@@ -1,8 +1,9 @@
 // ============================================================================
 // Gear List Component (formerly Inventory)
 // Optimized for large datasets with pagination and debounced search
-// Supports bulk selection for batch operations
-// Supports saved filter views
+// Supports bulk selection for batch operations (synced to FilterContext so
+// Export Data can export the selection), sorting, saved filter views
+// (persisted per-user), and an explicit Kits filter.
 // ============================================================================
 
 import { memo, useMemo, useState, useCallback, useEffect, useRef } from 'react';
@@ -10,6 +11,8 @@ import {
   Plus,
   Grid,
   List,
+  Check,
+  Download,
   CheckSquare,
   Square,
   MinusSquare,
@@ -33,9 +36,19 @@ import {
   filterBySearch,
   filterByCategory,
   filterByStatus,
+  formatDate,
+  getTodayISO,
   generateId,
 } from '../utils';
-import { Badge, Card, Button, SearchInput, Pagination, PageHeader } from '../components/ui.jsx';
+import {
+  Badge,
+  Card,
+  Button,
+  SearchInput,
+  Pagination,
+  PageHeader,
+  ConfirmDialog,
+} from '../components/ui.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import { Select } from '../components/Select.jsx';
 import { useDebounce, usePagination } from '../hooks/index.js';
@@ -46,15 +59,65 @@ import { ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 250, 500];
 const DEFAULT_PAGE_SIZE = 25;
 const SAVED_VIEWS_KEY = 'sims-saved-filter-views';
+const SORT_KEY = 'sims-gear-list-sort';
 
-// Checkbox component for consistent styling
-const Checkbox = memo(function Checkbox({ checked, indeterminate, onChange, size = 20 }) {
+// Sentinel for the Kits entry in the category filter — kits are excluded from
+// normal browsing (their contents are the individual items) but must stay
+// discoverable somewhere. Underscored so a real category can't collide.
+export const KITS_FILTER = '__kits__';
+
+const SEARCH_FIELDS = ['name', 'brand', 'id', 'serialNumber'];
+
+export const SORT_OPTIONS = [
+  { value: 'default', label: 'Category (default)' },
+  { value: 'name-asc', label: 'Name A–Z' },
+  { value: 'name-desc', label: 'Name Z–A' },
+  { value: 'id-asc', label: 'ID' },
+  { value: 'brand-asc', label: 'Brand' },
+  { value: 'value-desc', label: 'Value: high to low' },
+  { value: 'value-asc', label: 'Value: low to high' },
+];
+
+export function sortItems(items, sortBy) {
+  if (!sortBy || sortBy === 'default') return items;
+  const sorted = [...items];
+  const val = (i) => i.currentValue || i.purchasePrice || 0;
+  switch (sortBy) {
+    case 'name-asc':
+      sorted.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      break;
+    case 'name-desc':
+      sorted.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+      break;
+    case 'id-asc':
+      sorted.sort((a, b) => (a.id || '').localeCompare(b.id || ''));
+      break;
+    case 'brand-asc':
+      sorted.sort((a, b) => (a.brand || '').localeCompare(b.brand || ''));
+      break;
+    case 'value-desc':
+      sorted.sort((a, b) => val(b) - val(a));
+      break;
+    case 'value-asc':
+      sorted.sort((a, b) => val(a) - val(b));
+      break;
+    default:
+      break;
+  }
+  return sorted;
+}
+
+// Checkbox component for consistent styling (real checkbox semantics)
+const Checkbox = memo(function Checkbox({ checked, indeterminate, onChange, size = 20, label }) {
   const Icon = indeterminate ? MinusSquare : checked ? CheckSquare : Square;
   return (
     <button
+      role="checkbox"
+      aria-checked={indeterminate ? 'mixed' : checked}
+      aria-label={label}
       onClick={(e) => {
         e.stopPropagation();
-        onChange(!checked);
+        onChange(!checked, e);
       }}
       style={{
         background: 'none',
@@ -75,7 +138,7 @@ const Checkbox = memo(function Checkbox({ checked, indeterminate, onChange, size
 // Saved Views Dropdown Component
 const SavedViewsDropdown = memo(function SavedViewsDropdown({
   savedViews,
-  currentFilters: _currentFilters,
+  activeViewId,
   onLoadView,
   onSaveView,
   onDeleteView,
@@ -85,6 +148,8 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [newViewName, setNewViewName] = useState('');
   const dropdownRef = useRef(null);
+
+  const activeView = savedViews.find((v) => v.id === activeViewId);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -114,6 +179,10 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
     }
   };
 
+  const nameExists = savedViews.some(
+    (v) => v.name.toLowerCase() === newViewName.trim().toLowerCase(),
+  );
+
   return (
     <div ref={dropdownRef} style={{ position: 'relative' }}>
       <button
@@ -128,10 +197,20 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
           cursor: 'pointer',
           minWidth: 140,
           fontWeight: 500,
+          ...(activeView && { color: colors.primary }),
         }}
       >
         <Bookmark size={16} />
-        <span>Saved Views</span>
+        <span
+          style={{
+            maxWidth: 160,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {activeView ? activeView.name : 'Saved Views'}
+        </span>
         <ChevronDown size={16} style={{ marginLeft: 'auto' }} />
       </button>
 
@@ -162,36 +241,49 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
               }}
             >
               {showSaveDialog ? (
-                <div style={{ display: 'flex', gap: spacing[2] }}>
-                  <input
-                    type="text"
-                    value={newViewName}
-                    onChange={(e) => setNewViewName(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="View name..."
-                    autoFocus
-                    style={{
-                      ...styles.input,
-                      flex: 1,
-                      padding: `${spacing[1]}px ${spacing[2]}px`,
-                      fontSize: typography.fontSize.sm,
-                    }}
-                  />
-                  <button
-                    onClick={handleSave}
-                    disabled={!newViewName.trim()}
-                    style={{
-                      background: colors.primary,
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: borderRadius.md,
-                      padding: `${spacing[1]}px ${spacing[2]}px`,
-                      cursor: newViewName.trim() ? 'pointer' : 'not-allowed',
-                      opacity: newViewName.trim() ? 1 : 0.5,
-                    }}
-                  >
-                    Save
-                  </button>
+                <div>
+                  <div style={{ display: 'flex', gap: spacing[2] }}>
+                    <input
+                      type="text"
+                      value={newViewName}
+                      onChange={(e) => setNewViewName(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="View name..."
+                      autoFocus
+                      style={{
+                        ...styles.input,
+                        flex: 1,
+                        padding: `${spacing[1]}px ${spacing[2]}px`,
+                        fontSize: typography.fontSize.sm,
+                      }}
+                    />
+                    <button
+                      onClick={handleSave}
+                      disabled={!newViewName.trim()}
+                      style={{
+                        background: colors.primary,
+                        color: 'var(--on-primary)',
+                        border: 'none',
+                        borderRadius: borderRadius.md,
+                        padding: `${spacing[1]}px ${spacing[2]}px`,
+                        cursor: newViewName.trim() ? 'pointer' : 'not-allowed',
+                        opacity: newViewName.trim() ? 1 : 0.5,
+                      }}
+                    >
+                      {nameExists ? 'Update' : 'Save'}
+                    </button>
+                  </div>
+                  {nameExists && (
+                    <div
+                      style={{
+                        fontSize: typography.fontSize.xs,
+                        color: colors.textMuted,
+                        marginTop: spacing[1],
+                      }}
+                    >
+                      A view with this name exists — it will be updated.
+                    </div>
+                  )}
                 </div>
               ) : (
                 <button
@@ -232,8 +324,12 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
                     padding: `${spacing[2]}px ${spacing[2]}px`,
                     borderRadius: borderRadius.md,
                     cursor: 'pointer',
+                    ...(view.id === activeViewId && {
+                      background: `${withOpacity(colors.primary, 12)}`,
+                    }),
                   }}
                 >
+                  {view.id === activeViewId && <Check size={14} color={colors.primary} />}
                   <div
                     style={{ flex: 1 }}
                     onClick={() => {
@@ -244,7 +340,7 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
                     <div
                       style={{
                         fontWeight: typography.fontWeight.medium,
-                        color: colors.textPrimary,
+                        color: view.id === activeViewId ? colors.primary : colors.textPrimary,
                         fontSize: typography.fontSize.sm,
                       }}
                     >
@@ -259,8 +355,13 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
                     >
                       {[
                         view.filters.search && `"${view.filters.search}"`,
-                        view.filters.category !== 'all' && view.filters.category,
+                        view.filters.category === KITS_FILTER
+                          ? 'Kits'
+                          : view.filters.category !== 'all' && view.filters.category,
                         view.filters.status !== 'all' && view.filters.status,
+                        view.filters.sort &&
+                          view.filters.sort !== 'default' &&
+                          SORT_OPTIONS.find((o) => o.value === view.filters.sort)?.label,
                       ]
                         .filter(Boolean)
                         .join(' • ') || 'No filters'}
@@ -269,7 +370,7 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDeleteView(view.id);
+                      onDeleteView(view);
                     }}
                     className="hover-danger"
                     style={{
@@ -283,6 +384,7 @@ const SavedViewsDropdown = memo(function SavedViewsDropdown({
                       alignItems: 'center',
                     }}
                     title="Delete view"
+                    aria-label={`Delete saved view ${view.name}`}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -320,7 +422,7 @@ const GridItem = memo(function GridItem({
   return (
     <Card
       aria-label={`${item.name} - ${item.status}${isSelected ? ', selected' : ''}`}
-      onClick={() => (selectionMode ? onToggleSelect(item.id) : onViewItem(item.id))}
+      onClick={(e) => (selectionMode ? onToggleSelect(item.id, e) : onViewItem(item.id))}
       padding={false}
       style={{
         cursor: 'pointer',
@@ -330,6 +432,7 @@ const GridItem = memo(function GridItem({
         flexDirection: 'column',
         outline: isSelected ? `2px solid ${colors.primary}` : 'none',
         outlineOffset: '-2px',
+        ...(selectionMode && { userSelect: 'none' }),
       }}
     >
       {/* Image area - 60% height */}
@@ -347,7 +450,12 @@ const GridItem = memo(function GridItem({
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <Checkbox checked={isSelected} onChange={() => onToggleSelect(item.id)} size={22} />
+            <Checkbox
+              checked={isSelected}
+              onChange={(next, e) => onToggleSelect(item.id, e)}
+              size={22}
+              label={`Select ${item.name}`}
+            />
           </div>
         )}
         {item.image ? (
@@ -411,6 +519,7 @@ const GridItem = memo(function GridItem({
           >
             <Badge text={item.id} color={colors.primary} size="xs" />
             <Badge text={item.status} color={getStatusColor(item.status)} size="xs" />
+            {item.isKit && <Badge text="Kit" color={colors.accent1} size="xs" />}
           </div>
           <h4
             style={{
@@ -446,10 +555,12 @@ const ListItem = memo(function ListItem({
   isSelected,
   onToggleSelect,
 }) {
+  const isOverdue =
+    item.status === 'checked-out' && item.dueBack && item.dueBack < getTodayISO();
   return (
     <Card
       aria-label={`${item.name} - ${item.status}${isSelected ? ', selected' : ''}`}
-      onClick={() => (selectionMode ? onToggleSelect(item.id) : onViewItem(item.id))}
+      onClick={(e) => (selectionMode ? onToggleSelect(item.id, e) : onViewItem(item.id))}
       style={{
         cursor: 'pointer',
         padding: spacing[3],
@@ -458,11 +569,17 @@ const ListItem = memo(function ListItem({
         gap: spacing[3],
         outline: isSelected ? `2px solid ${colors.primary}` : 'none',
         outlineOffset: '-2px',
+        ...(selectionMode && { userSelect: 'none' }),
       }}
     >
       {selectionMode && (
         <div onClick={(e) => e.stopPropagation()}>
-          <Checkbox checked={isSelected} onChange={() => onToggleSelect(item.id)} size={22} />
+          <Checkbox
+            checked={isSelected}
+            onChange={(next, e) => onToggleSelect(item.id, e)}
+            size={22}
+            label={`Select ${item.name}`}
+          />
         </div>
       )}
       {item.image ? (
@@ -487,22 +604,26 @@ const ListItem = memo(function ListItem({
             justifyContent: 'center',
             color: colors.textMuted,
             fontSize: typography.fontSize.xs,
+            flexShrink: 0,
           }}
         >
           No img
         </div>
       )}
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
             display: 'flex',
             gap: spacing[1],
             marginBottom: spacing[1],
+            flexWrap: 'wrap',
           }}
         >
           <Badge text={item.id} color={colors.primary} />
           <Badge text={item.status} color={getStatusColor(item.status)} />
           <Badge text={item.category} color={colors.accent2} />
+          {item.isKit && <Badge text="Kit" color={colors.accent1} />}
+          {isOverdue && <Badge text="Overdue" color={colors.danger} />}
         </div>
         <div
           style={{
@@ -516,10 +637,25 @@ const ListItem = memo(function ListItem({
           style={{
             fontSize: typography.fontSize.sm,
             color: colors.textMuted,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
           }}
         >
-          {item.brand}
+          {[item.brand, item.location, item.condition].filter(Boolean).join(' • ')}
         </div>
+        {item.status === 'checked-out' && (
+          <div
+            style={{
+              fontSize: typography.fontSize.xs,
+              color: isOverdue ? colors.danger : colors.checkedOut,
+              marginTop: 2,
+            }}
+          >
+            {item.checkedOutTo || 'Unknown'}
+            {item.dueBack ? ` • Due ${formatDate(item.dueBack)}` : ''}
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -533,6 +669,7 @@ const SelectionToolbar = memo(function SelectionToolbar({
   onDeselectAll,
   onCancel,
   onBulkAction,
+  onExportSelection,
   allSelected,
   someSelected,
 }) {
@@ -555,6 +692,7 @@ const SelectionToolbar = memo(function SelectionToolbar({
           checked={allSelected}
           indeterminate={someSelected && !allSelected}
           onChange={() => (allSelected ? onDeselectAll() : onSelectAll())}
+          label="Select all items"
         />
         <span style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
           {selectedCount} of {totalCount} selected
@@ -584,6 +722,9 @@ const SelectionToolbar = memo(function SelectionToolbar({
           <Button size="sm" variant="secondary" danger onClick={() => onBulkAction('delete')}>
             Delete
           </Button>
+          <Button size="sm" variant="secondary" icon={Download} onClick={onExportSelection}>
+            Export
+          </Button>
         </div>
       )}
 
@@ -609,7 +750,11 @@ function GearList({
   setIsGridView,
   onViewItem,
   onAddItem,
-  onBulkAction, // New prop for handling bulk actions
+  onBulkAction,
+  onExportSelection, // opens the inventory export modal (selection-scoped)
+  onSelectionChange, // syncs selection to FilterContext (Export Data scope)
+  savedViews: savedViewsProp, // per-user saved views (profile-persisted)
+  onChangeSavedViews,
 }) {
   // Permissions
   const { canEdit } = usePermissions();
@@ -621,12 +766,24 @@ function GearList({
     return saved ? parseInt(saved, 10) : DEFAULT_PAGE_SIZE;
   });
 
+  // Sort state with localStorage persistence
+  const [sortBy, setSortBy] = useState(() => {
+    const saved = localStorage.getItem(SORT_KEY);
+    return SORT_OPTIONS.some((o) => o.value === saved) ? saved : 'default';
+  });
+  useEffect(() => {
+    localStorage.setItem(SORT_KEY, sortBy);
+  }, [sortBy]);
+
   // Selection state
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const lastToggledIdRef = useRef(null);
 
-  // Saved views state with localStorage persistence
+  // Saved views: per-user (profile) when provided; falls back to the legacy
+  // localStorage store so pre-existing views survive the migration.
   const [savedViews, setSavedViews] = useState(() => {
+    if (savedViewsProp !== undefined && savedViewsProp !== null) return savedViewsProp;
     try {
       const saved = localStorage.getItem(SAVED_VIEWS_KEY);
       return saved ? JSON.parse(saved) : [];
@@ -634,37 +791,42 @@ function GearList({
       return [];
     }
   });
+  const [viewPendingDelete, setViewPendingDelete] = useState(null);
 
-  // Save views to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem(SAVED_VIEWS_KEY, JSON.stringify(savedViews));
-  }, [savedViews]);
-
-  // Check if any filters are active
-  const hasActiveFilters = searchQuery || categoryFilter !== 'all' || statusFilter !== 'all';
-
-  // Current filters object
-  const currentFilters = useMemo(
-    () => ({
-      search: searchQuery,
-      category: categoryFilter,
-      status: statusFilter,
-    }),
-    [searchQuery, categoryFilter, statusFilter],
+  const persistViews = useCallback(
+    (next) => {
+      setSavedViews(next);
+      onChangeSavedViews?.(next);
+      // Keep the legacy store in sync for sessions without profile persistence
+      localStorage.setItem(SAVED_VIEWS_KEY, JSON.stringify(next));
+    },
+    [onChangeSavedViews],
   );
 
-  // Save current filters as a new view
+  // Check if any filters are active
+  const hasActiveFilters =
+    searchQuery || categoryFilter !== 'all' || statusFilter !== 'all' || sortBy !== 'default';
+
+  // Save (or update, when the name already exists) the current filters
   const saveCurrentView = useCallback(
     (name) => {
-      const newView = {
-        id: generateId(),
-        name,
-        filters: { ...currentFilters },
-        createdAt: new Date().toISOString(),
+      const filters = {
+        search: searchQuery,
+        category: categoryFilter,
+        status: statusFilter,
+        sort: sortBy,
       };
-      setSavedViews((prev) => [...prev, newView]);
+      const existing = savedViews.find((v) => v.name.toLowerCase() === name.toLowerCase());
+      if (existing) {
+        persistViews(savedViews.map((v) => (v.id === existing.id ? { ...v, filters } : v)));
+      } else {
+        persistViews([
+          ...savedViews,
+          { id: generateId(), name, filters, createdAt: new Date().toISOString() },
+        ]);
+      }
     },
-    [currentFilters],
+    [searchQuery, categoryFilter, statusFilter, sortBy, savedViews, persistViews],
   );
 
   // Load a saved view
@@ -673,14 +835,23 @@ function GearList({
       setSearchQuery(view.filters.search || '');
       setCategoryFilter(view.filters.category || 'all');
       setStatusFilter(view.filters.status || 'all');
+      setSortBy(
+        SORT_OPTIONS.some((o) => o.value === view.filters.sort) ? view.filters.sort : 'default',
+      );
     },
     [setSearchQuery, setCategoryFilter, setStatusFilter],
   );
 
-  // Delete a saved view
-  const deleteView = useCallback((viewId) => {
-    setSavedViews((prev) => prev.filter((v) => v.id !== viewId));
-  }, []);
+  // The saved view whose filters exactly match the current state
+  const activeViewId = useMemo(() => {
+    return savedViews.find(
+      (v) =>
+        (v.filters.search || '') === (searchQuery || '') &&
+        (v.filters.category || 'all') === categoryFilter &&
+        (v.filters.status || 'all') === statusFilter &&
+        (v.filters.sort || 'default') === sortBy,
+    )?.id;
+  }, [savedViews, searchQuery, categoryFilter, statusFilter, sortBy]);
 
   // Save page size to localStorage
   useEffect(() => {
@@ -692,11 +863,17 @@ function GearList({
 
   // Filter inventory with debounced search
   const filteredItems = useMemo(() => {
-    // First, filter out kits - GearList only shows individual items
-    let result = inventory.filter((item) => !item.isKit);
+    // Kits are excluded from normal browsing (their contents are the real
+    // items) but shown exclusively under the Kits filter entry.
+    let result =
+      categoryFilter === KITS_FILTER
+        ? inventory.filter((item) => item.isKit)
+        : inventory.filter((item) => !item.isKit);
 
-    result = filterBySearch(result, debouncedSearch, ['name', 'brand', 'id']);
-    result = filterByCategory(result, categoryFilter);
+    result = filterBySearch(result, debouncedSearch, SEARCH_FIELDS);
+    if (categoryFilter !== KITS_FILTER) {
+      result = filterByCategory(result, categoryFilter);
+    }
 
     // Handle low-stock filter specially - needs categorySettings
     if (statusFilter === 'low-stock') {
@@ -718,6 +895,9 @@ function GearList({
     return result;
   }, [inventory, debouncedSearch, categoryFilter, statusFilter, categorySettings]);
 
+  // Sort after filtering; pagination consumes the sorted list
+  const sortedItems = useMemo(() => sortItems(filteredItems, sortBy), [filteredItems, sortBy]);
+
   // Filtered item IDs for selection operations
   const filteredIds = useMemo(() => new Set(filteredItems.map((i) => i.id)), [filteredItems]);
 
@@ -725,6 +905,7 @@ function GearList({
   useEffect(() => {
     if (!selectionMode) {
       setSelectedIds(new Set());
+      lastToggledIdRef.current = null;
     }
   }, [selectionMode]);
 
@@ -736,18 +917,46 @@ function GearList({
     });
   }, [filteredIds]);
 
-  // Selection helpers
-  const toggleSelect = useCallback((id) => {
-    setSelectedIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
+  // Sync the selection to FilterContext so Export Data can scope to it —
+  // and clear it on unmount so a stale selection can't leak into an export
+  // started from another view.
+  useEffect(() => {
+    onSelectionChange?.(selectionMode ? [...selectedIds] : []);
+  }, [selectedIds, selectionMode, onSelectionChange]);
+
+  // Selection helpers. Shift-click selects the range between the last
+  // toggled item and the clicked one (in the current sorted order).
+  const toggleSelect = useCallback(
+    (id, event) => {
+      // Read the modifier synchronously — state updaters run after the
+      // event's lifetime, when synthetic-event fields are no longer reliable.
+      const isRangeSelect =
+        !!event?.shiftKey && !!lastToggledIdRef.current && lastToggledIdRef.current !== id;
+      if (isRangeSelect) {
+        const ids = sortedItems.map((i) => i.id);
+        const from = ids.indexOf(lastToggledIdRef.current);
+        const to = ids.indexOf(id);
+        if (from !== -1 && to !== -1) {
+          const [start, end] = from < to ? [from, to] : [to, from];
+          const range = ids.slice(start, end + 1);
+          setSelectedIds((prev) => new Set([...prev, ...range]));
+          lastToggledIdRef.current = id;
+          return;
+        }
       }
-      return newSet;
-    });
-  }, []);
+      setSelectedIds((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(id)) {
+          newSet.delete(id);
+        } else {
+          newSet.add(id);
+        }
+        return newSet;
+      });
+      lastToggledIdRef.current = id;
+    },
+    [sortedItems],
+  );
 
   const selectAll = useCallback(() => {
     setSelectedIds(new Set(filteredItems.map((i) => i.id)));
@@ -772,12 +981,19 @@ function GearList({
   const someSelected = selectedCount > 0;
 
   // Pagination
-  const { page, totalPages, paginatedItems, goToPage } = usePagination(filteredItems, pageSize);
+  const { page, totalPages, paginatedItems, goToPage } = usePagination(sortedItems, pageSize);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     goToPage(1);
-  }, [debouncedSearch, categoryFilter, statusFilter, pageSize, goToPage]);
+  }, [debouncedSearch, categoryFilter, statusFilter, sortBy, pageSize, goToPage]);
+
+  const clearFilters = useCallback(() => {
+    setSearchQuery('');
+    setCategoryFilter('all');
+    setStatusFilter('all');
+    setSortBy('default');
+  }, [setSearchQuery, setCategoryFilter, setStatusFilter]);
 
   return (
     <>
@@ -797,10 +1013,10 @@ function GearList({
             )}
             <SavedViewsDropdown
               savedViews={savedViews}
-              currentFilters={currentFilters}
+              activeViewId={activeViewId}
               onLoadView={loadView}
               onSaveView={saveCurrentView}
-              onDeleteView={deleteView}
+              onDeleteView={setViewPendingDelete}
               hasActiveFilters={hasActiveFilters}
             />
             {canEditGearList && !selectionMode ? (
@@ -825,6 +1041,7 @@ function GearList({
           onDeselectAll={deselectAll}
           onCancel={() => setSelectionMode(false)}
           onBulkAction={handleBulkAction}
+          onExportSelection={onExportSelection}
           allSelected={allSelected}
           someSelected={someSelected}
         />
@@ -847,7 +1064,7 @@ function GearList({
             value={searchQuery}
             onChange={setSearchQuery}
             onClear={() => setSearchQuery('')}
-            placeholder="Search items..."
+            placeholder="Search name, ID, brand, serial..."
           />
         </div>
 
@@ -864,11 +1081,7 @@ function GearList({
           {/* Clear Filters Button */}
           {hasActiveFilters && (
             <button
-              onClick={() => {
-                setSearchQuery('');
-                setCategoryFilter('all');
-                setStatusFilter('all');
-              }}
+              onClick={clearFilters}
               style={{
                 ...styles.btnSec,
                 display: 'flex',
@@ -892,6 +1105,7 @@ function GearList({
             options={[
               { value: 'all', label: 'All Categories' },
               ...categories.map((c) => ({ value: c, label: c })),
+              { value: KITS_FILTER, label: 'Kits' },
             ]}
             style={{ minWidth: 150 }}
             aria-label="Filter by category"
@@ -913,6 +1127,15 @@ function GearList({
             ]}
             style={{ minWidth: 140 }}
             aria-label="Filter by status"
+          />
+
+          {/* Sort */}
+          <Select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            options={SORT_OPTIONS}
+            style={{ minWidth: 170 }}
+            aria-label="Sort items"
           />
 
           {/* View Toggle */}
@@ -1000,7 +1223,18 @@ function GearList({
             color: colors.textMuted,
           }}
         >
-          No items found matching your criteria
+          <p style={{ marginBottom: spacing[4] }}>No items found matching your criteria</p>
+          {hasActiveFilters ? (
+            <Button variant="secondary" onClick={clearFilters} icon={X}>
+              Clear Filters
+            </Button>
+          ) : (
+            canEditGearList && (
+              <Button onClick={onAddItem} icon={Plus}>
+                Add Item
+              </Button>
+            )
+          )}
         </div>
       )}
 
@@ -1038,6 +1272,21 @@ function GearList({
           />
         </div>
       )}
+
+      {/* Saved view delete confirmation */}
+      <ConfirmDialog
+        isOpen={!!viewPendingDelete}
+        title="Delete Saved View"
+        message={
+          viewPendingDelete ? `Delete the saved view "${viewPendingDelete.name}"?` : ''
+        }
+        confirmText="Delete"
+        onConfirm={() => {
+          persistViews(savedViews.filter((v) => v.id !== viewPendingDelete.id));
+          setViewPendingDelete(null);
+        }}
+        onCancel={() => setViewPendingDelete(null)}
+      />
     </>
   );
 }

@@ -10,7 +10,13 @@ import { colors, styles, spacing, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 
-export const ExportModal = memo(function ExportModal({ onExport, onClose, user: _user }) {
+export const ExportModal = memo(function ExportModal({
+  onExport,
+  onClose,
+  user: _user,
+  selectionCount = 0,
+  totalCount = 0,
+}) {
   const [format, setFormat] = useState('csv');
   const [columns, setColumns] = useState(['id', 'name', 'category', 'status', 'value']);
   const [includeBranding, setIncludeBranding] = useState(false);
@@ -37,6 +43,22 @@ export const ExportModal = memo(function ExportModal({ onExport, onClose, user: 
     <Modal onClose={onClose} maxWidth={500}>
       <ModalHeader title="Export Data" onClose={onClose} />
       <div style={{ padding: spacing[4] }}>
+        {/* Scope: gear-list selection wins over exporting everything */}
+        <div
+          style={{
+            marginBottom: spacing[4],
+            padding: spacing[3],
+            borderRadius: styles.card.borderRadius,
+            background: `${withOpacity(colors.primary, 12)}`,
+            border: `1px solid ${withOpacity(colors.primary, 30)}`,
+            fontSize: typography.fontSize.sm,
+            color: colors.textPrimary,
+          }}
+        >
+          {selectionCount > 0
+            ? `Exporting ${selectionCount} selected item${selectionCount === 1 ? '' : 's'}`
+            : `Exporting all ${totalCount} items`}
+        </div>
         <div style={{ marginBottom: spacing[4] }}>
           <label style={styles.label}>Format</label>
           <div style={{ display: 'flex', gap: spacing[2] }}>
@@ -128,4 +150,8 @@ ExportModal.propTypes = {
     name: PropTypes.string,
     organization: PropTypes.string,
   }),
+  /** Items currently selected in the gear list (export scope) */
+  selectionCount: PropTypes.number,
+  /** Total inventory count (export scope when nothing is selected) */
+  totalCount: PropTypes.number,
 };

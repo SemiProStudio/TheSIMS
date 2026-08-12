@@ -117,6 +117,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     setScheduleMode,
     scheduleDate,
     setScheduleDate,
+    setSelectedIds,
   } = useFilterContext();
 
   const { setEditingReservationId, itemForm, setItemForm, showConfirm } = useModalContext();
@@ -156,6 +157,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     navigateToReservations,
     handleToggleCollapse,
     handleSaveLayoutPrefs,
+    handleSaveFilterViews,
     createItem,
     deleteItem,
     openEditItem,
@@ -226,6 +228,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             setCurrentView(VIEWS.ADD_ITEM);
           }}
           onBulkAction={handleBulkAction}
+          onExportSelection={() => openModal(MODALS.EXPORT)}
+          onSelectionChange={setSelectedIds}
+          savedViews={currentUser?.profile?.savedFilterViews}
+          onChangeSavedViews={handleSaveFilterViews}
         />
       )}
 

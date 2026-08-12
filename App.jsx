@@ -221,6 +221,27 @@ export default function App() {
     [currentUser?.id, currentUser?.profile, addToast, patchUser],
   );
 
+  // Gear list saved filter views — persisted in the user profile (like
+  // layout prefs) so they follow the user across browsers/devices.
+  const handleSaveFilterViews = useCallback(
+    async (views) => {
+      setCurrentUser((prev) =>
+        prev ? { ...prev, profile: { ...(prev.profile || {}), savedFilterViews: views } } : prev,
+      );
+      if (currentUser?.id) {
+        try {
+          await usersService.update(currentUser.id, {
+            profile: { ...(currentUser.profile || {}), savedFilterViews: views },
+          });
+        } catch (err) {
+          logError('Failed to save filter views:', err);
+          addToast('Saved views may not have synced', 'warning');
+        }
+      }
+    },
+    [currentUser?.id, currentUser?.profile, addToast],
+  );
+
   const handleToggleCollapse = useCallback((view, sectionId) => {
     setCurrentUser((prev) => {
       if (!prev) return prev;
@@ -712,6 +733,7 @@ export default function App() {
       navigateToReservations,
       handleToggleCollapse,
       handleSaveLayoutPrefs,
+      handleSaveFilterViews,
       createItem,
       deleteItem,
       openEditItem,
@@ -757,6 +779,7 @@ export default function App() {
       navigateToReservations,
       handleToggleCollapse,
       handleSaveLayoutPrefs,
+      handleSaveFilterViews,
       createItem,
       deleteItem,
       openEditItem,
