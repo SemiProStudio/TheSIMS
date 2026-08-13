@@ -66,7 +66,6 @@ describe('hasPermission — role boundaries (real DEFAULT_ROLES)', () => {
       'admin_categories',
       'admin_specs',
       'admin_locations',
-      'admin_themes',
       'admin_layout',
       'admin_notifications',
       'admin_roles',

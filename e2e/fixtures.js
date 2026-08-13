@@ -296,6 +296,27 @@ export class ThemeSelectorPage {
 // =============================================================================
 
 export const test = base.extend({
+  // Per-user UI settings (theme, sidebar, layout, sort) persist to the two
+  // SHARED test accounts since the profile-persistence round. Parallel
+  // workers would contaminate each other through them — one spec collapsing
+  // the sidebar would collapse it for every later login. Default: freeze
+  // persistence via the device flag the app honors (changes stay
+  // session-local, exactly the pre-round behavior). profile.spec opts out
+  // to exercise the real persistence path.
+  persistUserSettings: [false, { option: true }],
+  context: async ({ context, persistUserSettings }, use) => {
+    if (!persistUserSettings) {
+      await context.addInitScript(() => {
+        try {
+          localStorage.setItem('sims-ui-settings-readonly', '1');
+        } catch {
+          /* ignore */
+        }
+      });
+    }
+    await use(context);
+  },
+
   // Fixture that provides a logged-in page. The project's storageState
   // (written by auth.setup.js) already carries the admin session — just
   // load the app and wait for the dashboard.

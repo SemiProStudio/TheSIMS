@@ -34,7 +34,8 @@ export const VIEW_PERMISSIONS = {
   [VIEWS.MAINTENANCE_REPORT]: 'reports',
   [VIEWS.INSURANCE_REPORT]: 'reports',
   [VIEWS.CLIENT_REPORT]: 'reports',
-  [VIEWS.THEME_SELECTOR]: 'admin_themes',
+  // THEME_SELECTOR intentionally unmapped: theme choice is per-user
+  // personalization, available to everyone
   [VIEWS.NOTIFICATIONS]: 'admin_notifications',
   [VIEWS.CUSTOMIZE_DASHBOARD]: 'admin_layout',
   [VIEWS.CUSTOMIZE_ITEM_DETAIL]: 'admin_layout',

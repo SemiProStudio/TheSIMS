@@ -3,7 +3,7 @@
 // User preferences for email notifications
 // ============================================================================
 
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import {
   Mail,
   Calendar,
@@ -217,18 +217,9 @@ const DaySelector = memo(function DaySelector({ selectedDays, onChange }) {
 });
 
 // Main component
-function NotificationSettings({
-  preferences,
-  onSave,
-  onClose,
-  isAdmin: isAdminProp = false, // Keep prop for backwards compatibility but prefer permissions
-}) {
-  // Use permissions system to determine admin access
-  const { canView } = usePermissions();
-  const isAdmin = canView('admin_notifications') || isAdminProp;
-
-  // Initialize state from preferences or defaults
-  const [settings, setSettings] = useState({
+// Form state from a stored preferences row (nulls fall back to defaults)
+function buildSettings(preferences) {
+  return {
     email_enabled: preferences?.email_enabled ?? true,
 
     // Due date reminders
@@ -253,10 +244,36 @@ function NotificationSettings({
     admin_damage_reports: preferences?.admin_damage_reports ?? true,
     admin_overdue_summary: preferences?.admin_overdue_summary ?? false,
     admin_overdue_summary_frequency: preferences?.admin_overdue_summary_frequency ?? 'daily',
-  });
+  };
+}
+
+function NotificationSettings({
+  preferences,
+  onSave,
+  onClose,
+  isAdmin: isAdminProp = false, // Keep prop for backwards compatibility but prefer permissions
+}) {
+  // Use permissions system to determine admin access
+  const { canView } = usePermissions();
+  const isAdmin = canView('admin_notifications') || isAdminProp;
+
+  // Initialize state from preferences or defaults
+  const [settings, setSettings] = useState(() => buildSettings(preferences));
 
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Stored preferences load asynchronously after login — resync when they
+  // arrive so the screen shows the user's real saved choices instead of
+  // defaults (which a save would then write over the stored row). A dirty
+  // form is never clobbered.
+  const lastPreferencesRef = useRef(preferences);
+  useEffect(() => {
+    if (preferences && preferences !== lastPreferencesRef.current && !hasChanges) {
+      lastPreferencesRef.current = preferences;
+      setSettings(buildSettings(preferences));
+    }
+  }, [preferences, hasChanges]);
 
   const updateSetting = useCallback((key, value) => {
     setSettings((prev) => ({ ...prev, [key]: value }));

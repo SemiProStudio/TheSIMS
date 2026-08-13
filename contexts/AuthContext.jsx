@@ -187,26 +187,6 @@ export function AuthProvider({ children }) {
   }, []);
 
   // =============================================================================
-  // Update Profile
-  // =============================================================================
-  const updateProfile = useCallback(
-    async (updates) => {
-      if (!user) return { error: new Error('Not authenticated') };
-
-      try {
-        await usersService.update(user.id, updates);
-        const updatedProfile = { ...userProfile, ...updates };
-        setUserProfile(updatedProfile);
-        return { error: null };
-      } catch (err) {
-        setError(err);
-        return { error: err };
-      }
-    },
-    [user, userProfile],
-  );
-
-  // =============================================================================
   // Context Value
   // =============================================================================
   const value = useMemo(
@@ -220,7 +200,8 @@ export function AuthProvider({ children }) {
 
       // Computed
       isAuthenticated: !!user,
-      userRole: userProfile?.role || userProfile?.roleId || 'viewer',
+      // Always a role ID string — userProfile.role is the joined role OBJECT
+      userRole: userProfile?.roleId || 'role_user',
       userName: userProfile?.name || user?.email?.split('@')[0] || 'User',
       userEmail: userProfile?.email || user?.email || '',
 
@@ -231,7 +212,6 @@ export function AuthProvider({ children }) {
       signOut,
       resetPassword,
       updatePassword,
-      updateProfile,
     }),
     [
       user,
@@ -245,7 +225,6 @@ export function AuthProvider({ children }) {
       signOut,
       resetPassword,
       updatePassword,
-      updateProfile,
     ],
   );
 

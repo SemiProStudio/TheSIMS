@@ -373,6 +373,12 @@ function ProfileModal({ user, onSave, onClose }) {
                       {errors[field]}
                     </span>
                   )}
+                  {field === 'email' && !errors[field] && (
+                    <span style={{ color: colors.textMuted, fontSize: typography.fontSize.xs }}>
+                      Contact email shown on labels &amp; reports — changing it does not change
+                      your login email
+                    </span>
+                  )}
                 </div>
                 {profile[field]?.length > maxLen * 0.8 && (
                   <span

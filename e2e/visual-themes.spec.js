@@ -23,6 +23,9 @@ test.describe('Visual Regression - Themes', () => {
         // Set theme via localStorage and reload
         await page.evaluate((themeName) => {
           localStorage.setItem('sims-theme', themeName);
+          // Device override: the profile theme is applied at login and would
+          // repaint over the test's choice without this
+          localStorage.setItem('sims-theme-override', themeName);
         }, theme);
 
         await page.reload();
@@ -46,6 +49,7 @@ test.describe('Visual Regression - Themes', () => {
       // Set dark theme
       await page.evaluate(() => {
         localStorage.setItem('sims-theme', 'dark');
+        localStorage.setItem('sims-theme-override', 'dark');
       });
       await page.reload();
       await page.waitForTimeout(1000);
@@ -89,6 +93,7 @@ test.describe('Visual Regression - Themes', () => {
       // Set light theme
       await page.evaluate(() => {
         localStorage.setItem('sims-theme', 'light');
+        localStorage.setItem('sims-theme-override', 'light');
       });
       await page.reload();
       await page.waitForTimeout(1000);
@@ -153,6 +158,7 @@ test.describe('Visual Regression - Themes', () => {
       // Set dark theme
       await page.evaluate(() => {
         localStorage.setItem('sims-theme', 'dark');
+        localStorage.setItem('sims-theme-override', 'dark');
       });
       await page.reload();
       await page.waitForTimeout(1000);
@@ -175,6 +181,7 @@ test.describe('Visual Regression - Themes', () => {
       // Set light theme
       await page.evaluate(() => {
         localStorage.setItem('sims-theme', 'light');
+        localStorage.setItem('sims-theme-override', 'light');
       });
       await page.reload();
       await page.waitForTimeout(1000);
@@ -200,6 +207,7 @@ test.describe('Visual Regression - Themes', () => {
       // never existed and silently rendered the fallback theme)
       await page.evaluate(() => {
         localStorage.setItem('sims-theme', 'blackwhite');
+        localStorage.setItem('sims-theme-override', 'blackwhite');
       });
       await page.reload();
       await page.waitForTimeout(1000);
@@ -229,6 +237,7 @@ test.describe('Visual Regression - Responsive Themes', () => {
       // Set dark theme
       await page.evaluate(() => {
         localStorage.setItem('sims-theme', 'dark');
+        localStorage.setItem('sims-theme-override', 'dark');
       });
       await page.reload();
       await page.waitForTimeout(1000);
@@ -248,6 +257,7 @@ test.describe('Visual Regression - Responsive Themes', () => {
       // Set light theme
       await page.evaluate(() => {
         localStorage.setItem('sims-theme', 'light');
+        localStorage.setItem('sims-theme-override', 'light');
       });
       await page.reload();
       await page.waitForTimeout(1000);

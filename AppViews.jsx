@@ -234,7 +234,9 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onBulkAction={handleBulkAction}
           onExportSelection={() => openModal(MODALS.EXPORT)}
           onSelectionChange={setSelectedIds}
-          savedViews={currentUser?.profile?.savedFilterViews}
+          savedViews={currentUser?.savedFilterViews}
+          uiPrefs={currentUser?.uiPrefs}
+          onSaveUiPrefs={handlers.updateUiPrefs}
           onChangeSavedViews={handleSaveFilterViews}
         />
       )}
@@ -641,7 +643,12 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
 
       {currentView === VIEWS.THEME_SELECTOR && (
         <Suspense fallback={<ViewLoading message="Loading Themes..." />}>
-          <ThemeSelector onBack={() => setCurrentView(VIEWS.DASHBOARD)} />
+          <ThemeSelector
+            onBack={() => setCurrentView(VIEWS.DASHBOARD)}
+            onPersistCustomTheme={(customTheme) =>
+              handlers.updateUiPrefs?.({ customTheme })
+            }
+          />
         </Suspense>
       )}
 

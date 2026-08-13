@@ -265,7 +265,7 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
   );
 });
 
-function ThemeSelector({ onBack }) {
+function ThemeSelector({ onBack, onPersistCustomTheme }) {
   const { themeId, setTheme, updateCustomTheme, availableThemes } = useTheme();
   const [showCustomEditor, setShowCustomEditor] = useState(false);
 
@@ -274,6 +274,11 @@ function ThemeSelector({ onBack }) {
     updateCustomTheme(customThemeData);
     setTheme('custom');
     setShowCustomEditor(false);
+    // Follow the user, not the machine: the editor already cached the
+    // colors on this device; this stores them in the profile
+    if (customThemeData?.colors) {
+      onPersistCustomTheme?.({ name: customThemeData.name, colors: customThemeData.colors });
+    }
   };
 
   // Show custom theme editor

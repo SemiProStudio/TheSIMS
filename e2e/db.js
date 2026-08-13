@@ -169,6 +169,29 @@ export async function deleteItemsByExactName(name) {
  * any seed item a crashed run left checked out to an E2E holder. Runs in
  * global setup (self-healing) and global teardown (hygiene).
  */
+/**
+ * Reset the test users' persisted UI settings (layoutPrefs, uiPrefs,
+ * savedFilterViews in profile JSON) so every run starts deterministic.
+ * Called ONLY from auth.setup — NOT from cleanupTestData, which per-spec
+ * afterAll hooks call mid-run while profile.spec may be exercising live
+ * persistence in parallel. Branding fields (businessName, logo, …) are kept.
+ */
+export async function resetTestUserSettings() {
+  const db = await adminDb();
+  const { data: users, error } = await db
+    .from('users')
+    .select('id, profile')
+    .in('email', ['admin@test.sims', 'user@test.sims']);
+  if (error) throw error;
+  for (const user of users || []) {
+    const profile = { ...(user.profile || {}) };
+    delete profile.layoutPrefs;
+    delete profile.uiPrefs;
+    delete profile.savedFilterViews;
+    await db.from('users').update({ profile }).eq('id', user.id);
+  }
+}
+
 export async function cleanupTestData() {
   const db = await adminDb();
 

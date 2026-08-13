@@ -181,4 +181,53 @@ describe('NotificationSettings', () => {
       expect(screen.getByText('Save Preferences').closest('button')).toBeDisabled();
     });
   });
+
+  // ===========================================================================
+  // Server-truth resync (profile-persistence round)
+  // Stored preferences load asynchronously after login. Before this round
+  // the screen always rendered defaults — and saving one toggle overwrote
+  // the user's whole stored row with defaults + that toggle.
+  // ===========================================================================
+  describe('Stored preferences resync', () => {
+    it('resyncs the form when stored preferences arrive after mount', () => {
+      const { rerender } = render(<NotificationSettings {...defaultProps} preferences={null} />);
+      expect(screen.getByRole('switch', { name: 'Email Notifications' })).toBeChecked();
+
+      rerender(
+        <NotificationSettings {...defaultProps} preferences={{ email_enabled: false }} />,
+      );
+      expect(screen.getByRole('switch', { name: 'Email Notifications' })).not.toBeChecked();
+      expect(
+        screen.getByText('All email notifications are currently disabled'),
+      ).toBeInTheDocument();
+    });
+
+    it('never clobbers a form the user has already edited', async () => {
+      const { rerender } = render(<NotificationSettings {...defaultProps} preferences={null} />);
+      // User turns email off — the form is now dirty
+      await userEvent.click(screen.getByRole('switch', { name: 'Email Notifications' }));
+      expect(screen.getByRole('switch', { name: 'Email Notifications' })).not.toBeChecked();
+
+      // Server truth arrives late with email ON — must not wipe the edit
+      rerender(<NotificationSettings {...defaultProps} preferences={{ email_enabled: true }} />);
+      expect(screen.getByRole('switch', { name: 'Email Notifications' })).not.toBeChecked();
+    });
+
+    it('saves the loaded values, not defaults, when one thing changes', async () => {
+      const onSave = vi.fn();
+      render(
+        <NotificationSettings
+          {...defaultProps}
+          onSave={onSave}
+          preferences={{ overdue_notifications: false, maintenance_reminders: false }}
+        />,
+      );
+      await userEvent.click(screen.getByRole('switch', { name: 'Overdue notifications' }));
+      await userEvent.click(screen.getByText('Save Preferences'));
+
+      const saved = onSave.mock.calls[0][0];
+      expect(saved.overdue_notifications).toBe(true); // the edit
+      expect(saved.maintenance_reminders).toBe(false); // stored value preserved
+    });
+  });
 });

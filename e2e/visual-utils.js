@@ -92,6 +92,22 @@ export async function compareElementSnapshot(locator, name, options = {}) {
 // =============================================================================
 
 export const test = base.extend({
+  // Freeze per-user settings persistence, exactly like e2e/fixtures.js does
+  // for functional specs. Without this, the 'sidebar collapsed' visual test
+  // persisted its collapse into the shared admin PROFILE and every later
+  // visual context logged in with a collapsed sidebar — failing every
+  // full-page baseline.
+  context: async ({ context }, use) => {
+    await context.addInitScript(() => {
+      try {
+        localStorage.setItem('sims-ui-settings-readonly', '1');
+      } catch {
+        /* ignore */
+      }
+    });
+    await use(context);
+  },
+
   // Fixture that provides authenticated page for visual tests. The project's
   // storageState (written by auth.setup.js) already carries the admin
   // session — just load the app and wait for the dashboard.
