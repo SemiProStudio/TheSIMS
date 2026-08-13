@@ -21,6 +21,10 @@ import {
   removeById,
   findById,
   filterBySearch,
+  rankBySearchRelevance,
+  isItemOverdue,
+  isLowStock,
+  matchesStatusSelection,
   filterByCategory,
   filterByStatus,
   addReplyToNote,
@@ -402,6 +406,121 @@ describe('filterBySearch', () => {
     const result = filterBySearch(items, '1', ['id']);
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('1');
+  });
+
+  it('matches multi-word queries across different fields', () => {
+    const gear = [
+      { id: 'T1', name: 'Carbon Tripod', brand: 'Sony' },
+      { id: 'T2', name: 'Carbon Tripod', brand: 'Manfrotto' },
+    ];
+    const result = filterBySearch(gear, 'sony tripod', ['name', 'brand', 'id']);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('T1');
+  });
+
+  it('requires EVERY token to match somewhere', () => {
+    const result = filterBySearch(items, 'sony canon');
+    expect(result).toHaveLength(0);
+  });
+});
+
+describe('rankBySearchRelevance', () => {
+  const gear = [
+    { id: 'X1', name: 'Cable for CA1', serialNumber: 'S9' },
+    { id: 'X2', name: 'CA1 Adapter', serialNumber: 'S8' },
+    { id: 'CA1', name: 'Zeta Camera', serialNumber: 'S7' },
+  ];
+
+  it('puts an exact id match first, then name-prefix, then substring', () => {
+    const result = rankBySearchRelevance(gear, 'ca1');
+    expect(result.map((i) => i.id)).toEqual(['CA1', 'X2', 'X1']);
+  });
+
+  it('ranks exact serial matches with ids', () => {
+    const result = rankBySearchRelevance(gear, 's8');
+    expect(result[0].id).toBe('X2');
+  });
+
+  it('keeps incoming order for equal ranks and empty queries', () => {
+    expect(rankBySearchRelevance(gear, '').map((i) => i.id)).toEqual(['X1', 'X2', 'CA1']);
+    const sameRank = rankBySearchRelevance(gear, 'zzz');
+    expect(sameRank.map((i) => i.id)).toEqual(['X1', 'X2', 'CA1']);
+  });
+});
+
+// =============================================================================
+// Computed status matching (overdue / low-stock)
+// =============================================================================
+
+describe('isItemOverdue', () => {
+  it('is true only for checked-out items past their due date', () => {
+    expect(isItemOverdue({ status: 'checked-out', dueBack: '2020-01-01' }, '2026-08-13')).toBe(
+      true,
+    );
+    expect(isItemOverdue({ status: 'checked-out', dueBack: '2099-01-01' }, '2026-08-13')).toBe(
+      false,
+    );
+    expect(isItemOverdue({ status: 'available', dueBack: '2020-01-01' }, '2026-08-13')).toBe(false);
+    expect(isItemOverdue({ status: 'checked-out' }, '2026-08-13')).toBe(false);
+  });
+});
+
+describe('isLowStock', () => {
+  const settings = { Consumables: { trackQuantity: true, lowStockThreshold: 3 } };
+
+  it('uses the item reorder point when present', () => {
+    expect(isLowStock({ category: 'Consumables', quantity: 5, reorderPoint: 5 }, settings)).toBe(
+      true,
+    );
+    expect(isLowStock({ category: 'Consumables', quantity: 6, reorderPoint: 5 }, settings)).toBe(
+      false,
+    );
+  });
+
+  it('falls back to the category threshold', () => {
+    expect(isLowStock({ category: 'Consumables', quantity: 3 }, settings)).toBe(true);
+    expect(isLowStock({ category: 'Consumables', quantity: 4 }, settings)).toBe(false);
+  });
+
+  it('ignores untracked categories and undefined quantities', () => {
+    expect(isLowStock({ category: 'Cameras', quantity: 0 }, settings)).toBe(false);
+    expect(isLowStock({ category: 'Consumables' }, settings)).toBe(false);
+    expect(isLowStock({ category: 'Consumables', quantity: 1 }, {})).toBe(false);
+  });
+});
+
+describe('matchesStatusSelection', () => {
+  const settings = { Consumables: { trackQuantity: true, lowStockThreshold: 3 } };
+  const overdueItem = { status: 'checked-out', dueBack: '2020-01-01', category: 'Cameras' };
+  const lowStockItem = { status: 'available', category: 'Consumables', quantity: 1 };
+
+  it('matches everything when no statuses are selected', () => {
+    expect(matchesStatusSelection(overdueItem, [], settings)).toBe(true);
+  });
+
+  it('matches stored statuses by equality', () => {
+    expect(matchesStatusSelection(overdueItem, ['checked-out'], settings)).toBe(true);
+    expect(matchesStatusSelection(overdueItem, ['available'], settings)).toBe(false);
+  });
+
+  it('computes overdue instead of comparing to the stored slug', () => {
+    expect(matchesStatusSelection(overdueItem, ['overdue'], settings, '2026-08-13')).toBe(true);
+    expect(
+      matchesStatusSelection({ ...overdueItem, dueBack: '2099-01-01' }, ['overdue'], settings),
+    ).toBe(false);
+  });
+
+  it('computes low-stock from quantity', () => {
+    expect(matchesStatusSelection(lowStockItem, ['low-stock'], settings)).toBe(true);
+    expect(matchesStatusSelection(overdueItem, ['low-stock'], settings)).toBe(false);
+  });
+
+  it('ORs across a multi-select', () => {
+    expect(matchesStatusSelection(lowStockItem, ['overdue', 'low-stock'], settings)).toBe(true);
+    expect(matchesStatusSelection(overdueItem, ['overdue', 'low-stock'], settings, '2026-08-13')).toBe(
+      true,
+    );
+    expect(matchesStatusSelection(lowStockItem, ['overdue', 'missing'], settings)).toBe(false);
   });
 });
 

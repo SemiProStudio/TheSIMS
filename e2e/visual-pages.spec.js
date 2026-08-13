@@ -173,6 +173,36 @@ test.describe('Visual Regression - Pages', () => {
     });
   });
 
+  test.describe('Search View', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.goto('/');
+
+      const dashboard = new DashboardPage(page);
+      await dashboard.expectDashboard();
+      await dashboard.navigateTo('Search');
+      await page.waitForTimeout(1000);
+    });
+
+    test('search prompt state should match baseline', async ({ page }) => {
+      await expect(page).toHaveScreenshot('search-view-prompt.png', {
+        maxDiffPixels: 300,
+      });
+    });
+
+    test('search results should match baseline', async ({ page }) => {
+      // Deterministic single gear result from the seeded rows — no dates in
+      // frame, so the CURRENT_DATE-relative seed reservations can't drift it
+      const searchInput = page.getByPlaceholder(/Search gear, clients/);
+      await searchInput.fill('sony a7s');
+      await expect(page.getByText('Sony A7S III')).toBeVisible({ timeout: 10000 });
+      await page.waitForTimeout(500);
+
+      await expect(page).toHaveScreenshot('search-view-results.png', {
+        maxDiffPixels: 300,
+      });
+    });
+  });
+
   test.describe('Admin Panel', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto('/');

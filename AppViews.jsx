@@ -106,10 +106,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     setCategoryFilter,
     statusFilter,
     setStatusFilter,
-    selectedCategories,
-    setSelectedCategories,
-    selectedStatuses,
-    setSelectedStatuses,
     isGridView,
     setIsGridView,
     scheduleView,
@@ -264,6 +260,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                 setSelectedPackList(list);
                 setCurrentView(VIEWS.PACK_LISTS);
               }
+            } else if (itemBackContext?.returnTo === 'search') {
+              // Query and filters live in FilterContext, so the search is
+              // exactly as the user left it
+              setCurrentView(VIEWS.SEARCH);
             } else {
               setCurrentView(VIEWS.GEAR_LIST);
             }
@@ -389,15 +389,24 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
 
       {currentView === VIEWS.SEARCH && (
         <SearchView
-          inventory={inventory}
-          categories={categories}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          selectedCategories={selectedCategories}
-          setSelectedCategories={setSelectedCategories}
-          selectedStatuses={selectedStatuses}
-          setSelectedStatuses={setSelectedStatuses}
-          onViewItem={navigateToItem}
+          onViewItem={(id) =>
+            navigateToItem(id, { returnTo: 'search', backLabel: 'Back to Search' })
+          }
+          onViewClient={(client) => {
+            // ClientsView restores a pending selection from this context at
+            // mount (same mechanism as returning from a reservation detail)
+            setReservationBackView({ view: VIEWS.SEARCH, context: { clientId: client.id } });
+            setCurrentView(VIEWS.CLIENTS);
+          }}
+          onViewPackage={(pkg) => {
+            setSelectedPackage(pkg);
+            setCurrentView(VIEWS.PACKAGES);
+          }}
+          onViewPackList={(list) => {
+            setSelectedPackList(list);
+            setCurrentView(VIEWS.PACK_LISTS);
+          }}
+          onViewReservation={(group, item) => navigateToReservation(group, item)}
         />
       )}
 
@@ -429,10 +438,12 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             reservation={selectedReservation}
             item={selectedReservationItem}
             onBack={() => {
-              const backView = selectedItem
-                ? VIEWS.GEAR_DETAIL
-                : reservationBackView?.view || VIEWS.SCHEDULE;
-              setCurrentView(backView);
+              // reservationBackView records where the reservation was opened
+              // from (schedule, search, item detail, dashboard, clients).
+              // The old `selectedItem ? GEAR_DETAIL : ...` heuristic misfired
+              // for the rest of the session once ANY item detail had been
+              // viewed, because selectedItem is never cleared.
+              setCurrentView(reservationBackView?.view || VIEWS.SCHEDULE);
               // Don't clear reservationBackView here — let the target view
               // read the context (e.g., clientId) before clearing it
             }}
