@@ -3,10 +3,11 @@
 // Handle item checkout process with borrower info and due dates
 // ============================================================================
 
-import { memo, useState } from 'react';
+import { memo, useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
+import { AlertTriangle } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatPhoneNumber, handlePhoneInput } from '../utils';
+import { formatPhoneNumber, handlePhoneInput, formatDate, getTodayISO } from '../utils';
 import { Badge, Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
@@ -35,6 +36,20 @@ export const CheckOutModal = memo(function CheckOutModal({
   });
 
   const [errors, setErrors] = useState({});
+
+  // Reservations overlapping the checkout window [today, dueDate] — checkout
+  // was previously blind to reservations, so gear reserved for a job could
+  // walk out the door with no warning at all. Informational, not blocking:
+  // the person checking out is often the one who reserved it.
+  const overlappingReservations = useMemo(() => {
+    const start = getTodayISO();
+    const end = formData.dueDate || start;
+    return (item?.reservations || []).filter((r) => {
+      const rStart = r.start || r.startDate;
+      const rEnd = r.end || r.endDate;
+      return rStart && rEnd && rStart <= end && rEnd >= start;
+    });
+  }, [item, formData.dueDate]);
 
   // Project types
   const projectTypes = [
@@ -175,6 +190,40 @@ export const CheckOutModal = memo(function CheckOutModal({
             </div>
           </div>
         </div>
+
+        {/* Reservation warning */}
+        {overlappingReservations.length > 0 && (
+          <div
+            role="status"
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: spacing[2],
+              background: withOpacity(colors.warning, 12),
+              border: `1px solid ${withOpacity(colors.warning, 50)}`,
+              borderRadius: borderRadius.md,
+              padding: spacing[3],
+              marginBottom: spacing[4],
+              fontSize: typography.fontSize.sm,
+              color: colors.textPrimary,
+            }}
+          >
+            <AlertTriangle
+              size={16}
+              color={colors.warning}
+              style={{ flexShrink: 0, marginTop: 2 }}
+            />
+            <div>
+              <strong>This item is reserved during the checkout period:</strong>{' '}
+              {overlappingReservations
+                .map(
+                  (r) =>
+                    `${r.project || 'Reservation'} (${formatDate(r.start || r.startDate)} – ${formatDate(r.end || r.endDate)})`,
+                )
+                .join(', ')}
+            </div>
+          </div>
+        )}
 
         {/* Borrower Section */}
         <div style={{ marginBottom: spacing[4] }}>

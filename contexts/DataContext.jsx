@@ -643,6 +643,9 @@ export function DataProvider({ children }) {
         // Don't pass id - let DB generate UUID
         item_id: itemId,
         client_id: reservation.clientId || null,
+        group_id: reservation.groupId || null,
+        created_by_id: reservation.createdById || null,
+        created_by_name: reservation.createdByName || null,
         project: reservation.project,
         project_type: reservation.projectType || 'Other',
         start_date: reservation.start,
@@ -662,23 +665,38 @@ export function DataProvider({ children }) {
     }
   }, []);
 
+  // Map camelCase reservation-form fields to DB columns. '' clientId means
+  // "no client" and must become NULL — an empty string would violate the FK.
+  const mapReservationUpdates = (updates) => {
+    const dbUpdates = {};
+    if (updates.project !== undefined) dbUpdates.project = updates.project;
+    if (updates.projectType !== undefined) dbUpdates.project_type = updates.projectType;
+    if (updates.start !== undefined) dbUpdates.start_date = updates.start;
+    if (updates.end !== undefined) dbUpdates.end_date = updates.end;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.user !== undefined) dbUpdates.contact_name = updates.user;
+    if (updates.contactPhone !== undefined) dbUpdates.contact_phone = updates.contactPhone;
+    if (updates.contactEmail !== undefined) dbUpdates.contact_email = updates.contactEmail;
+    if (updates.location !== undefined) dbUpdates.location = updates.location;
+    if (updates.clientId !== undefined) dbUpdates.client_id = updates.clientId || null;
+    return dbUpdates;
+  };
+
   const updateReservation = useCallback(async (reservationId, updates) => {
     try {
-      const dbUpdates = {};
-      if (updates.project !== undefined) dbUpdates.project = updates.project;
-      if (updates.projectType !== undefined) dbUpdates.project_type = updates.projectType;
-      if (updates.start !== undefined) dbUpdates.start_date = updates.start;
-      if (updates.end !== undefined) dbUpdates.end_date = updates.end;
-      if (updates.status !== undefined) dbUpdates.status = updates.status;
-      if (updates.user !== undefined) dbUpdates.contact_name = updates.user;
-      if (updates.contactPhone !== undefined) dbUpdates.contact_phone = updates.contactPhone;
-      if (updates.contactEmail !== undefined) dbUpdates.contact_email = updates.contactEmail;
-      if (updates.location !== undefined) dbUpdates.location = updates.location;
-      if (updates.clientId !== undefined) dbUpdates.client_id = updates.clientId;
-
-      await reservationsService.update(reservationId, dbUpdates);
+      await reservationsService.update(reservationId, mapReservationUpdates(updates));
     } catch (err) {
       logError('Failed to update reservation:', err);
+      throw err;
+    }
+  }, []);
+
+  // Update every row of a multi-item reservation in one statement
+  const updateReservationRows = useCallback(async (reservationIds, updates) => {
+    try {
+      await reservationsService.updateMany(reservationIds, mapReservationUpdates(updates));
+    } catch (err) {
+      logError('Failed to update reservation group:', err);
       throw err;
     }
   }, []);
@@ -688,6 +706,17 @@ export function DataProvider({ children }) {
       await reservationsService.delete(reservationId);
     } catch (err) {
       logError('Failed to delete reservation:', err);
+      throw err;
+    }
+  }, []);
+
+  // Soft-cancel: rows keep their history with status='cancelled'; every load
+  // path excludes them, and getIds pruning removes them on other devices
+  const cancelReservations = useCallback(async (reservationIds) => {
+    try {
+      await reservationsService.cancelMany(reservationIds);
+    } catch (err) {
+      logError('Failed to cancel reservations:', err);
       throw err;
     }
   }, []);
@@ -735,19 +764,23 @@ export function DataProvider({ children }) {
         returnNotes,
         damageReported,
         damageDescription,
+        returnStatus,
       } = checkinData;
 
-      // Use the dedicated checkIn service method
+      // Use the dedicated checkIn service method. returnStatus lets the
+      // caller return the item to 'reserved' when a confirmed reservation
+      // covers today (damage still wins).
       const result = await inventoryService.checkIn(itemId, {
         userId: userId,
         userName: returnedBy,
         notes: returnNotes || conditionNotes,
         condition: condition,
         damageReported: !!damageReported,
+        returnStatus,
       });
 
       // Determine new status based on damage
-      const newStatus = damageReported ? 'needs-attention' : 'available';
+      const newStatus = damageReported ? 'needs-attention' : returnStatus || 'available';
 
       // Update local state
       setInventory((prev) =>
@@ -1266,7 +1299,9 @@ export function DataProvider({ children }) {
       // Reservation Operations
       createReservation,
       updateReservation,
+      updateReservationRows,
       deleteReservation,
+      cancelReservations,
 
       // Check In/Out Operations
       checkOutItem,
@@ -1342,7 +1377,9 @@ export function DataProvider({ children }) {
       deleteMaintenance,
       createReservation,
       updateReservation,
+      updateReservationRows,
       deleteReservation,
+      cancelReservations,
       checkOutItem,
       checkInItem,
       createPackage,

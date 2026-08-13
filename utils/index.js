@@ -213,6 +213,60 @@ export const getAllReservationConflicts = (
   };
 };
 
+/**
+ * Whether the item has a reservation covering todayISO. Drives the
+ * 'reserved' ↔ 'available' status reconciliation — cancelled rows never
+ * reach local state, so every reservation here counts.
+ */
+export const hasActiveReservation = (item, todayISO) => {
+  return (item?.reservations || []).some((r) => {
+    const start = r.start || r.startDate;
+    const end = r.end || r.endDate;
+    return start && end && start <= todayISO && end >= todayISO;
+  });
+};
+
+/**
+ * Group per-item reservation rows into logical multi-item reservations.
+ * Rows created together share a group_id; legacy rows (NULL group_id) fall
+ * back to project+dates matching. Each group carries the ids of every row
+ * in it (reservationIds) so edit/cancel can target exact rows instead of
+ * re-matching by name.
+ */
+export const groupReservationsForSchedule = (inventory) => {
+  const all = (inventory || []).flatMap((i) =>
+    (i.reservations || []).map((r) => ({ ...r, item: i })),
+  );
+  all.sort((a, b) => new Date(a.start) - new Date(b.start));
+
+  const groups = {};
+  all.forEach((r) => {
+    const key = r.groupId
+      ? `g:${r.groupId}`
+      : `${r.project || 'unnamed'}_${r.start}_${r.end}`;
+    if (!groups[key]) {
+      groups[key] = { ...r, groupKey: key, items: [r.item], itemCount: 1, reservationIds: [r.id] };
+    } else {
+      groups[key].items.push(r.item);
+      groups[key].itemCount++;
+      groups[key].reservationIds.push(r.id);
+    }
+  });
+  return Object.values(groups).sort((a, b) => new Date(a.start) - new Date(b.start));
+};
+
+/**
+ * Deterministic palette index for a string key — keeps a reservation's
+ * calendar color stable across periods instead of depending on its index
+ * within whatever range happens to be visible.
+ */
+export const stableColorIndex = (str, paletteSize) => {
+  const s = String(str || '');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h) % Math.max(1, paletteSize);
+};
+
 // ============================================================================
 // Money Formatting
 // ============================================================================

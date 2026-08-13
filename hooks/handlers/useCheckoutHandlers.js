@@ -4,6 +4,7 @@
 // ============================================================================
 import { useState, useCallback } from 'react';
 import { STATUS, MODALS } from '../../constants.js';
+import { getTodayISO, hasActiveReservation } from '../../utils';
 import { error as logError } from '../../lib/logger.js';
 import { useToast } from '../../contexts/ToastContext.js';
 
@@ -160,7 +161,14 @@ export function useCheckoutHandlers({
       } = checkinData;
 
       const currentItem = inventory.find((i) => i.id === itemId);
-      const newStatus = damageReported ? STATUS.NEEDS_ATTENTION : STATUS.AVAILABLE;
+      // A returned item goes back to 'reserved' — not 'available' — when a
+      // confirmed reservation covers today; damage always wins
+      const hasReservationToday = hasActiveReservation(currentItem, getTodayISO());
+      const newStatus = damageReported
+        ? STATUS.NEEDS_ATTENTION
+        : hasReservationToday
+          ? STATUS.RESERVED
+          : STATUS.AVAILABLE;
       // Borrower details must be captured before check-in clears them
       const borrowerName = currentItem?.checkedOutTo;
       const checkoutClientId = currentItem?.checkoutClientId;
@@ -174,6 +182,7 @@ export function useCheckoutHandlers({
           returnNotes,
           damageReported,
           damageDescription,
+          returnStatus: hasReservationToday ? STATUS.RESERVED : undefined,
         });
       } catch (err) {
         // Keep the modal open with the notes/damage description intact —
@@ -213,7 +222,7 @@ export function useCheckoutHandlers({
           {
             field: 'status',
             oldValue: STATUS.CHECKED_OUT,
-            newValue: damageReported ? STATUS.NEEDS_ATTENTION : STATUS.AVAILABLE,
+            newValue: newStatus,
           },
           { field: 'returnedBy', newValue: returnedBy },
           ...(conditionChanged

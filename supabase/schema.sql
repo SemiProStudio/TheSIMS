@@ -333,7 +333,11 @@ CREATE TABLE IF NOT EXISTS reservations (
   -- Status and notes
   status VARCHAR(50) DEFAULT 'confirmed',
   notes JSONB DEFAULT '[]',
-  
+
+  -- Rows created together (multi-item reservation) share a group_id;
+  -- NULL on legacy rows (the app falls back to project+dates matching)
+  group_id UUID,
+
   -- Timestamps
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -347,6 +351,7 @@ CREATE INDEX IF NOT EXISTS idx_reservations_dates ON reservations(start_date, en
 CREATE INDEX IF NOT EXISTS idx_reservations_status ON reservations(status);
 CREATE INDEX IF NOT EXISTS idx_reservations_project_type ON reservations(project_type);
 CREATE INDEX IF NOT EXISTS idx_reservations_created_by ON reservations(created_by_id);
+CREATE INDEX IF NOT EXISTS idx_reservations_group ON reservations(group_id);
 
 -- =============================================================================
 -- MAINTENANCE RECORDS TABLE

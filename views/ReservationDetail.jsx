@@ -20,6 +20,7 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity } from '
 import { formatDate, getStatusColor, getTodayISO } from '../utils';
 import { Badge, Card, CardHeader, Button } from '../components/ui.jsx';
 import NotesSection from '../components/NotesSection.jsx';
+import { usePermissions } from '../contexts/PermissionsContext.js';
 
 // Map widget with embedded OpenStreetMap
 const MapWidget = memo(function MapWidget({ location }) {
@@ -137,6 +138,9 @@ function ReservationDetail({
   user,
   onViewItem,
 }) {
+  const { canEdit } = usePermissions();
+  const canEditSchedule = canEdit('schedule');
+
   if (!reservation || !item) return null;
 
   // Get all items in this reservation (for multi-item reservations)
@@ -195,14 +199,16 @@ function ReservationDetail({
             <p style={{ color: colors.textSecondary, margin: `0 0 ${spacing[4]}px` }}>
               {itemCount > 1 ? `${itemCount} items reserved` : `${item.name} - ${item.brand}`}
             </p>
-            <div style={{ display: 'flex', gap: spacing[3] }}>
-              <Button variant="secondary" onClick={onEdit} icon={Edit}>
-                Edit Reservation
-              </Button>
-              <Button variant="secondary" danger onClick={onDelete} icon={Trash2}>
-                Cancel
-              </Button>
-            </div>
+            {canEditSchedule && (
+              <div style={{ display: 'flex', gap: spacing[3] }}>
+                <Button variant="secondary" onClick={onEdit} icon={Edit}>
+                  Edit Reservation
+                </Button>
+                <Button variant="secondary" danger onClick={onDelete} icon={Trash2}>
+                  Cancel Reservation
+                </Button>
+              </div>
+            )}
           </Card>
 
           {/* Schedule & Location */}

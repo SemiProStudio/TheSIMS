@@ -121,7 +121,8 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     setSelectedIds,
   } = useFilterContext();
 
-  const { setEditingReservationId, itemForm, setItemForm, showConfirm } = useModalContext();
+  const { setEditingReservationId, setReservationForm, itemForm, setItemForm, showConfirm } =
+    useModalContext();
 
   const dataContext = useData();
   const {
@@ -277,6 +278,17 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onAddReservation={() => {
             resetReservationForm();
             setEditingReservationId(null);
+            // Preselect the item this detail page is showing — the modal
+            // used to open empty and make the user search for the item
+            // they were already standing on. Search stays available for
+            // adding more items.
+            if (selectedItem?.id) {
+              setReservationForm((prev) => ({
+                ...prev,
+                itemIds: [selectedItem.id],
+                itemId: selectedItem.id,
+              }));
+            }
             openModal(MODALS.ADD_RESERVATION);
           }}
           onDeleteReservation={deleteReservation}

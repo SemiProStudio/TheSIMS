@@ -112,6 +112,10 @@ describe('DataContext.createReservation', () => {
     expect(reservationsService.create).toHaveBeenCalledWith({
       item_id: 'CAM001',
       client_id: 'client-42',
+      // Not in this form — the handler stamps these for rows it creates
+      group_id: null,
+      created_by_id: null,
+      created_by_name: null,
       project: 'Commercial Shoot',
       project_type: 'Commercial',
       start_date: '2026-09-01',
