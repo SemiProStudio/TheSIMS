@@ -171,6 +171,8 @@ export function useReservationHandlers({
 
       let firstCreatedReservation = null;
       let createdCount = 0;
+      const createdItems = [];
+      const createdReservationIds = [];
       for (const targetItemId of itemIds) {
         const targetItem = inventory.find((i) => i.id === targetItemId);
         if (!targetItem) {
@@ -203,6 +205,8 @@ export function useReservationHandlers({
         }
 
         createdCount++;
+        createdItems.push(targetItem);
+        createdReservationIds.push(reservation.id);
         if (!firstCreatedReservation) {
           firstCreatedReservation = { reservation, item: targetItem };
         }
@@ -268,7 +272,17 @@ export function useReservationHandlers({
       }
 
       if (firstCreatedReservation) {
-        navigateToReservation(firstCreatedReservation.reservation, firstCreatedReservation.item);
+        // Navigate with the full group view — the detail page should show
+        // every item just created, not only the first row
+        navigateToReservation(
+          {
+            ...firstCreatedReservation.reservation,
+            items: createdItems,
+            itemCount: createdItems.length,
+            reservationIds: createdReservationIds,
+          },
+          firstCreatedReservation.item,
+        );
       }
     }
 

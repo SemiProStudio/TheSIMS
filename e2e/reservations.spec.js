@@ -26,14 +26,13 @@ test.describe('Reservation Creation', () => {
       await expect(modal).toBeVisible();
       await expect(modal.getByText('Add Reservation').first()).toBeVisible();
 
-      // Save must be gated until item, project, dates, and contact are set
+      // Save must be gated until project, dates, and contact are set
       const saveButton = modal.getByRole('button', { name: /^Add Reservation/ });
       await expect(saveButton).toBeDisabled();
 
-      // The modal does NOT preselect the item it was opened from — pick it
-      // in the item search
-      await modal.locator('input[placeholder="Search items by name, ID, or brand..."]').fill(id);
-      await modal.getByText(name).first().click();
+      // The item this detail page shows is preselected (schedule hardening
+      // round) — no need to search for it, but search stays available
+      await expect(modal.getByText(name).first()).toBeVisible();
 
       await modal
         .locator('input[placeholder="e.g., Wedding - Smith/Jones"]')

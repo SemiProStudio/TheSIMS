@@ -120,9 +120,10 @@ test.describe.serial('multi-item reservation lifecycle', () => {
       .toBe(2);
 
     // --- Checkout warns about the active reservation ---
+    // The item is 'reserved' now — the status reconciliation put it there
     await pages.dashboard.navigateTo('Gear List');
     await pages.gearList.expectGearList();
-    await pages.gearList.openItem(itemAId, ITEM_A);
+    await pages.gearList.openItem(itemAId, ITEM_A, 'reserved');
     await pages.itemDetail.expectItemDetail();
     await page.getByRole('button', { name: 'Check Out', exact: true }).click();
     await expect(page.locator('text=reserved during the checkout period')).toBeVisible({
