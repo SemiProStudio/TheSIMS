@@ -154,8 +154,17 @@ export default function App() {
     bumpNavigationNonce,
   } = useNavigationContext();
 
-  const { setSearchQuery, setCategoryFilter, setStatusFilter, setScheduleDate, selectedIds } =
-    useFilterContext();
+  const {
+    setSearchQuery,
+    setCategoryFilter,
+    setStatusFilter,
+    setScheduleDate,
+    selectedIds,
+    setGlobalSearchQuery,
+    setGlobalSearchTypes,
+    setSelectedCategories,
+    setSelectedStatuses,
+  } = useFilterContext();
 
   const {
     setActiveModal,
@@ -386,6 +395,15 @@ export default function App() {
         setStatusFilter('all');
         setSearchQuery('');
       }
+      // Sidebar click starts a fresh search — same symmetry as the gear
+      // list. Back-navigation from a result doesn't pass through here, so
+      // the in-progress search survives that round-trip.
+      if (viewId === VIEWS.SEARCH) {
+        setGlobalSearchQuery('');
+        setGlobalSearchTypes([]);
+        setSelectedCategories([]);
+        setSelectedStatuses([]);
+      }
       if (viewId === VIEWS.PACKAGES) setSelectedPackage(null);
       if (viewId === VIEWS.PACK_LISTS) setSelectedPackList(null);
       if (viewId === VIEWS.SCHEDULE) {
@@ -405,6 +423,10 @@ export default function App() {
       setCategoryFilter,
       setStatusFilter,
       setSearchQuery,
+      setGlobalSearchQuery,
+      setGlobalSearchTypes,
+      setSelectedCategories,
+      setSelectedStatuses,
       setSelectedPackage,
       setSelectedPackList,
       setScheduleDate,

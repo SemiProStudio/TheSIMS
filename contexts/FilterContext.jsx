@@ -14,8 +14,15 @@ export function FilterProvider({
   defaultStatusFilter = 'all',
   defaultGridView = true,
 }) {
-  // Search state
+  // Search state (gear list)
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Global Search view state — separate from the gear list's query so a
+  // search typed on one page doesn't silently follow the user to the other.
+  // Lives here (not in SearchView) so it survives navigating into a result
+  // and back.
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [globalSearchTypes, setGlobalSearchTypes] = useState([]);
 
   // Category filters
   const [categoryFilter, setCategoryFilter] = useState(defaultCategoryFilter);
@@ -97,6 +104,8 @@ export function FilterProvider({
 
   const resetAllFilters = useCallback(() => {
     setSearchQuery('');
+    setGlobalSearchQuery('');
+    setGlobalSearchTypes([]);
     setCategoryFilter(defaultCategoryFilter);
     setSelectedCategories([]);
     setStatusFilter(defaultStatusFilter);
@@ -104,34 +113,6 @@ export function FilterProvider({
     setPackageCategoryFilter('all');
     setSelectedIds([]);
   }, [defaultCategoryFilter, defaultStatusFilter]);
-
-  const createItemFilter = useCallback(
-    (options = {}) => {
-      const {
-        searchFields = ['name', 'code', 'description'],
-        categoryField = 'category',
-        statusField = 'status',
-      } = options;
-
-      return (item) => {
-        if (searchQuery) {
-          const query = searchQuery.toLowerCase();
-          const matchesSearch = searchFields.some((field) =>
-            item[field]?.toLowerCase?.().includes(query),
-          );
-          if (!matchesSearch) return false;
-        }
-        if (categoryFilter !== 'all' && item[categoryField] !== categoryFilter) return false;
-        if (selectedCategories.length > 0 && !selectedCategories.includes(item[categoryField]))
-          return false;
-        if (statusFilter !== 'all' && item[statusField] !== statusFilter) return false;
-        if (selectedStatuses.length > 0 && !selectedStatuses.includes(item[statusField]))
-          return false;
-        return true;
-      };
-    },
-    [searchQuery, categoryFilter, selectedCategories, statusFilter, selectedStatuses],
-  );
 
   const hasActiveFilters = useMemo(() => {
     return (
@@ -155,6 +136,10 @@ export function FilterProvider({
       setSearchQuery,
       handleSearch,
       clearSearch,
+      globalSearchQuery,
+      setGlobalSearchQuery,
+      globalSearchTypes,
+      setGlobalSearchTypes,
       categoryFilter,
       setCategoryFilter,
       selectedCategories,
@@ -195,11 +180,12 @@ export function FilterProvider({
       selectionCount,
       hasSelection,
       resetAllFilters,
-      createItemFilter,
       hasActiveFilters,
     }),
     [
       searchQuery,
+      globalSearchQuery,
+      globalSearchTypes,
       categoryFilter,
       selectedCategories,
       packageCategoryFilter,
@@ -233,7 +219,6 @@ export function FilterProvider({
       clearSelection,
       isSelected,
       resetAllFilters,
-      createItemFilter,
     ],
   );
 

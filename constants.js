@@ -327,6 +327,18 @@ export const STATUS = {
   LOW_STOCK: 'low-stock',
 };
 
+// Human-readable status labels — the stored values are slugs and must never
+// be shown raw in filter UIs
+export const STATUS_LABELS = {
+  [STATUS.AVAILABLE]: 'Available',
+  [STATUS.CHECKED_OUT]: 'Checked Out',
+  [STATUS.RESERVED]: 'Reserved',
+  [STATUS.NEEDS_ATTENTION]: 'Needs Attention',
+  [STATUS.MISSING]: 'Missing',
+  [STATUS.OVERDUE]: 'Overdue',
+  [STATUS.LOW_STOCK]: 'Low Stock',
+};
+
 // Item conditions
 export const CONDITION = {
   EXCELLENT: 'excellent',

@@ -411,7 +411,10 @@ export const findById = (array, id) => {
 // ============================================================================
 
 /**
- * Filter items by search query
+ * Filter items by search query. Multi-word queries are tokenized: every
+ * token must match at least one field, but tokens may match across
+ * different fields — "sony tripod" finds brand "Sony" + name "Tripod",
+ * which a contiguous-substring match never could.
  * @param {Array} items - Items to filter
  * @param {string} query - Search query
  * @param {string[]} fields - Fields to search in
@@ -419,10 +422,80 @@ export const findById = (array, id) => {
  */
 export const filterBySearch = (items, query, fields = ['name', 'brand', 'id']) => {
   if (!query?.trim()) return items;
-  const q = query.toLowerCase().trim();
+  const tokens = query.toLowerCase().trim().split(/\s+/);
   return items.filter((item) =>
-    fields.some((field) => item[field]?.toString().toLowerCase().includes(q)),
+    tokens.every((token) =>
+      fields.some((field) => item[field]?.toString().toLowerCase().includes(token)),
+    ),
   );
+};
+
+/**
+ * Rank search matches: exact ID (or serial) matches first, then name-prefix
+ * matches, then everything else. Ties keep their incoming order, so an exact
+ * ID hit can never be buried under pages of name matches.
+ * @param {Array} items - Matched items (already filtered)
+ * @param {string} query - The query the match was made with
+ * @param {Object} fields - { ids: string[], name: string }
+ * @returns {Array} Re-ordered copy
+ */
+export const rankBySearchRelevance = (items, query, fields = {}) => {
+  const { ids = ['id', 'serialNumber'], name = 'name' } = fields;
+  const q = (query || '').toLowerCase().trim();
+  if (!q) return items;
+  const score = (item) => {
+    if (ids.some((f) => item[f]?.toString().toLowerCase() === q)) return 0;
+    if (item[name]?.toString().toLowerCase().startsWith(q)) return 1;
+    return 2;
+  };
+  return items
+    .map((item, index) => ({ item, index, rank: score(item) }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map((entry) => entry.item);
+};
+
+/**
+ * Whether an item is overdue — a computed state, never stored: the item's
+ * stored status stays 'checked-out' while its due date is in the past.
+ * (Distinct from isOverdue(date), which only compares a date to today.)
+ */
+export const isItemOverdue = (item, todayISO = getTodayISO()) =>
+  item.status === 'checked-out' && !!item.dueBack && item.dueBack < todayISO;
+
+/**
+ * Whether an item is low on stock — computed from quantity vs. its reorder
+ * point (or the category's default threshold). Only quantity-tracked
+ * categories qualify.
+ */
+export const isLowStock = (item, categorySettings) => {
+  const settings = categorySettings?.[item.category];
+  if (!settings?.trackQuantity) return false;
+  if (item.quantity === undefined || item.quantity === null) return false;
+  const threshold = item.reorderPoint || settings.lowStockThreshold || 0;
+  return threshold > 0 && item.quantity <= threshold;
+};
+
+/**
+ * Multi-select status match that understands the computed states: 'overdue'
+ * and 'low-stock' are derived, so the plain equality check the Search view
+ * used to do silently matched nothing for them.
+ * @param {Object} item - Inventory item
+ * @param {string[]} statuses - Selected statuses (empty = match all)
+ * @param {Object} categorySettings - For low-stock thresholds
+ * @param {string} todayISO - Injectable for tests
+ */
+export const matchesStatusSelection = (
+  item,
+  statuses,
+  categorySettings,
+  todayISO = getTodayISO(),
+) => {
+  if (!statuses || statuses.length === 0) return true;
+  return statuses.some((status) => {
+    if (status === 'overdue') return isItemOverdue(item, todayISO);
+    if (status === 'low-stock') return isLowStock(item, categorySettings);
+    return item.status === status;
+  });
 };
 
 /**

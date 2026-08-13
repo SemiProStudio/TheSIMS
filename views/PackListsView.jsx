@@ -172,7 +172,7 @@ function PackListsView({
     if (!packageSearch.trim()) return packages;
     const q = packageSearch.toLowerCase();
     return packages.filter(
-      (pkg) => pkg.name.toLowerCase().includes(q) || pkg.id.toLowerCase().includes(q),
+      (pkg) => pkg.name?.toLowerCase().includes(q) || pkg.id?.toLowerCase().includes(q),
     );
   }, [packages, packageSearch]);
 
@@ -180,7 +180,7 @@ function PackListsView({
   const filteredPackLists = useMemo(() => {
     if (!packListSearch.trim()) return packLists;
     const q = packListSearch.toLowerCase();
-    return packLists.filter((list) => list.name.toLowerCase().includes(q));
+    return packLists.filter((list) => list.name?.toLowerCase().includes(q));
   }, [packLists, packListSearch]);
 
   // Filter items - by category and search
@@ -197,9 +197,9 @@ function PackListsView({
       const q = itemSearch.toLowerCase();
       items = items.filter(
         (item) =>
-          item.name.toLowerCase().includes(q) ||
-          item.id.toLowerCase().includes(q) ||
-          item.category.toLowerCase().includes(q),
+          item.name?.toLowerCase().includes(q) ||
+          item.id?.toLowerCase().includes(q) ||
+          item.category?.toLowerCase().includes(q),
       );
     }
 

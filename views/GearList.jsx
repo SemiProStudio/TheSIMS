@@ -7,6 +7,7 @@
 // ============================================================================
 
 import { memo, useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { STATUS_LABELS } from '../constants.js';
 import {
   Plus,
   Grid,
@@ -35,7 +36,7 @@ import {
   getStatusColor,
   filterBySearch,
   filterByCategory,
-  filterByStatus,
+  matchesStatusSelection,
   formatDate,
   getTodayISO,
   generateId,
@@ -875,21 +876,12 @@ function GearList({
       result = filterByCategory(result, categoryFilter);
     }
 
-    // Handle low-stock filter specially - needs categorySettings
-    if (statusFilter === 'low-stock') {
-      result = result.filter((item) => {
-        const settings = categorySettings?.[item.category];
-        if (!settings?.trackQuantity) return false;
-
-        // Only consider items that have a quantity defined
-        if (item.quantity === undefined || item.quantity === null) return false;
-
-        const quantity = item.quantity;
-        const threshold = item.reorderPoint || settings.lowStockThreshold || 0;
-        return threshold > 0 && quantity <= threshold;
-      });
-    } else {
-      result = filterByStatus(result, statusFilter);
+    // Shared matcher handles the computed states (overdue, low-stock) that
+    // plain status equality can't
+    if (statusFilter !== 'all') {
+      result = result.filter((item) =>
+        matchesStatusSelection(item, [statusFilter], categorySettings),
+      );
     }
 
     return result;
@@ -1117,13 +1109,7 @@ function GearList({
             onChange={(e) => setStatusFilter(e.target.value)}
             options={[
               { value: 'all', label: 'All Status' },
-              { value: 'available', label: 'Available' },
-              { value: 'checked-out', label: 'Checked Out' },
-              { value: 'reserved', label: 'Reserved' },
-              { value: 'needs-attention', label: 'Needs Attention' },
-              { value: 'missing', label: 'Missing' },
-              { value: 'overdue', label: 'Overdue' },
-              { value: 'low-stock', label: 'Low Stock' },
+              ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
             ]}
             style={{ minWidth: 140 }}
             aria-label="Filter by status"

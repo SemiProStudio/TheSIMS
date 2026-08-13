@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { STATUS, DASHBOARD_SECTIONS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, getStatusColor, getTodayISO, isReminderDue } from '../utils';
+import { formatDate, getStatusColor, getTodayISO, isReminderDue, filterBySearch } from '../utils';
 import {
   Badge,
   StatCard,
@@ -363,17 +363,11 @@ function Dashboard({
       .slice(0, 6);
   }, [inventory, today]);
 
-  // Quick search results (name, ID, brand, serial number)
+  // Quick search results — same shared matcher and fields as the gear list
+  // and the Search view, so the three can't silently drift apart again
   const allSearchResults = useMemo(() => {
     if (!quickSearch.trim()) return [];
-    const q = quickSearch.toLowerCase();
-    return inventory.filter(
-      (item) =>
-        (item.name || '').toLowerCase().includes(q) ||
-        (item.id || '').toLowerCase().includes(q) ||
-        (item.brand || '').toLowerCase().includes(q) ||
-        (item.serialNumber || '').toLowerCase().includes(q),
-    );
+    return filterBySearch(inventory, quickSearch, ['name', 'brand', 'id', 'serialNumber']);
   }, [inventory, quickSearch]);
   const searchResults = allSearchResults.slice(0, 5);
 
