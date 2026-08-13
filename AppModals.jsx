@@ -310,6 +310,7 @@ export default memo(function AppModals({ handlers, currentUser }) {
             specs={specs}
             auditLog={auditLog}
             packLists={packLists}
+            clients={clients}
             onClose={closeModal}
           />
         )}

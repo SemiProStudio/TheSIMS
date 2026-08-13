@@ -19,6 +19,7 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({
   specs,
   auditLog,
   packLists,
+  clients = [],
   onClose,
 }) {
   const [exportFormat, setExportFormat] = useState('json');
@@ -30,11 +31,18 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({
     specs: true,
     auditLog: false,
     packLists: true,
+    clients: true,
+    reservations: true,
   });
 
   const toggleOption = (key) => {
     setIncludeOptions((prev) => ({ ...prev, [key]: !prev[key] }));
   };
+
+  // Reservations live nested on inventory items — flatten for the backup
+  const allReservations = inventory.flatMap((item) =>
+    (item.reservations || []).map((r) => ({ ...r, itemId: item.id })),
+  );
 
   const handleExport = () => {
     const timestamp = new Date().toISOString().split('T')[0];
@@ -49,6 +57,8 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({
       if (includeOptions.specs) data.specs = specs;
       if (includeOptions.auditLog) data.auditLog = auditLog;
       if (includeOptions.packLists) data.packLists = packLists;
+      if (includeOptions.clients) data.clients = clients;
+      if (includeOptions.reservations) data.reservations = allReservations;
 
       data.exportedAt = new Date().toISOString();
       data.version = '2.0';
@@ -116,6 +126,8 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({
     { key: 'categories', label: 'Categories', count: categories.length },
     { key: 'specs', label: 'Specifications', count: Object.keys(specs).length },
     { key: 'packLists', label: 'Pack Lists', count: packLists.length },
+    { key: 'clients', label: 'Clients', count: clients.length },
+    { key: 'reservations', label: 'Reservations', count: allReservations.length },
     { key: 'users', label: 'Users (no passwords)', count: users.length },
     { key: 'auditLog', label: 'Audit Log', count: auditLog.length },
   ];
@@ -241,6 +253,7 @@ DatabaseExportModal.propTypes = {
   auditLog: PropTypes.array,
   /** Pack lists array */
   packLists: PropTypes.array,
+  clients: PropTypes.array,
   /** Callback to close modal */
   onClose: PropTypes.func.isRequired,
 };

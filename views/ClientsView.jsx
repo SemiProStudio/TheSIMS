@@ -19,11 +19,11 @@ import {
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import {
-  formatMoney,
   formatDate,
   formatPhoneNumber,
   getTodayISO,
   handlePhoneInput,
+  groupReservationsForSchedule,
 } from '../utils';
 import {
   Card,
@@ -39,6 +39,10 @@ import { Modal, ModalHeader } from '../modals/ModalBase.jsx';
 import NotesSection from '../components/NotesSection.jsx';
 import { useData } from '../contexts/DataContext.js';
 import { useNavigationContext } from '../contexts/NavigationContext.js';
+import { useToast } from '../contexts/ToastContext.js';
+import { usePermissions } from '../contexts/PermissionsContext.js';
+import { ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
+import { validateClient } from '../lib/validators.js';
 
 import { error as logError } from '../lib/logger.js';
 
@@ -171,24 +175,28 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
     notes: client?.notes || '',
     favorite: client?.favorite || false,
   });
-  const [nameError, setNameError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const isNameEmpty = !formData.name.trim();
   const isEditing = !!client;
+  const nameError = fieldErrors.name;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (isNameEmpty) {
-      setNameError('Client name is required');
+    // Full validator up front (2-100 char name, email/phone formats) so the
+    // save can't die on the service-side validation with no feedback
+    const validation = validateClient(formData);
+    if (!validation.isValid) {
+      setFieldErrors(validation.errors);
       return;
     }
 
+    // Form fields only — no client-generated ids or timestamps. The DB
+    // generates CL### ids and owns created_at/updated_at; the old payload's
+    // camelCase timestamps made PostgREST reject every insert and update.
     onSave({
-      ...client,
       ...formData,
-      id: client?.id || `CL${Date.now()}`,
-      createdAt: client?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      id: client?.id,
     });
   };
 
@@ -209,7 +217,7 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
             value={formData.name}
             onChange={(e) => {
               setFormData((prev) => ({ ...prev, name: e.target.value }));
-              setNameError('');
+              setFieldErrors((prev) => ({ ...prev, name: undefined }));
             }}
             style={{ ...styles.input, borderColor: isNameEmpty ? colors.danger : colors.border }}
             placeholder="Client name"
@@ -257,14 +265,24 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
           }}
         >
           <div>
-            <label style={styles.label}>Email</label>
+            <label style={{ ...styles.label, color: fieldErrors.email ? colors.danger : undefined }}>
+              Email
+            </label>
             <input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+              onChange={(e) => {
+                setFormData((prev) => ({ ...prev, email: e.target.value }));
+                setFieldErrors((prev) => ({ ...prev, email: undefined }));
+              }}
               style={styles.input}
               placeholder="email@example.com"
             />
+            {fieldErrors.email && (
+              <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>
+                {fieldErrors.email}
+              </span>
+            )}
           </div>
           <div>
             <label style={styles.label}>Phone</label>
@@ -354,6 +372,7 @@ const ClientDetailView = memo(function ClientDetailView({
   onReplyNote,
   onDeleteNote,
   user,
+  canEdit = true,
 }) {
   const [notesCollapsed, setNotesCollapsed] = useState(false);
 
@@ -361,11 +380,6 @@ const ClientDetailView = memo(function ClientDetailView({
     () => ({
       totalProjects: projects.length,
       activeProjects: projects.filter((p) => p.end >= getTodayISO()).length,
-      totalValue: projects.reduce((sum, p) => sum + (p.value || 0), 0),
-      lastProject:
-        projects.length > 0
-          ? projects.sort((a, b) => new Date(b.start) - new Date(a.start))[0]
-          : null,
     }),
     [projects],
   );
@@ -480,14 +494,20 @@ const ClientDetailView = memo(function ClientDetailView({
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
-            <Button variant="secondary" onClick={() => onEdit(client)} icon={Edit2}>
-              Edit
-            </Button>
-            <button className="btn-icon danger" onClick={() => onDelete(client)}>
-              <Trash2 size={16} />
-            </button>
-          </div>
+          {canEdit && (
+            <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
+              <Button variant="secondary" onClick={() => onEdit(client)} icon={Edit2}>
+                Edit
+              </Button>
+              <button
+                className="btn-icon danger"
+                aria-label={`Delete ${client.name}`}
+                onClick={() => onDelete(client)}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -524,20 +544,8 @@ const ClientDetailView = memo(function ClientDetailView({
           >
             {stats.activeProjects}
           </div>
-          <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>Active</div>
-        </Card>
-        <Card style={{ textAlign: 'center', padding: spacing[4] }}>
-          <div
-            style={{
-              fontSize: typography.fontSize['2xl'],
-              fontWeight: 'bold',
-              color: colors.accent1,
-            }}
-          >
-            {formatMoney(stats.totalValue)}
-          </div>
           <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-            Total Value
+            Active or Upcoming
           </div>
         </Card>
       </div>
@@ -559,6 +567,7 @@ const ClientDetailView = memo(function ClientDetailView({
           onDelete={onDeleteNote}
           user={user}
           panelColor={colors.primary}
+          readOnly={!canEdit}
         />
       </CollapsibleSection>
 
@@ -606,11 +615,6 @@ const ClientDetailView = memo(function ClientDetailView({
                     {project.itemCount || 1} items
                   </div>
                 </div>
-                {project.value > 0 && (
-                  <span style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm }}>
-                    {formatMoney(project.value)}
-                  </span>
-                )}
                 <ChevronRight size={16} color={colors.textMuted} />
               </div>
             ))}
@@ -637,16 +641,27 @@ function ClientsView({
 }) {
   const ctxData = useData();
   const dataContext = propDataContext || ctxData;
-  const { ensureClients } = ctxData;
+  const ensureClients = ctxData?.ensureClients;
   const { reservationBackView, setReservationBackView } = useNavigationContext();
+  const { addToast } = useToast();
+  const { canEdit } = usePermissions();
+  const canEditClients = canEdit('clients');
   const [searchQuery, setSearchQuery] = useState('');
+  // Lazy data starts as [] — without this flag the view can't tell "still
+  // fetching" from "no clients exist" and shows a misleading empty state
+  const clientsLoaded = dataContext?.clientsLoaded !== false;
 
   // Lazy-load clients on mount
   useEffect(() => {
-    ensureClients();
+    ensureClients?.();
   }, [ensureClients]);
 
-  // Restore selected client when returning from reservation detail
+  // Restore selected client when returning from reservation detail. Clients
+  // load lazily, so the target may not be in the list yet at mount — keep the
+  // id pending and resolve it when the data arrives.
+  const [pendingRestoreId, setPendingRestoreId] = useState(
+    () => reservationBackView?.context?.clientId || null,
+  );
   const [selectedClient, setSelectedClient] = useState(() => {
     const restoredClientId = reservationBackView?.context?.clientId;
     if (restoredClientId) {
@@ -654,6 +669,16 @@ function ClientsView({
     }
     return null;
   });
+
+  useEffect(() => {
+    if (pendingRestoreId && !selectedClient) {
+      const found = clients.find((c) => c.id === pendingRestoreId);
+      if (found) {
+        setSelectedClient(found);
+        setPendingRestoreId(null);
+      }
+    }
+  }, [clients, pendingRestoreId, selectedClient]);
 
   // Clear the back context after we've consumed it
   useEffect(() => {
@@ -676,23 +701,26 @@ function ClientsView({
     }
   }, [clients, selectedClient]);
 
-  // Get project history for each client from reservations
+  // Hydrate threaded notes when a client is opened — getAll() doesn't join
+  // them. The loadClientNotes patch flows into selectedClient via the sync
+  // effect above. Primitive deps only (the packages notes-refetch-loop bug).
+  const loadClientNotes = dataContext?.loadClientNotes;
+  const selectedClientId = selectedClient?.id;
+  const clientNotesLoaded = selectedClient ? selectedClient.clientNotes !== undefined : true;
+  useEffect(() => {
+    if (!selectedClientId || clientNotesLoaded || !loadClientNotes) return;
+    loadClientNotes(selectedClientId);
+  }, [selectedClientId, clientNotesLoaded, loadClientNotes]);
+
+  // Project history: group per-item reservation rows into logical multi-item
+  // reservations (shared group_id, legacy name+dates fallback) — a 5-item
+  // reservation is ONE project, not five
   const getClientProjects = useCallback(
     (clientId) => {
-      const projects = [];
-      inventory.forEach((item) => {
-        (item.reservations || []).forEach((res) => {
-          if (res.clientId === clientId) {
-            projects.push({
-              ...res,
-              itemId: item.id,
-              itemName: item.name,
-              itemCount: 1,
-            });
-          }
-        });
-      });
-      return projects.sort((a, b) => new Date(b.start) - new Date(a.start));
+      return groupReservationsForSchedule(inventory)
+        .filter((g) => g.clientId === clientId)
+        .map((g) => ({ ...g, itemId: g.items[0]?.id, itemName: g.items[0]?.name }))
+        .sort((a, b) => new Date(b.start) - new Date(a.start));
     },
     [inventory],
   );
@@ -704,7 +732,6 @@ function ClientsView({
       return {
         totalProjects: projects.length,
         activeReservations: projects.filter((p) => p.end >= getTodayISO()).length,
-        totalValue: projects.reduce((sum, p) => sum + (p.value || 0), 0),
       };
     },
     [getClientProjects],
@@ -743,73 +770,108 @@ function ClientsView({
     });
   }, [clients, searchQuery, filterType]);
 
-  // Save client — used by both list and detail views for consistency
+  // Save client — persist-first: the DB write must succeed before local
+  // state, the audit log, or the modal change. On failure the form stays
+  // open with the user's input intact. (The old fallback patched local state
+  // on failure, showing edits that reverted on reload — and every write was
+  // failing: the payload carried columns PostgREST rejects.)
   const handleSaveClient = useCallback(
     async (clientData) => {
-      const exists = clients.find((c) => c.id === clientData.id);
-      if (exists) {
-        // Update existing client — persist to Supabase
+      const isExisting = !!clientData.id && clients.some((c) => c.id === clientData.id);
+      if (isExisting) {
         try {
-          if (dataContext?.updateClient) {
-            await dataContext.updateClient(clientData.id, clientData);
-          } else {
-            dataContext.patchClient(clientData.id, clientData);
-          }
+          await dataContext.updateClient(clientData.id, clientData);
         } catch (err) {
           logError('Failed to update client:', err);
-          dataContext.patchClient(clientData.id, clientData);
+          addToast('Failed to save client: ' + (err.message || 'Please try again.'), 'error');
+          return;
         }
-        // If currently viewing this client, update selected state
         if (selectedClient?.id === clientData.id) {
-          setSelectedClient(clientData);
+          setSelectedClient((prev) => ({ ...prev, ...clientData }));
+        }
+        if (addAuditLog) {
+          addAuditLog({
+            type: 'client_updated',
+            description: `Client "${clientData.name}" updated`,
+            user: user?.name || 'Unknown',
+            clientId: clientData.id,
+          });
         }
       } else {
-        // New client - create in database, only set selected after success
+        let created;
         try {
-          if (dataContext?.createClient) {
-            await dataContext.createClient(clientData);
-          }
-          setSelectedClient(clientData);
+          // The DB generates the CL### id — select the RETURNED row, not the
+          // local form data
+          created = await dataContext.createClient(clientData);
         } catch (err) {
           logError('Failed to create client:', err);
+          addToast('Failed to create client: ' + (err.message || 'Please try again.'), 'error');
+          return;
         }
+        if (addAuditLog) {
+          addAuditLog({
+            type: 'client_created',
+            description: `Client "${created.name}" created`,
+            user: user?.name || 'Unknown',
+            clientId: created.id,
+          });
+        }
+        setSelectedClient(created);
       }
       setShowAddModal(false);
       setEditingClient(null);
     },
-    [clients, dataContext, selectedClient],
+    [clients, dataContext, selectedClient, addToast, addAuditLog, user],
   );
 
+  // Returns true when the delete persisted — callers only navigate away on
+  // success. Failure keeps the dialog open with an error toast.
   const handleDeleteClient = useCallback(async () => {
-    if (deleteConfirm.client) {
-      const clientToDelete = deleteConfirm.client;
+    const clientToDelete = deleteConfirm.client;
+    if (!clientToDelete) return false;
 
-      // Delete from database
-      if (dataContext?.deleteClient) {
-        try {
-          await dataContext.deleteClient(clientToDelete.id);
-        } catch (err) {
-          logError('Failed to delete client:', err);
-        }
-      }
+    try {
+      await dataContext.deleteClient(clientToDelete.id);
+    } catch (err) {
+      logError('Failed to delete client:', err);
+      addToast('Failed to delete client: ' + (err.message || 'Please try again.'), 'error');
+      return false;
+    }
 
-      // Log deletion
-      if (addAuditLog) {
-        addAuditLog({
-          type: 'client_deleted',
-          description: `Client "${clientToDelete.name}" deleted`,
-          user: user?.name || 'Unknown',
-          clientId: clientToDelete.id,
-        });
-      }
+    if (addAuditLog) {
+      addAuditLog({
+        type: 'client_deleted',
+        description: `Client "${clientToDelete.name}" deleted`,
+        user: user?.name || 'Unknown',
+        clientId: clientToDelete.id,
+      });
     }
     setDeleteConfirm({ isOpen: false, client: null });
-  }, [deleteConfirm.client, addAuditLog, user, dataContext]);
+    return true;
+  }, [deleteConfirm.client, addAuditLog, user, dataContext, addToast]);
+
+  // Deleting a client detaches its history (FKs are SET NULL) — say so
+  const deleteMessage = useMemo(() => {
+    const client = deleteConfirm.client;
+    if (!client) return '';
+    const projectCount = getClientProjects(client.id).length;
+    const hasCheckouts = inventory.some((i) => i.checkoutClientId === client.id);
+    let message = `Are you sure you want to delete "${client.name}"?`;
+    if (projectCount > 0) {
+      message += ` ${projectCount} reservation${projectCount === 1 ? '' : 's'} will keep their history but lose the link to this client.`;
+    }
+    if (hasCheckouts) {
+      message += ' This client currently has gear checked out.';
+    }
+    message += ' This cannot be undone.';
+    return message;
+  }, [deleteConfirm.client, getClientProjects, inventory]);
 
   // Detail view
   if (selectedClient) {
     return (
       <>
+        {!canEditClients && <ViewOnlyBanner functionId="clients" />}
         <ClientDetailView
           client={selectedClient}
           projects={getClientProjects(selectedClient.id)}
@@ -826,6 +888,7 @@ function ClientsView({
           onReplyNote={(parentId, text) => onReplyNote(selectedClient.id, parentId, text)}
           onDeleteNote={(noteId) => onDeleteNote(selectedClient.id, noteId)}
           user={user}
+          canEdit={canEditClients}
         />
         {editingClient && (
           <ClientFormModal
@@ -839,11 +902,11 @@ function ClientsView({
         <ConfirmDialog
           isOpen={deleteConfirm.isOpen}
           title="Delete Client"
-          message={`Are you sure you want to delete "${deleteConfirm.client?.name}"? This cannot be undone.`}
+          message={deleteMessage}
           confirmText="Delete"
-          onConfirm={() => {
-            handleDeleteClient();
-            setSelectedClient(null);
+          onConfirm={async () => {
+            const ok = await handleDeleteClient();
+            if (ok) setSelectedClient(null);
           }}
           onCancel={() => setDeleteConfirm({ isOpen: false, client: null })}
         />
@@ -858,11 +921,15 @@ function ClientsView({
         title="Clients"
         subtitle={`${clients.length} total clients`}
         action={
-          <Button onClick={() => setShowAddModal(true)} icon={Plus}>
-            Add Client
-          </Button>
+          canEditClients ? (
+            <Button onClick={() => setShowAddModal(true)} icon={Plus}>
+              Add Client
+            </Button>
+          ) : null
         }
       />
+
+      {!canEditClients && <ViewOnlyBanner functionId="clients" />}
 
       {/* Filters */}
       <Card style={{ marginBottom: spacing[4] }}>
@@ -889,7 +956,14 @@ function ClientsView({
       </Card>
 
       {/* Client List */}
-      {filteredClients.length === 0 ? (
+      {!clientsLoaded && clients.length === 0 ? (
+        <Card
+          role="status"
+          style={{ textAlign: 'center', padding: spacing[8], color: colors.textMuted }}
+        >
+          Loading clients...
+        </Card>
+      ) : filteredClients.length === 0 ? (
         <Card style={{ textAlign: 'center', padding: spacing[8] }}>
           <Users size={48} color={colors.textMuted} style={{ marginBottom: spacing[3] }} />
           <h3 style={{ margin: 0, color: colors.textPrimary }}>
@@ -900,7 +974,7 @@ function ClientsView({
               ? 'Add your first client to start tracking projects'
               : 'Try adjusting your search or filters'}
           </p>
-          {clients.length === 0 && (
+          {clients.length === 0 && canEditClients && (
             <Button
               onClick={() => setShowAddModal(true)}
               icon={Plus}
@@ -939,7 +1013,7 @@ function ClientsView({
       <ConfirmDialog
         isOpen={deleteConfirm.isOpen}
         title="Delete Client"
-        message={`Are you sure you want to delete "${deleteConfirm.client?.name}"? This cannot be undone.`}
+        message={deleteMessage}
         confirmText="Delete"
         onConfirm={handleDeleteClient}
         onCancel={() => setDeleteConfirm({ isOpen: false, client: null })}

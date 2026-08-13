@@ -12,6 +12,7 @@ import {
   itemNotesService,
   itemRemindersService,
   clientsService,
+  clientNotesService,
   packagesService,
   packageNotesService,
   packListsService,
@@ -1013,6 +1014,49 @@ export function DataProvider({ children }) {
   }, []);
 
   // =============================================================================
+  // CLIENT NOTES OPERATIONS
+  // =============================================================================
+
+  // getAll() doesn't join notes, so clients start with clientNotes ===
+  // undefined; the detail view calls this once to hydrate them.
+  const loadClientNotes = useCallback(async (clientId) => {
+    try {
+      const notes = await clientNotesService.getByClientId(clientId);
+      setClients((prev) => prev.map((c) => (c.id === clientId ? { ...c, clientNotes: notes } : c)));
+      return notes;
+    } catch (err) {
+      logError('Failed to load client notes:', err);
+      return [];
+    }
+  }, []);
+
+  const addClientNote = useCallback(async (clientId, note) => {
+    try {
+      const dbNote = {
+        // Don't pass id - let DB generate UUID
+        client_id: clientId,
+        user_name: note.user,
+        text: note.text,
+        parent_id: note.parentId || null,
+        deleted: false,
+      };
+      const result = await clientNotesService.create(dbNote);
+      return result; // Returns record with real UUID
+    } catch (err) {
+      logError('Failed to save client note:', err);
+      return null;
+    }
+  }, []);
+
+  const deleteClientNote = useCallback(async (noteId) => {
+    try {
+      await clientNotesService.softDelete(noteId);
+    } catch (err) {
+      logError('Failed to delete client note:', err);
+    }
+  }, []);
+
+  // =============================================================================
   // CATEGORIES OPERATIONS
   // =============================================================================
 
@@ -1245,6 +1289,7 @@ export function DataProvider({ children }) {
       auditLog,
       auditLogLoaded,
       packListsLoaded,
+      clientsLoaded,
 
       // Refresh functions
       refreshData: loadData,
@@ -1325,6 +1370,9 @@ export function DataProvider({ children }) {
       createClient,
       updateClient,
       deleteClient,
+      loadClientNotes,
+      addClientNote,
+      deleteClientNote,
 
       // Notification Operations
       saveNotificationPreferences,
@@ -1357,6 +1405,7 @@ export function DataProvider({ children }) {
       auditLog,
       auditLogLoaded,
       packListsLoaded,
+      clientsLoaded,
       loadData,
       refreshStaleData,
       ensureClients,
@@ -1395,6 +1444,9 @@ export function DataProvider({ children }) {
       createClient,
       updateClient,
       deleteClient,
+      loadClientNotes,
+      addClientNote,
+      deleteClientNote,
       saveNotificationPreferences,
       getNotificationPreferences,
       sendCheckoutEmail,

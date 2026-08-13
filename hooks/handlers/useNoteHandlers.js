@@ -11,6 +11,14 @@ import {
   findNoteById,
 } from '../../utils';
 
+// Swap an optimistic temp id for the DB-generated one, recursively
+const replaceNoteIdDeep = (notes, tempId, realId) =>
+  notes.map((n) => ({
+    ...n,
+    id: n.id === tempId ? realId : n.id,
+    replies: n.replies ? replaceNoteIdDeep(n.replies, tempId, realId) : [],
+  }));
+
 export function useNoteHandlers({
   selectedItem,
   setSelectedItem,
@@ -183,12 +191,16 @@ export function useNoteHandlers({
     [createNoteHandler],
   );
 
+  // Client notes persist to the client_notes table (optimistic local patch,
+  // then swap the temp id for the DB UUID). These were local-only before —
+  // every note typed on a client silently vanished on reload.
   const clientNoteHandlers = useMemo(
     () => ({
-      add: (clientId, text) => {
+      add: async (clientId, text) => {
         if (!text?.trim() || !clientId) return;
+        const tempId = generateId();
         const note = {
-          id: generateId(),
+          id: tempId,
           user: currentUser?.name || 'Unknown',
           date: getTodayISO(),
           text: text.trim(),
@@ -198,26 +210,45 @@ export function useNoteHandlers({
         dataContext.patchClient(clientId, (client) => ({
           clientNotes: [...(client.clientNotes || []), note],
         }));
+        if (dataContext?.addClientNote) {
+          const dbResult = await dataContext.addClientNote(clientId, note);
+          if (dbResult?.id && dbResult.id !== tempId) {
+            dataContext.patchClient(clientId, (client) => ({
+              clientNotes: replaceNoteIdDeep(client.clientNotes || [], tempId, dbResult.id),
+            }));
+          }
+        }
       },
-      reply: (clientId, parentId, text) => {
+      reply: async (clientId, parentId, text) => {
         if (!text?.trim() || !clientId) return;
+        const tempId = generateId();
         const reply = {
-          id: generateId(),
+          id: tempId,
           user: currentUser?.name || 'Unknown',
           date: getTodayISO(),
           text: text.trim(),
           replies: [],
           deleted: false,
+          parentId,
         };
         dataContext.patchClient(clientId, (client) => ({
           clientNotes: addReplyToNote(client.clientNotes || [], parentId, reply),
         }));
+        if (dataContext?.addClientNote) {
+          const dbResult = await dataContext.addClientNote(clientId, reply);
+          if (dbResult?.id && dbResult.id !== tempId) {
+            dataContext.patchClient(clientId, (client) => ({
+              clientNotes: replaceNoteIdDeep(client.clientNotes || [], tempId, dbResult.id),
+            }));
+          }
+        }
       },
       delete: (clientId, noteId) => {
         if (!clientId) return;
         dataContext.patchClient(clientId, (client) => ({
           clientNotes: markNoteDeleted(client.clientNotes || [], noteId),
         }));
+        dataContext?.deleteClientNote?.(noteId);
       },
     }),
     [currentUser, dataContext],

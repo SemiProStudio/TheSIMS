@@ -5,9 +5,9 @@
 
 import { memo, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Download, Building2, Users, FileText, DollarSign } from 'lucide-react';
+import { Download, Building2, Users, FileText } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatMoney, sanitizeCSVCell } from '../utils';
+import { sanitizeCSVCell, groupReservationsForSchedule } from '../utils';
 import {
   Badge,
   Card,
@@ -33,25 +33,20 @@ export const ClientReportPanel = memo(function ClientReportPanel({
     ensureClients();
   }, [ensureClients]);
 
-  // Calculate reservation counts for each client
+  // Reservation counts per client — grouped, so a 5-item reservation counts
+  // as ONE booking, not five
   const clientsWithStats = useMemo(() => {
     const reservationCounts = {};
-    const totalValues = {};
-
-    inventory.forEach((item) => {
-      (item.reservations || []).forEach((res) => {
-        if (res.clientId) {
-          reservationCounts[res.clientId] = (reservationCounts[res.clientId] || 0) + 1;
-          totalValues[res.clientId] = (totalValues[res.clientId] || 0) + (res.value || 0);
-        }
-      });
+    groupReservationsForSchedule(inventory).forEach((group) => {
+      if (group.clientId) {
+        reservationCounts[group.clientId] = (reservationCounts[group.clientId] || 0) + 1;
+      }
     });
 
     return clients
       .map((client) => ({
         ...client,
         reservationCount: reservationCounts[client.id] || 0,
-        totalValue: totalValues[client.id] || 0,
       }))
       .sort((a, b) => b.reservationCount - a.reservationCount);
   }, [clients, inventory]);
@@ -59,10 +54,9 @@ export const ClientReportPanel = memo(function ClientReportPanel({
   // Summary stats
   const stats = useMemo(() => {
     const totalReservations = clientsWithStats.reduce((sum, c) => sum + c.reservationCount, 0);
-    const totalValue = clientsWithStats.reduce((sum, c) => sum + c.totalValue, 0);
     const activeClients = clientsWithStats.filter((c) => c.reservationCount > 0).length;
 
-    return { totalReservations, totalValue, activeClients };
+    return { totalReservations, activeClients };
   }, [clientsWithStats]);
 
   // Export CSV
@@ -74,7 +68,6 @@ export const ClientReportPanel = memo(function ClientReportPanel({
       'Email',
       'Phone',
       'Reservations',
-      'Total Value',
       'Favorite',
     ];
     const rows = clientsWithStats.map((c) => [
@@ -84,7 +77,6 @@ export const ClientReportPanel = memo(function ClientReportPanel({
       c.email || '',
       c.phone || '',
       c.reservationCount,
-      c.totalValue,
       c.favorite ? 'Yes' : 'No',
     ]);
 
@@ -193,12 +185,6 @@ export const ClientReportPanel = memo(function ClientReportPanel({
           value={stats.totalReservations}
           color={colors.checkedOut}
         />
-        <StatCard
-          icon={DollarSign}
-          label="Total Value"
-          value={formatMoney(stats.totalValue)}
-          color={colors.accent1}
-        />
       </div>
 
       {/* Client List */}
@@ -272,17 +258,6 @@ export const ClientReportPanel = memo(function ClientReportPanel({
                     }}
                   >
                     Reservations
-                  </th>
-                  <th
-                    style={{
-                      padding: spacing[3],
-                      textAlign: 'right',
-                      fontSize: typography.fontSize.xs,
-                      color: colors.textMuted,
-                      fontWeight: typography.fontWeight.medium,
-                    }}
-                  >
-                    Total Value
                   </th>
                 </tr>
               </thead>
@@ -358,16 +333,6 @@ export const ClientReportPanel = memo(function ClientReportPanel({
                         }}
                       >
                         {client.reservationCount}
-                      </span>
-                    </td>
-                    <td style={{ padding: spacing[3], textAlign: 'right' }}>
-                      <span
-                        style={{
-                          fontWeight: typography.fontWeight.medium,
-                          color: client.totalValue > 0 ? colors.available : colors.textMuted,
-                        }}
-                      >
-                        {client.totalValue > 0 ? formatMoney(client.totalValue) : '—'}
                       </span>
                     </td>
                   </tr>
