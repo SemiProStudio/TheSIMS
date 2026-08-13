@@ -383,6 +383,7 @@ function ScheduleView({
               <button
                 onClick={() => setScheduleMode(SCHEDULE_MODES.LIST)}
                 title="List View"
+                aria-pressed={scheduleMode === SCHEDULE_MODES.LIST}
                 style={{
                   ...styles.btnSec,
                   border: 'none',
@@ -400,6 +401,7 @@ function ScheduleView({
               <button
                 onClick={() => setScheduleMode(SCHEDULE_MODES.CALENDAR)}
                 title="Calendar View"
+                aria-pressed={scheduleMode === SCHEDULE_MODES.CALENDAR}
                 style={{
                   ...styles.btnSec,
                   border: 'none',
@@ -428,6 +430,7 @@ function ScheduleView({
                 <button
                   key={v}
                   onClick={() => setScheduleView(v)}
+                  aria-pressed={scheduleView === v}
                   style={{
                     ...styles.btnSec,
                     border: 'none',

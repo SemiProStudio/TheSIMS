@@ -177,6 +177,12 @@ export default function App() {
     setGlobalSearchTypes,
     setSelectedCategories,
     setSelectedStatuses,
+    isGridView,
+    setIsGridView,
+    scheduleView,
+    setScheduleView,
+    scheduleMode,
+    setScheduleMode,
   } = useFilterContext();
 
   const {
@@ -350,7 +356,13 @@ export default function App() {
   // effects below must swallow those transitions (they're the application,
   // not a user action) instead of persisting the pre-apply device state
   // back over the profile.
-  const pendingApplyRef = useRef({ themeId: null, sidebarCollapsed: null });
+  const pendingApplyRef = useRef({
+    themeId: null,
+    sidebarCollapsed: null,
+    gearListGridView: null,
+    scheduleView: null,
+    scheduleMode: null,
+  });
   useEffect(() => {
     const id = currentUser?.id;
     if (!id) {
@@ -375,6 +387,9 @@ export default function App() {
         typeof apply.sidebarCollapsed === 'boolean'
           ? apply.sidebarCollapsed
           : (device.sidebarCollapsed ?? false),
+      gearListGridView: apply.gearListGridView ?? isGridView,
+      scheduleView: apply.scheduleView ?? scheduleView,
+      scheduleMode: apply.scheduleMode ?? scheduleMode,
     };
 
     if (apply.customTheme) {
@@ -388,6 +403,9 @@ export default function App() {
     }
     if (themeToApply && themeToApply !== themeId) setTheme(themeToApply);
     if (typeof apply.sidebarCollapsed === 'boolean') setSidebarCollapsed(apply.sidebarCollapsed);
+    if (typeof apply.gearListGridView === 'boolean') setIsGridView(apply.gearListGridView);
+    if (apply.scheduleView) setScheduleView(apply.scheduleView);
+    if (apply.scheduleMode) setScheduleMode(apply.scheduleMode);
 
     if (themeOverride && seedPatch.uiPrefs) {
       // The overridden device theme is not the user's choice — don't adopt it
@@ -418,6 +436,12 @@ export default function App() {
     setTheme,
     updateCustomTheme,
     setSidebarCollapsed,
+    isGridView,
+    setIsGridView,
+    scheduleView,
+    setScheduleView,
+    scheduleMode,
+    setScheduleMode,
     persistProfilePatch,
     dataContext,
   ]);
@@ -444,6 +468,38 @@ export default function App() {
     }
     updateUiPrefs({ sidebarCollapsed });
   }, [sidebarCollapsed, currentUser?.id, updateUiPrefs]);
+
+  // Gear list grid/list mode follows the user
+  useEffect(() => {
+    if (!currentUser?.id || appliedForUserRef.current !== currentUser.id) return;
+    const pending = pendingApplyRef.current;
+    if (pending.gearListGridView !== null) {
+      if (isGridView === pending.gearListGridView) pending.gearListGridView = null;
+      return;
+    }
+    updateUiPrefs({ gearListGridView: isGridView });
+  }, [isGridView, currentUser?.id, updateUiPrefs]);
+
+  // Schedule period (day/week/month) and mode (calendar/list) follow the user
+  useEffect(() => {
+    if (!currentUser?.id || appliedForUserRef.current !== currentUser.id) return;
+    const pending = pendingApplyRef.current;
+    if (pending.scheduleView !== null) {
+      if (scheduleView === pending.scheduleView) pending.scheduleView = null;
+      return;
+    }
+    updateUiPrefs({ scheduleView });
+  }, [scheduleView, currentUser?.id, updateUiPrefs]);
+
+  useEffect(() => {
+    if (!currentUser?.id || appliedForUserRef.current !== currentUser.id) return;
+    const pending = pendingApplyRef.current;
+    if (pending.scheduleMode !== null) {
+      if (scheduleMode === pending.scheduleMode) pending.scheduleMode = null;
+      return;
+    }
+    updateUiPrefs({ scheduleMode });
+  }, [scheduleMode, currentUser?.id, updateUiPrefs]);
 
   // ============================================================================
   // Navigation Handlers

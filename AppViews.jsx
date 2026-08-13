@@ -414,7 +414,13 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
 
       {currentView === VIEWS.LABELS && (
         <Suspense fallback={<ViewLoading message="Loading Labels..." />}>
-          <LabelsView inventory={inventory} packages={packages} user={currentUser} />
+          <LabelsView
+            inventory={inventory}
+            packages={packages}
+            user={currentUser}
+            uiPrefs={currentUser?.uiPrefs}
+            onSaveUiPrefs={handlers.updateUiPrefs}
+          />
         </Suspense>
       )}
 

@@ -52,12 +52,23 @@ const PRINT_STYLES = `
   }
 `;
 
-function LabelsView({ inventory, packages = [], user }) {
+function LabelsView({ inventory, packages = [], user, uiPrefs, onSaveUiPrefs }) {
   const { addToast } = useToast();
   const [search, setSearch] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
-  const [selectedFormat, setSelectedFormat] = useState(LABEL_FORMATS[1]);
+  // Per-user preferred format (profile uiPrefs); tab-specific kit/package
+  // formats are session-only and never stored
+  const [selectedFormat, setSelectedFormat] = useState(
+    () => LABEL_FORMATS.find((f) => f.id === uiPrefs?.labelFormat) || LABEL_FORMATS[1],
+  );
   const [selectionTab, setSelectionTab] = useState('items'); // 'items', 'kits', 'packages'
+
+  const pickFormat = (format) => {
+    setSelectedFormat(format);
+    if (LABEL_FORMATS.some((f) => f.id === format.id)) {
+      onSaveUiPrefs?.({ labelFormat: format.id });
+    }
+  };
 
   // Get kits from inventory (items that are containers with kit items)
   const kits = useMemo(() => {
@@ -337,7 +348,7 @@ function LabelsView({ inventory, packages = [], user }) {
                     name="label-format"
                     value={format.id}
                     checked={selectedFormat.id === format.id}
-                    onChange={() => setSelectedFormat(format)}
+                    onChange={() => pickFormat(format)}
                   />
                   <span
                     aria-hidden="true"
