@@ -474,6 +474,8 @@ CREATE TABLE IF NOT EXISTS pack_lists (
 
 CREATE INDEX IF NOT EXISTS idx_pack_lists_name ON pack_lists(name);
 CREATE INDEX IF NOT EXISTS idx_pack_lists_created_by ON pack_lists(created_by_id);
+-- Case-insensitive uniqueness — matches the app's duplicate-name check
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pack_lists_name_unique ON pack_lists (lower(name));
 
 -- =============================================================================
 -- PACK LIST ITEMS TABLE (Junction table for individual items)
