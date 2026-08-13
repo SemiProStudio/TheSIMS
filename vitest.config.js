@@ -6,6 +6,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    // 5s default flakes on starved CI runners under coverage instrumentation
+    // (rolesManager "All Hide" timed out on run #203 while passing locally).
+    // Tests still finish in ms — this only absorbs runner variance.
+    testTimeout: 15000,
     setupFiles: ['./test/setup.js'],
     include: ['**/*.{test,spec}.{js,jsx,ts,tsx}'],
     exclude: ['node_modules/', 'dist/', 'e2e/', '.claude/'],
