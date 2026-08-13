@@ -9,7 +9,15 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity } from '
 import { formatDate } from '../utils';
 
 // Single note component with replies
-const Note = memo(function Note({ note, depth = 0, onReply, onDelete, user, panelColor }) {
+const Note = memo(function Note({
+  note,
+  depth = 0,
+  onReply,
+  onDelete,
+  user,
+  panelColor,
+  readOnly = false,
+}) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
@@ -119,7 +127,8 @@ const Note = memo(function Note({ note, depth = 0, onReply, onDelete, user, pane
           {note.text}
         </p>
 
-        {/* Note Actions */}
+        {/* Note Actions — hidden for view-only users */}
+        {!readOnly && (
         <div
           style={{
             display: 'flex',
@@ -162,6 +171,7 @@ const Note = memo(function Note({ note, depth = 0, onReply, onDelete, user, pane
             Delete
           </button>
         </div>
+        )}
 
         {/* Reply Input */}
         {showReplyInput && (
@@ -204,6 +214,7 @@ const Note = memo(function Note({ note, depth = 0, onReply, onDelete, user, pane
               onDelete={onDelete}
               user={user}
               panelColor={panelColor}
+              readOnly={readOnly}
             />
           ))}
         </div>
@@ -213,7 +224,15 @@ const Note = memo(function Note({ note, depth = 0, onReply, onDelete, user, pane
 });
 
 // Main Notes Section Component
-function NotesSection({ notes = [], onAddNote, onReply, onDelete, user, panelColor }) {
+function NotesSection({
+  notes = [],
+  onAddNote,
+  onReply,
+  onDelete,
+  user,
+  panelColor,
+  readOnly = false,
+}) {
   const [newNoteText, setNewNoteText] = useState('');
 
   const handleSubmitNote = useCallback(() => {
@@ -236,7 +255,8 @@ function NotesSection({ notes = [], onAddNote, onReply, onDelete, user, panelCol
   return (
     <>
       <div style={{ padding: spacing[4] }}>
-        {/* Add Note Input */}
+        {/* Add Note Input — hidden for view-only users */}
+        {!readOnly && (
         <div
           style={{
             display: 'flex',
@@ -260,6 +280,7 @@ function NotesSection({ notes = [], onAddNote, onReply, onDelete, user, panelCol
             <Plus size={16} />
           </button>
         </div>
+        )}
 
         {/* Notes List */}
         <div style={{ maxHeight: 300, overflowY: 'auto' }}>
@@ -283,6 +304,7 @@ function NotesSection({ notes = [], onAddNote, onReply, onDelete, user, panelCol
                 onDelete={onDelete}
                 user={user}
                 panelColor={panelColor}
+                readOnly={readOnly}
               />
             ))
           )}
