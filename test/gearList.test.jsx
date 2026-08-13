@@ -91,6 +91,8 @@ function renderGearList(overrides = {}) {
     onSelectionChange: vi.fn(),
     savedViews: [],
     onChangeSavedViews: vi.fn(),
+    uiPrefs: undefined,
+    onSaveUiPrefs: vi.fn(),
     ...overrides,
   };
   const view = render(<GearList {...props} />);
@@ -269,6 +271,65 @@ describe('GearList saved views', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(props.onChangeSavedViews).toHaveBeenCalledWith([]);
+  });
+});
+
+// =============================================================================
+// Per-user UI prefs (profile-persistence round)
+// Sort/page-size were device-scoped localStorage; saved views fell back to a
+// shared device store that leaked one user's views to the next account.
+// =============================================================================
+describe('GearList per-user UI prefs', () => {
+  // The Select is a custom listbox — the trigger button shows the current
+  // option's label, options are picked by role
+  const sortTrigger = () => screen.getByLabelText('Sort items');
+
+  it('initializes sort from the profile uiPrefs', () => {
+    renderGearList({ uiPrefs: { gearListSort: 'name-desc' } });
+    expect(sortTrigger()).toHaveTextContent('Name Z–A');
+    // Zeta before Alpha before Mid
+    const names = screen.getAllByText(/Camera|Light/).map((el) => el.textContent);
+    expect(names.indexOf('Zeta Camera')).toBeLessThan(names.indexOf('Alpha Camera'));
+  });
+
+  it('falls back to default sort for unknown stored values', () => {
+    renderGearList({ uiPrefs: { gearListSort: 'not-a-sort' } });
+    expect(sortTrigger()).toHaveTextContent('Category (default)');
+  });
+
+  it('persists sort changes via onSaveUiPrefs — but never on mount', () => {
+    const { props } = renderGearList();
+    expect(props.onSaveUiPrefs).not.toHaveBeenCalled();
+
+    fireEvent.click(sortTrigger());
+    fireEvent.click(screen.getByRole('option', { name: 'Name A–Z' }));
+    expect(props.onSaveUiPrefs).toHaveBeenCalledWith(
+      expect.objectContaining({ gearListSort: 'name-asc' }),
+    );
+  });
+
+  it('ignores the legacy device stores entirely (no cross-user leak)', () => {
+    localStorage.setItem('sims-gear-list-sort', 'name-desc');
+    localStorage.setItem(
+      'sims-saved-filter-views',
+      JSON.stringify([{ id: 'v9', name: 'Leaked View', filters: { search: 'x' } }]),
+    );
+    renderGearList({ savedViews: undefined });
+    expect(sortTrigger()).toHaveTextContent('Category (default)');
+    fireEvent.click(screen.getByRole('button', { name: /Saved Views/ }));
+    expect(screen.queryByText('Leaked View')).not.toBeInTheDocument();
+  });
+
+  it('saving a view no longer writes the shared device store', () => {
+    localStorage.clear();
+    renderGearList({ searchQuery: 'sony' });
+    fireEvent.click(screen.getByRole('button', { name: /Saved Views/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Save Current Filters/ }));
+    fireEvent.change(screen.getByPlaceholderText('View name...'), {
+      target: { value: 'Mine Only' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(localStorage.getItem('sims-saved-filter-views')).toBeNull();
   });
 });
 

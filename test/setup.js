@@ -23,12 +23,21 @@ Object.defineProperty(window, 'matchMedia', {
   }),
 });
 
-// Mock localStorage
+// Mock localStorage — a REAL in-memory store wrapped in vi.fn so tests can
+// both assert calls and rely on round-tripping values (browser semantics:
+// getItem returns null for missing keys)
+const localStorageStore = new Map();
 const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
+  getItem: vi.fn((key) => (localStorageStore.has(key) ? localStorageStore.get(key) : null)),
+  setItem: vi.fn((key, value) => {
+    localStorageStore.set(String(key), String(value));
+  }),
+  removeItem: vi.fn((key) => {
+    localStorageStore.delete(key);
+  }),
+  clear: vi.fn(() => {
+    localStorageStore.clear();
+  }),
 };
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
@@ -61,4 +70,7 @@ scrollProps.forEach((prop) => {
 // Reset mocks between tests
 beforeEach(() => {
   vi.clearAllMocks();
+  // Fresh device storage per test — the in-memory store would otherwise
+  // leak state across tests within a file
+  localStorageStore.clear();
 });

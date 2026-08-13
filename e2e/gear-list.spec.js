@@ -8,7 +8,7 @@
 
 import fs from 'fs';
 import { test, expect } from './fixtures.js';
-import { E2E_PREFIX, adminDb, createTestItem, deleteTestItem } from './db.js';
+import { E2E_PREFIX, createTestItem, deleteTestItem } from './db.js';
 
 async function openGearList(page, pages) {
   await page.goto('/');
@@ -108,10 +108,11 @@ test.describe('Gear list selection export', () => {
 });
 
 test.describe('Gear list saved views', () => {
-  test('saves, persists across reload (user profile), loads, and deletes a view', async ({
-    page,
-    pages,
-  }) => {
+  // In-session behavior only: this spec (like all non-profile specs) runs
+  // with UI-settings persistence FROZEN so parallel workers can't
+  // contaminate the shared admin account. The cross-reload profile
+  // round-trip lives in profile.spec.js, which opts into live persistence.
+  test('saves, loads, and deletes a view', async ({ page, pages }) => {
     const viewName = `${E2E_PREFIX} Sony View`;
     await openGearList(page, pages);
 
@@ -125,31 +126,13 @@ test.describe('Gear list saved views', () => {
     // Trigger now shows the active view's name
     await expect(page.getByRole('button', { name: viewName, exact: true })).toBeVisible();
 
-    // The profile write is optimistic fire-and-forget — wait for it to land
-    // in the DB before reloading, or the reload aborts the in-flight request.
-    const db = await adminDb();
-    await expect
-      .poll(
-        async () => {
-          const { data } = await db
-            .from('users')
-            .select('profile')
-            .eq('email', process.env.E2E_ADMIN_EMAIL)
-            .single();
-          return (data?.profile?.savedFilterViews || []).some((v) => v.name === viewName);
-        },
-        { timeout: 10000 },
-      )
-      .toBe(true);
+    // Dismiss the popover (it stays open after saving) with an outside click
+    await page.getByRole('heading', { name: 'Gear List' }).click();
 
-    // Survives a full reload (persisted in the user profile, not just this tab)
-    await page.goto('/');
-    await pages.dashboard.expectDashboard();
-    await pages.dashboard.navigateTo('Gear List');
+    // Clearing filters and loading the view re-applies them
+    await searchBox(page).fill('');
     await page.getByRole('button', { name: /Saved Views/ }).click();
     await expect(page.getByText(viewName)).toBeVisible();
-
-    // Loading it applies the filters
     await page.getByText(viewName).click();
     await expect(searchBox(page)).toHaveValue('sony');
 

@@ -3,7 +3,7 @@
 // Orchestrates auth, hooks, and state — delegates rendering to sub-components.
 // ============================================================================
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   VIEWS,
   MODALS,
@@ -24,6 +24,14 @@ import { SkipLink } from './components/ui.jsx';
 import { log, error as logError } from './lib/logger.js';
 import { useToast } from './contexts/ToastContext.js';
 import { usersService } from './lib/services.js';
+import {
+  collectDeviceUiPrefs,
+  resolveLoginSettings,
+  cacheCustomTheme,
+  clearLegacyDeviceKeys,
+  getThemeOverride,
+  isUiSettingsReadonly,
+} from './lib/userSettings.js';
 
 // Custom hooks for state management
 import { useInventoryActions } from './hooks/index.js';
@@ -65,7 +73,7 @@ export default function App() {
   // ============================================================================
   // Theme
   // ============================================================================
-  const { currentTheme } = useTheme();
+  const { currentTheme, themeId, setTheme, updateCustomTheme } = useTheme();
 
   // ============================================================================
   // Auth & Data Contexts
@@ -116,15 +124,20 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
 
-  // Sync auth state with context
+  // Sync auth state with context. This also refires on token refresh (the
+  // profile is refetched) — merge over the previous state so in-session data
+  // the row doesn't carry (notificationPreferences) survives, and settings
+  // lifted from profile JSON (layoutPrefs etc.) come back instead of
+  // resetting to defaults mid-session.
   useEffect(() => {
     if (auth.isAuthenticated && auth.userProfile) {
       log('[App] User authenticated:', auth.userProfile.email);
       setIsLoggedIn(true);
-      setCurrentUser({
+      setCurrentUser((prev) => ({
+        ...(prev && prev.id === auth.userProfile.id ? prev : {}),
         ...auth.userProfile,
-        layoutPrefs: auth.userProfile.layoutPrefs || DEFAULT_LAYOUT_PREFS,
-      });
+        layoutPrefs: auth.userProfile.layoutPrefs || prev?.layoutPrefs || DEFAULT_LAYOUT_PREFS,
+      }));
     } else if (!auth.loading && !auth.isAuthenticated) {
       setIsLoggedIn(false);
       setCurrentUser(null);
@@ -196,6 +209,8 @@ export default function App() {
         log('[App] Login successful');
         setIsLoggedIn(true);
         setCurrentUser({ ...user, layoutPrefs: user.layoutPrefs || DEFAULT_LAYOUT_PREFS });
+        // The auth-sync effect above rebuilds currentUser from the fetched
+        // profile; the per-user settings effect below applies theme/sidebar
         if (dataContext.refreshData) dataContext.refreshData();
       }
     },
@@ -209,52 +224,102 @@ export default function App() {
   }, [auth]);
 
   // ============================================================================
+  // Per-user settings persistence
+  // ============================================================================
+  // All profile-JSON writes go through ONE serialized writer. The previous
+  // four ad-hoc writers each spread a possibly-stale profile snapshot, so
+  // concurrent saves could silently clobber each other's keys — and the
+  // profile modal replaced the whole JSON, wiping layoutPrefs/savedFilterViews.
+  const currentUserRef = useRef(null);
+  const profileRef = useRef({});
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+    profileRef.current = currentUser?.profile || {};
+  }, [currentUser]);
+
+  const profileWriteQueueRef = useRef(Promise.resolve());
+  const persistProfilePatch = useCallback(
+    (patch, { failureToast = 'Settings may not have saved', localOnly = false } = {}) => {
+      const userId = currentUserRef.current?.id;
+      if (!userId) return Promise.resolve();
+      // Merge on the ref synchronously so back-to-back patches stack instead
+      // of overwriting each other
+      const merged = { ...profileRef.current, ...patch };
+      profileRef.current = merged;
+      setCurrentUser((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev, profile: merged };
+        // Keep the lifted top-level mirrors in sync
+        if ('layoutPrefs' in patch) next.layoutPrefs = patch.layoutPrefs;
+        if ('savedFilterViews' in patch) next.savedFilterViews = patch.savedFilterViews;
+        if ('uiPrefs' in patch) next.uiPrefs = patch.uiPrefs;
+        return next;
+      });
+      if (localOnly) return Promise.resolve();
+      profileWriteQueueRef.current = profileWriteQueueRef.current.then(() =>
+        usersService.update(userId, { profile: merged }).then(
+          () => {},
+          (err) => {
+            logError('Failed to save profile settings:', err);
+            if (failureToast) addToast(failureToast, 'warning');
+          },
+        ),
+      );
+      return profileWriteQueueRef.current;
+    },
+    [addToast],
+  );
+
+  // Discrete UI preferences (theme, sidebar, gear list sort/page size).
+  // Skips writes when nothing changed so mount-time effects stay silent.
+  // A device with frozen settings (kiosk/tests) keeps changes session-local.
+  const updateUiPrefs = useCallback(
+    (patch) => {
+      const currentUi = profileRef.current?.uiPrefs || {};
+      const changed = Object.entries(patch).some(
+        ([key, value]) => JSON.stringify(currentUi[key]) !== JSON.stringify(value),
+      );
+      if (!changed) return Promise.resolve();
+      return persistProfilePatch(
+        { uiPrefs: { ...currentUi, ...patch } },
+        { failureToast: 'Preferences may not have saved', localOnly: isUiSettingsReadonly() },
+      );
+    },
+    [persistProfilePatch],
+  );
+
+  // ============================================================================
   // Layout Handlers
   // ============================================================================
   const handleSaveLayoutPrefs = useCallback(
     async (newPrefs) => {
-      setCurrentUser((prev) => ({ ...prev, layoutPrefs: newPrefs }));
-      patchUser(currentUser?.id, { layoutPrefs: newPrefs });
-      // Persist to DB in the user's profile JSON
-      if (currentUser?.id) {
-        try {
-          const currentProfile = currentUser.profile || {};
-          await usersService.update(currentUser.id, {
-            profile: { ...currentProfile, layoutPrefs: newPrefs },
-          });
-        } catch (err) {
-          logError('Failed to save layout prefs:', err);
-          addToast('Layout preferences may not have saved', 'warning');
-        }
-      }
+      patchUser(currentUserRef.current?.id, { layoutPrefs: newPrefs });
+      await persistProfilePatch(
+        { layoutPrefs: newPrefs },
+        {
+          failureToast: 'Layout preferences may not have saved',
+          localOnly: isUiSettingsReadonly(),
+        },
+      );
     },
-    [currentUser?.id, currentUser?.profile, addToast, patchUser],
+    [persistProfilePatch, patchUser],
   );
 
   // Gear list saved filter views — persisted in the user profile (like
   // layout prefs) so they follow the user across browsers/devices.
   const handleSaveFilterViews = useCallback(
-    async (views) => {
-      setCurrentUser((prev) =>
-        prev ? { ...prev, profile: { ...(prev.profile || {}), savedFilterViews: views } } : prev,
-      );
-      if (currentUser?.id) {
-        try {
-          await usersService.update(currentUser.id, {
-            profile: { ...(currentUser.profile || {}), savedFilterViews: views },
-          });
-        } catch (err) {
-          logError('Failed to save filter views:', err);
-          addToast('Saved views may not have synced', 'warning');
-        }
-      }
-    },
-    [currentUser?.id, currentUser?.profile, addToast],
+    (views) =>
+      persistProfilePatch(
+        { savedFilterViews: views },
+        { failureToast: 'Saved views may not have synced', localOnly: isUiSettingsReadonly() },
+      ),
+    [persistProfilePatch],
   );
 
-  const handleToggleCollapse = useCallback((view, sectionId) => {
-    setCurrentUser((prev) => {
-      if (!prev) return prev;
+  const handleToggleCollapse = useCallback(
+    (view, sectionId) => {
+      const prev = currentUserRef.current;
+      if (!prev) return;
       const newPrefs = structuredClone(prev.layoutPrefs || {});
       if (!newPrefs[view]) newPrefs[view] = { sections: {} };
       if (!newPrefs[view].sections) newPrefs[view].sections = {};
@@ -262,19 +327,123 @@ export default function App() {
         newPrefs[view].sections[sectionId] = { visible: true, collapsed: false, order: 0 };
       }
       newPrefs[view].sections[sectionId].collapsed = !newPrefs[view].sections[sectionId].collapsed;
+      // Quiet persistence — a collapse toggle isn't worth a warning toast
+      persistProfilePatch(
+        { layoutPrefs: newPrefs },
+        { failureToast: null, localOnly: isUiSettingsReadonly() },
+      );
+    },
+    [persistProfilePatch],
+  );
 
-      // Persist (fire and forget to avoid blocking UI)
-      if (prev.id) {
-        usersService
-          .update(prev.id, {
-            profile: { ...(prev.profile || {}), layoutPrefs: newPrefs },
-          })
-          .catch(() => {});
-      }
+  // ============================================================================
+  // Per-user settings: apply at login, seed/migrate once, sync on change
+  // ============================================================================
+  // Runs once per login. Applies the profile's theme/custom theme/sidebar
+  // state to this device, seeds any never-stored settings from the legacy
+  // device values (one-time migration), clears the migrated device stores so
+  // the next account on this machine can't inherit them, and loads
+  // notification preferences (saved-but-never-loaded before this round).
+  const appliedForUserRef = useRef(null);
+  const themeOverrideRef = useRef(false);
+  // Values the login effect is steering the device toward. The change-sync
+  // effects below must swallow those transitions (they're the application,
+  // not a user action) instead of persisting the pre-apply device state
+  // back over the profile.
+  const pendingApplyRef = useRef({ themeId: null, sidebarCollapsed: null });
+  useEffect(() => {
+    const id = currentUser?.id;
+    if (!id) {
+      appliedForUserRef.current = null; // logging out re-arms the next login
+      return;
+    }
+    if (appliedForUserRef.current === id) return;
+    appliedForUserRef.current = id;
 
-      return { ...prev, layoutPrefs: newPrefs };
-    });
-  }, []);
+    const device = collectDeviceUiPrefs();
+    const { apply, seedPatch } = resolveLoginSettings(currentUser.profile, device);
+
+    // A device-forced theme (kiosk displays, visual test runs) wins over the
+    // profile and is never seeded or persisted
+    const themeOverride = getThemeOverride();
+    themeOverrideRef.current = !!themeOverride;
+    const themeToApply = themeOverride || apply.themeId;
+
+    pendingApplyRef.current = {
+      themeId: themeToApply ?? themeId,
+      sidebarCollapsed:
+        typeof apply.sidebarCollapsed === 'boolean'
+          ? apply.sidebarCollapsed
+          : (device.sidebarCollapsed ?? false),
+    };
+
+    if (apply.customTheme) {
+      cacheCustomTheme(apply.customTheme);
+      updateCustomTheme({
+        id: 'custom',
+        isCustom: true,
+        name: apply.customTheme.name,
+        colors: apply.customTheme.colors,
+      });
+    }
+    if (themeToApply && themeToApply !== themeId) setTheme(themeToApply);
+    if (typeof apply.sidebarCollapsed === 'boolean') setSidebarCollapsed(apply.sidebarCollapsed);
+
+    if (themeOverride && seedPatch.uiPrefs) {
+      // The overridden device theme is not the user's choice — don't adopt it
+      delete seedPatch.uiPrefs.themeId;
+      if (Object.keys(seedPatch.uiPrefs).length === 0) delete seedPatch.uiPrefs;
+    }
+    if (Object.keys(seedPatch).length > 0) {
+      persistProfilePatch(seedPatch, {
+        failureToast: null,
+        localOnly: isUiSettingsReadonly(),
+      });
+    }
+    clearLegacyDeviceKeys();
+
+    dataContext
+      .getNotificationPreferences(id)
+      .then((prefs) => {
+        if (prefs) {
+          setCurrentUser((prev) =>
+            prev?.id === id ? { ...prev, notificationPreferences: prefs } : prev,
+          );
+        }
+      })
+      .catch((err) => logError('Failed to load notification preferences:', err));
+  }, [
+    currentUser,
+    themeId,
+    setTheme,
+    updateCustomTheme,
+    setSidebarCollapsed,
+    persistProfilePatch,
+    dataContext,
+  ]);
+
+  // Theme picks persist to the profile
+  useEffect(() => {
+    if (!currentUser?.id || appliedForUserRef.current !== currentUser.id) return;
+    if (themeOverrideRef.current) return; // forced device theme — never persist
+    const pending = pendingApplyRef.current;
+    if (pending.themeId !== null) {
+      if (themeId === pending.themeId) pending.themeId = null; // application landed
+      return;
+    }
+    if (themeId) updateUiPrefs({ themeId });
+  }, [themeId, currentUser?.id, updateUiPrefs]);
+
+  // Sidebar collapse follows the user, not the machine
+  useEffect(() => {
+    if (!currentUser?.id || appliedForUserRef.current !== currentUser.id) return;
+    const pending = pendingApplyRef.current;
+    if (pending.sidebarCollapsed !== null) {
+      if (sidebarCollapsed === pending.sidebarCollapsed) pending.sidebarCollapsed = null;
+      return;
+    }
+    updateUiPrefs({ sidebarCollapsed });
+  }, [sidebarCollapsed, currentUser?.id, updateUiPrefs]);
 
   // ============================================================================
   // Navigation Handlers
@@ -599,22 +768,20 @@ export default function App() {
   // ============================================================================
   const updateUserProfile = useCallback(
     async (updatedUser) => {
-      patchUser(updatedUser.id, updatedUser);
-      if (currentUser.id === updatedUser.id) setCurrentUser(updatedUser);
-      // Persist to database
-      try {
-        await usersService.update(updatedUser.id, { profile: updatedUser.profile });
-      } catch (err) {
-        logError('Failed to save profile:', err);
-        addToast('Profile changes may not have saved', 'warning');
-      }
+      // The profile modal builds ONLY its branding fields — merge them into
+      // the stored profile. Persisting it verbatim used to wipe
+      // layoutPrefs/savedFilterViews/uiPrefs from the DB on every save.
+      await persistProfilePatch(updatedUser.profile || {}, {
+        failureToast: 'Profile changes may not have saved',
+      });
+      patchUser(updatedUser.id, { profile: profileRef.current });
       // Audit log
       addAuditLog({
         type: 'profile_updated',
         description: `${updatedUser.name || 'User'} updated their profile`,
       });
     },
-    [currentUser, addAuditLog, addToast, patchUser],
+    [persistProfilePatch, addAuditLog, patchUser],
   );
 
   const exportData = useCallback(
@@ -777,6 +944,7 @@ export default function App() {
       handleToggleCollapse,
       handleSaveLayoutPrefs,
       handleSaveFilterViews,
+      updateUiPrefs,
       createItem,
       deleteItem,
       openEditItem,
@@ -825,6 +993,7 @@ export default function App() {
       handleToggleCollapse,
       handleSaveLayoutPrefs,
       handleSaveFilterViews,
+      updateUiPrefs,
       createItem,
       deleteItem,
       openEditItem,

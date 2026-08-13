@@ -49,11 +49,8 @@ export const APP_FUNCTIONS = {
     name: 'Admin: Locations',
     description: 'Manage storage locations',
   },
-  ADMIN_THEMES: {
-    id: 'admin_themes',
-    name: 'Admin: Themes',
-    description: 'Customize app appearance',
-  },
+  // admin_themes was removed: theme choice is per-user personalization
+  // (stored in the user's profile), not an admin-controlled function
   ADMIN_LAYOUT: {
     id: 'admin_layout',
     name: 'Admin: Layout',
@@ -107,7 +104,6 @@ export const DEFAULT_ROLES = [
       admin_categories: PERMISSION_LEVELS.VIEW,
       admin_specs: PERMISSION_LEVELS.VIEW,
       admin_locations: PERMISSION_LEVELS.EDIT,
-      admin_themes: PERMISSION_LEVELS.HIDE,
       admin_layout: PERMISSION_LEVELS.HIDE,
       admin_notifications: PERMISSION_LEVELS.HIDE,
       admin_roles: PERMISSION_LEVELS.HIDE,
@@ -133,7 +129,6 @@ export const DEFAULT_ROLES = [
       admin_categories: PERMISSION_LEVELS.HIDE,
       admin_specs: PERMISSION_LEVELS.HIDE,
       admin_locations: PERMISSION_LEVELS.HIDE,
-      admin_themes: PERMISSION_LEVELS.HIDE,
       admin_layout: PERMISSION_LEVELS.HIDE,
       admin_notifications: PERMISSION_LEVELS.HIDE,
       admin_roles: PERMISSION_LEVELS.HIDE,
@@ -159,7 +154,6 @@ export const DEFAULT_ROLES = [
       admin_categories: PERMISSION_LEVELS.HIDE,
       admin_specs: PERMISSION_LEVELS.HIDE,
       admin_locations: PERMISSION_LEVELS.HIDE,
-      admin_themes: PERMISSION_LEVELS.HIDE,
       admin_layout: PERMISSION_LEVELS.HIDE,
       admin_notifications: PERMISSION_LEVELS.HIDE,
       admin_roles: PERMISSION_LEVELS.HIDE,

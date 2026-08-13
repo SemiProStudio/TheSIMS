@@ -59,8 +59,6 @@ import { ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
 // Items per page options
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 250, 500];
 const DEFAULT_PAGE_SIZE = 25;
-const SAVED_VIEWS_KEY = 'sims-saved-filter-views';
-const SORT_KEY = 'sims-gear-list-sort';
 
 // Sentinel for the Kits entry in the category filter — kits are excluded from
 // normal browsing (their contents are the individual items) but must stay
@@ -756,50 +754,47 @@ function GearList({
   onSelectionChange, // syncs selection to FilterContext (Export Data scope)
   savedViews: savedViewsProp, // per-user saved views (profile-persisted)
   onChangeSavedViews,
+  uiPrefs, // per-user UI prefs (profile-persisted): gearListSort, gearListPageSize
+  onSaveUiPrefs,
 }) {
   // Permissions
   const { canEdit } = usePermissions();
   const canEditGearList = canEdit('gear_list');
 
-  // Page size state with localStorage persistence
-  const [pageSize, setPageSize] = useState(() => {
-    const saved = localStorage.getItem('sims-gear-list-page-size');
-    return saved ? parseInt(saved, 10) : DEFAULT_PAGE_SIZE;
-  });
-
-  // Sort state with localStorage persistence
+  // Sort and page size are per-user profile prefs. Legacy device values are
+  // migrated into the profile at login, so there is no localStorage read
+  // here — a shared machine must not leak one user's prefs to the next.
+  const [pageSize, setPageSize] = useState(() => uiPrefs?.gearListPageSize || DEFAULT_PAGE_SIZE);
   const [sortBy, setSortBy] = useState(() => {
-    const saved = localStorage.getItem(SORT_KEY);
+    const saved = uiPrefs?.gearListSort;
     return SORT_OPTIONS.some((o) => o.value === saved) ? saved : 'default';
   });
+
+  // Persist changes only — the mount value came from the profile
+  const prefsMountedRef = useRef(false);
   useEffect(() => {
-    localStorage.setItem(SORT_KEY, sortBy);
-  }, [sortBy]);
+    if (!prefsMountedRef.current) {
+      prefsMountedRef.current = true;
+      return;
+    }
+    onSaveUiPrefs?.({ gearListSort: sortBy, gearListPageSize: pageSize });
+  }, [sortBy, pageSize, onSaveUiPrefs]);
 
   // Selection state
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const lastToggledIdRef = useRef(null);
 
-  // Saved views: per-user (profile) when provided; falls back to the legacy
-  // localStorage store so pre-existing views survive the migration.
-  const [savedViews, setSavedViews] = useState(() => {
-    if (savedViewsProp !== undefined && savedViewsProp !== null) return savedViewsProp;
-    try {
-      const saved = localStorage.getItem(SAVED_VIEWS_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  // Saved views are per-user (profile-persisted). The old shared-device
+  // localStorage fallback leaked one user's views to the next account on
+  // the machine; login-time migration now adopts legacy views instead.
+  const [savedViews, setSavedViews] = useState(() => savedViewsProp ?? []);
   const [viewPendingDelete, setViewPendingDelete] = useState(null);
 
   const persistViews = useCallback(
     (next) => {
       setSavedViews(next);
       onChangeSavedViews?.(next);
-      // Keep the legacy store in sync for sessions without profile persistence
-      localStorage.setItem(SAVED_VIEWS_KEY, JSON.stringify(next));
     },
     [onChangeSavedViews],
   );
@@ -853,11 +848,6 @@ function GearList({
         (v.filters.sort || 'default') === sortBy,
     )?.id;
   }, [savedViews, searchQuery, categoryFilter, statusFilter, sortBy]);
-
-  // Save page size to localStorage
-  useEffect(() => {
-    localStorage.setItem('sims-gear-list-page-size', pageSize.toString());
-  }, [pageSize]);
 
   // Debounce search for performance with large datasets
   const debouncedSearch = useDebounce(searchQuery, 200);

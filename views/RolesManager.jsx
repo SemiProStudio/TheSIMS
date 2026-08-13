@@ -415,7 +415,6 @@ const RoleEditor = memo(function RoleEditor({ role, onSave, onCancel }) {
         'admin_categories',
         'admin_specs',
         'admin_locations',
-        'admin_themes',
         'admin_layout',
         'admin_notifications',
         'admin_roles',
