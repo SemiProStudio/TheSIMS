@@ -367,6 +367,13 @@ export const ReservationModal = memo(function ReservationModal({
     }
   }, [item, reservationForm.itemIds, reservationForm.itemId, inventory]);
 
+  // A conflict acknowledgment only covers the conflicts that were visible
+  // when it was given — changing the item list voids it
+  const selectedItemIdsKey = selectedItems.map((i) => i.id).join(',');
+  useEffect(() => {
+    setAcknowledgedConflicts(false);
+  }, [selectedItemIdsKey]);
+
   // Add item to selection
   const handleAddItem = useCallback(
     (newItem) => {

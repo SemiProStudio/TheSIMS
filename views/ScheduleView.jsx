@@ -17,10 +17,17 @@ import {
 } from 'lucide-react';
 import { SCHEDULE_MODES, SCHEDULE_PERIODS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, parseLocalDate } from '../utils';
+import {
+  formatDate,
+  parseLocalDate,
+  groupReservationsForSchedule,
+  stableColorIndex,
+} from '../utils';
 import { Badge, Card, Button, PageHeader } from '../components/ui.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 import { useData } from '../contexts/DataContext.js';
+import { usePermissions } from '../contexts/PermissionsContext.js';
+import { ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
 
 // Helper: compact date range like "Jun 7–10" or "Jun 7 – Jul 2"
 function shortDateRange(start, end) {
@@ -50,8 +57,11 @@ const EVENT_COLORS = [
   colors.reserved,
 ];
 
-function getEventColor(idx) {
-  return EVENT_COLORS[idx % EVENT_COLORS.length];
+// Color keyed to the reservation's stable group key — not its index within
+// the visible period, which made the same reservation change color whenever
+// the user navigated to a different week or month
+function getEventColor(groupKey) {
+  return EVENT_COLORS[stableColorIndex(groupKey, EVENT_COLORS.length)];
 }
 
 function ScheduleView({
@@ -67,31 +77,15 @@ function ScheduleView({
   onAddReservation,
 }) {
   const { tier2Loaded } = useData();
+  const { canEdit } = usePermissions();
+  const canEditSchedule = canEdit('schedule');
 
   // Track which reservation is hovered (by evIdx) so all its segments highlight together
   const [hoveredEvIdx, setHoveredEvIdx] = useState(null);
 
-  // Get all reservations with item info
-  const allReservations = useMemo(() => {
-    return (inventory || [])
-      .flatMap((i) => (i.reservations || []).map((r) => ({ ...r, item: i })))
-      .sort((a, b) => new Date(a.start) - new Date(b.start));
-  }, [inventory]);
-
-  // Group reservations by project+dates (multi-item reservations)
-  const groupedReservations = useMemo(() => {
-    const groups = {};
-    allReservations.forEach((r) => {
-      const key = `${r.project || 'unnamed'}_${r.start}_${r.end}`;
-      if (!groups[key]) {
-        groups[key] = { ...r, items: [r.item], itemCount: 1 };
-      } else {
-        groups[key].items.push(r.item);
-        groups[key].itemCount++;
-      }
-    });
-    return Object.values(groups).sort((a, b) => new Date(a.start) - new Date(b.start));
-  }, [allReservations]);
+  // Group per-item rows into logical multi-item reservations (shared
+  // group_id, with legacy project+dates fallback)
+  const groupedReservations = useMemo(() => groupReservationsForSchedule(inventory), [inventory]);
 
   // Get dates for current view
   const scheduleDates = useMemo(() => {
@@ -374,7 +368,7 @@ function ScheduleView({
         title="Schedule"
         action={
           <div style={{ display: 'flex', gap: spacing[3], alignItems: 'center', flexWrap: 'wrap' }}>
-            {onAddReservation && (
+            {canEditSchedule && onAddReservation && (
               <Button onClick={onAddReservation} icon={Plus} style={{ marginRight: spacing[2] }}>
                 New
               </Button>
@@ -478,6 +472,8 @@ function ScheduleView({
           </div>
         }
       />
+
+      {!canEditSchedule && <ViewOnlyBanner functionId="schedule" />}
 
       {/* ================================================================== */}
       {/* List View                                                          */}
@@ -762,7 +758,7 @@ function ScheduleView({
                     })}
                     {/* Spanning event bars (positioned absolutely over the grid) */}
                     {rowSegments.map((seg, si) => {
-                      const evColor = getEventColor(seg.evIdx);
+                      const evColor = getEventColor(seg.ev.groupKey);
                       const ev = seg.ev;
                       const label =
                         ev.project ||
@@ -949,7 +945,7 @@ function ScheduleView({
                 })()}
                 {/* Reservation bars */}
                 {sorted.map((item, idx) => {
-                  const evColor = getEventColor(item.evIdx);
+                  const evColor = getEventColor(item.ev.groupKey);
                   const ev = item.ev;
                   const isMulti = ev.itemCount > 1;
                   const label =
