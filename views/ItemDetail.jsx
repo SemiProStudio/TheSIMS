@@ -26,7 +26,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, formatMoney, getStatusColor, getConditionColor } from '../utils';
+import { formatDate, formatMoney, getStatusColor, getConditionColor, getStatusLabel } from '../utils';
 import { ITEM_DETAIL_SECTIONS } from '../constants.js';
 import { Badge, Card, Button, CollapsibleSection, BackButton } from '../components/ui.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
@@ -248,7 +248,7 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
                     {acc.id} • {acc.category}
                   </div>
                 </div>
-                <Badge text={acc.status} color={getStatusColor(acc.status)} size="sm" />
+                <Badge text={getStatusLabel(acc.status)} color={getStatusColor(acc.status)} size="sm" />
                 {onRemoveAccessory && (
                   <button
                     onClick={() => onRemoveAccessory(item.id, acc.id)}
@@ -1071,7 +1071,7 @@ function ItemDetail({
               }}
             >
               <Badge text={item.id} color={colors.primary} />
-              <Badge text={item.status} color={getStatusColor(item.status)} />
+              <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
               <Badge text={item.condition} color={getConditionColor(item.condition)} />
               <Badge text={item.category} color={colors.accent2} />
             </div>

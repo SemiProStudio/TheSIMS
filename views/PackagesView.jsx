@@ -16,7 +16,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
-import { formatMoney, getStatusColor } from '../utils';
+import { formatMoney, getStatusColor, getStatusLabel } from '../utils';
 import {
   Badge,
   Card,
@@ -926,7 +926,7 @@ function PackagesView({
                         )}
                       </div>
                     )}
-                    <Badge text={item.status} color={getStatusColor(item.status)} size="sm" />
+                    <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} size="sm" />
                   </div>
                 );
               })
@@ -1148,7 +1148,7 @@ function PackagesView({
                         {item.name}
                       </div>
                     </div>
-                    <Badge text={item.status} color={getStatusColor(item.status)} />
+                    <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
                     <ChevronRight size={16} color={colors.textMuted} />
                   </div>
                 );

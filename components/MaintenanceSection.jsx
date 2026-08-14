@@ -22,7 +22,9 @@ import { formatDate, formatMoney } from '../utils';
 import { Badge, Button } from './ui.jsx';
 
 // Get status color for maintenance
-const getMaintenanceStatusColor = (status) => {
+// Exported: MaintenanceReportView shares this map (it used to carry an
+// identical private copy — a classic pre-drift duplicate)
+export const getMaintenanceStatusColor = (status) => {
   switch (status) {
     case MAINTENANCE_STATUS.COMPLETED:
       return colors.available;

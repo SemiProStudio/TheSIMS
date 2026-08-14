@@ -22,6 +22,7 @@ import {
   csvForMaintenance,
 } from '../lib/reportData.js';
 import { useData } from '../contexts/DataContext.js';
+import { getMaintenanceStatusColor } from '../components/MaintenanceSection.jsx';
 
 export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
   inventory,
@@ -53,20 +54,6 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
     [stats.costByType],
   );
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed':
-        return colors.available;
-      case 'in-progress':
-        return colors.checkedOut;
-      case 'scheduled':
-        return colors.primary;
-      case 'cancelled':
-        return colors.textMuted;
-      default:
-        return colors.textMuted;
-    }
-  };
 
   const formatStatus = (status) => {
     switch (status) {
@@ -208,10 +195,10 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
                     }}
                   >
                     <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
-                      <Badge text={record.type} color={getStatusColor(record.status)} size="xs" />
+                      <Badge text={record.type} color={getMaintenanceStatusColor(record.status)} size="xs" />
                       <Badge
                         text={formatStatus(record.status)}
-                        color={getStatusColor(record.status)}
+                        color={getMaintenanceStatusColor(record.status)}
                         size="xs"
                       />
                       {record.warrantyWork && (

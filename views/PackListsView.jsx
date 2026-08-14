@@ -29,7 +29,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, generateId, getStatusColor } from '../utils';
+import { formatDate, generateId, getStatusColor, getStatusLabel } from '../utils';
 import {
   Badge,
   Card,
@@ -1467,7 +1467,7 @@ function PackListsView({
                       )}
                     </div>
                   </div>
-                  <Badge text={item.status} color={getStatusColor(item.status)} />
+                  <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
                   <ChevronRight
                     size={16}
                     color={colors.textMuted}

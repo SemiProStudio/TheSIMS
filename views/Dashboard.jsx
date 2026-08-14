@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { STATUS, DASHBOARD_SECTIONS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, getStatusColor, getTodayISO, isReminderDue, filterBySearch } from '../utils';
+import { formatDate, getStatusColor, getTodayISO, isReminderDue, filterBySearch, getStatusLabel } from '../utils';
 import {
   Badge,
   StatCard,
@@ -529,7 +529,7 @@ function Dashboard({
                         {item.id} &bull; {item.category}
                       </div>
                     </div>
-                    <Badge text={item.status} color={getStatusColor(item.status)} />
+                    <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
                   </button>
                 ))}
                 {allSearchResults.length > searchResults.length && (
