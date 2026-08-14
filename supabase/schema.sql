@@ -507,6 +507,7 @@ CREATE TABLE IF NOT EXISTS pack_list_packages (
   pack_list_id UUID NOT NULL REFERENCES pack_lists(id) ON DELETE CASCADE,
   package_id VARCHAR(50) NOT NULL REFERENCES packages(id) ON DELETE CASCADE,
   sort_order INTEGER DEFAULT 0,
+  is_packed BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(pack_list_id, package_id)
 );

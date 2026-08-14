@@ -16,6 +16,7 @@ import { colors } from './theme.js';
 import { findById, sanitizeCSVCell } from './utils';
 import { openPrintWindow } from './lib/printUtil.js';
 import { escapeHtml } from './lib/escapeHtml.js';
+import { resolveScannedCode, truncateScannedCode } from './lib/qrData.js';
 import { useTheme } from './contexts/ThemeContext.js';
 import { PermissionsProvider } from './contexts/PermissionsContext.jsx';
 import { useAuth } from './contexts/AuthContext.js';
@@ -85,6 +86,7 @@ export default function App() {
   const {
     inventory,
     packages,
+    tier2Loaded,
     roles: contextRoles,
     specs: contextSpecs,
     patchInventoryItem,
@@ -541,24 +543,43 @@ export default function App() {
   );
 
   // QR deep link: printed labels encode /?item=<id> so a phone's native
-  // camera app lands directly on the item. Handled once, after login and the
-  // first inventory load (see the module-scope capture above).
+  // camera app lands directly on the item. Package labels carry their pkg id
+  // in the same param, so both are resolved here (case-insensitively —
+  // hand-typed URLs shouldn't fail on casing). Handled once, after login and
+  // the first inventory load (see the module-scope capture above).
   const [pendingDeepLinkItem, setPendingDeepLinkItem] = useState(() =>
     sessionStorage.getItem(DEEPLINK_STORAGE_KEY),
   );
   useEffect(() => {
-    if (!pendingDeepLinkItem || !isLoggedIn || inventory.length === 0) return;
+    // tier2Loaded gates the resolve: packages arrive in the tier-2 load, so
+    // firing on the tier-1 inventory alone would bounce package deep links
+    // to "no item found" while their data was still in flight
+    if (!pendingDeepLinkItem || !isLoggedIn || inventory.length === 0 || !tier2Loaded) return;
     setPendingDeepLinkItem(null);
     sessionStorage.removeItem(DEEPLINK_STORAGE_KEY);
-    if (findById(inventory, pendingDeepLinkItem)) {
-      navigateToItem(pendingDeepLinkItem);
+    const target = resolveScannedCode(pendingDeepLinkItem, inventory, packages);
+    if (target?.type === 'item') {
+      navigateToItem(target.entity.id);
+    } else if (target?.type === 'package') {
+      setSelectedPackage(target.entity);
+      setCurrentView(VIEWS.PACKAGES);
     } else {
-      addToast(`No item found for code "${pendingDeepLinkItem}"`, 'error');
+      addToast(`No item found for code "${truncateScannedCode(pendingDeepLinkItem)}"`, 'error');
     }
     const url = new URL(window.location.href);
     url.searchParams.delete('item');
     window.history.replaceState({}, '', url);
-  }, [pendingDeepLinkItem, isLoggedIn, inventory, navigateToItem, addToast]);
+  }, [
+    pendingDeepLinkItem,
+    isLoggedIn,
+    inventory,
+    packages,
+    tier2Loaded,
+    navigateToItem,
+    setSelectedPackage,
+    setCurrentView,
+    addToast,
+  ]);
 
   const navigateToReservation = useCallback(
     (reservation, item, backContext = null) => {

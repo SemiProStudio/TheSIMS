@@ -11,6 +11,7 @@ import { useNavigationContext } from './contexts/NavigationContext.js';
 import { useFilterContext } from './contexts/FilterContext.js';
 import { useModalContext } from './contexts/ModalContext.js';
 import { useData } from './contexts/DataContext.js';
+import { usePermissions } from './contexts/PermissionsContext.js';
 import { useAuth } from './contexts/AuthContext.js';
 import { useToast } from './contexts/ToastContext.js';
 import { ModalLoading } from './components/Loading.jsx';
@@ -68,8 +69,17 @@ const ImagePreviewModal = lazy(() => import('./modals/ImagePreviewModal.jsx'));
 
 export default memo(function AppModals({ handlers, currentUser }) {
   // Read state from contexts
-  const { selectedItem, setSelectedItem, selectedReservationItem, setCurrentView } =
-    useNavigationContext();
+  const {
+    selectedItem,
+    setSelectedItem,
+    selectedReservationItem,
+    setCurrentView,
+    setSelectedPackage,
+  } = useNavigationContext();
+
+  // Scanner quick actions mirror ItemDetail's gate: checkout/check-in are
+  // item_details EDIT operations, so view-only roles get lookup only
+  const { canEdit } = usePermissions();
 
   const { selectedIds } = useFilterContext();
 
@@ -257,22 +267,36 @@ export default memo(function AppModals({ handlers, currentUser }) {
         {activeModal === MODALS.QR_SCANNER && (
           <QRScannerModal
             inventory={inventory}
+            packages={packages}
             onItemFound={(item) => {
               closeModal();
               setSelectedItem(item);
               setCurrentView(VIEWS.GEAR_DETAIL);
             }}
-            onQuickCheckout={(item) => {
+            onPackageFound={(pkg) => {
               closeModal();
-              // Use openCheckoutModal which properly sets internal state
-              // (fixes bug: setCheckoutItem was not exposed by useCheckoutHandlers)
-              openCheckoutModal(item.id);
+              setSelectedPackage(pkg);
+              setCurrentView(VIEWS.PACKAGES);
             }}
-            onQuickCheckin={(item) => {
-              closeModal();
-              // Use openCheckinModal which properly sets internal state
-              openCheckinModal(item.id);
-            }}
+            onQuickCheckout={
+              canEdit('item_details')
+                ? (item) => {
+                    closeModal();
+                    // Use openCheckoutModal which properly sets internal state
+                    // (fixes bug: setCheckoutItem was not exposed by useCheckoutHandlers)
+                    openCheckoutModal(item.id);
+                  }
+                : undefined
+            }
+            onQuickCheckin={
+              canEdit('item_details')
+                ? (item) => {
+                    closeModal();
+                    // Use openCheckinModal which properly sets internal state
+                    openCheckinModal(item.id);
+                  }
+                : undefined
+            }
             onClose={closeModal}
           />
         )}

@@ -163,3 +163,102 @@ test.describe.serial('pack lists lifecycle', () => {
       .toBe(0);
   });
 });
+
+// =============================================================================
+// Scan-to-Pack package units (QR round)
+// Packages on a list are physical cases — scanning their label packs them.
+// Requires the pack_list_packages.is_packed migration; on a DB that hasn't
+// run it yet these tests SKIP loudly instead of failing.
+// =============================================================================
+test.describe.serial('scan-to-pack package units', () => {
+  const PKG_LIST_NAME = `${E2E_PREFIX} PackList ScanPkg`;
+  let migrated = false;
+  let itemCId;
+  let listId;
+
+  test.beforeAll(async () => {
+    const db = await adminDb();
+    const probe = await db.from('pack_list_packages').select('is_packed').limit(1);
+    migrated = !probe.error;
+    if (!migrated) return;
+
+    itemCId = await createTestItem({ name: `${E2E_PREFIX} ScanPkgItem` });
+    const { data: list, error } = await db
+      .from('pack_lists')
+      .insert({ id: crypto.randomUUID(), name: PKG_LIST_NAME })
+      .select()
+      .single();
+    if (error) throw error;
+    listId = list.id;
+    // Seed package pkg-doc rides along as a unit; only OUR list row gains
+    // packed state — the package itself is never mutated
+    const { error: syncError } = await db.rpc('sync_pack_list_children', {
+      p_pack_list_id: listId,
+      p_items: [{ id: itemCId, quantity: 1, is_packed: false }],
+      p_package_ids: ['pkg-doc'],
+    });
+    if (syncError) throw syncError;
+  });
+
+  test.afterAll(async () => {
+    await cleanupTestData();
+  });
+
+  test('scanning a package label packs it; contained items point to the package', async ({
+    page,
+    pages,
+  }) => {
+    test.skip(!migrated, 'pack_list_packages.is_packed migration not applied to this DB yet');
+
+    await page.goto('/');
+    await pages.dashboard.expectDashboard();
+    await pages.dashboard.navigateTo('Pack Lists');
+    await page.getByText(PKG_LIST_NAME).first().click();
+    await expect(page.locator(`h2:has-text("${PKG_LIST_NAME}")`)).toBeVisible({ timeout: 15000 });
+
+    // Item + package both count toward progress
+    await expect(page.locator('text=0/2 packed')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Scan to Pack' }).click();
+    const manual = page.getByPlaceholder('Item ID or Serial Number');
+
+    // Package label → packed
+    await manual.fill('pkg-doc');
+    await page.getByRole('button', { name: 'Pack', exact: true }).click();
+    await expect(page.getByText('1/2 packed')).toBeVisible();
+
+    // DB truth: OUR list's junction row is packed
+    await expect
+      .poll(
+        async () => {
+          const db = await adminDb();
+          const { data } = await db
+            .from('pack_list_packages')
+            .select('is_packed')
+            .eq('pack_list_id', listId)
+            .eq('package_id', 'pkg-doc');
+          return data?.[0]?.is_packed ?? null;
+        },
+        { timeout: 10000 },
+      )
+      .toBe(true);
+
+    // Scanning an item that lives INSIDE the listed package: acknowledged,
+    // not "Not in List", and nothing toggles
+    await manual.fill('CA1004');
+    await page.getByRole('button', { name: 'Pack', exact: true }).click();
+    await expect(page.getByText('Scan the package label')).toBeVisible();
+    await expect(page.getByText('1/2 packed')).toBeVisible();
+
+    // Re-scanning the packed package reports Already Packed
+    await manual.fill('pkg-doc');
+    await page.getByRole('button', { name: 'Pack', exact: true }).click();
+    await expect(page.getByText('Already packed').first()).toBeVisible();
+
+    // Close the overlay — the detail toggle shows the packed pill state too
+    await page.locator('.modal-backdrop button.btn-icon').first().click();
+    await expect(
+      page.getByRole('button', { name: /Documentary Run & Gun — mark unpacked/ }),
+    ).toBeVisible();
+  });
+});

@@ -965,6 +965,16 @@ export function DataProvider({ children }) {
     }
   }, []);
 
+  // Same single-row semantics for packages on the list
+  const togglePackListPackagePacked = useCallback(async (listId, packageId, isPacked) => {
+    try {
+      await packListsService.togglePackagePacked(listId, packageId, isPacked);
+    } catch (err) {
+      logError('Failed to toggle package packed state:', err);
+      throw err;
+    }
+  }, []);
+
   // =============================================================================
   // CLIENTS OPERATIONS
   // =============================================================================
@@ -1365,6 +1375,7 @@ export function DataProvider({ children }) {
       updatePackList,
       deletePackList,
       togglePackListItemPacked,
+      togglePackListPackagePacked,
 
       // Client Operations
       createClient,
@@ -1441,6 +1452,7 @@ export function DataProvider({ children }) {
       updatePackList,
       deletePackList,
       togglePackListItemPacked,
+      togglePackListPackagePacked,
       createClient,
       updateClient,
       deleteClient,

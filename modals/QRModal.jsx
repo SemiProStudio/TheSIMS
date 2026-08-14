@@ -21,8 +21,9 @@ export const QRModal = memo(function QRModal({ item, onClose }) {
   const qrData = buildItemQRData(item.id);
 
   const handleDownload = async () => {
-    // Generate a fresh high-resolution PNG (512px) rather than reading the
-    // display canvas — the download is what ends up in print material.
+    // Generate a fresh high-resolution PNG rather than reading the display
+    // canvas — the download is what ends up in print material. 128px display
+    // size × the 4× oversample in generateQRDataURL = a 512px PNG.
     const dataURL = await generateQRDataURL(qrData, 128);
     if (!dataURL) return;
     const link = document.createElement('a');

@@ -132,6 +132,20 @@ test.describe('QR deep link (/?item=<id>)', () => {
     await pages.dashboard.expectDashboard();
     await expect(page.getByText(/No item found for code "ZZNOPE99"/)).toBeVisible();
   });
+
+  test('package deep link opens the package detail (labels encode pkg ids)', async ({ page }) => {
+    await page.goto('/?item=pkg-interview');
+    await expect(page.locator('h2:has-text("Interview Kit - 2 Person")')).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page).not.toHaveURL(/item=/);
+  });
+
+  test('deep link ids are case-insensitive (hand-typed URLs)', async ({ page, pages }) => {
+    await page.goto('/?item=le1002');
+    await pages.itemDetail.expectItemDetail();
+    await expect(page.getByText('LE1002').first()).toBeVisible();
+  });
 });
 
 test.describe('QR modal', () => {
@@ -184,5 +198,20 @@ test.describe('QR scanner manual entry', () => {
     await page.getByLabel('Or enter code manually').fill('ZZNOPE99');
     await page.getByRole('button', { name: 'Lookup' }).click();
     await expect(page.getByText(/No item found with code "ZZNOPE99"/)).toBeVisible();
+  });
+
+  test('resolves a package id and View Package opens its detail', async ({ page }) => {
+    await page.getByLabel('Or enter code manually').fill('pkg-interview');
+    await page.getByRole('button', { name: 'Lookup' }).click();
+
+    // Package card — lookup only, no checkout quick actions
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('Interview Kit - 2 Person')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: /Quick Check/ })).toHaveCount(0);
+
+    await dialog.getByRole('button', { name: 'View Package' }).click();
+    await expect(page.locator('h2:has-text("Interview Kit - 2 Person")')).toBeVisible({
+      timeout: 15000,
+    });
   });
 });
