@@ -13,7 +13,7 @@ import { Download } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
-import { downloadCSV } from '../utils';
+import { downloadCSV, getTodayISO } from '../utils';
 import { backupService } from '../lib/services.js';
 import {
   BACKUP_SECTIONS,
@@ -72,7 +72,7 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({ onClose }
   };
 
   const handleExport = async () => {
-    const timestamp = new Date().toISOString().split('T')[0];
+    const timestamp = getTodayISO();
     setError(null);
     setExporting(true);
 

@@ -105,13 +105,22 @@ export const formatDateTime = (date) => {
 };
 
 /**
+ * Format a Date as its LOCAL calendar date (YYYY-MM-DD).
+ * The one shared implementation — `toISOString().split('T')[0]` is the UTC
+ * date, which is tomorrow's date every evening west of Greenwich and
+ * yesterday's east of it. Calendar-date writes and comparisons must use
+ * this (or getTodayISO); toISOString stamps are for timestamps only.
+ * @param {Date} d
+ * @returns {string}
+ */
+export const toLocalYMD = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/**
  * Get today's date as ISO string (YYYY-MM-DD)
  * @returns {string}
  */
-export const getTodayISO = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+export const getTodayISO = () => toLocalYMD(new Date());
 
 /**
  * Check if a date is before today

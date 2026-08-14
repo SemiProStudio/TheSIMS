@@ -7,6 +7,7 @@ import { memo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Save } from 'lucide-react';
 import { MAINTENANCE_TYPES } from '../constants.js';
+import { toLocalYMD, getTodayISO } from '../utils';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
@@ -30,7 +31,7 @@ export const MaintenanceModal = memo(function MaintenanceModal({
     try {
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return '';
-      return date.toISOString().split('T')[0];
+      return toLocalYMD(date);
     } catch {
       return '';
     }
@@ -50,7 +51,7 @@ export const MaintenanceModal = memo(function MaintenanceModal({
       vendor: '',
       vendorContact: '',
       cost: '',
-      scheduledDate: new Date().toISOString().split('T')[0],
+      scheduledDate: getTodayISO(),
       completedDate: '',
       status: 'scheduled',
       notes: '',
@@ -90,7 +91,7 @@ export const MaintenanceModal = memo(function MaintenanceModal({
 
     // If marking as completed but no completedDate, set it to today
     if (formData.status === 'completed' && !formData.completedDate) {
-      record.completedDate = new Date().toISOString().split('T')[0];
+      record.completedDate = getTodayISO();
     }
 
     onSave(record);

@@ -425,7 +425,10 @@ describe('CSV builders', () => {
     expect(rows[0][7]).toBe('No');
   });
 
-  it('csvDate stamps ISO dates', () => {
-    expect(csvDate(new Date(Date.UTC(2026, 7, 14)))).toBe('2026-08-14');
+  it('csvDate stamps the LOCAL calendar date', () => {
+    // Local-midnight fixture: toISOString() would shift this to the previous
+    // day east of UTC (and a UTC fixture shifts west) — csvDate must not
+    expect(csvDate(new Date(2026, 7, 14))).toBe('2026-08-14');
+    expect(csvDate(new Date(2026, 7, 14, 23, 59))).toBe('2026-08-14');
   });
 });

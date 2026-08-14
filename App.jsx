@@ -13,7 +13,7 @@ import {
   DEFAULT_ROLES,
 } from './constants.js';
 import { colors } from './theme.js';
-import { findById, sanitizeCSVCell } from './utils';
+import { findById, sanitizeCSVCell, getTodayISO } from './utils';
 import { openPrintWindow } from './lib/printUtil.js';
 import { escapeHtml } from './lib/escapeHtml.js';
 import { resolveScannedCode, truncateScannedCode } from './lib/qrData.js';
@@ -929,7 +929,7 @@ export default function App() {
         if (col === 'notes') return (notesByItemId?.[item.id] || []).join('; ');
         return item[col];
       };
-      const timestamp = new Date().toISOString().split('T')[0];
+      const timestamp = getTodayISO();
 
       if (options.format === 'csv') {
         const headers = options.columns

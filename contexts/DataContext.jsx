@@ -34,7 +34,7 @@ import {
   validateClient,
   validateMaintenanceRecord,
 } from '../lib/validators.js';
-import { updateById, removeById } from '../utils';
+import { updateById, removeById, getTodayISO } from '../utils';
 import DataContext from './DataContext.js';
 
 // =============================================================================
@@ -873,7 +873,7 @@ export function DataProvider({ children }) {
                 status: 'checked-out',
                 checkedOutTo: checkoutData.userName,
                 checkedOutToUserId: checkoutData.userId,
-                checkedOutDate: new Date().toISOString().split('T')[0],
+                checkedOutDate: getTodayISO(),
                 dueBack: checkoutData.dueBack,
                 checkoutProject: checkoutData.project,
                 checkoutClientId: checkoutData.clientId,
@@ -967,7 +967,7 @@ export function DataProvider({ children }) {
           const uiNote = {
             id: row?.id,
             user: returnedBy || 'System',
-            date: new Date().toISOString().split('T')[0],
+            date: getTodayISO(),
             text: `⚠️ Damage reported: ${damageDescription}`,
             replies: [],
             deleted: false,

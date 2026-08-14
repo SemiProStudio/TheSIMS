@@ -7,7 +7,7 @@ import { memo, useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { AlertTriangle } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatPhoneNumber, handlePhoneInput, formatDate, getTodayISO } from '../utils';
+import { formatPhoneNumber, handlePhoneInput, formatDate, getTodayISO, toLocalYMD } from '../utils';
 import { Badge, Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
@@ -77,7 +77,7 @@ export const CheckOutModal = memo(function CheckOutModal({
   const setQuickDueDate = (days) => {
     const date = new Date();
     date.setDate(date.getDate() + days);
-    setFormData((prev) => ({ ...prev, dueDate: date.toISOString().split('T')[0] }));
+    setFormData((prev) => ({ ...prev, dueDate: toLocalYMD(date) }));
   };
 
   const handleChange = (field, value) => {
@@ -131,7 +131,7 @@ export const CheckOutModal = memo(function CheckOutModal({
       expectedReturn: formData.expectedReturn || formData.dueDate,
       notes: formData.notes.trim(),
       conditionAtCheckout: formData.condition,
-      checkedOutDate: new Date().toISOString().split('T')[0],
+      checkedOutDate: getTodayISO(),
       checkedOutTime: new Date().toLocaleTimeString(),
     });
   };
@@ -402,7 +402,7 @@ export const CheckOutModal = memo(function CheckOutModal({
             <DatePicker
               value={formData.dueDate}
               onChange={(e) => handleChange('dueDate', e.target.value)}
-              min={new Date().toISOString().split('T')[0]}
+              min={getTodayISO()}
               error={!formData.dueDate || errors.dueDate}
               placeholder="Select due date"
               aria-label="Due date"
