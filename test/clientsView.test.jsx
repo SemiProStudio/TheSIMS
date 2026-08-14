@@ -14,7 +14,7 @@
 // =============================================================================
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
 
 const { mockAddToast, permissionsState } = vi.hoisted(() => ({
   mockAddToast: vi.fn(),
@@ -122,7 +122,11 @@ describe('create', () => {
   async function fillAndSubmit(name = 'Fresh Client') {
     fireEvent.click(screen.getAllByRole('button', { name: 'Add Client' })[0]);
     fireEvent.change(screen.getByPlaceholderText('Client name'), { target: { value: name } });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Add Client' }).pop());
+    // act(async) flushes the create handler's post-await updates (selection,
+    // modal close) inside act — they otherwise escape and warn
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: 'Add Client' }).pop());
+    });
   }
 
   it('sends form fields only — no local id, no camelCase timestamps', async () => {
@@ -136,6 +140,11 @@ describe('create', () => {
     expect(payload.id).toBeUndefined();
     expect(payload).not.toHaveProperty('createdAt');
     expect(payload).not.toHaveProperty('updatedAt');
+    // Settle the post-create updates (selection, modal close) inside act —
+    // otherwise they escape and get attributed to whichever test runs next
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Fresh Client' })).toBeInTheDocument(),
+    );
   });
 
   it('selects the RETURNED row (real DB id) and audits on success', async () => {

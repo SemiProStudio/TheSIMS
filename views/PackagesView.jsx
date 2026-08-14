@@ -670,7 +670,8 @@ function PackagesView({
                 placeholder="e.g., Wedding Photography Package"
                 style={{
                   ...styles.input,
-                  ...(nameError ? { borderColor: colors.danger } : {}),
+                  // Always-present longhand — see DatePicker note
+                  borderColor: nameError ? colors.danger : colors.border,
                 }}
                 autoFocus
               />
@@ -895,7 +896,7 @@ function PackagesView({
                             width: 60,
                             padding: `${spacing[1]}px ${spacing[2]}px`,
                             textAlign: 'center',
-                            ...(qtyError ? { borderColor: colors.danger } : {}),
+                            borderColor: qtyError ? colors.danger : colors.border,
                           }}
                         />
                         {qtyError && (

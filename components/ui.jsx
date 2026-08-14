@@ -708,8 +708,10 @@ export const SearchInput = memo(
           gap: spacing[2],
           ...styles.input,
           padding: '12px 16px',
+          // Always-present longhand — conditionally REMOVING borderColor
+          // while styles.input's border shorthand stays makes React warn
+          borderColor: isFocused ? colors.primary : colors.border,
           ...(isFocused && {
-            borderColor: colors.primary,
             boxShadow: `0 0 0 2px color-mix(in srgb, ${colors.primary} 20%, transparent)`,
           }),
           ...customStyle,
@@ -1165,8 +1167,8 @@ StatCard.propTypes = {
 };
 
 EmptyState.propTypes = {
-  /** Lucide icon component */
-  icon: PropTypes.elementType.isRequired,
+  /** Lucide icon component — optional; the placeholder renders text-only without it */
+  icon: PropTypes.elementType,
   /** Title text */
   title: PropTypes.string.isRequired,
   /** Description text */

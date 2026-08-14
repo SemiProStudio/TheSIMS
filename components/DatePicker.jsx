@@ -533,6 +533,9 @@ const DatePicker = memo(function DatePicker({
     ...styles.input,
     ...(isFocused || isOpen ? styles.inputFocused : {}),
     ...(error ? styles.inputError : {}),
+    // Always-present longhand — conditionally REMOVING borderColor while
+    // styles.input's border shorthand stays makes React warn on rerender
+    borderColor: error ? colors.danger : isFocused || isOpen ? colors.primary : colors.border,
     ...(disabled ? styles.inputDisabled : {}),
     ...style,
   };
