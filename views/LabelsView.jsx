@@ -11,15 +11,17 @@ import { Printer, Download, Check } from 'lucide-react';
 import { LABEL_FORMATS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Card, CardHeader, Button, SearchInput, Badge, PageHeader } from '../components/ui.jsx';
-import { ItemLabel, renderLabelsHTML, qrDisplaySize } from '../components/ItemLabel.jsx';
+import { ItemLabel } from '../components/ItemLabel.jsx';
+import { renderLabelsHTML } from '../components/labelRender.jsx';
+import { qrDisplaySize } from '../lib/labelMetrics.js';
 import {
   buildLabelSheetSVGs,
   rasterizeSheetToPNG,
   CRICUT_PRINT_AREA,
   SHEET_DPI,
 } from '../components/labelSheet.jsx';
-import { generateQRDataURL, useQRDataURL } from '../components/QRCode.jsx';
-import { buildItemQRData } from '../lib/qrData.js';
+import { useQRDataURL } from '../hooks/useQRDataURL.js';
+import { buildItemQRData, generateQRDataURL } from '../lib/qrData.js';
 import { useToast } from '../contexts/ToastContext.js';
 
 import { error as logError } from '../lib/logger.js';

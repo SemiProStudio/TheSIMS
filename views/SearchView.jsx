@@ -47,7 +47,7 @@ const GEAR_PAGE_SIZE = 50;
 // Entity types the global search spans. Each is gated on the matching
 // function permission so search can never leak entities a role can't view
 // through its own view.
-export const SEARCH_TYPES = [
+const SEARCH_TYPES = [
   { id: 'gear', label: 'Gear', permission: 'gear_list' },
   { id: 'clients', label: 'Clients', permission: 'clients' },
   { id: 'packages', label: 'Packages', permission: 'gear_list' },

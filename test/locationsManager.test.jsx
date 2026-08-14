@@ -7,7 +7,8 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import LocationsManager, { computeLocationPathRenames } from '../views/LocationsManager.jsx';
+import LocationsManager from '../views/LocationsManager.jsx';
+import { computeLocationPathRenames } from '../utils';
 
 const tree = [
   {

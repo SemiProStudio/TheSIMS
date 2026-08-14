@@ -21,33 +21,14 @@ import {
 } from 'lucide-react';
 import { LOCATION_TYPES } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { flattenLocations } from '../utils';
+import { flattenLocations, computeLocationPathRenames } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 
 // The legacy path separator: older item location strings use "A - B" while
 // the location picker writes "A > B". Both are matched when propagating
 // renames; updates write the canonical " > " form.
-export const LEGACY_SEPARATOR = ' - ';
-
-/**
- * Diff two location trees by node id and report every full-path change —
- * renaming a parent yields one entry per affected descendant too. Items
- * store locations as plain strings, so these renames must be applied to
- * items or their locations silently orphan.
- * @returns {Array<{from: string, to: string}>}
- */
-export function computeLocationPathRenames(originalTree, editedTree) {
-  const before = new Map(flattenLocations(originalTree).map((l) => [l.id, l.fullPath]));
-  const renames = [];
-  flattenLocations(editedTree).forEach((l) => {
-    const oldPath = before.get(l.id);
-    if (oldPath && oldPath !== l.fullPath) {
-      renames.push({ from: oldPath, to: l.fullPath });
-    }
-  });
-  return renames;
-}
+const LEGACY_SEPARATOR = ' - ';
 
 // Get icon for location type
 const getLocationIcon = (type) => {

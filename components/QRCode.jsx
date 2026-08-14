@@ -1,10 +1,8 @@
 // ============================================================================
-// QR Code Rendering
-// Single home for QR generation: a canvas component for on-screen display
-// (QR modal) and a data-URL helper for label previews and print/export HTML.
-// Both render at OVERSAMPLE× the display size so QR modules stay crisp on
-// retina screens and, more importantly, on 300–600dpi label printers — a QR
-// rasterized at its 60–80px display size prints visibly blurry.
+// QR Code Rendering — canvas component for on-screen display (QR modal).
+// Renders at OVERSAMPLE× the display size so QR modules stay crisp on retina
+// screens (see lib/qrData.js, the shared home for QR options and the
+// data-URL helper used by label previews and print/export HTML).
 // QR colors are intentionally hardcoded black-on-white in every theme:
 // scanners need the contrast, and labels print on white stock.
 // ============================================================================
@@ -14,60 +12,8 @@ import PropTypes from 'prop-types';
 import QRCodeLib from 'qrcode';
 import { borderRadius } from '../theme.js';
 
+import { OVERSAMPLE, QR_OPTIONS } from '../lib/qrData.js';
 import { error as logError } from '../lib/logger.js';
-
-const OVERSAMPLE = 4;
-
-const QR_OPTIONS = {
-  margin: 1,
-  color: {
-    dark: '#000000',
-    light: '#FFFFFF',
-  },
-  errorCorrectionLevel: 'M',
-};
-
-/**
- * Generate a QR PNG data URL rendered at OVERSAMPLE× the display size.
- * @param {string} data - Payload to encode.
- * @param {number} displaySize - The CSS pixel size it will be displayed at.
- * @returns {Promise<string>} data URL, or '' on failure.
- */
-export async function generateQRDataURL(data, displaySize = 100) {
-  try {
-    return await QRCodeLib.toDataURL(String(data), {
-      ...QR_OPTIONS,
-      width: displaySize * OVERSAMPLE,
-    });
-  } catch (err) {
-    logError('QR Code toDataURL error:', err);
-    return '';
-  }
-}
-
-/**
- * Hook: async data-URL generation for rendering QRs as <img> (label previews).
- * Returns '' until ready.
- */
-export function useQRDataURL(data, displaySize) {
-  const [url, setUrl] = useState('');
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!data) {
-      setUrl('');
-      return undefined;
-    }
-    generateQRDataURL(data, displaySize).then((dataURL) => {
-      if (!cancelled) setUrl(dataURL);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [data, displaySize]);
-
-  return url;
-}
 
 // ============================================================================
 // Canvas QR component (QR modal)

@@ -22,9 +22,8 @@ vi.mock('../contexts/PermissionsContext.jsx', () => ({
   ViewOnlyBanner: () => null,
 }));
 
-const { default: GearList, sortItems, SORT_OPTIONS, KITS_FILTER } = await import(
-  '../views/GearList.jsx'
-);
+const { default: GearList } = await import('../views/GearList.jsx');
+const { sortItems, SORT_OPTIONS, KITS_FILTER } = await import('../lib/gearListOptions.js');
 const { ExportModal } = await import('../modals/ExportModal.jsx');
 
 const inventory = [

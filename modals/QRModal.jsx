@@ -11,8 +11,8 @@ import { Download } from 'lucide-react';
 import { colors, spacing, borderRadius } from '../theme.js';
 import { Badge, Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
-import { QRCodeCanvas, generateQRDataURL } from '../components/QRCode.jsx';
-import { buildItemQRData } from '../lib/qrData.js';
+import { QRCodeCanvas } from '../components/QRCode.jsx';
+import { buildItemQRData, generateQRDataURL } from '../lib/qrData.js';
 
 // ============================================================================
 // QR Modal

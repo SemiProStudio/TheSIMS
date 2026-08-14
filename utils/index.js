@@ -627,6 +627,25 @@ export const flattenLocations = (locations, parentPath = '') => {
   return result;
 };
 
+/**
+ * Diff two location trees by node id and report every full-path change —
+ * renaming a parent yields one entry per affected descendant too. Items
+ * store locations as plain strings, so these renames must be applied to
+ * items or their locations silently orphan.
+ * @returns {Array<{from: string, to: string}>}
+ */
+export function computeLocationPathRenames(originalTree, editedTree) {
+  const before = new Map(flattenLocations(originalTree).map((l) => [l.id, l.fullPath]));
+  const renames = [];
+  flattenLocations(editedTree).forEach((l) => {
+    const oldPath = before.get(l.id);
+    if (oldPath && oldPath !== l.fullPath) {
+      renames.push({ from: oldPath, to: l.fullPath });
+    }
+  });
+  return renames;
+}
+
 // ============================================================================
 // Reminder Utilities
 // ============================================================================

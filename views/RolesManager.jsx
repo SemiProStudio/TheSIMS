@@ -19,7 +19,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { APP_FUNCTIONS, PERMISSION_LEVELS } from '../constants.js';
+import { APP_FUNCTIONS, PERMISSION_LEVELS, LOCKED_ADMIN_PERMISSIONS } from '../constants.js';
 import { Button, Card, Badge, PageHeader } from '../components/ui.jsx';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '../modals/ModalBase.jsx';
 import { generateId } from '../utils';
@@ -331,10 +331,6 @@ const RoleCard = memo(function RoleCard({ role, onEdit, onDelete, onAssign, user
   );
 });
 
-// Permissions that can never be lowered on the Administrator system role —
-// otherwise two clicks ("All Hide" + Save) could lock every admin out of
-// user & role management with no in-app way back.
-export const LOCKED_ADMIN_PERMISSIONS = ['admin_users', 'admin_roles'];
 const ADMIN_ROLE_ID = 'role_admin';
 
 // Role editor component

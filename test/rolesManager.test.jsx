@@ -7,7 +7,8 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
-import RolesManager, { LOCKED_ADMIN_PERMISSIONS } from '../views/RolesManager.jsx';
+import RolesManager from '../views/RolesManager.jsx';
+import { LOCKED_ADMIN_PERMISSIONS } from '../constants.js';
 import { PERMISSION_LEVELS } from '../constants.js';
 
 const roles = [
