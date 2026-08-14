@@ -6,11 +6,11 @@
 // could (the Search-round lesson, finally applied here).
 // ============================================================================
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Download, AlertTriangle, Clock, Package, MapPin, TrendingDown } from 'lucide-react';
 import { colors, spacing, typography } from '../theme.js';
-import { formatDate, formatMoney, downloadCSV } from '../utils';
+import { formatDate, formatMoney, downloadCSV, getTodayISO } from '../utils';
 import {
   Badge,
   Card,
@@ -33,9 +33,23 @@ export const AlertsReportPanel = memo(function AlertsReportPanel({
 }) {
   const { categorySettings } = useData();
 
+  // "Today" ticks hourly and on tab re-focus — the overdue set is a function
+  // of today's date, and a tab left open past midnight kept yesterday's
+  const [todayTick, setTodayTick] = useState(() => getTodayISO());
+  useEffect(() => {
+    const update = () => setTodayTick(getTodayISO());
+    const id = setInterval(update, 60 * 60 * 1000);
+    document.addEventListener('visibilitychange', update);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', update);
+    };
+  }, []);
+
   const alertData = useMemo(
     () => computeAlertData(inventory, categorySettings),
-    [inventory, categorySettings],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- todayTick re-derives the date-dependent overdue set
+    [inventory, categorySettings, todayTick],
   );
 
   const severitySegments = useMemo(

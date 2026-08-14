@@ -96,7 +96,9 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
         onBack={onBack}
         backLabel="Back to Reports"
         action={
-          <Button onClick={handleExport} icon={Download}>
+          // Disabled until the FULL history loads — exporting during
+          // "Loading records…" silently produced a pending-only CSV
+          <Button onClick={handleExport} icon={Download} disabled={!maintenanceLoaded}>
             Export CSV
           </Button>
         }

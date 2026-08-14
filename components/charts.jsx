@@ -61,7 +61,7 @@ export const DonutChart = memo(function DonutChart({
             data.map((d, i) =>
               segments[i].length > 0 ? (
                 <circle
-                  key={d.label}
+                  key={`${i}-${d.label}`}
                   cx={size / 2}
                   cy={size / 2}
                   r={radius}
@@ -107,9 +107,9 @@ export const DonutChart = memo(function DonutChart({
       </div>
       {legend && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[1], minWidth: 120 }}>
-          {data.map((d) => (
+          {data.map((d, i) => (
             <div
-              key={d.label}
+              key={`${i}-${d.label}`}
               style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}
             >
               <span
@@ -189,8 +189,8 @@ export const HBarChart = memo(function HBarChart({
         ariaLabel || data.map((d) => `${d.label} ${formatValue(d.value)}`).join(', ')
       }
     >
-      {data.map((d) => (
-        <div key={d.label} style={{ marginBottom: spacing[3] }}>
+      {data.map((d, i) => (
+        <div key={`${i}-${d.label}`} style={{ marginBottom: spacing[3] }}>
           <div
             style={{
               display: 'flex',
@@ -333,7 +333,7 @@ export const ColumnChart = memo(function ColumnChart({
         const cx = slot * i + slot / 2;
         const top = y(Math.max(0, d.value));
         return (
-          <g key={d.label}>
+          <g key={`${i}-${d.label}`}>
             <rect
               x={cx - barW / 2}
               y={top}
@@ -428,14 +428,14 @@ export const TrendChart = memo(function TrendChart({
       )}
       {drawPoints &&
         points.map((p, i) => (
-          <circle key={data[i].label} cx={p.x} cy={p.y} r={3} fill={color}>
+          <circle key={i} cx={p.x} cy={p.y} r={3} fill={color}>
             <title>{`${data[i].label}: ${formatValue(data[i].value)}`}</title>
           </circle>
         ))}
       {data.map((d, i) =>
         shown.has(i) ? (
           <text
-            key={d.label}
+            key={`${i}-${d.label}`}
             x={xs[i]}
             y={VIEW_H - PAD_BOTTOM + 16}
             fontSize={11}
