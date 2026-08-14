@@ -523,10 +523,25 @@ export default function App() {
         dataContext
           .getItemWithDetails(id)
           .then((itemWithDetails) => {
-            if (itemWithDetails) {
-              setSelectedItem(itemWithDetails);
-              patchInventoryItem(id, itemWithDetails);
+            if (!itemWithDetails) return;
+            // Hydrate ONLY the child collections the list rows don't carry.
+            // The snapshot's SCALARS date from navigation time — applying
+            // them wholesale reverted any edit/checkout/status change that
+            // landed while the fetch was in flight (the optimistic-UI vs
+            // lazy-fetch race class), and replacing selectedItem outright
+            // also clobbered quick navigations away to another item.
+            const collections = {};
+            for (const key of [
+              'notes',
+              'reminders',
+              'reservations',
+              'maintenanceHistory',
+              'checkoutHistory',
+            ]) {
+              if (itemWithDetails[key] !== undefined) collections[key] = itemWithDetails[key];
             }
+            patchInventoryItem(id, collections);
+            setSelectedItem((prev) => (prev?.id === id ? { ...prev, ...collections } : prev));
           })
           .catch((err) => logError('Failed to load item details:', err));
       }
