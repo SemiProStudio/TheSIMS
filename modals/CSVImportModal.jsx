@@ -1,6 +1,10 @@
 // ============================================================================
 // CSV Import Modal
-// Import inventory items from CSV file with template download
+// Import inventory items from CSV with template download.
+// Parsing/validation live in lib/csv.js + lib/importItems.js (RFC 4180,
+// BOM-tolerant, header aliases for every SIMS export flavor). Import runs
+// through the REAL create path — results are reported honestly, including
+// per-row failures.
 // ============================================================================
 
 import { memo, useState, useRef } from 'react';
@@ -9,23 +13,76 @@ import { Upload, Download } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
-import { sanitizeCSVCell } from '../utils';
+import { downloadCSV, formatMoney } from '../utils';
+import { parseCSV } from '../lib/csv.js';
+import { buildImportItems } from '../lib/importItems.js';
+
+const TEMPLATE_HEADERS = [
+  'name',
+  'brand',
+  'category',
+  'status',
+  'condition',
+  'location',
+  'purchaseDate',
+  'purchasePrice',
+  'currentValue',
+  'serialNumber',
+  'quantity',
+  'notes',
+];
+
+const TEMPLATE_ROWS = [
+  ['Sony A7S III', 'Sony', 'Cameras', 'available', 'excellent', 'Studio A - Shelf 1', '2023-06-15', '3498', '2800', 'SN-A7S3-001', '1', 'Great condition'],
+  ['Canon RF 24-70mm f/2.8', 'Canon', 'Lenses', 'available', 'good', 'Lens Cabinet', '2023-03-20', '2399', '2100', 'SN-RF2470-002', '1', ''],
+  ['Aputure 600d Pro', 'Aputure', 'Lighting', 'checked-out', 'excellent', 'Lighting Storage', '2023-01-10', '1699', '1400', 'SN-600D-003', '1', ''],
+];
+
+const noticeBoxStyle = (color) => ({
+  background: `${withOpacity(color, 15)}`,
+  border: `1px solid ${withOpacity(color, 40)}`,
+  borderRadius: borderRadius.md,
+  padding: spacing[3],
+  marginBottom: spacing[4],
+  color,
+  fontSize: typography.fontSize.sm,
+  whiteSpace: 'pre-line',
+  maxHeight: 140,
+  overflowY: 'auto',
+});
+
+const capList = (list, max = 6) =>
+  list.slice(0, max).join('\n') + (list.length > max ? `\n… and ${list.length - max} more` : '');
 
 export const CSVImportModal = memo(function CSVImportModal({
   categories,
   specs,
+  existingSerials = [],
   onImport,
   onClose,
 }) {
   const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [error, setError] = useState(null);
+  const [prepared, setPrepared] = useState(null); // {items, errors, warnings}
+  const [parseError, setParseError] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [progress, setProgress] = useState(null); // {done, total}
+  const [result, setResult] = useState(null); // {created, failed, noteFailures}
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Build case-insensitive category lookup: lowercased name → original name
-  const categoryMap = Object.fromEntries(categories.map((cat) => [cat.toLowerCase(), cat]));
+  const prepareFile = async (selectedFile) => {
+    setFile(selectedFile);
+    setParseError(null);
+    setPrepared(null);
+    setResult(null);
+    try {
+      const text = await selectedFile.text();
+      const parsed = parseCSV(text);
+      setPrepared(buildImportItems(parsed, { categories, existingSerials }));
+    } catch (err) {
+      setParseError(err.message);
+    }
+  };
 
   // Drag-and-drop handlers
   const handleDragOver = (e) => {
@@ -46,292 +103,63 @@ export const CSVImportModal = memo(function CSVImportModal({
     setIsDragging(false);
     const droppedFile = e.dataTransfer.files?.[0];
     if (droppedFile && (droppedFile.type === 'text/csv' || droppedFile.name.endsWith('.csv'))) {
-      setFile(droppedFile);
-      setError(null);
-      setPreview(null);
-      try {
-        const text = await droppedFile.text();
-        const parsed = parseCSV(text);
-        setPreview(parsed);
-      } catch (err) {
-        setError(err.message);
-      }
+      await prepareFile(droppedFile);
     } else if (droppedFile) {
-      setError('Please drop a CSV file');
+      setParseError('Please drop a CSV file');
     }
   };
 
-  // CSV column definitions
-  const requiredColumns = ['name', 'category'];
-
-  // Generate CSV template
-  const downloadTemplate = () => {
-    const headers = [
-      'name',
-      'brand',
-      'category',
-      'status',
-      'condition',
-      'location',
-      'purchaseDate',
-      'purchasePrice',
-      'currentValue',
-      'serialNumber',
-      'notes',
-    ];
-
-    // Add spec columns for each category
-    const specColumns = [];
-    Object.entries(specs).forEach(([_category, specList]) => {
-      if (Array.isArray(specList)) {
-        specList.forEach((spec) => {
-          const colName = `spec:${spec.name}`;
-          if (!specColumns.includes(colName)) {
-            specColumns.push(colName);
-          }
-        });
-      }
-    });
-
-    const allHeaders = [...headers, ...specColumns];
-
-    // Example rows
-    const exampleRows = [
-      [
-        'Sony A7S III',
-        'Sony',
-        'Cameras',
-        'available',
-        'excellent',
-        'Studio A - Shelf 1',
-        '2023-06-15',
-        '3498',
-        '2800',
-        'SN-A7S3-001',
-        'Great condition',
-      ],
-      [
-        'Canon RF 24-70mm f/2.8',
-        'Canon',
-        'Lenses',
-        'available',
-        'good',
-        'Lens Cabinet',
-        '2023-03-20',
-        '2399',
-        '2100',
-        'SN-RF2470-002',
-        '',
-      ],
-      [
-        'Aputure 600d Pro',
-        'Aputure',
-        'Lighting',
-        'checked-out',
-        'excellent',
-        'Lighting Storage',
-        '2023-01-10',
-        '1699',
-        '1400',
-        'SN-600D-003',
-        '',
-      ],
-    ];
-
-    // Pad example rows to match header count
-    const paddedRows = exampleRows.map((row) => {
-      while (row.length < allHeaders.length) row.push('');
-      return row;
-    });
-
-    const csvContent = [
-      allHeaders.map((h) => sanitizeCSVCell(h)).join(','),
-      ...paddedRows.map((row) => row.map((cell) => sanitizeCSVCell(cell)).join(',')),
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'sims-import-template.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // Parse CSV file
-  const parseCSV = (text) => {
-    const lines = text.split(/\r?\n/).filter((line) => line.trim());
-    if (lines.length < 2) {
-      throw new Error('CSV file must have a header row and at least one data row');
-    }
-
-    // Parse header
-    const headers = parseCSVLine(lines[0]);
-
-    // Check for required columns
-    const missingRequired = requiredColumns.filter(
-      (col) => !headers.some((h) => h.toLowerCase() === col.toLowerCase()),
-    );
-    if (missingRequired.length > 0) {
-      throw new Error(`Missing required columns: ${missingRequired.join(', ')}`);
-    }
-
-    // Parse data rows
-    const rows = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseCSVLine(lines[i]);
-      if (values.length === 0 || values.every((v) => !v.trim())) continue;
-
-      const row = {};
-      headers.forEach((header, idx) => {
-        row[header.toLowerCase()] = values[idx] || '';
-      });
-      rows.push(row);
-    }
-
-    return { headers, rows };
-  };
-
-  // Parse a single CSV line handling quotes
-  const parseCSVLine = (line) => {
-    const result = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      const nextChar = line[i + 1];
-
-      if (inQuotes) {
-        if (char === '"' && nextChar === '"') {
-          current += '"';
-          i++;
-        } else if (char === '"') {
-          inQuotes = false;
-        } else {
-          current += char;
-        }
-      } else {
-        if (char === '"') {
-          inQuotes = true;
-        } else if (char === ',') {
-          result.push(current.trim());
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-    }
-    result.push(current.trim());
-
-    return result;
-  };
-
-  // Handle file selection
   const handleFileChange = async (e) => {
     const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
-    setFile(selectedFile);
-    setError(null);
-    setPreview(null);
-
-    try {
-      const text = await selectedFile.text();
-      const parsed = parseCSV(text);
-      setPreview(parsed);
-    } catch (err) {
-      setError(err.message);
-    }
+    if (selectedFile) await prepareFile(selectedFile);
   };
 
-  // Validate and import
+  const downloadTemplate = () => {
+    // Spec columns for every category ride along as optional extras
+    const specColumns = [];
+    Object.values(specs || {}).forEach((specList) => {
+      if (Array.isArray(specList)) {
+        specList.forEach((spec) => {
+          const col = `spec:${spec.name}`;
+          if (!specColumns.includes(col)) specColumns.push(col);
+        });
+      }
+    });
+    const headers = [...TEMPLATE_HEADERS, ...specColumns];
+    const rows = TEMPLATE_ROWS.map((row) => {
+      const padded = [...row];
+      while (padded.length < headers.length) padded.push('');
+      return padded;
+    });
+    downloadCSV(headers, rows, 'sims-import-template.csv');
+  };
+
   const handleImport = async () => {
-    if (!preview) return;
+    if (!prepared || prepared.errors.length > 0 || prepared.items.length === 0) return;
 
     setImporting(true);
-    setError(null);
-
+    setProgress({ done: 0, total: prepared.items.length });
     try {
-      const items = [];
-      const errors = [];
-
-      preview.rows.forEach((row, idx) => {
-        // Validate required fields
-        if (!row.name?.trim()) {
-          errors.push(`Row ${idx + 2}: Missing name`);
-          return;
-        }
-        if (!row.category?.trim()) {
-          errors.push(`Row ${idx + 2}: Missing category`);
-          return;
-        }
-        // Case-insensitive category matching: CSV value → actual category name
-        const matchedCategory = categoryMap[row.category.trim().toLowerCase()];
-        if (!matchedCategory) {
-          errors.push(`Row ${idx + 2}: Unknown category "${row.category}"`);
-          return;
-        }
-
-        // Build item object — all row keys are already lowercased by parseCSV
-        const item = {
-          name: row.name.trim(),
-          brand: row.brand?.trim() || '',
-          category: matchedCategory,
-          status: row.status?.trim() || 'available',
-          condition: row.condition?.trim() || 'excellent',
-          location: row.location?.trim() || '',
-          purchaseDate: row.purchasedate?.trim() || '',
-          purchasePrice: parseFloat(row.purchaseprice) || 0,
-          currentValue: parseFloat(row.currentvalue) || 0,
-          serialNumber: row.serialnumber?.trim() || '',
-          notes: row.notes?.trim()
-            ? [
-                {
-                  id: `imported_${Date.now()}_${idx}`,
-                  user: 'Import',
-                  date: new Date().toISOString().split('T')[0],
-                  text: row.notes.trim(),
-                  replies: [],
-                  deleted: false,
-                },
-              ]
-            : [],
-          specs: {},
-          reservations: [],
-          reminders: [],
-          viewCount: 0,
-          checkoutCount: 0,
-        };
-
-        // Extract specs from spec: columns
-        Object.entries(row).forEach(([key, value]) => {
-          if (key.startsWith('spec:') && value?.trim()) {
-            const specName = key.substring(5);
-            item.specs[specName] = value.trim();
-          }
-        });
-
-        items.push(item);
-      });
-
-      if (errors.length > 0) {
-        setError(
-          `Import errors:\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? `\n... and ${errors.length - 5} more` : ''}`,
-        );
-        setImporting(false);
-        return;
+      const summary = await onImport(prepared.items, (done, total) =>
+        setProgress({ done, total }),
+      );
+      if (summary && (summary.failed.length > 0 || summary.noteFailures > 0)) {
+        // Partial failure: stay open and say exactly what happened. Import is
+        // disabled from here — re-running would duplicate the created rows.
+        setResult(summary);
+      } else {
+        onClose();
       }
-
-      // Call import handler
-      await onImport(items);
-      onClose();
     } catch (err) {
-      setError(err.message || 'Import failed');
+      setParseError(err.message || 'Import failed');
     } finally {
       setImporting(false);
+      setProgress(null);
     }
   };
+
+  const canImport =
+    prepared && prepared.errors.length === 0 && prepared.items.length > 0 && !importing && !result;
 
   return (
     <Modal onClose={onClose} maxWidth={600}>
@@ -362,7 +190,8 @@ export const CSVImportModal = memo(function CSVImportModal({
               marginBottom: spacing[3],
             }}
           >
-            Download our CSV template with all available columns and example data.
+            Download our CSV template with all available columns and example data. Exports from
+            SIMS re-import as-is.
           </p>
           <Button variant="secondary" onClick={downloadTemplate} icon={Download}>
             Download Template
@@ -412,29 +241,43 @@ export const CSVImportModal = memo(function CSVImportModal({
           />
         </div>
 
-        {/* Error display */}
-        {error && (
-          <div
-            style={{
-              background: `${withOpacity(colors.danger, 20)}`,
-              border: `1px solid ${withOpacity(colors.danger, 50)}`,
-              borderRadius: borderRadius.md,
-              padding: spacing[3],
-              marginBottom: spacing[4],
-              color: colors.danger,
-              fontSize: typography.fontSize.sm,
-              whiteSpace: 'pre-line',
-            }}
-          >
-            {error}
+        {/* Parse-level error */}
+        {parseError && <div style={noticeBoxStyle(colors.danger)}>{parseError}</div>}
+
+        {/* Row errors block the import */}
+        {prepared && prepared.errors.length > 0 && (
+          <div style={noticeBoxStyle(colors.danger)} role="alert">
+            {`Fix these rows before importing:\n${capList(prepared.errors)}`}
+          </div>
+        )}
+
+        {/* Warnings don't block, but the user should see them */}
+        {prepared && prepared.warnings.length > 0 && (
+          <div style={noticeBoxStyle(colors.warning)}>
+            {`Warnings:\n${capList(prepared.warnings)}`}
+          </div>
+        )}
+
+        {/* Import result: partial failures keep the modal open and honest */}
+        {result && (
+          <div style={noticeBoxStyle(result.failed.length ? colors.danger : colors.warning)} role="alert">
+            {[
+              `Imported ${result.created.length} of ${result.created.length + result.failed.length} items.`,
+              result.failed.length
+                ? `Failed:\n${capList(result.failed.map((f) => `${f.name}: ${f.error}`))}`
+                : '',
+              result.noteFailures ? `${result.noteFailures} note(s) could not be saved.` : '',
+            ]
+              .filter(Boolean)
+              .join('\n')}
           </div>
         )}
 
         {/* Preview */}
-        {preview && (
+        {prepared && !result && (
           <div style={{ marginBottom: spacing[4] }}>
             <h4 style={{ margin: `0 0 ${spacing[2]}px`, color: colors.textPrimary }}>
-              Preview ({preview.rows.length} items, {preview.headers.length} columns)
+              Preview ({prepared.items.length} importable items)
             </h4>
             <div
               style={{
@@ -453,47 +296,45 @@ export const CSVImportModal = memo(function CSVImportModal({
               >
                 <thead>
                   <tr>
-                    {['name', 'brand', 'category', 'status', 'purchaseprice'].map((col) => (
+                    {['Name', 'Brand', 'Category', 'Status', 'Price'].map((col) => (
                       <th
                         key={col}
                         style={{
-                          textAlign: col === 'purchaseprice' ? 'right' : 'left',
+                          textAlign: col === 'Price' ? 'right' : 'left',
                           padding: spacing[2],
                           borderBottom: `1px solid ${colors.border}`,
                           color: colors.textMuted,
                           fontWeight: typography.fontWeight.medium,
                         }}
                       >
-                        {col === 'purchaseprice' ? 'Price' : col}
+                        {col}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {preview.rows.slice(0, 5).map((row, idx) => (
+                  {prepared.items.slice(0, 5).map((item, idx) => (
                     <tr key={idx}>
-                      {['name', 'brand', 'category', 'status', 'purchaseprice'].map((col) => (
-                        <td
-                          key={col}
-                          style={{
-                            padding: spacing[2],
-                            borderBottom: `1px solid ${colors.borderLight}`,
-                            color: colors.textPrimary,
-                            textAlign: col === 'purchaseprice' ? 'right' : 'left',
-                          }}
-                        >
-                          {col === 'purchaseprice'
-                            ? row[col]
-                              ? `$${row[col]}`
-                              : '-'
-                            : row[col] || '-'}
-                        </td>
-                      ))}
+                      <td style={{ padding: spacing[2], borderBottom: `1px solid ${colors.borderLight}`, color: colors.textPrimary }}>
+                        {item.name}
+                      </td>
+                      <td style={{ padding: spacing[2], borderBottom: `1px solid ${colors.borderLight}`, color: colors.textPrimary }}>
+                        {item.brand || '-'}
+                      </td>
+                      <td style={{ padding: spacing[2], borderBottom: `1px solid ${colors.borderLight}`, color: colors.textPrimary }}>
+                        {item.category}
+                      </td>
+                      <td style={{ padding: spacing[2], borderBottom: `1px solid ${colors.borderLight}`, color: colors.textPrimary }}>
+                        {item.status}
+                      </td>
+                      <td style={{ padding: spacing[2], borderBottom: `1px solid ${colors.borderLight}`, color: colors.textPrimary, textAlign: 'right' }}>
+                        {item.purchasePrice ? formatMoney(item.purchasePrice) : '-'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {preview.rows.length > 5 && (
+              {prepared.items.length > 5 && (
                 <p
                   style={{
                     color: colors.textMuted,
@@ -503,24 +344,40 @@ export const CSVImportModal = memo(function CSVImportModal({
                     margin: 0,
                   }}
                 >
-                  ... and {preview.rows.length - 5} more items
+                  ... and {prepared.items.length - 5} more items
                 </p>
               )}
             </div>
           </div>
         )}
 
+        {/* Progress */}
+        {importing && progress && (
+          <p
+            role="status"
+            style={{
+              color: colors.textSecondary,
+              fontSize: typography.fontSize.sm,
+              marginBottom: spacing[3],
+            }}
+          >
+            Importing {progress.done} of {progress.total}…
+          </p>
+        )}
+
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {result ? 'Close' : 'Cancel'}
           </Button>
           <Button
             onClick={handleImport}
-            disabled={!preview || importing}
+            disabled={!canImport}
             icon={importing ? null : Upload}
           >
-            {importing ? 'Importing...' : `Import ${preview?.rows.length || 0} Items`}
+            {importing
+              ? 'Importing...'
+              : `Import ${prepared?.items.length || 0} Items`}
           </Button>
         </div>
       </div>
@@ -543,7 +400,9 @@ CSVImportModal.propTypes = {
       }),
     ),
   ),
-  /** Callback when import is confirmed with items array */
+  /** Serial numbers already in inventory — duplicates warn before import */
+  existingSerials: PropTypes.arrayOf(PropTypes.string),
+  /** async (items, onProgress) => {created, failed, noteFailures} */
   onImport: PropTypes.func.isRequired,
   /** Callback to close modal */
   onClose: PropTypes.func.isRequired,

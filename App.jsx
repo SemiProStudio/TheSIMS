@@ -862,10 +862,33 @@ export default function App() {
   );
 
   const exportData = useCallback(
-    (options) => {
-      const items = selectedIds.length
-        ? inventory.filter((i) => selectedIds.includes(i.id))
-        : inventory;
+    async (options) => {
+      const items =
+        options.scope !== 'all' && selectedIds.length
+          ? inventory.filter((i) => selectedIds.includes(i.id))
+          : inventory;
+
+      // Notes live in their own lazy table — without this fetch the Notes
+      // column exported empty for every item whose detail page hadn't been
+      // visited this session
+      let notesByItemId = null;
+      if (options.columns.includes('notes')) {
+        try {
+          const { backupService } = await import('./lib/services.js');
+          const rows = await backupService.fetchAllRows('item_notes');
+          notesByItemId = {};
+          rows.forEach((n) => {
+            if (n.deleted) return;
+            if (!notesByItemId[n.item_id]) notesByItemId[n.item_id] = [];
+            notesByItemId[n.item_id].push(n.text);
+          });
+        } catch (err) {
+          logError('Failed to fetch notes for export:', err);
+          addToast('Export failed: could not load item notes', 'error');
+          return;
+        }
+      }
+
       const escHtml = escapeHtml;
       const columnLabels = {
         id: 'ID',
@@ -884,10 +907,7 @@ export default function App() {
       // Resolve a column value from an item
       const getCellValue = (item, col) => {
         if (col === 'value') return item.currentValue;
-        if (col === 'notes') {
-          const activeNotes = (item.notes || []).filter((n) => !n.deleted);
-          return activeNotes.map((n) => n.text).join('; ');
-        }
+        if (col === 'notes') return (notesByItemId?.[item.id] || []).join('; ');
         return item[col];
       };
       const timestamp = new Date().toISOString().split('T')[0];
