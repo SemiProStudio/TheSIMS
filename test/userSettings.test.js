@@ -166,6 +166,39 @@ describe('resolveLoginSettings', () => {
     const { apply } = resolveLoginSettings({}, { themeId: 'terminal' });
     expect(apply.themeId).toBe('terminal');
   });
+
+  it('applies stored view prefs (grid mode, schedule period and mode)', () => {
+    const { apply } = resolveLoginSettings(
+      { uiPrefs: { gearListGridView: false, scheduleView: 'month', scheduleMode: 'list' } },
+      {},
+    );
+    expect(apply.gearListGridView).toBe(false);
+    expect(apply.scheduleView).toBe('month');
+    expect(apply.scheduleMode).toBe('list');
+  });
+
+  it('leaves view prefs at app defaults (null) when never stored', () => {
+    const { apply } = resolveLoginSettings({}, {});
+    expect(apply.gearListGridView).toBeNull();
+    expect(apply.scheduleView).toBeNull();
+    expect(apply.scheduleMode).toBeNull();
+  });
+
+  it('rejects invalid stored view-pref values instead of wedging a view', () => {
+    const { apply } = resolveLoginSettings(
+      { uiPrefs: { gearListGridView: 'yes', scheduleView: 'decade', scheduleMode: 'vr' } },
+      {},
+    );
+    expect(apply.gearListGridView).toBeNull();
+    expect(apply.scheduleView).toBeNull();
+    expect(apply.scheduleMode).toBeNull();
+  });
+
+  it('never seeds the view prefs (they have no legacy device store)', () => {
+    const { seedPatch } = resolveLoginSettings({}, { themeId: 'dark' });
+    expect(seedPatch.uiPrefs?.gearListGridView).toBeUndefined();
+    expect(seedPatch.uiPrefs?.scheduleView).toBeUndefined();
+  });
 });
 
 // =============================================================================

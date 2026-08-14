@@ -189,6 +189,61 @@ test.describe.serial('per-user settings round-trips', () => {
     await expect(page.getByText(viewName)).toBeVisible();
   });
 
+  test('grid mode, schedule period/mode, and label format follow the user', async ({
+    page,
+    pages,
+  }) => {
+    await page.goto('/');
+    await pages.dashboard.expectDashboard();
+
+    // Gear list: switch to list view
+    await pages.dashboard.navigateTo('Gear List');
+    await page.getByRole('button', { name: 'List view' }).click();
+    await expect
+      .poll(async () => (await readProfile()).uiPrefs?.gearListGridView ?? null, {
+        timeout: 10000,
+      })
+      .toBe(false);
+
+    // Schedule: month period + list mode
+    await pages.dashboard.navigateTo('Schedule');
+    await page.getByRole('button', { name: 'month' }).click();
+    await page.getByTitle('List View').click();
+    await expect
+      .poll(
+        async () => {
+          const ui = (await readProfile()).uiPrefs || {};
+          return `${ui.scheduleView}/${ui.scheduleMode}`;
+        },
+        { timeout: 10000 },
+      )
+      .toBe('month/list');
+
+    // Labels: pick the Small format (custom-styled radio — click its label)
+    await pages.dashboard.navigateTo('Labels');
+    await page.getByText('Small - QR Only').click();
+    await expect
+      .poll(async () => (await readProfile()).uiPrefs?.labelFormat ?? null, { timeout: 10000 })
+      .toBe('small');
+
+    // One reload restores all three surfaces
+    await page.reload();
+    await pages.dashboard.expectDashboard();
+    await pages.dashboard.navigateTo('Gear List');
+    await expect(page.getByRole('button', { name: 'List view' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await pages.dashboard.navigateTo('Schedule');
+    await expect(page.getByTitle('List View')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'month' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await pages.dashboard.navigateTo('Labels');
+    await expect(page.locator('input[name="label-format"][value="small"]')).toBeChecked();
+  });
+
   test('notification preferences persist AND load back', async ({ page, pages }) => {
     await page.goto('/');
     await pages.dashboard.expectDashboard();
