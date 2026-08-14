@@ -12,7 +12,7 @@
 // Only ZZZ E2E data is created; cleanupTestData purges it.
 // =============================================================================
 import { test, expect } from './fixtures.js';
-import { createTestItem, cleanupTestData, adminDb, E2E_PREFIX } from './db.js';
+import { createTestItem, deleteTestItem, adminDb, E2E_PREFIX } from './db.js';
 
 const LIST_NAME = `${E2E_PREFIX} PackList Lifecycle`;
 const ITEM_A = `${E2E_PREFIX} PackItemA`;
@@ -28,8 +28,13 @@ test.describe.serial('pack lists lifecycle', () => {
     itemBId = await createTestItem({ name: ITEM_B, status: 'checked-out' });
   });
 
+  // Scoped cleanup — see auth.setup for the run-start global purge; a
+  // mid-run cleanupTestData here wiped other specs' live ZZZ data
   test.afterAll(async () => {
-    await cleanupTestData();
+    const db = await adminDb();
+    await db.from('pack_lists').delete().eq('name', LIST_NAME);
+    await deleteTestItem(itemAId);
+    await deleteTestItem(itemBId);
   });
 
   test('create, pack, watermark, reload, sidebar reset, edit, reset, delete', async ({
@@ -201,7 +206,9 @@ test.describe.serial('scan-to-pack package units', () => {
   });
 
   test.afterAll(async () => {
-    await cleanupTestData();
+    const db = await adminDb();
+    if (listId) await db.from('pack_lists').delete().eq('id', listId);
+    if (itemCId) await deleteTestItem(itemCId);
   });
 
   test('scanning a package label packs it; contained items point to the package', async ({

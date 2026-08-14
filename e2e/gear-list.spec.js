@@ -54,22 +54,23 @@ test.describe('Gear list search and sort', () => {
 
 test.describe('Gear list kits filter', () => {
   test('kits are hidden by default and shown under the Kits filter', async ({ page, pages }) => {
+    const kitName = `${E2E_PREFIX} Test Kit ${Date.now()}`;
     const kitId = await createTestItem({
-      name: `${E2E_PREFIX} Test Kit`,
+      name: kitName,
       columns: { is_kit: true, kit_contents: [] },
     });
     try {
       await openGearList(page, pages);
 
       // Hidden in normal browsing, even when searched
-      await searchBox(page).fill(`${E2E_PREFIX} Test Kit`);
+      await searchBox(page).fill(kitName);
       await expect(page.getByText('No items found matching your criteria')).toBeVisible();
       await searchBox(page).fill('');
 
       // Visible under the Kits filter with a Kit badge
       await page.getByLabel('Filter by category').click();
       await page.getByRole('option', { name: 'Kits' }).click();
-      const kitRow = page.locator('.card').filter({ hasText: `${E2E_PREFIX} Test Kit` });
+      const kitRow = page.locator('.card').filter({ hasText: kitName });
       await expect(kitRow).toBeVisible();
       await expect(kitRow.getByText('Kit', { exact: true })).toBeVisible();
     } finally {
@@ -85,17 +86,14 @@ test.describe('Gear list selection export', () => {
     await page.getByRole('button', { name: 'Multiple Selection' }).click();
     await page.getByRole('checkbox', { name: 'Select Sony A7S III' }).click();
     await page.getByRole('checkbox', { name: 'Select Sony FX6' }).click();
-    await expect(page.getByText('2 of 20 selected')).toBeVisible();
+    await expect(page.getByText(/2 of \d+ selected/)).toBeVisible();
 
     // Export from the selection toolbar — the modal states the scope
     await page.getByRole('button', { name: 'Export', exact: true }).click();
     await expect(page.getByText('Exporting 2 selected items')).toBeVisible();
 
     const downloadPromise = page.waitForEvent('download');
-    await page
-      .getByRole('dialog')
-      .getByRole('button', { name: 'Export', exact: true })
-      .click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Export', exact: true }).click();
     const download = await downloadPromise;
 
     const csv = fs.readFileSync(await download.path(), 'utf-8').trim();
