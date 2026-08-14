@@ -11,6 +11,7 @@ import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 import { useItemForm } from '../components/ItemForm.jsx';
 import { SmartPasteModal } from '../modals/smartPaste/SmartPasteModal.jsx';
+import { applySmartPastePayload } from '../lib/smartPaste/applyPayload.js';
 
 // ============================================================================
 // Add/Edit Item Page
@@ -53,15 +54,7 @@ export const ItemFormPage = memo(function ItemFormPage({
   });
 
   const handleSmartPasteApply = (parsed) => {
-    setItemForm((prev) => ({
-      ...prev,
-      name: parsed.name || prev.name,
-      brand: parsed.brand || prev.brand,
-      category: parsed.category || prev.category,
-      purchasePrice: parsed.purchasePrice || prev.purchasePrice,
-      currentValue: parsed.purchasePrice || prev.currentValue,
-      specs: { ...prev.specs, ...parsed.specs },
-    }));
+    setItemForm((prev) => applySmartPastePayload(prev, parsed));
   };
 
   return (

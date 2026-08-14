@@ -13,7 +13,7 @@ import {
   DEFAULT_ROLES,
 } from './constants.js';
 import { colors } from './theme.js';
-import { findById, sanitizeCSVCell, getTodayISO } from './utils';
+import { findById, downloadCSV, getTodayISO } from './utils';
 import { openPrintWindow } from './lib/printUtil.js';
 import { escapeHtml } from './lib/escapeHtml.js';
 import { resolveScannedCode, truncateScannedCode } from './lib/qrData.js';
@@ -921,6 +921,8 @@ export default function App() {
         purchasePrice: 'Purchase Price',
         value: 'Current Value',
         serialNumber: 'Serial #',
+        quantity: 'Quantity',
+        reorderPoint: 'Reorder Point',
         notes: 'Notes',
       };
       // Resolve a column value from an item
@@ -932,20 +934,13 @@ export default function App() {
       const timestamp = getTodayISO();
 
       if (options.format === 'csv') {
-        const headers = options.columns
-          .map((col) => sanitizeCSVCell(columnLabels[col] || col))
-          .join(',');
-        const rows = items.map((i) =>
-          options.columns.map((col) => sanitizeCSVCell(getCellValue(i, col))).join(','),
+        // The one shared CSV writer — this used to hand-roll the same
+        // sanitize/blob/anchor dance downloadCSV already does
+        downloadCSV(
+          options.columns.map((col) => columnLabels[col] || col),
+          items.map((i) => options.columns.map((col) => getCellValue(i, col))),
+          `inventory-${timestamp}.csv`,
         );
-        const csvContent = headers + '\n' + rows.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `inventory-${timestamp}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
       } else if (options.format === 'pdf') {
         // Build branding header if enabled
         let brandingHtml = '';

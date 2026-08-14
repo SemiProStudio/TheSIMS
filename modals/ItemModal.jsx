@@ -15,6 +15,7 @@ import { useItemForm } from '../components/ItemForm.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 import ImageCropEditor from '../components/ImageCropEditor.jsx';
 import { SmartPasteModal } from './smartPaste/SmartPasteModal.jsx';
+import { applySmartPastePayload } from '../lib/smartPaste/applyPayload.js';
 
 // ============================================================================
 // Item Modal (Add/Edit)
@@ -99,15 +100,7 @@ export const ItemModal = memo(function ItemModal({
   };
 
   const handleSmartPasteApply = (parsed) => {
-    setItemForm((prev) => ({
-      ...prev,
-      name: parsed.name || prev.name,
-      brand: parsed.brand || prev.brand,
-      category: parsed.category || prev.category,
-      purchasePrice: parsed.purchasePrice || prev.purchasePrice,
-      currentValue: parsed.purchasePrice || prev.currentValue,
-      specs: { ...prev.specs, ...parsed.specs },
-    }));
+    setItemForm((prev) => applySmartPastePayload(prev, parsed));
   };
 
   // Helper to render field error

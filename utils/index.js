@@ -723,8 +723,12 @@ export const isReminderDue = (reminder) => {
 export function sanitizeCSVCell(value) {
   if (value === null || value === undefined) return '""';
   let str = String(value);
-  // Prefix formula-triggering characters to prevent CSV injection
-  if (/^[=+\-@\t\r]/.test(str)) {
+  // Prefix formula-triggering characters to prevent CSV injection. Values
+  // that ALREADY start with an apostrophe-plus-formula-char get one more —
+  // the importer's stripFormulaGuard removes exactly one, so guard/strip is
+  // a true inverse (a stored '=B2 used to lose its apostrophe on the first
+  // round trip).
+  if (/^[=+\-@\t\r]/.test(str) || /^'[=+\-@\t\r]/.test(str)) {
     str = "'" + str;
   }
   // Escape double quotes and always wrap in quotes

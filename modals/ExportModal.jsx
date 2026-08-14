@@ -37,6 +37,10 @@ export const ExportModal = memo(function ExportModal({
     { id: 'purchasePrice', label: 'Purchase $' },
     { id: 'value', label: 'Current Value' },
     { id: 'serialNumber', label: 'Serial #' },
+    // Without these two, an export-then-reimport reset every quantity-tracked
+    // item to 1 and dropped reorder points entirely
+    { id: 'quantity', label: 'Quantity' },
+    { id: 'reorderPoint', label: 'Reorder Point' },
     // Note text is item_details data — hidden from roles that can't view it
     ...(allowNotes ? [{ id: 'notes', label: 'Notes' }] : []),
   ];

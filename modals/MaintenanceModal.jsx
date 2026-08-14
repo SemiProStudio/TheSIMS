@@ -8,6 +8,7 @@ import PropTypes from 'prop-types';
 import { Save } from 'lucide-react';
 import { MAINTENANCE_TYPES } from '../constants.js';
 import { toLocalYMD, getTodayISO } from '../utils';
+import { parseMoney } from '../lib/csv.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
@@ -72,7 +73,8 @@ export const MaintenanceModal = memo(function MaintenanceModal({
     const newErrors = {};
     if (!formData.type) newErrors.type = 'Type is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
-    if (formData.cost && isNaN(Number(formData.cost))) newErrors.cost = 'Cost must be a number';
+    // parseMoney accepts what users paste ('$1,200') — Number() rejected it
+    if (formData.cost && !parseMoney(formData.cost).ok) newErrors.cost = 'Cost must be a number';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -84,7 +86,7 @@ export const MaintenanceModal = memo(function MaintenanceModal({
     const record = {
       ...formData,
       id: editingRecord?.id || `maint-${Date.now()}`,
-      cost: formData.cost ? Number(formData.cost) : 0,
+      cost: formData.cost ? parseMoney(formData.cost).value : 0,
       createdAt: editingRecord?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
