@@ -13,7 +13,6 @@ import { Modal, ModalHeader } from './ModalBase.jsx';
 export const ExportModal = memo(function ExportModal({
   onExport,
   onClose,
-  user: _user,
   selectionCount = 0,
   totalCount = 0,
   allowNotes = true,
@@ -185,11 +184,6 @@ ExportModal.propTypes = {
   onExport: PropTypes.func.isRequired,
   /** Callback to close modal */
   onClose: PropTypes.func.isRequired,
-  /** Current user (for branding options) */
-  user: PropTypes.shape({
-    name: PropTypes.string,
-    organization: PropTypes.string,
-  }),
   /** Items currently selected in the gear list (export scope) */
   selectionCount: PropTypes.number,
   /** Total inventory count (export scope when nothing is selected) */

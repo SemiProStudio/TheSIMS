@@ -224,7 +224,6 @@ export default memo(function AppModals({ handlers, currentUser }) {
           <ExportModal
             onExport={exportData}
             onClose={closeModal}
-            user={currentUser}
             selectionCount={selectedIds.length}
             totalCount={inventory.length}
             // Notes live behind item_details — a reports-only role could
@@ -349,7 +348,6 @@ export default memo(function AppModals({ handlers, currentUser }) {
         {activeModal === MODALS.CHECK_OUT && checkoutItem && (
           <CheckOutModal
             item={checkoutItem}
-            users={users}
             clients={canSeeClients ? clients : []}
             currentUser={currentUser}
             onCheckOut={processCheckout}

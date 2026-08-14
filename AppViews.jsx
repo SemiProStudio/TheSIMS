@@ -301,7 +301,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onCheckout={openCheckoutModal}
           onCheckin={openCheckinModal}
           onEdit={openEditItem}
-          onDelete={deleteItem}
           onShowQR={() => openModal(MODALS.QR_CODE)}
           onAddReservation={() => {
             resetReservationForm();

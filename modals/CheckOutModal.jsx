@@ -15,7 +15,6 @@ import { Modal, ModalHeader } from './ModalBase.jsx';
 
 export const CheckOutModal = memo(function CheckOutModal({
   item,
-  users: _users,
   clients = [],
   currentUser,
   onCheckOut,

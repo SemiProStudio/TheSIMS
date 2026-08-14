@@ -521,10 +521,6 @@ export default function App() {
       const item = findById(inventory, id);
       if (item) {
         setSelectedItem(item);
-        patchInventoryItem(id, (existingItem) => ({
-          ...existingItem,
-          viewCount: (existingItem.viewCount || 0) + 1,
-        }));
         setCurrentView(VIEWS.GEAR_DETAIL);
         setActiveModal(null);
         setItemBackContext(context);
@@ -722,7 +718,6 @@ export default function App() {
     setChangeLog,
     showConfirm,
     inventory,
-    selectedItem,
     currentUser,
     currentView,
     specs,

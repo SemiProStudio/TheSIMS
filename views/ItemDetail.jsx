@@ -375,7 +375,6 @@ function ItemDetail({
   onCheckout,
   onCheckin,
   onEdit,
-  onDelete: _onDelete,
   onShowQR,
   onAddReservation,
   onDeleteReservation,

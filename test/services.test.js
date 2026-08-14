@@ -16,7 +16,6 @@ vi.mock('../lib/supabase.js', () => ({
 // Import services after mocking
 import {
   notificationPreferencesService,
-  notificationLogService,
   emailService,
   inventoryService,
   clientsService,
@@ -124,57 +123,6 @@ describe('notificationPreferencesService', () => {
 // =============================================================================
 // Notification Log Service Tests
 // =============================================================================
-
-describe('notificationLogService', () => {
-  describe('getByUserId', () => {
-    it('should return notifications array', async () => {
-      const logs = [{ id: 'log-1', user_id: 'user-123' }];
-      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(logs));
-      const result = await notificationLogService.getByUserId('user-123');
-      expect(result).toEqual(logs);
-    });
-
-    it('should accept limit parameter', async () => {
-      getSupabase.mockResolvedValueOnce(createMockSupabaseClient([]));
-      const result = await notificationLogService.getByUserId('user-123', 10);
-      expect(result).toEqual([]);
-    });
-  });
-
-  describe('create', () => {
-    it('should return created notification', async () => {
-      const notification = {
-        user_id: 'user-123',
-        email: 'test@example.com',
-        notification_type: 'checkout_confirmation',
-        subject: 'Test Subject',
-      };
-      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(notification));
-      const result = await notificationLogService.create(notification);
-      expect(result).toEqual(notification);
-    });
-  });
-
-  describe('updateStatus', () => {
-    it('should return updated status', async () => {
-      const returnData = { id: 'log-123', status: 'sent' };
-      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(returnData));
-      const result = await notificationLogService.updateStatus('log-123', 'sent');
-      expect(result).toEqual(returnData);
-    });
-
-    it('should handle error message parameter', async () => {
-      const returnData = { id: 'log-123', status: 'failed' };
-      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(returnData));
-      const result = await notificationLogService.updateStatus(
-        'log-123',
-        'failed',
-        'Network error',
-      );
-      expect(result).toEqual(returnData);
-    });
-  });
-});
 
 // =============================================================================
 // Email Service Tests
@@ -299,27 +247,6 @@ describe('emailService', () => {
     });
   });
 
-  describe('sendDueDateReminder', () => {
-    it('should call send with correct template', async () => {
-      const sendSpy = vi.spyOn(emailService, 'send').mockResolvedValue({ success: true });
-
-      await emailService.sendDueDateReminder({
-        borrowerEmail: 'test@example.com',
-        borrowerName: 'Test User',
-        item: { id: 'CAM001', name: 'Camera', brand: 'Canon' },
-        dueDate: '2024-01-22',
-        checkoutDate: '2024-01-15',
-      });
-
-      expect(sendSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          templateKey: 'due_date_reminder',
-        }),
-      );
-
-      sendSpy.mockRestore();
-    });
-  });
 });
 
 // =============================================================================

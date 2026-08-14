@@ -32,7 +32,6 @@ export function useInventoryActions({
 
   // Current state for operations
   inventory,
-  selectedItem: _selectedItem,
   currentUser,
   currentView,
   specs,
