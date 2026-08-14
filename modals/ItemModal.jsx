@@ -70,18 +70,11 @@ export const ItemModal = memo(function ItemModal({
       if (isEdit && itemId) {
         setImageUploading(true);
         try {
-          const { storageService, isStorageUrl, getStoragePathFromUrl } =
-            await import('../lib/index.js');
-
-          // Delete old image from storage before uploading new one
-          const oldImageUrl = itemForm.image;
-          if (oldImageUrl && isStorageUrl(oldImageUrl)) {
-            const oldPath = getStoragePathFromUrl(oldImageUrl);
-            if (oldPath) {
-              await storageService.deleteImage(oldPath).catch(() => {});
-            }
-          }
-
+          const { storageService } = await import('../lib/index.js');
+          // Upload only — the OLD storage object stays until the save
+          // commits (useInventoryActions.updateItem cleans it up afterwards).
+          // Deleting it here meant Cancel, or a failed save, left the DB
+          // referencing a destroyed image.
           const result = await storageService.uploadFromDataUrl(croppedDataUrl, itemId);
           handleChange('image', result.url);
         } catch (_err) {
@@ -93,7 +86,7 @@ export const ItemModal = memo(function ItemModal({
         handleChange('image', croppedDataUrl);
       }
     },
-    [isEdit, itemId, itemForm.image, handleChange],
+    [isEdit, itemId, handleChange],
   );
 
   // Handle save with validation
@@ -245,20 +238,10 @@ export const ItemModal = memo(function ItemModal({
                         Resize / Crop
                       </button>
                       <button
-                        onClick={async () => {
-                          // Delete from storage if it's a storage URL
-                          if (isEdit && itemForm.image) {
-                            try {
-                              const { storageService, isStorageUrl, getStoragePathFromUrl } =
-                                await import('../lib/index.js');
-                              if (isStorageUrl(itemForm.image)) {
-                                const path = getStoragePathFromUrl(itemForm.image);
-                                if (path) await storageService.deleteImage(path).catch(() => {});
-                              }
-                            } catch (_e) {
-                              /* non-fatal */
-                            }
-                          }
+                        onClick={() => {
+                          // Clear the form only — the storage object is
+                          // deleted after the save commits (a click here used
+                          // to destroy it immediately, surviving Cancel)
                           handleChange('image', null);
                         }}
                         style={{

@@ -171,10 +171,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     deleteReminder,
     openEditReservation,
     deleteReservation,
-    setItemAsKit,
-    addItemsToKit,
-    removeItemFromKit,
-    clearKitItems,
     addRequiredAccessories,
     removeRequiredAccessory,
     addItemToPackage,
@@ -338,11 +334,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             patchInventoryItem(selectedItem.id, { currentValue: newValue });
             setSelectedItem((prev) => ({ ...prev, currentValue: newValue }));
           }}
-          onSetAsKit={setItemAsKit}
-          onAddToKit={addItemsToKit}
           onAddToPackage={addItemToPackage}
-          onRemoveFromKit={removeItemFromKit}
-          onClearKit={clearKitItems}
           onAddAccessory={addRequiredAccessories}
           onRemoveAccessory={removeRequiredAccessory}
           onViewItem={navigateToItem}

@@ -71,22 +71,15 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
 
     try {
       // Import storage service dynamically to avoid circular deps
-      const { storageService, isStorageUrl, getStoragePathFromUrl } =
-        await import('../lib/index.js');
+      const { storageService } = await import('../lib/index.js');
 
       if (!itemId) {
         // No itemId, just use the data URL
         onSelect(uploadedImage);
       } else {
-        // Delete old image from storage before uploading new one
-        if (currentImage && isStorageUrl(currentImage)) {
-          const oldPath = getStoragePathFromUrl(currentImage);
-          if (oldPath) {
-            await storageService.deleteImage(oldPath).catch(() => {});
-          }
-        }
-
-        // Upload to Supabase Storage
+        // Upload only — the old storage object is cleaned up by selectImage
+        // AFTER the DB write commits (pre-deleting it here broke the item's
+        // image everywhere whenever that write failed)
         const result = await storageService.uploadFromDataUrl(uploadedImage, itemId);
         onSelect(result.url);
       }

@@ -754,22 +754,12 @@ export default function App() {
     addChangeLog,
   });
 
-  const {
-    setItemAsKit,
-    addItemsToKit,
-    removeItemFromKit,
-    clearKitItems,
-    addRequiredAccessories,
-    removeRequiredAccessory,
-    selectImage,
-  } = useKitHandlers({
+  const { addRequiredAccessories, removeRequiredAccessory, selectImage } = useKitHandlers({
     inventory,
     selectedItem,
     setSelectedItem,
     dataContext,
-    currentUser,
     closeModal,
-    addAuditLog,
     addChangeLog,
   });
 
@@ -1062,10 +1052,6 @@ export default function App() {
       deleteReservation,
       saveReservation,
       reservePackage,
-      setItemAsKit,
-      addItemsToKit,
-      removeItemFromKit,
-      clearKitItems,
       addRequiredAccessories,
       removeRequiredAccessory,
       selectImage,
@@ -1111,10 +1097,6 @@ export default function App() {
       deleteReservation,
       saveReservation,
       reservePackage,
-      setItemAsKit,
-      addItemsToKit,
-      removeItemFromKit,
-      clearKitItems,
       addRequiredAccessories,
       removeRequiredAccessory,
       selectImage,

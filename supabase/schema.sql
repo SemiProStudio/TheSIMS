@@ -242,6 +242,9 @@ CREATE TABLE IF NOT EXISTS inventory (
   is_kit BOOLEAN DEFAULT false,
   kit_type VARCHAR(50),
   kit_contents JSONB DEFAULT '[]',
+  -- Inventory ids that should accompany this item at checkout
+  -- (added 2026-08-14: the Required Accessories UI was state-only before)
+  required_accessories JSONB DEFAULT '[]',
   
   -- Statistics
   view_count INTEGER DEFAULT 0,

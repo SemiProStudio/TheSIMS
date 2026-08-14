@@ -265,6 +265,24 @@ export function useInventoryActions({
       // Persist to Supabase AND update local state
       await dataContext.updateItem(editingItemId, updates);
 
+      // The row no longer references the old image — only NOW is it safe to
+      // clean up storage. The modals used to delete the old object before the
+      // save committed, so a failed or cancelled save left the DB (and every
+      // other client) pointing at a destroyed image.
+      const previousImage = originalItem?.image;
+      if (previousImage && previousImage !== updates.image) {
+        try {
+          const { storageService, isStorageUrl, getStoragePathFromUrl } =
+            await import('../lib/index.js');
+          if (isStorageUrl(previousImage)) {
+            const oldPath = getStoragePathFromUrl(previousImage);
+            if (oldPath) await storageService.deleteImage(oldPath).catch(() => {});
+          }
+        } catch (_e) {
+          /* non-fatal — an orphaned storage object at worst */
+        }
+      }
+
       // Always refresh selectedItem with the latest updates
       // Use editingItemId directly (not selectedItem from closure) to avoid stale reference
       setSelectedItem((prev) => {
