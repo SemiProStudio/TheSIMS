@@ -6,6 +6,7 @@
 import { lazy, Suspense, memo, useEffect } from 'react';
 import { VIEWS, MODALS } from './constants.js';
 import { generateItemCode } from './utils';
+import { runImport } from './lib/importItems.js';
 import { error as logError } from './lib/logger.js';
 import { useNavigationContext } from './contexts/NavigationContext.js';
 import { useFilterContext } from './contexts/FilterContext.js';
@@ -106,31 +107,24 @@ export default memo(function AppModals({ handlers, currentUser }) {
     locations,
     categories,
     categorySettings,
-    auditLog,
-    packLists,
     clients,
     refreshData,
-    addInventoryItems,
     addLocalUser,
     ensureClients,
-    ensureAuditLog,
-    ensurePackLists,
+    createItem: createItemInDb,
+    addItemNote: addItemNoteInDb,
   } = useData();
 
   const auth = useAuth();
   const { addToast } = useToast();
 
-  // Lazy-load data when modals that need it open
+  // Lazy-load data when modals that need it open. (The database export no
+  // longer reads React memory — it fetches complete tables server-side.)
   useEffect(() => {
     if (activeModal === MODALS.CHECK_OUT || activeModal === MODALS.ADD_RESERVATION) {
       ensureClients();
     }
-    if (activeModal === MODALS.DATABASE_EXPORT) {
-      ensureClients();
-      ensureAuditLog();
-      ensurePackLists();
-    }
-  }, [activeModal, ensureClients, ensureAuditLog, ensurePackLists]);
+  }, [activeModal, ensureClients]);
 
   // Destructure handlers
   const {
@@ -305,39 +299,38 @@ export default memo(function AppModals({ handlers, currentUser }) {
           <CSVImportModal
             categories={categories}
             specs={specs}
-            onImport={(items) => {
-              const newItems = items.map((item) => ({
-                ...item,
-                id: generateItemCode(
-                  item.category,
-                  inventory.map((i) => i.id),
-                ),
-                image: null,
-              }));
-              addInventoryItems(newItems);
-              addAuditLog({
-                type: 'csv_import',
-                description: `Imported ${newItems.length} items from CSV`,
-                user: currentUser?.name || 'Unknown',
+            existingSerials={inventory.map((i) => i.serialNumber).filter(Boolean)}
+            onImport={async (items, onProgress) => {
+              // Sequential creates through the REAL persist path — the old
+              // handler patched local state and imports vanished on reload
+              const summary = await runImport({
+                items,
+                existingIds: inventory.map((i) => i.id),
+                createItem: createItemInDb,
+                addNote: addItemNoteInDb,
+                generateCode: generateItemCode,
+                onProgress,
               });
+              if (summary.created.length > 0) {
+                addAuditLog({
+                  type: 'csv_import',
+                  description: `Imported ${summary.created.length} items from CSV`,
+                  user: currentUser?.name || 'Unknown',
+                });
+              }
+              if (summary.failed.length === 0 && summary.noteFailures === 0) {
+                addToast(
+                  `Imported ${summary.created.length} item${summary.created.length === 1 ? '' : 's'}`,
+                  'success',
+                );
+              }
+              return summary;
             }}
             onClose={closeModal}
           />
         )}
 
-        {activeModal === MODALS.DATABASE_EXPORT && (
-          <DatabaseExportModal
-            inventory={inventory}
-            packages={packages}
-            users={users}
-            categories={categories}
-            specs={specs}
-            auditLog={auditLog}
-            packLists={packLists}
-            clients={clients}
-            onClose={closeModal}
-          />
-        )}
+        {activeModal === MODALS.DATABASE_EXPORT && <DatabaseExportModal onClose={closeModal} />}
 
         {activeModal === MODALS.CHECK_OUT && checkoutItem && (
           <CheckOutModal

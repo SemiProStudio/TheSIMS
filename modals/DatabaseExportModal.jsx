@@ -1,136 +1,133 @@
 // ============================================================================
 // Database Export Modal
-// Full backup/export of all inventory data
+// Complete backup fetched from the database at export time. The old version
+// serialized React memory: lazy tables exported empty, item notes and
+// checkout history never exported at all, and the audit log stopped at the
+// 100 rows the UI loads. Counts shown are real table counts, and the JSON
+// contains raw table rows (version 3.0) — a faithful snapshot.
 // ============================================================================
 
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Download } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
-import { sanitizeCSVCell } from '../utils';
+import { downloadCSV } from '../utils';
+import { backupService } from '../lib/services.js';
+import {
+  BACKUP_SECTIONS,
+  DEFAULT_BACKUP_INCLUDE,
+  tablesForInclude,
+  assembleBackup,
+} from '../lib/backupExport.js';
+import { error as logError } from '../lib/logger.js';
 
-export const DatabaseExportModal = memo(function DatabaseExportModal({
-  inventory,
-  packages,
-  users,
-  categories,
-  specs,
-  auditLog,
-  packLists,
-  clients = [],
-  onClose,
-}) {
+const ALL_TABLES = BACKUP_SECTIONS.flatMap((s) => s.tables);
+
+// Inventory-only CSV flavor: raw rows → the camelCase headers the CSV
+// importer recognizes, so this export round-trips back in.
+const INVENTORY_CSV_COLUMNS = [
+  ['id', (r) => r.id],
+  ['name', (r) => r.name],
+  ['brand', (r) => r.brand],
+  ['category', (r) => r.category_name],
+  ['status', (r) => r.status],
+  ['condition', (r) => r.condition],
+  ['location', (r) => r.location_display],
+  ['purchaseDate', (r) => r.purchase_date],
+  ['purchasePrice', (r) => r.purchase_price],
+  ['currentValue', (r) => r.current_value],
+  ['serialNumber', (r) => r.serial_number],
+  ['quantity', (r) => r.quantity],
+];
+
+export const DatabaseExportModal = memo(function DatabaseExportModal({ onClose }) {
   const [exportFormat, setExportFormat] = useState('json');
-  const [includeOptions, setIncludeOptions] = useState({
-    inventory: true,
-    packages: true,
-    users: false,
-    categories: true,
-    specs: true,
-    auditLog: false,
-    packLists: true,
-    clients: true,
-    reservations: true,
-  });
+  const [includeOptions, setIncludeOptions] = useState(DEFAULT_BACKUP_INCLUDE);
+  const [counts, setCounts] = useState(null); // {table: count|null}
+  const [exporting, setExporting] = useState(false);
+  const [progressLabel, setProgressLabel] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Real table counts — not whatever fraction the UI happens to have loaded
+  useEffect(() => {
+    let cancelled = false;
+    backupService
+      .tableCounts(ALL_TABLES)
+      .then((result) => {
+        if (!cancelled) setCounts(result);
+      })
+      .catch((err) => {
+        logError('Failed to load table counts:', err);
+        if (!cancelled) setCounts({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const toggleOption = (key) => {
     setIncludeOptions((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Reservations live nested on inventory items — flatten for the backup
-  const allReservations = inventory.flatMap((item) =>
-    (item.reservations || []).map((r) => ({ ...r, itemId: item.id })),
-  );
-
-  const handleExport = () => {
+  const handleExport = async () => {
     const timestamp = new Date().toISOString().split('T')[0];
+    setError(null);
+    setExporting(true);
 
-    if (exportFormat === 'json') {
-      // Full JSON backup
-      const data = {};
-      if (includeOptions.inventory) data.inventory = inventory;
-      if (includeOptions.packages) data.packages = packages;
-      if (includeOptions.users) data.users = users.map((u) => ({ ...u, password: undefined }));
-      if (includeOptions.categories) data.categories = categories;
-      if (includeOptions.specs) data.specs = specs;
-      if (includeOptions.auditLog) data.auditLog = auditLog;
-      if (includeOptions.packLists) data.packLists = packLists;
-      if (includeOptions.clients) data.clients = clients;
-      if (includeOptions.reservations) data.reservations = allReservations;
-
-      data.exportedAt = new Date().toISOString();
-      data.version = '2.0';
-
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `sims-backup-${timestamp}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } else {
-      // CSV export (inventory only)
-      const headers = [
-        'id',
-        'name',
-        'brand',
-        'category',
-        'status',
-        'condition',
-        'location',
-        'purchaseDate',
-        'purchasePrice',
-        'currentValue',
-        'serialNumber',
-      ];
-
-      // Add dynamic spec headers
-      const specHeaders = new Set();
-      inventory.forEach((item) => {
-        if (item.specs) {
-          Object.keys(item.specs).forEach((key) => specHeaders.add(`spec:${key}`));
+    try {
+      if (exportFormat === 'json') {
+        const tables = tablesForInclude(includeOptions);
+        if (tables.length === 0) {
+          setError('Select at least one section to export.');
+          return;
         }
-      });
-      const allHeaders = [...headers, ...Array.from(specHeaders)];
-
-      const rows = inventory.map((item) => {
-        const row = headers.map((h) => item[h]);
-
-        // Add spec values
-        Array.from(specHeaders).forEach((specHeader) => {
-          const specName = specHeader.replace('spec:', '');
-          row.push(item.specs?.[specName] || '');
+        const data = await assembleBackup(includeOptions, backupService.fetchAllRows, {
+          onProgress: (table, done, total) =>
+            setProgressLabel(`Fetching ${table}… (${done + 1}/${total})`),
         });
 
-        return row.map((cell) => sanitizeCSVCell(cell)).join(',');
-      });
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sims-backup-${timestamp}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        setProgressLabel('Fetching inventory…');
+        const rows = await backupService.fetchAllRows('inventory');
 
-      const csvContent = [allHeaders.map((h) => sanitizeCSVCell(h)).join(','), ...rows].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `sims-inventory-${timestamp}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+        const specHeaders = new Set();
+        rows.forEach((r) => {
+          Object.keys(r.specs || {}).forEach((key) => specHeaders.add(key));
+        });
+        const specList = Array.from(specHeaders);
+
+        const headers = [...INVENTORY_CSV_COLUMNS.map(([h]) => h), ...specList.map((s) => `spec:${s}`)];
+        const csvRows = rows.map((r) => [
+          ...INVENTORY_CSV_COLUMNS.map(([, get]) => get(r) ?? ''),
+          ...specList.map((s) => r.specs?.[s] ?? ''),
+        ]);
+        downloadCSV(headers, csvRows, `sims-inventory-${timestamp}.csv`);
+      }
+      onClose();
+    } catch (err) {
+      logError('Database export failed:', err);
+      setError(`Export failed: ${err.message || 'unknown error'}`);
+    } finally {
+      setExporting(false);
+      setProgressLabel(null);
     }
-
-    onClose();
   };
 
-  const exportOptions = [
-    { key: 'inventory', label: 'Inventory', count: inventory.length },
-    { key: 'packages', label: 'Kits & Packages', count: packages.length },
-    { key: 'categories', label: 'Categories', count: categories.length },
-    { key: 'specs', label: 'Specifications', count: Object.keys(specs).length },
-    { key: 'packLists', label: 'Pack Lists', count: packLists.length },
-    { key: 'clients', label: 'Clients', count: clients.length },
-    { key: 'reservations', label: 'Reservations', count: allReservations.length },
-    { key: 'users', label: 'Users (no passwords)', count: users.length },
-    { key: 'auditLog', label: 'Audit Log', count: auditLog.length },
-  ];
+  // A section's headline count is its primary (first) table
+  const sectionCount = (section) => {
+    if (!counts) return '…';
+    const count = counts[section.tables[0]];
+    return count === null || count === undefined ? '—' : count;
+  };
 
   return (
     <Modal onClose={onClose} maxWidth={500}>
@@ -174,9 +171,9 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({
           <div style={{ marginBottom: spacing[4] }}>
             <label style={styles.label}>Include in Export</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-              {exportOptions.map((opt) => (
+              {BACKUP_SECTIONS.map((section) => (
                 <label
-                  key={opt.key}
+                  key={section.key}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -184,24 +181,42 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({
                     cursor: 'pointer',
                     padding: spacing[2],
                     borderRadius: borderRadius.md,
-                    background: includeOptions[opt.key]
+                    background: includeOptions[section.key]
                       ? `${withOpacity(colors.primary, 10)}`
                       : 'transparent',
                   }}
                 >
                   <input
                     type="checkbox"
-                    checked={includeOptions[opt.key]}
-                    onChange={() => toggleOption(opt.key)}
+                    checked={!!includeOptions[section.key]}
+                    onChange={() => toggleOption(section.key)}
                     style={{ accentColor: colors.primary }}
                   />
-                  <span style={{ flex: 1, color: colors.textPrimary }}>{opt.label}</span>
+                  <span style={{ flex: 1, color: colors.textPrimary }}>{section.label}</span>
                   <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>
-                    {opt.count}
+                    {sectionCount(section)}
                   </span>
                 </label>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Error */}
+        {error && (
+          <div
+            role="alert"
+            style={{
+              background: `${withOpacity(colors.danger, 15)}`,
+              border: `1px solid ${withOpacity(colors.danger, 40)}`,
+              borderRadius: borderRadius.md,
+              padding: spacing[3],
+              marginBottom: spacing[4],
+              color: colors.danger,
+              fontSize: typography.fontSize.sm,
+            }}
+          >
+            {error}
           </div>
         )}
 
@@ -217,17 +232,31 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({
           }}
         >
           {exportFormat === 'json'
-            ? 'JSON backup includes all selected data and can be used to restore your inventory later.'
-            : 'CSV export contains inventory items only, suitable for spreadsheet applications.'}
+            ? 'Fetches complete tables from the database — including item notes, full maintenance and checkout history, and cancelled reservations. Passwords are never included.'
+            : 'CSV export contains all inventory items, suitable for spreadsheets. It re-imports cleanly through Import CSV.'}
         </p>
+
+        {/* Progress */}
+        {exporting && progressLabel && (
+          <p
+            role="status"
+            style={{
+              color: colors.textSecondary,
+              fontSize: typography.fontSize.sm,
+              marginBottom: spacing[3],
+            }}
+          >
+            {progressLabel}
+          </p>
+        )}
 
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={exporting}>
             Cancel
           </Button>
-          <Button onClick={handleExport} icon={Download}>
-            Export {exportFormat.toUpperCase()}
+          <Button onClick={handleExport} icon={Download} disabled={exporting}>
+            {exporting ? 'Exporting…' : `Export ${exportFormat.toUpperCase()}`}
           </Button>
         </div>
       </div>
@@ -239,21 +268,6 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({
 // PropTypes
 // ============================================================================
 DatabaseExportModal.propTypes = {
-  /** Full inventory array */
-  inventory: PropTypes.array.isRequired,
-  /** Packages/kits array */
-  packages: PropTypes.array,
-  /** Users array (passwords excluded from export) */
-  users: PropTypes.array,
-  /** Categories array */
-  categories: PropTypes.array,
-  /** Specs configuration object */
-  specs: PropTypes.object,
-  /** Audit log entries */
-  auditLog: PropTypes.array,
-  /** Pack lists array */
-  packLists: PropTypes.array,
-  clients: PropTypes.array,
   /** Callback to close modal */
   onClose: PropTypes.func.isRequired,
 };

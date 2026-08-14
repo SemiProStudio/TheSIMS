@@ -20,6 +20,9 @@ export const ExportModal = memo(function ExportModal({
   const [format, setFormat] = useState('csv');
   const [columns, setColumns] = useState(['id', 'name', 'category', 'status', 'value']);
   const [includeBranding, setIncludeBranding] = useState(false);
+  // A lingering gear-list selection narrows the scope — give the user a
+  // one-click way out instead of a silent surprise
+  const [scope, setScope] = useState(selectionCount > 0 ? 'selection' : 'all');
 
   const allColumns = [
     { id: 'id', label: 'ID' },
@@ -55,9 +58,30 @@ export const ExportModal = memo(function ExportModal({
             color: colors.textPrimary,
           }}
         >
-          {selectionCount > 0
+          {scope === 'selection' && selectionCount > 0
             ? `Exporting ${selectionCount} selected item${selectionCount === 1 ? '' : 's'}`
             : `Exporting all ${totalCount} items`}
+          {selectionCount > 0 && (
+            <button
+              type="button"
+              onClick={() => setScope(scope === 'selection' ? 'all' : 'selection')}
+              style={{
+                display: 'block',
+                marginTop: spacing[1],
+                padding: 0,
+                background: 'none',
+                border: 'none',
+                color: colors.primary,
+                fontSize: typography.fontSize.sm,
+                cursor: 'pointer',
+                textDecoration: 'underline',
+              }}
+            >
+              {scope === 'selection'
+                ? `Export all ${totalCount} items instead`
+                : `Export only the ${selectionCount} selected`}
+            </button>
+          )}
         </div>
         <div style={{ marginBottom: spacing[4] }}>
           <label style={styles.label}>Format</label>
@@ -105,29 +129,36 @@ export const ExportModal = memo(function ExportModal({
           </div>
         </div>
 
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: spacing[2],
-            marginBottom: spacing[4],
-            cursor: 'pointer',
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={includeBranding}
-            onChange={(e) => setIncludeBranding(e.target.checked)}
-            style={{ accentColor: colors.primary }}
-          />
-          <span style={{ color: colors.textPrimary, fontSize: typography.fontSize.sm }}>
-            Include branding
-          </span>
-        </label>
+        {/* Branding only exists on the PDF — showing the toggle for CSV
+            promised something the format can't deliver */}
+        {format === 'pdf' && (
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[2],
+              marginBottom: spacing[4],
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={includeBranding}
+              onChange={(e) => setIncludeBranding(e.target.checked)}
+              style={{ accentColor: colors.primary }}
+            />
+            <span style={{ color: colors.textPrimary, fontSize: typography.fontSize.sm }}>
+              Include branding
+            </span>
+          </label>
+        )}
 
         <Button
           fullWidth
-          onClick={() => onExport({ format, columns, includeBranding })}
+          onClick={() => {
+            onExport({ format, columns, includeBranding, scope });
+            onClose();
+          }}
           icon={Download}
         >
           Export

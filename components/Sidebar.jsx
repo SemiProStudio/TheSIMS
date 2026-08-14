@@ -27,7 +27,7 @@ import {
 import { VIEWS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { useTheme } from '../contexts/ThemeContext.js';
-import { usePermissions } from '../contexts/PermissionsContext.js';
+import { usePermissions, canAccessView } from '../contexts/PermissionsContext.js';
 import { announcePageChange } from '../utils/accessibility.js';
 
 // Navigation button component
@@ -510,7 +510,7 @@ function Sidebar({
               />
             ))}
 
-            {/* Import CSV - Admin only */}
+            {/* Import CSV — anyone who may edit the gear list may import into it */}
             {canEdit('gear_list') && (
               <button
                 onClick={onOpenImport}
@@ -549,8 +549,10 @@ function Sidebar({
               </button>
             )}
 
-            {/* Export Data - Admin only */}
-            {canView('gear_list') && (
+            {/* Export Data — the FULL database backup (clients, users, audit
+                log), so it requires admin-area access, not mere gear-list
+                visibility. Same rule as the Admin hub itself. */}
+            {canAccessView(VIEWS.ADMIN, { canView, canEdit }) && (
               <button
                 onClick={onOpenExport}
                 className="sidebar-nav-btn"
