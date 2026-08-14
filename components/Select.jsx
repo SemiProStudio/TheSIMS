@@ -263,8 +263,10 @@ export function Select({
           boxSizing: 'border-box',
           transition: 'border-color 150ms ease, box-shadow 150ms ease',
           outline: 'none',
+          // Always-present longhand — conditionally REMOVING borderColor
+          // while the border shorthand stays makes React warn on rerender
+          borderColor: isOpen ? colors.primary : colors.border,
           ...(isOpen && {
-            borderColor: colors.primary,
             boxShadow: `0 0 0 2px rgba(106, 154, 184, 0.2)`,
           }),
         }}

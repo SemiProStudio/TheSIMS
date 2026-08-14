@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NotificationSettings from '../views/NotificationSettings.jsx';
 
@@ -204,8 +204,10 @@ describe('NotificationSettings', () => {
 
     it('never clobbers a form the user has already edited', async () => {
       const { rerender } = render(<NotificationSettings {...defaultProps} preferences={null} />);
-      // User turns email off — the form is now dirty
-      await userEvent.click(screen.getByRole('switch', { name: 'Email Notifications' }));
+      // User turns email off — the form is now dirty (fireEvent: the toggle
+      // handler is synchronous; userEvent's async event gaps let the state
+      // updates land outside act and warn)
+      fireEvent.click(screen.getByRole('switch', { name: 'Email Notifications' }));
       expect(screen.getByRole('switch', { name: 'Email Notifications' })).not.toBeChecked();
 
       // Server truth arrives late with email ON — must not wipe the edit
@@ -222,8 +224,13 @@ describe('NotificationSettings', () => {
           preferences={{ overdue_notifications: false, maintenance_reminders: false }}
         />,
       );
-      await userEvent.click(screen.getByRole('switch', { name: 'Overdue notifications' }));
-      await userEvent.click(screen.getByText('Save Preferences'));
+      fireEvent.click(screen.getByRole('switch', { name: 'Overdue notifications' }));
+      // act(async) flushes handleSave's post-await updates (setHasChanges/
+      // setSaving) inside act — userEvent's scope closes before they land
+      await act(async () => {
+        fireEvent.click(screen.getByText('Save Preferences'));
+      });
+      expect(screen.getByRole('button', { name: 'Save Preferences' })).toBeDisabled();
 
       const saved = onSave.mock.calls[0][0];
       expect(saved.overdue_notifications).toBe(true); // the edit
