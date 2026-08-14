@@ -1709,3 +1709,22 @@ button:disabled,
   outline: var(--focus-ring);
   outline-offset: 2px;
 }
+
+/* Report views: clickable list entries are real buttons (reset to text),
+   clickable table rows are focusable; both get visible keyboard focus */
+.report-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.report-row:focus-visible,
+.report-tr:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -2px;
+}

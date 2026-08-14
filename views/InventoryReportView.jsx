@@ -1,15 +1,22 @@
 // ============================================================================
 // Inventory Summary Report Panel View
-// Full inventory breakdown by category, status, condition, and location
+// Full inventory breakdown with status composition, value-by-category, and
+// an acquisition curve (cumulative value by purchase month).
 // ============================================================================
 
 import { memo, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Download, Package, Layers, MapPin, BarChart3 } from 'lucide-react';
-import { colors, spacing, borderRadius, typography } from '../theme.js';
-import { formatMoney, sanitizeCSVCell } from '../utils';
+import { Download, Package, Layers, MapPin, BarChart3, TrendingUp } from 'lucide-react';
+import { colors, spacing, typography } from '../theme.js';
+import { formatMoney, downloadCSV, getStatusColor } from '../utils';
+import { STATUS_LABELS } from '../constants.js';
 import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
+import { ReportBranding } from '../components/ReportBranding.jsx';
+import { DonutChart, HBarChart, TrendChart } from '../components/charts.jsx';
+import { computeInventoryStats, acquisitionSeries, csvForInventory } from '../lib/reportData.js';
+
+const statusLabel = (status) => STATUS_LABELS[status] || status;
 
 export const InventoryReportPanel = memo(function InventoryReportPanel({
   inventory,
@@ -52,96 +59,33 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
     return items;
   }, [inventory, selectedCategory, sortBy]);
 
-  // Calculate summary stats
-  const stats = useMemo(() => {
-    const totalValue = inventory.reduce((sum, i) => sum + (i.currentValue || 0), 0);
-    const totalPurchase = inventory.reduce((sum, i) => sum + (i.purchasePrice || 0), 0);
+  const stats = useMemo(() => computeInventoryStats(inventory), [inventory]);
 
-    // By category
-    const byCategory = {};
-    inventory.forEach((item) => {
-      const cat = item.category || 'Uncategorized';
-      if (!byCategory[cat]) {
-        byCategory[cat] = { count: 0, value: 0 };
-      }
-      byCategory[cat].count++;
-      byCategory[cat].value += item.currentValue || 0;
-    });
+  const statusSegments = useMemo(
+    () =>
+      Object.entries(stats.byStatus)
+        .sort((a, b) => b[1] - a[1])
+        .map(([status, count]) => ({
+          label: statusLabel(status),
+          value: count,
+          color: getStatusColor(status),
+        })),
+    [stats.byStatus],
+  );
 
-    // By status
-    const byStatus = {};
-    inventory.forEach((item) => {
-      const status = item.status || 'unknown';
-      byStatus[status] = (byStatus[status] || 0) + 1;
-    });
+  const categoryValueBars = useMemo(
+    () =>
+      Object.entries(stats.byCategory)
+        .sort((a, b) => b[1].value - a[1].value)
+        .map(([category, data]) => ({
+          label: `${category} (${data.count})`,
+          value: data.value,
+          color: colors.primary,
+        })),
+    [stats.byCategory],
+  );
 
-    // By condition
-    const byCondition = {};
-    inventory.forEach((item) => {
-      const condition = item.condition || 'Unknown';
-      byCondition[condition] = (byCondition[condition] || 0) + 1;
-    });
-
-    // By location
-    const byLocation = {};
-    inventory.forEach((item) => {
-      const loc = item.location || 'Unassigned';
-      if (!byLocation[loc]) {
-        byLocation[loc] = { count: 0, value: 0 };
-      }
-      byLocation[loc].count++;
-      byLocation[loc].value += item.currentValue || 0;
-    });
-
-    return {
-      totalItems: inventory.length,
-      totalValue,
-      totalPurchase,
-      depreciation: totalPurchase - totalValue,
-      byCategory,
-      byStatus,
-      byCondition,
-      byLocation,
-    };
-  }, [inventory]);
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'available':
-        return colors.available;
-      case 'checked-out':
-        return colors.checkedOut;
-      case 'reserved':
-        return colors.primary;
-      case 'needs-attention':
-        return colors.danger;
-      case 'missing':
-        return colors.textMuted;
-      case 'low-stock':
-        return colors.warning;
-      default:
-        return colors.textMuted;
-    }
-  };
-
-  const formatStatus = (status) => {
-    switch (status) {
-      case 'available':
-        return 'Available';
-      case 'checked-out':
-        return 'Checked Out';
-      case 'reserved':
-        return 'Reserved';
-      case 'needs-attention':
-        return 'Needs Attention';
-      case 'missing':
-        return 'Missing';
-      case 'low-stock':
-        return 'Low Stock';
-      default:
-        return status;
-    }
-  };
+  const acquisition = useMemo(() => acquisitionSeries(inventory), [inventory]);
 
   const formatCondition = (c) => {
     switch (c) {
@@ -158,49 +102,16 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
     }
   };
 
-  // Export CSV
   const handleExport = () => {
-    const headers = [
-      'Item ID',
-      'Name',
-      'Brand',
-      'Category',
-      'Status',
-      'Condition',
-      'Location',
-      'Serial Number',
-      'Purchase Date',
-      'Purchase Price',
-      'Current Value',
-      'Quantity',
-    ];
-    const rows = filteredItems.map((item) => [
-      item.id,
-      item.name,
-      item.brand || '',
-      item.category || '',
-      item.status || '',
-      item.condition || '',
-      item.location || '',
-      item.serialNumber || '',
-      item.purchaseDate || '',
-      item.purchasePrice || 0,
-      item.currentValue || 0,
-      item.quantity || 1,
-    ]);
+    const { headers, rows, filename } = csvForInventory(filteredItems);
+    downloadCSV(headers, rows, filename);
+  };
 
-    const csvContent = [
-      headers.map((h) => sanitizeCSVCell(h)).join(','),
-      ...rows.map((row) => row.map((cell) => sanitizeCSVCell(cell)).join(',')),
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `inventory-summary-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+  const handleRowKeyDown = (event, itemId) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onViewItem(itemId);
+    }
   };
 
   return (
@@ -217,55 +128,7 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
         }
       />
 
-      {/* Profile branding for print/export */}
-      {currentUser?.profile &&
-        (() => {
-          const p = currentUser.profile;
-          const sf = p.showFields || {};
-          const hasContent = Object.entries(sf).some(([k, v]) => v && p[k]);
-          if (!hasContent) return null;
-          return (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: spacing[4],
-                padding: spacing[3],
-                marginBottom: spacing[4],
-                borderBottom: `1px solid ${colors.borderLight}`,
-              }}
-            >
-              {sf.logo && p.logo && (
-                <img src={p.logo} alt="" style={{ height: 36, objectFit: 'contain' }} />
-              )}
-              <div>
-                {sf.businessName && p.businessName && (
-                  <div
-                    style={{
-                      fontWeight: typography.fontWeight.semibold,
-                      color: colors.textPrimary,
-                    }}
-                  >
-                    {p.businessName}
-                  </div>
-                )}
-                <div
-                  style={{
-                    fontSize: typography.fontSize.xs,
-                    color: colors.textMuted,
-                    display: 'flex',
-                    gap: spacing[3],
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  {sf.displayName && p.displayName && <span>{p.displayName}</span>}
-                  {sf.phone && p.phone && <span>{p.phone}</span>}
-                  {sf.email && p.email && <span>{p.email}</span>}
-                </div>
-              </div>
-            </div>
-          );
-        })()}
+      <ReportBranding profile={currentUser?.profile} />
 
       {/* Summary Stats */}
       <div
@@ -307,6 +170,34 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
           color={colors.accent2}
         />
       </div>
+
+      {/* Value growth */}
+      {acquisition.datedItems > 0 && (
+        <Card padding={false} style={{ marginBottom: spacing[5] }}>
+          <CardHeader title="Inventory Value Growth — Last 24 Months" icon={TrendingUp} />
+          <div style={{ padding: spacing[4] }}>
+            <TrendChart
+              data={acquisition.series}
+              color={colors.available}
+              formatValue={formatMoney}
+              showPoints={false}
+              ariaLabel="Cumulative current value of inventory by purchase month over the last 24 months"
+            />
+            {acquisition.undatedItems > 0 && (
+              <p
+                style={{
+                  margin: `${spacing[2]}px 0 0`,
+                  fontSize: typography.fontSize.xs,
+                  color: colors.textMuted,
+                }}
+              >
+                {acquisition.undatedItems} item{acquisition.undatedItems === 1 ? '' : 's'} without a
+                purchase date not shown
+              </p>
+            )}
+          </div>
+        </Card>
+      )}
 
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Main inventory table */}
@@ -400,7 +291,10 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
                 {filteredItems.map((item) => (
                   <tr
                     key={item.id}
+                    className="report-tr"
+                    tabIndex={0}
                     onClick={() => onViewItem(item.id)}
+                    onKeyDown={(e) => handleRowKeyDown(e, item.id)}
                     style={{
                       borderBottom: `1px solid ${colors.borderLight}`,
                       cursor: 'pointer',
@@ -418,8 +312,8 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
                       </div>
                       <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
                         {item.id}
-                        {item.brand ? ` \u2022 ${item.brand}` : ''}
-                        {item.location ? ` \u2022 ${item.location}` : ''}
+                        {item.brand ? ` • ${item.brand}` : ''}
+                        {item.location ? ` • ${item.location}` : ''}
                       </div>
                     </td>
                     <td style={{ padding: spacing[3] }}>
@@ -427,7 +321,7 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
                     </td>
                     <td style={{ padding: spacing[3] }}>
                       <Badge
-                        text={formatStatus(item.status)}
+                        text={statusLabel(item.status)}
                         color={getStatusColor(item.status)}
                         size="xs"
                       />
@@ -482,96 +376,25 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
           <Card padding={false}>
             <CardHeader title="By Status" />
             <div style={{ padding: spacing[4] }}>
-              {Object.entries(stats.byStatus)
-                .sort((a, b) => b[1] - a[1])
-                .map(([status, count]) => (
-                  <div
-                    key={status}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: spacing[2],
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-                      <div
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          background: getStatusColor(status),
-                        }}
-                      />
-                      <span
-                        style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}
-                      >
-                        {formatStatus(status)}
-                      </span>
-                    </div>
-                    <span
-                      style={{
-                        fontSize: typography.fontSize.sm,
-                        fontWeight: typography.fontWeight.medium,
-                        color: colors.textPrimary,
-                      }}
-                    >
-                      {count}
-                    </span>
-                  </div>
-                ))}
+              <DonutChart
+                data={statusSegments}
+                centerLabel="items"
+                ariaLabel={`Items by status: ${statusSegments
+                  .map((s) => `${s.label} ${s.value}`)
+                  .join(', ')}`}
+              />
             </div>
           </Card>
 
-          {/* By Category */}
+          {/* Value by Category */}
           <Card padding={false}>
-            <CardHeader title="By Category" />
+            <CardHeader title="Value by Category" />
             <div style={{ padding: spacing[4] }}>
-              {Object.entries(stats.byCategory)
-                .sort((a, b) => b[1].count - a[1].count)
-                .map(([category, data]) => (
-                  <div key={category} style={{ marginBottom: spacing[3] }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        marginBottom: spacing[1],
-                      }}
-                    >
-                      <span
-                        style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}
-                      >
-                        {category}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: typography.fontSize.sm,
-                          fontWeight: typography.fontWeight.medium,
-                          color: colors.textPrimary,
-                        }}
-                      >
-                        {data.count} ({formatMoney(data.value)})
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        height: 6,
-                        background: colors.borderLight,
-                        borderRadius: borderRadius.full,
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: '100%',
-                          width: `${(data.count / stats.totalItems) * 100}%`,
-                          background: colors.primary,
-                          borderRadius: borderRadius.full,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
+              <HBarChart
+                data={categoryValueBars}
+                formatValue={formatMoney}
+                ariaLabel="Current inventory value per category"
+              />
             </div>
           </Card>
 

@@ -1,15 +1,19 @@
 // ============================================================================
 // Insurance Report Panel View
-// Asset values for insurance documentation
+// Asset values for insurance documentation, with the depreciation story per
+// category (purchase vs. current paired bars) and a value distribution.
 // ============================================================================
 
 import { memo, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Download, DollarSign, TrendingDown, Package } from 'lucide-react';
+import { Download, DollarSign, TrendingDown, Package, BarChart3 } from 'lucide-react';
 import { colors, spacing, borderRadius, typography } from '../theme.js';
-import { formatMoney, sanitizeCSVCell } from '../utils';
+import { formatMoney, downloadCSV } from '../utils';
 import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
+import { ReportBranding } from '../components/ReportBranding.jsx';
+import { HBarChart, ColumnChart } from '../components/charts.jsx';
+import { computeInventoryStats, valueDistribution, csvForInsurance } from '../lib/reportData.js';
 
 export const InsuranceReportPanel = memo(function InsuranceReportPanel({
   inventory,
@@ -25,12 +29,10 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
   const filteredItems = useMemo(() => {
     let items = [...inventory];
 
-    // Filter by category
     if (selectedCategory !== 'all') {
       items = items.filter((i) => i.category === selectedCategory);
     }
 
-    // Sort
     switch (sortBy) {
       case 'value-desc':
         items.sort((a, b) => (b.currentValue || 0) - (a.currentValue || 0));
@@ -42,10 +44,10 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
         items.sort((a, b) => (b.purchasePrice || 0) - (a.purchasePrice || 0));
         break;
       case 'name':
-        items.sort((a, b) => a.name.localeCompare(b.name));
+        items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         break;
       case 'category':
-        items.sort((a, b) => a.category.localeCompare(b.category));
+        items.sort((a, b) => (a.category || '').localeCompare(b.category || ''));
         break;
       default:
         break;
@@ -54,81 +56,49 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
     return items;
   }, [inventory, selectedCategory, sortBy]);
 
-  // Calculate totals
   const stats = useMemo(() => {
-    const totalPurchase = inventory.reduce((sum, i) => sum + (i.purchasePrice || 0), 0);
-    const totalCurrent = inventory.reduce((sum, i) => sum + (i.currentValue || 0), 0);
-    const totalDepreciation = totalPurchase - totalCurrent;
-    const itemCount = inventory.length;
-
-    // By category
-    const byCategory = {};
-    inventory.forEach((item) => {
-      if (!byCategory[item.category]) {
-        byCategory[item.category] = { count: 0, purchaseValue: 0, currentValue: 0 };
-      }
-      byCategory[item.category].count++;
-      byCategory[item.category].purchaseValue += item.purchasePrice || 0;
-      byCategory[item.category].currentValue += item.currentValue || 0;
-    });
-
-    // High value items (top 10)
+    const inv = computeInventoryStats(inventory);
     const highValueItems = [...inventory]
       .sort((a, b) => (b.currentValue || 0) - (a.currentValue || 0))
       .slice(0, 10);
-
     return {
-      totalPurchase,
-      totalCurrent,
-      totalDepreciation,
-      itemCount,
-      averageValue: itemCount > 0 ? totalCurrent / itemCount : 0,
-      byCategory,
+      ...inv,
+      averageValue: inv.totalItems > 0 ? inv.totalValue / inv.totalItems : 0,
       highValueItems,
     };
   }, [inventory]);
 
-  // Generate CSV export
+  const depreciationBars = useMemo(
+    () =>
+      Object.entries(stats.byCategory)
+        .sort((a, b) => b[1].value - a[1].value)
+        .map(([category, data]) => {
+          const purchase = inventory
+            .filter((i) => (i.category || 'Uncategorized') === category)
+            .reduce((sum, i) => sum + (i.purchasePrice || 0), 0);
+          return {
+            label: `${category} (${data.count})`,
+            value: data.value,
+            color: colors.available,
+            secondaryValue: purchase,
+            secondaryColor: colors.textMuted,
+          };
+        }),
+    [stats.byCategory, inventory],
+  );
+
+  const distribution = useMemo(() => valueDistribution(inventory), [inventory]);
+
   const handleExport = () => {
-    const headers = [
-      'Item ID',
-      'Name',
-      'Brand',
-      'Category',
-      'Serial Number',
-      'Purchase Date',
-      'Purchase Price',
-      'Current Value',
-      'Condition',
-      'Location',
-      'Status',
-    ];
-    const rows = filteredItems.map((item) => [
-      item.id,
-      item.name,
-      item.brand,
-      item.category,
-      item.serialNumber || '',
-      item.purchaseDate || '',
-      item.purchasePrice || 0,
-      item.currentValue || 0,
-      item.condition || '',
-      item.location || '',
-      item.status,
-    ]);
+    const { headers, rows, filename } = csvForInsurance(filteredItems);
+    downloadCSV(headers, rows, filename);
+  };
 
-    const csvContent = [
-      headers.map((h) => sanitizeCSVCell(h)).join(','),
-      ...rows.map((row) => row.map((cell) => sanitizeCSVCell(cell)).join(',')),
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `insurance-inventory-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+  const handleRowKeyDown = (event, itemId) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onViewItem(itemId);
+    }
   };
 
   return (
@@ -145,55 +115,7 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
         }
       />
 
-      {/* Profile branding for print/export */}
-      {currentUser?.profile &&
-        (() => {
-          const p = currentUser.profile;
-          const sf = p.showFields || {};
-          const hasContent = Object.entries(sf).some(([k, v]) => v && p[k]);
-          if (!hasContent) return null;
-          return (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: spacing[4],
-                padding: spacing[3],
-                marginBottom: spacing[4],
-                borderBottom: `1px solid ${colors.borderLight}`,
-              }}
-            >
-              {sf.logo && p.logo && (
-                <img src={p.logo} alt="" style={{ height: 36, objectFit: 'contain' }} />
-              )}
-              <div>
-                {sf.businessName && p.businessName && (
-                  <div
-                    style={{
-                      fontWeight: typography.fontWeight.semibold,
-                      color: colors.textPrimary,
-                    }}
-                  >
-                    {p.businessName}
-                  </div>
-                )}
-                <div
-                  style={{
-                    fontSize: typography.fontSize.xs,
-                    color: colors.textMuted,
-                    display: 'flex',
-                    gap: spacing[3],
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  {sf.displayName && p.displayName && <span>{p.displayName}</span>}
-                  {sf.phone && p.phone && <span>{p.phone}</span>}
-                  {sf.email && p.email && <span>{p.email}</span>}
-                </div>
-              </div>
-            </div>
-          );
-        })()}
+      <ReportBranding profile={currentUser?.profile} />
 
       {/* Summary Stats */}
       <div
@@ -207,7 +129,7 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
         <StatCard
           icon={DollarSign}
           label="Total Current Value"
-          value={formatMoney(stats.totalCurrent)}
+          value={formatMoney(stats.totalValue)}
           color={colors.available}
         />
         <StatCard
@@ -219,13 +141,13 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
         <StatCard
           icon={TrendingDown}
           label="Total Depreciation"
-          value={formatMoney(stats.totalDepreciation)}
+          value={formatMoney(stats.depreciation)}
           color={colors.danger}
         />
         <StatCard
           icon={Package}
           label="Total Items"
-          value={stats.itemCount}
+          value={stats.totalItems}
           color={colors.accent1}
         />
         <StatCard
@@ -328,7 +250,10 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
                 {filteredItems.map((item) => (
                   <tr
                     key={item.id}
+                    className="report-tr"
+                    tabIndex={0}
                     onClick={() => onViewItem(item.id)}
+                    onKeyDown={(e) => handleRowKeyDown(e, item.id)}
                     style={{
                       borderBottom: `1px solid ${colors.borderLight}`,
                       cursor: 'pointer',
@@ -345,11 +270,12 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
                         {item.name}
                       </div>
                       <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                        {item.id} • {item.brand}
+                        {item.id}
+                        {item.brand ? ` • ${item.brand}` : ''}
                       </div>
                     </td>
                     <td style={{ padding: spacing[3] }}>
-                      <Badge text={item.category} color={colors.primary} size="xs" />
+                      <Badge text={item.category || 'None'} color={colors.primary} size="xs" />
                     </td>
                     <td
                       style={{
@@ -417,67 +343,37 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
 
         {/* Sidebar */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-          {/* Value by Category */}
+          {/* Purchase vs Current by Category */}
           <Card padding={false}>
-            <CardHeader title="Value by Category" />
+            <CardHeader title="Current vs. Purchase by Category" icon={TrendingDown} />
             <div style={{ padding: spacing[4] }}>
-              {Object.entries(stats.byCategory)
-                .sort((a, b) => b[1].currentValue - a[1].currentValue)
-                .map(([category, data]) => (
-                  <div key={category} style={{ marginBottom: spacing[3] }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        marginBottom: spacing[1],
-                      }}
-                    >
-                      <span
-                        style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}
-                      >
-                        {category}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: typography.fontSize.sm,
-                          fontWeight: typography.fontWeight.medium,
-                          color: colors.textPrimary,
-                        }}
-                      >
-                        {formatMoney(data.currentValue)}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-                      <div
-                        style={{
-                          flex: 1,
-                          height: 6,
-                          background: colors.borderLight,
-                          borderRadius: borderRadius.full,
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <div
-                          style={{
-                            height: '100%',
-                            width: `${(data.currentValue / stats.totalCurrent) * 100}%`,
-                            background: colors.primary,
-                            borderRadius: borderRadius.full,
-                          }}
-                        />
-                      </div>
-                      <span
-                        style={{
-                          fontSize: typography.fontSize.xs,
-                          color: colors.textMuted,
-                          minWidth: 35,
-                        }}
-                      >
-                        {data.count} items
-                      </span>
-                    </div>
-                  </div>
-                ))}
+              <HBarChart
+                data={depreciationBars}
+                formatValue={formatMoney}
+                ariaLabel="Current value versus purchase value per category"
+              />
+              <p
+                style={{
+                  margin: `${spacing[2]}px 0 0`,
+                  fontSize: typography.fontSize.xs,
+                  color: colors.textMuted,
+                }}
+              >
+                Top bar: current value • bottom bar: purchase value
+              </p>
+            </div>
+          </Card>
+
+          {/* Value distribution */}
+          <Card padding={false}>
+            <CardHeader title="Value Distribution" icon={BarChart3} />
+            <div style={{ padding: spacing[4] }}>
+              <ColumnChart
+                data={distribution}
+                color={colors.accent2}
+                formatValue={(v) => `${v} items`}
+                ariaLabel="Number of items per value band"
+              />
             </div>
           </Card>
 
@@ -486,7 +382,9 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
             <CardHeader title="Highest Value Items" />
             <div style={{ padding: spacing[4], maxHeight: 250, overflowY: 'auto' }}>
               {stats.highValueItems.map((item, idx) => (
-                <div
+                <button
+                  type="button"
+                  className="report-row"
                   key={item.id}
                   onClick={() => onViewItem(item.id)}
                   style={{
@@ -494,7 +392,6 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     padding: spacing[2],
-                    cursor: 'pointer',
                     borderRadius: borderRadius.md,
                     marginBottom: spacing[1],
                   }}
@@ -534,7 +431,7 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
                   >
                     {formatMoney(item.currentValue)}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           </Card>
@@ -566,6 +463,10 @@ InsuranceReportPanel.propTypes = {
   ).isRequired,
   /** Available categories for filtering */
   categories: PropTypes.arrayOf(PropTypes.string).isRequired,
+  /** Currently logged in user */
+  currentUser: PropTypes.shape({
+    profile: PropTypes.object,
+  }),
   /** Callback when item is clicked */
   onViewItem: PropTypes.func.isRequired,
   /** Callback to go back */

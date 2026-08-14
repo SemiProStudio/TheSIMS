@@ -722,6 +722,29 @@ export function sanitizeCSVCell(value) {
   return '"' + str.replace(/"/g, '""') + '"';
 }
 
+/**
+ * Build a sanitized CSV from headers + rows and trigger a browser download.
+ * The one shared implementation — the report views used to carry seven
+ * private copies of this exact blob/link dance.
+ *
+ * @param {string[]} headers - Column headers
+ * @param {Array<Array<*>>} rows - Row cell values (sanitized per cell)
+ * @param {string} filename - Download filename
+ */
+export function downloadCSV(headers, rows, filename) {
+  const csvContent = [
+    headers.map((h) => sanitizeCSVCell(h)).join(','),
+    ...rows.map((row) => row.map((cell) => sanitizeCSVCell(cell)).join(',')),
+  ].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 // ============================================================================
 // Depreciation Utilities
 // ============================================================================

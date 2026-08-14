@@ -1,14 +1,27 @@
 // ============================================================================
 // Maintenance Report Panel View
-// All maintenance records across inventory
+// All maintenance records across inventory, with cost trend and type charts.
+// Requires the FULL record set: ensureMaintenance() merges completed records
+// in (Tier 2 only carries pending ones for the dashboard), so cost/vendor
+// stats are real instead of $0-until-you-browsed-the-right-items.
 // ============================================================================
 
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Wrench, Clock, AlertTriangle, DollarSign, Building2, Download } from 'lucide-react';
 import { colors, spacing, typography } from '../theme.js';
-import { formatDate, formatMoney, sanitizeCSVCell } from '../utils';
+import { formatDate, formatMoney, downloadCSV } from '../utils';
 import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
+import { ReportBranding } from '../components/ReportBranding.jsx';
+import { ColumnChart, HBarChart } from '../components/charts.jsx';
+import {
+  collectMaintenanceRecords,
+  computeMaintenanceStats,
+  sortMaintenanceRecords,
+  maintenanceCostSeries,
+  csvForMaintenance,
+} from '../lib/reportData.js';
+import { useData } from '../contexts/DataContext.js';
 
 export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
   inventory,
@@ -16,79 +29,29 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
   onViewItem,
   onBack,
 }) {
-  // Collect all maintenance records across all items
-  const allMaintenanceRecords = useMemo(() => {
-    const records = [];
-    inventory.forEach((item) => {
-      if (item.maintenanceHistory && item.maintenanceHistory.length > 0) {
-        (item.maintenanceHistory || []).forEach((record) => {
-          records.push({
-            ...record,
-            itemId: item.id,
-            itemName: item.name,
-            itemBrand: item.brand,
-          });
-        });
-      }
-    });
-    return records;
-  }, [inventory]);
+  const { ensureMaintenance, maintenanceLoaded } = useData();
 
-  // Calculate statistics
-  const stats = useMemo(() => {
-    const completed = allMaintenanceRecords.filter((r) => r.status === 'completed');
-    const pending = allMaintenanceRecords.filter(
-      (r) => r.status === 'scheduled' || r.status === 'in-progress',
-    );
-    const inProgress = allMaintenanceRecords.filter((r) => r.status === 'in-progress');
-    const totalCost = completed
-      .filter((r) => !r.warrantyWork)
-      .reduce((sum, r) => sum + (Number(r.cost) || 0), 0);
-    const warrantySavings = completed
-      .filter((r) => r.warrantyWork)
-      .reduce((sum, r) => sum + (Number(r.cost) || 0), 0);
+  useEffect(() => {
+    ensureMaintenance();
+  }, [ensureMaintenance]);
 
-    // Group by type
-    const byType = {};
-    allMaintenanceRecords.forEach((r) => {
-      byType[r.type] = (byType[r.type] || 0) + 1;
-    });
-
-    // Top vendors by cost
-    const vendorCosts = {};
-    completed.forEach((r) => {
-      if (r.vendor) {
-        vendorCosts[r.vendor] = (vendorCosts[r.vendor] || 0) + (Number(r.cost) || 0);
-      }
-    });
-    const topVendors = Object.entries(vendorCosts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-
-    return {
-      total: allMaintenanceRecords.length,
-      completed: completed.length,
-      pending: pending.length,
-      inProgress: inProgress.length,
-      totalCost,
-      warrantySavings,
-      byType,
-      topVendors,
-    };
-  }, [allMaintenanceRecords]);
-
-  // Sort records: pending first, then by date descending
-  const sortedRecords = useMemo(() => {
-    return [...allMaintenanceRecords].sort((a, b) => {
-      const aIsPending = a.status === 'scheduled' || a.status === 'in-progress';
-      const bIsPending = b.status === 'scheduled' || b.status === 'in-progress';
-      if (aIsPending && !bIsPending) return -1;
-      if (!aIsPending && bIsPending) return 1;
-      const aDate = a.completedDate || a.scheduledDate || a.createdAt;
-      const bDate = b.completedDate || b.scheduledDate || b.createdAt;
-      return new Date(bDate) - new Date(aDate);
-    });
-  }, [allMaintenanceRecords]);
+  const allMaintenanceRecords = useMemo(() => collectMaintenanceRecords(inventory), [inventory]);
+  const stats = useMemo(() => computeMaintenanceStats(allMaintenanceRecords), [allMaintenanceRecords]);
+  const sortedRecords = useMemo(
+    () => sortMaintenanceRecords(allMaintenanceRecords),
+    [allMaintenanceRecords],
+  );
+  const costSeries = useMemo(
+    () => maintenanceCostSeries(allMaintenanceRecords),
+    [allMaintenanceRecords],
+  );
+  const costByTypeBars = useMemo(
+    () =>
+      Object.entries(stats.costByType)
+        .sort((a, b) => b[1] - a[1])
+        .map(([type, cost]) => ({ label: type, value: cost, color: colors.warning })),
+    [stats.costByType],
+  );
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -120,43 +83,9 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
     }
   };
 
-  // Export maintenance records to CSV
   const handleExport = () => {
-    const headers = [
-      'Item',
-      'Item ID',
-      'Type',
-      'Description',
-      'Status',
-      'Vendor',
-      'Cost',
-      'Warranty',
-      'Scheduled Date',
-      'Completed Date',
-    ];
-    const rows = sortedRecords.map((r) => [
-      r.itemName,
-      r.itemId,
-      r.type,
-      r.description || '',
-      r.status,
-      r.vendor || '',
-      r.cost || 0,
-      r.warrantyWork ? 'Yes' : 'No',
-      r.scheduledDate || '',
-      r.completedDate || '',
-    ]);
-    const csvContent = [
-      headers.map((h) => sanitizeCSVCell(h)).join(','),
-      ...rows.map((row) => row.map((cell) => sanitizeCSVCell(cell)).join(',')),
-    ].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `maintenance-report-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const { headers, rows, filename } = csvForMaintenance(allMaintenanceRecords);
+    downloadCSV(headers, rows, filename);
   };
 
   return (
@@ -173,55 +102,21 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
         }
       />
 
-      {/* Profile branding for print/export */}
-      {currentUser?.profile &&
-        (() => {
-          const p = currentUser.profile;
-          const sf = p.showFields || {};
-          const hasContent = Object.entries(sf).some(([k, v]) => v && p[k]);
-          if (!hasContent) return null;
-          return (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: spacing[4],
-                padding: spacing[3],
-                marginBottom: spacing[4],
-                borderBottom: `1px solid ${colors.borderLight}`,
-              }}
-            >
-              {sf.logo && p.logo && (
-                <img src={p.logo} alt="" style={{ height: 36, objectFit: 'contain' }} />
-              )}
-              <div>
-                {sf.businessName && p.businessName && (
-                  <div
-                    style={{
-                      fontWeight: typography.fontWeight.semibold,
-                      color: colors.textPrimary,
-                    }}
-                  >
-                    {p.businessName}
-                  </div>
-                )}
-                <div
-                  style={{
-                    fontSize: typography.fontSize.xs,
-                    color: colors.textMuted,
-                    display: 'flex',
-                    gap: spacing[3],
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  {sf.displayName && p.displayName && <span>{p.displayName}</span>}
-                  {sf.phone && p.phone && <span>{p.phone}</span>}
-                  {sf.email && p.email && <span>{p.email}</span>}
-                </div>
-              </div>
-            </div>
-          );
-        })()}
+      <ReportBranding profile={currentUser?.profile} />
+
+      {!maintenanceLoaded && (
+        <div
+          style={{
+            padding: spacing[3],
+            marginBottom: spacing[4],
+            fontSize: typography.fontSize.sm,
+            color: colors.textMuted,
+          }}
+          role="status"
+        >
+          Loading full maintenance history…
+        </div>
+      )}
 
       {/* Summary Stats */}
       <div
@@ -259,6 +154,21 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
         />
       </div>
 
+      {/* Cost over time */}
+      {maintenanceLoaded && stats.completed > 0 && (
+        <Card padding={false} style={{ marginBottom: spacing[5] }}>
+          <CardHeader title="Maintenance Cost — Last 12 Months" icon={DollarSign} />
+          <div style={{ padding: spacing[4] }}>
+            <ColumnChart
+              data={costSeries}
+              color={colors.warning}
+              formatValue={formatMoney}
+              ariaLabel="Completed non-warranty maintenance cost per month over the last 12 months"
+            />
+          </div>
+        </Card>
+      )}
+
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Main Records List */}
         <Card
@@ -270,17 +180,20 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
             {sortedRecords.length === 0 ? (
               <div style={{ padding: spacing[6], textAlign: 'center', color: colors.textMuted }}>
                 <Wrench size={32} style={{ marginBottom: spacing[2], opacity: 0.3 }} />
-                <p style={{ margin: 0 }}>No maintenance records found</p>
+                <p style={{ margin: 0 }}>
+                  {maintenanceLoaded ? 'No maintenance records found' : 'Loading records…'}
+                </p>
               </div>
             ) : (
               sortedRecords.map((record, idx) => (
-                <div
+                <button
+                  type="button"
+                  className="report-row"
                   key={record.id}
                   style={{
                     padding: spacing[4],
                     borderBottom:
                       idx < sortedRecords.length - 1 ? `1px solid ${colors.borderLight}` : 'none',
-                    cursor: 'pointer',
                   }}
                   onClick={() => onViewItem(record.itemId)}
                 >
@@ -340,7 +253,7 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
                         ? `Scheduled ${formatDate(record.scheduledDate)}`
                         : formatDate(record.createdAt)}
                   </div>
-                </div>
+                </button>
               ))
             )}
           </div>
@@ -348,9 +261,34 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
 
         {/* Sidebar Stats */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-          {/* By Type */}
+          {/* Cost by Type */}
           <Card padding={false}>
-            <CardHeader title="By Type" />
+            <CardHeader title="Cost by Type" />
+            <div style={{ padding: spacing[4] }}>
+              {costByTypeBars.length === 0 ? (
+                <p
+                  style={{
+                    color: colors.textMuted,
+                    textAlign: 'center',
+                    margin: 0,
+                    fontSize: typography.fontSize.sm,
+                  }}
+                >
+                  No completed work yet
+                </p>
+              ) : (
+                <HBarChart
+                  data={costByTypeBars}
+                  formatValue={formatMoney}
+                  ariaLabel="Completed maintenance cost by record type"
+                />
+              )}
+            </div>
+          </Card>
+
+          {/* By Type (counts) */}
+          <Card padding={false}>
+            <CardHeader title="Records by Type" />
             <div style={{ padding: spacing[4] }}>
               {Object.entries(stats.byType).length === 0 ? (
                 <p
@@ -478,6 +416,10 @@ MaintenanceReportPanel.propTypes = {
       ),
     }),
   ).isRequired,
+  /** Currently logged in user */
+  currentUser: PropTypes.shape({
+    profile: PropTypes.object,
+  }),
   /** Callback when item is clicked */
   onViewItem: PropTypes.func.isRequired,
   /** Callback to go back */
