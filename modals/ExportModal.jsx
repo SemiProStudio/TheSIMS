@@ -16,6 +16,7 @@ export const ExportModal = memo(function ExportModal({
   user: _user,
   selectionCount = 0,
   totalCount = 0,
+  allowNotes = true,
 }) {
   const [format, setFormat] = useState('csv');
   const [columns, setColumns] = useState(['id', 'name', 'category', 'status', 'value']);
@@ -36,7 +37,8 @@ export const ExportModal = memo(function ExportModal({
     { id: 'purchasePrice', label: 'Purchase $' },
     { id: 'value', label: 'Current Value' },
     { id: 'serialNumber', label: 'Serial #' },
-    { id: 'notes', label: 'Notes' },
+    // Note text is item_details data — hidden from roles that can't view it
+    ...(allowNotes ? [{ id: 'notes', label: 'Notes' }] : []),
   ];
 
   const toggleColumn = (col) =>
@@ -185,4 +187,6 @@ ExportModal.propTypes = {
   selectionCount: PropTypes.number,
   /** Total inventory count (export scope when nothing is selected) */
   totalCount: PropTypes.number,
+  /** Whether the role may export note text (item_details view) */
+  allowNotes: PropTypes.bool,
 };

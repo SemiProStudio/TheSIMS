@@ -214,4 +214,41 @@ describe('canAccessView (navigation guard)', () => {
       false,
     );
   });
+
+  // Pure-editor admin pages require EDIT — view-level permission only ever
+  // rendered editors whose saves failed at the database (whole-app round)
+  it('admin editors require EDIT: Manager (view-level admin perms) is refused', () => {
+    const allowed = guards({ id: 'u1', roleId: 'role_manager' });
+    expect(allowed(VIEWS.EDIT_SPECS)).toBe(false);
+    expect(allowed(VIEWS.EDIT_CATEGORIES)).toBe(false);
+    expect(allowed(VIEWS.ROLES_MANAGE)).toBe(false);
+
+    const admin = guards({ id: 'u1', roleId: 'role_admin' });
+    expect(admin(VIEWS.EDIT_SPECS)).toBe(true);
+    expect(admin(VIEWS.EDIT_CATEGORIES)).toBe(true);
+    expect(admin(VIEWS.ROLES_MANAGE)).toBe(true);
+  });
+
+  it('Manager keeps the read-consumable admin surfaces (users directory, logs)', () => {
+    const allowed = guards({ id: 'u1', roleId: 'role_manager' });
+    expect(allowed(VIEWS.USERS)).toBe(true);
+    expect(allowed(VIEWS.AUDIT_LOG)).toBe(true);
+    expect(allowed(VIEWS.ADMIN)).toBe(true);
+  });
+
+  it('stale admin_layout/admin_notifications keys no longer open the hub', () => {
+    // Legacy role rows can still carry the retired keys — they became
+    // per-user personalization, so they grant no admin access
+    const roles = [
+      {
+        id: 'role_legacy',
+        permissions: {
+          dashboard: PERMISSION_LEVELS.VIEW,
+          admin_layout: PERMISSION_LEVELS.EDIT,
+          admin_notifications: PERMISSION_LEVELS.EDIT,
+        },
+      },
+    ];
+    expect(guards({ id: 'u1', roleId: 'role_legacy' }, roles)(VIEWS.ADMIN)).toBe(false);
+  });
 });

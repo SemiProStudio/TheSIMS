@@ -583,6 +583,21 @@ describe('maintenanceService', () => {
     });
   });
 
+  describe('inventory delete honesty', () => {
+    // RLS-filtered deletes "succeed" with zero rows — the DELETE policy is
+    // admin-only, so a non-admin bulk delete looked successful in the UI
+    // while every item came back on reload
+    it('throws when RLS silently filters the delete to zero rows', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient([]));
+      await expect(inventoryService.delete('CAM001')).rejects.toThrow(/administrator access/);
+    });
+
+    it('succeeds when the row was actually deleted', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient([{ id: 'CAM001' }]));
+      await expect(inventoryService.delete('CAM001')).resolves.toEqual({ id: 'CAM001' });
+    });
+  });
+
   describe('update', () => {
     // The edit modal hands back its full camelCase form record with join
     // artifacts. PostgREST rejects unknown columns (PGRST204), so the service

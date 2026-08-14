@@ -78,9 +78,9 @@ export default memo(function AppModals({ handlers, currentUser }) {
     setSelectedPackage,
   } = useNavigationContext();
 
-  // Scanner quick actions mirror ItemDetail's gate: checkout/check-in are
-  // item_details EDIT operations, so view-only roles get lookup only
-  const { canEdit } = usePermissions();
+  // Scanner quick actions mirror ItemDetail's gate: checkout/check-in write
+  // the inventory row, which RLS gates on gear_list edit
+  const { canView, canEdit } = usePermissions();
 
   const { selectedIds } = useFilterContext();
 
@@ -120,11 +120,18 @@ export default memo(function AppModals({ handlers, currentUser }) {
 
   // Lazy-load data when modals that need it open. (The database export no
   // longer reads React memory — it fetches complete tables server-side.)
+  // The client roster only loads for roles that can view clients — the
+  // checkout/reservation dropdowns used to hand the full client list to
+  // roles with clients hidden (SearchView already prevents this exact leak).
+  const canSeeClients = canView('clients');
   useEffect(() => {
-    if (activeModal === MODALS.CHECK_OUT || activeModal === MODALS.ADD_RESERVATION) {
+    if (
+      canSeeClients &&
+      (activeModal === MODALS.CHECK_OUT || activeModal === MODALS.ADD_RESERVATION)
+    ) {
       ensureClients();
     }
-  }, [activeModal, ensureClients]);
+  }, [activeModal, ensureClients, canSeeClients]);
 
   // Destructure handlers
   const {
@@ -206,7 +213,7 @@ export default memo(function AppModals({ handlers, currentUser }) {
               closeModal();
               setEditingReservationId(null);
             }}
-            clients={clients}
+            clients={canSeeClients ? clients : []}
             inventory={inventory}
             item={editingReservationId ? selectedItem || selectedReservationItem : null}
             editingReservationId={editingReservationId}
@@ -224,6 +231,9 @@ export default memo(function AppModals({ handlers, currentUser }) {
             user={currentUser}
             selectionCount={selectedIds.length}
             totalCount={inventory.length}
+            // Notes live behind item_details — a reports-only role could
+            // otherwise export note text it can't see anywhere in the UI
+            allowNotes={canView('item_details')}
           />
         )}
 
@@ -273,7 +283,9 @@ export default memo(function AppModals({ handlers, currentUser }) {
               setCurrentView(VIEWS.PACKAGES);
             }}
             onQuickCheckout={
-              canEdit('item_details')
+              // gear_list edit, matching RLS on the inventory write (the old
+              // item_details gate offered buttons the DB would refuse)
+              canEdit('gear_list')
                 ? (item) => {
                     closeModal();
                     // Use openCheckoutModal which properly sets internal state
@@ -283,7 +295,7 @@ export default memo(function AppModals({ handlers, currentUser }) {
                 : undefined
             }
             onQuickCheckin={
-              canEdit('item_details')
+              canEdit('gear_list')
                 ? (item) => {
                     closeModal();
                     // Use openCheckinModal which properly sets internal state
@@ -295,7 +307,9 @@ export default memo(function AppModals({ handlers, currentUser }) {
           />
         )}
 
-        {activeModal === MODALS.CSV_IMPORT && (
+        {/* Defense-in-depth: openers are gated, but the modal layer enforces
+            its own key so no future openModal caller can bypass it */}
+        {activeModal === MODALS.CSV_IMPORT && canEdit('gear_list') && (
           <CSVImportModal
             categories={categories}
             specs={specs}
@@ -330,13 +344,15 @@ export default memo(function AppModals({ handlers, currentUser }) {
           />
         )}
 
-        {activeModal === MODALS.DATABASE_EXPORT && <DatabaseExportModal onClose={closeModal} />}
+        {activeModal === MODALS.DATABASE_EXPORT && canView('admin_users') && (
+          <DatabaseExportModal onClose={closeModal} />
+        )}
 
         {activeModal === MODALS.CHECK_OUT && checkoutItem && (
           <CheckOutModal
             item={checkoutItem}
             users={users}
-            clients={clients}
+            clients={canSeeClients ? clients : []}
             currentUser={currentUser}
             onCheckOut={processCheckout}
             onClose={closeModal}
@@ -364,7 +380,10 @@ export default memo(function AppModals({ handlers, currentUser }) {
           />
         )}
 
-        {activeModal === MODALS.ADD_USER && (
+        {/* Gated inside the modal layer too: Add User mints REAL sign-in
+            credentials via GoTrue signup (not RLS-protected), so no future
+            openModal caller may reach it without admin_users edit */}
+        {activeModal === MODALS.ADD_USER && canEdit('admin_users') && (
           <AddUserModal
             existingEmails={users.map((u) => u.email.toLowerCase())}
             roles={roles}
@@ -375,12 +394,30 @@ export default memo(function AppModals({ handlers, currentUser }) {
               // own login with the account they just created.
               if (auth?.adminCreateUser && newUser.password) {
                 try {
-                  const { needsEmailConfirmation } = await auth.adminCreateUser(
+                  const { user: createdUser, needsEmailConfirmation } = await auth.adminCreateUser(
                     newUser.email,
                     newUser.password,
                     newUser.name,
                     newUser.roleId,
                   );
+
+                  // Apply the chosen role for real: handle_new_user hardcodes
+                  // role_user on signup (fail-safe by design), so the admin's
+                  // selection needs this second, admin-authorized update —
+                  // without it the account silently stayed Standard User
+                  // while the panel showed the chosen role.
+                  if (createdUser?.id && newUser.roleId && newUser.roleId !== 'role_user') {
+                    try {
+                      const { usersService } = await import('./lib/services.js');
+                      await usersService.updateRole(createdUser.id, newUser.roleId);
+                    } catch (roleErr) {
+                      logError('Failed to apply role to new user:', roleErr);
+                      addToast(
+                        `User created, but the "${newUser.roleName || newUser.roleId}" role could not be applied — set it in Manage Users.`,
+                        'warning',
+                      );
+                    }
+                  }
 
                   // Optimistic local update (only after auth succeeds)
                   addLocalUser(newUser);

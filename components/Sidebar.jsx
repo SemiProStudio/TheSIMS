@@ -27,7 +27,7 @@ import {
 import { VIEWS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { useTheme } from '../contexts/ThemeContext.js';
-import { usePermissions, canAccessView } from '../contexts/PermissionsContext.js';
+import { usePermissions, ADMIN_HUB_PERMISSIONS } from '../contexts/PermissionsContext.js';
 import { announcePageChange } from '../utils/accessibility.js';
 
 // Navigation button component
@@ -113,7 +113,12 @@ const mainNavItems = [
     label: 'Packages',
     viewId: VIEWS.PACKAGES,
     colorVar: '--sidebar-item3',
-    permissionId: 'pack_lists',
+    // Matches the view guard (VIEW_PERMISSIONS) and RLS: packages are gear
+    // grouping, gated by gear_list. The old pack_lists key meant a
+    // pack_lists-only role saw a button that landed on "Access restricted"
+    // while gear_list-only roles reached Packages through search with no
+    // button at all.
+    permissionId: 'gear_list',
   },
   {
     icon: ClipboardList,
@@ -218,19 +223,16 @@ function Sidebar({
   const { canView, canEdit } = usePermissions();
   const userMenuRef = useRef(null);
 
-  // Filter nav items based on permissions
+  // Filter nav items based on permissions. "Any admin access" has exactly ONE
+  // definition (ADMIN_HUB_PERMISSIONS, shared with the hub's render gate) —
+  // this list and the hub used to disagree, stranding categories-only roles
+  // with a section header but no reachable editor.
+  const hasAnyAdminAccess = ADMIN_HUB_PERMISSIONS.some((p) => canView(p));
   const visibleMainNavItems = mainNavItems.filter((item) => canView(item.permissionId));
-  const visibleAdminNavItems = adminNavItems.filter((item) => canView(item.permissionId));
-
-  // Check if user can access any admin features
-  const hasAnyAdminAccess =
-    visibleAdminNavItems.length > 0 ||
-    canView('admin_users') ||
-    canView('admin_categories') ||
-    canView('admin_specs') ||
-    canView('admin_locations') ||
-    canView('admin_roles') ||
-    canView('admin_audit');
+  const visibleAdminNavItems = adminNavItems.filter((item) =>
+    // The hub filters its cards per permission, so it opens for ANY admin role
+    item.viewId === VIEWS.ADMIN ? hasAnyAdminAccess : canView(item.permissionId),
+  );
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -550,9 +552,10 @@ function Sidebar({
             )}
 
             {/* Export Data — the FULL database backup (clients, users, audit
-                log), so it requires admin-area access, not mere gear-list
-                visibility. Same rule as the Admin hub itself. */}
-            {canAccessView(VIEWS.ADMIN, { canView, canEdit }) && (
+                log), so it follows admin_users VIEW specifically: roles that
+                can see the user directory may export it. "Any admin perm" was
+                too broad — a categories-only role could dump the whole DB. */}
+            {canView('admin_users') && (
               <button
                 onClick={onOpenExport}
                 className="sidebar-nav-btn"

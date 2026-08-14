@@ -48,19 +48,32 @@ export const VIEW_PERMISSIONS = {
   // available to everyone.
 };
 
-// The Admin hub is reachable with ANY admin permission (mirrors the
-// sidebar's hasAnyAdminAccess) — a role with only, say, category access
-// still needs the hub to get there.
-const ADMIN_HUB_PERMISSIONS = [
+// The Admin hub is reachable with ANY admin permission — a role with only,
+// say, category access still needs the hub to get there. Exported as THE
+// single definition of "any admin access": the Sidebar and the hub render
+// gate both consume it (they used to disagree — the hub required admin_users
+// specifically, leaving categories-only roles a blank page and no path to
+// their editor). admin_layout/admin_notifications were dropped when layout
+// and notification prefs became per-user personalization.
+export const ADMIN_HUB_PERMISSIONS = [
   'admin_users',
   'admin_categories',
   'admin_specs',
   'admin_locations',
   'admin_roles',
-  'admin_layout',
-  'admin_notifications',
   'admin_audit',
 ];
+
+// Views that are pure mutation surfaces — no read-only mode exists, so
+// view-level permission would only render an editor whose every save fails
+// at the database. These require EDIT.
+const EDIT_REQUIRED_VIEWS = new Set([
+  VIEWS.ADD_ITEM,
+  VIEWS.ROLES_MANAGE,
+  VIEWS.EDIT_SPECS,
+  VIEWS.EDIT_CATEGORIES,
+  VIEWS.LOCATIONS_MANAGE,
+]);
 
 /**
  * Whether the current role may render a view. Pure — pass canView/canEdit
@@ -71,7 +84,7 @@ export function canAccessView(view, { canView, canEdit }) {
   if (view === VIEWS.ADMIN) return ADMIN_HUB_PERMISSIONS.some((p) => canView(p));
   const permission = VIEW_PERMISSIONS[view];
   if (!permission) return true;
-  if (view === VIEWS.ADD_ITEM) return canEdit(permission);
+  if (EDIT_REQUIRED_VIEWS.has(view)) return canEdit(permission);
   return canView(permission);
 }
 

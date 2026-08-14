@@ -500,13 +500,15 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         </Suspense>
       )}
 
-      <PermissionGate permission="admin_users">
-        {currentView === VIEWS.ADMIN && (
-          <Suspense fallback={<ViewLoading message="Loading Admin Panel..." />}>
-            <AdminPanel setCurrentView={setCurrentView} />
-          </Suspense>
-        )}
-      </PermissionGate>
+      {/* The hub opens for ANY admin permission (same rule as the view guard
+          and the sidebar — it used to demand admin_users specifically, which
+          left e.g. a categories-only role a blank page and no path to its own
+          editor). AdminPanel filters its cards per permission. */}
+      {currentView === VIEWS.ADMIN && canAccessView(VIEWS.ADMIN, { canView, canEdit }) && (
+        <Suspense fallback={<ViewLoading message="Loading Admin Panel..." />}>
+          <AdminPanel setCurrentView={setCurrentView} />
+        </Suspense>
+      )}
 
       <PermissionGate permission="gear_list" requireEdit>
         {currentView === VIEWS.ADD_ITEM && (
@@ -527,7 +529,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         )}
       </PermissionGate>
 
-      <PermissionGate permission="admin_specs">
+      <PermissionGate permission="admin_specs" requireEdit>
         {currentView === VIEWS.EDIT_SPECS && (
           <Suspense fallback={<ViewLoading message="Loading Specs Editor..." />}>
             <SpecsPage
@@ -590,7 +592,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         )}
       </PermissionGate>
 
-      <PermissionGate permission="admin_categories">
+      <PermissionGate permission="admin_categories" requireEdit>
         {currentView === VIEWS.EDIT_CATEGORIES && (
           <Suspense fallback={<ViewLoading message="Loading Categories..." />}>
             <CategoriesPage
@@ -685,6 +687,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               users={users}
               roles={roles}
               currentUserId={currentUser?.id}
+              readOnly={!canEdit('admin_users')}
               onAddUser={() => openModal(MODALS.ADD_USER)}
               onChangeRole={changeUserRole}
               onDeleteUser={(userId) => {
@@ -814,7 +817,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         )}
       </PermissionGate>
 
-      <PermissionGate permission="admin_locations">
+      <PermissionGate permission="admin_locations" requireEdit>
         {currentView === VIEWS.LOCATIONS_MANAGE && (
           <Suspense fallback={<ViewLoading message="Loading Locations..." />}>
             <LocationsManager
@@ -881,7 +884,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         )}
       </PermissionGate>
 
-      <PermissionGate permission="admin_roles">
+      <PermissionGate permission="admin_roles" requireEdit>
         {currentView === VIEWS.ROLES_MANAGE && (
           <Suspense fallback={<ViewLoading message="Loading Roles..." />}>
             <RolesManager

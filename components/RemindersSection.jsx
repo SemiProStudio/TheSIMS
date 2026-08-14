@@ -29,6 +29,7 @@ const ReminderItem = memo(function ReminderItem({
   onUncomplete,
   onDelete,
   panelColor,
+  readOnly = false,
 }) {
   const today = getTodayISO();
   const isCompleted = reminder.completed;
@@ -164,43 +165,45 @@ const ReminderItem = memo(function ReminderItem({
           </div>
         </div>
 
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: spacing[1], flexShrink: 0 }}>
-          {isCompleted ? (
+        {/* Actions — hidden for view-only roles (item_details view) */}
+        {readOnly ? null : (
+          <div style={{ display: 'flex', gap: spacing[1], flexShrink: 0 }}>
+            {isCompleted ? (
+              <button
+                onClick={() => onUncomplete(reminder.id)}
+                title="Mark incomplete"
+                style={{
+                  ...styles.btnSec,
+                  padding: spacing[1],
+                  fontSize: typography.fontSize.xs,
+                }}
+              >
+                ↩
+              </button>
+            ) : (
+              <button
+                onClick={() => onComplete(reminder.id)}
+                title="Mark complete"
+                aria-label="Mark complete"
+                className="btn btn-sm"
+                style={{ background: colors.success, color: colors.onSuccess }}
+              >
+                ✓
+              </button>
+            )}
             <button
-              onClick={() => onUncomplete(reminder.id)}
-              title="Mark incomplete"
+              onClick={() => onDelete(reminder.id)}
+              title="Delete reminder"
               style={{
                 ...styles.btnSec,
                 padding: spacing[1],
-                fontSize: typography.fontSize.xs,
+                color: colors.danger,
               }}
             >
-              ↩
+              <Trash2 size={14} />
             </button>
-          ) : (
-            <button
-              onClick={() => onComplete(reminder.id)}
-              title="Mark complete"
-              aria-label="Mark complete"
-              className="btn btn-sm"
-              style={{ background: colors.success, color: colors.onSuccess }}
-            >
-              ✓
-            </button>
-          )}
-          <button
-            onClick={() => onDelete(reminder.id)}
-            title="Delete reminder"
-            style={{
-              ...styles.btnSec,
-              padding: spacing[1],
-              color: colors.danger,
-            }}
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -331,6 +334,7 @@ function RemindersSection({
   panelColor,
   showAddForm = false,
   onToggleAddForm,
+  readOnly = false,
 }) {
   const handleAdd = useCallback(
     (reminder) => {
@@ -362,7 +366,7 @@ function RemindersSection({
     <>
       <div style={{ padding: spacing[4] }}>
         {/* Add form (toggled from header + button) */}
-        {showAddForm && (
+        {showAddForm && !readOnly && (
           <AddReminderForm
             onAdd={handleAdd}
             onCancel={() => onToggleAddForm && onToggleAddForm(false)}
@@ -380,6 +384,7 @@ function RemindersSection({
                 onUncomplete={onUncompleteReminder}
                 onDelete={onDeleteReminder}
                 panelColor={panelColor}
+                readOnly={readOnly}
               />
             ))}
           </div>
