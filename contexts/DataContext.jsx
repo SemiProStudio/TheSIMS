@@ -636,11 +636,16 @@ export function DataProvider({ children }) {
     }
   }, []);
 
+  // Returns true/false so the handler can roll back the optimistic
+  // soft-delete — swallowing the failure resurrected "deleted" notes on
+  // reload while the audit log claimed they were removed
   const deleteItemNote = useCallback(async (noteId) => {
     try {
       await itemNotesService.softDelete(noteId);
+      return true;
     } catch (err) {
       logError('Failed to delete note:', err);
+      return false;
     }
   }, []);
 
@@ -677,16 +682,20 @@ export function DataProvider({ children }) {
       if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
 
       await itemRemindersService.update(reminderId, dbUpdates);
+      return true;
     } catch (err) {
       logError('Failed to update reminder:', err);
+      return false;
     }
   }, []);
 
   const deleteItemReminder = useCallback(async (reminderId) => {
     try {
       await itemRemindersService.delete(reminderId);
+      return true;
     } catch (err) {
       logError('Failed to delete reminder:', err);
+      return false;
     }
   }, []);
 
@@ -795,6 +804,10 @@ export function DataProvider({ children }) {
     if (updates.contactEmail !== undefined) dbUpdates.contact_email = updates.contactEmail;
     if (updates.location !== undefined) dbUpdates.location = updates.location;
     if (updates.clientId !== undefined) dbUpdates.client_id = updates.clientId || null;
+    // Notes are JSONB on the reservation row. This mapping was missing, so
+    // the note handlers' claim that reservation notes "persist through the
+    // reservation update path" was false — every note vanished on reload.
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
     return dbUpdates;
   };
 
@@ -933,14 +946,35 @@ export function DataProvider({ children }) {
         setCheckoutEvents((prev) => [...prev, historyEvent]);
       }
 
-      // If damage reported, add a note
+      // If damage reported, add a note — and mirror it into state so the
+      // "⚠️ Damage reported" entry (and the notes badge) shows without a
+      // re-navigation. Only when the item's notes are already hydrated:
+      // an undefined list means the next detail visit fetches the complete
+      // set, damage note included.
       if (damageReported && damageDescription) {
         try {
-          await itemNotesService.create({
+          const row = await itemNotesService.create({
             item_id: itemId,
             user_name: returnedBy || 'System',
             text: `⚠️ Damage reported: ${damageDescription}`,
           });
+          const uiNote = {
+            id: row?.id,
+            user: returnedBy || 'System',
+            date: new Date().toISOString().split('T')[0],
+            text: `⚠️ Damage reported: ${damageDescription}`,
+            replies: [],
+            deleted: false,
+          };
+          if (uiNote.id) {
+            setInventory((prev) =>
+              prev.map((item) =>
+                item.id === itemId && item.notes !== undefined
+                  ? { ...item, notes: [...item.notes, uiNote] }
+                  : item,
+              ),
+            );
+          }
         } catch (noteErr) {
           logError('Failed to add damage note:', noteErr);
         }
@@ -1048,8 +1082,10 @@ export function DataProvider({ children }) {
   const deletePackageNote = useCallback(async (noteId) => {
     try {
       await packageNotesService.softDelete(noteId);
+      return true;
     } catch (err) {
       logError('Failed to delete package note:', err);
+      return false;
     }
   }, []);
 
@@ -1213,8 +1249,10 @@ export function DataProvider({ children }) {
   const deleteClientNote = useCallback(async (noteId) => {
     try {
       await clientNotesService.softDelete(noteId);
+      return true;
     } catch (err) {
       logError('Failed to delete client note:', err);
+      return false;
     }
   }, []);
 

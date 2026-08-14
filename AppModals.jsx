@@ -70,13 +70,8 @@ const ImagePreviewModal = lazy(() => import('./modals/ImagePreviewModal.jsx'));
 
 export default memo(function AppModals({ handlers, currentUser }) {
   // Read state from contexts
-  const {
-    selectedItem,
-    setSelectedItem,
-    selectedReservationItem,
-    setCurrentView,
-    setSelectedPackage,
-  } = useNavigationContext();
+  const { selectedItem, selectedReservationItem, setCurrentView, setSelectedPackage } =
+    useNavigationContext();
 
   // Scanner quick actions mirror ItemDetail's gate: checkout/check-in write
   // the inventory row, which RLS gates on gear_list edit
@@ -140,6 +135,7 @@ export default memo(function AppModals({ handlers, currentUser }) {
     deleteItem,
     saveReservation,
     selectImage,
+    navigateToItem,
     exportData,
     updateUserProfile,
     addAuditLog,
@@ -274,8 +270,10 @@ export default memo(function AppModals({ handlers, currentUser }) {
             packages={packages}
             onItemFound={(item) => {
               closeModal();
-              setSelectedItem(item);
-              setCurrentView(VIEWS.GEAR_DETAIL);
+              // Through the real navigation path — setting the slim list row
+              // directly skipped detail hydration, so a scanned item showed
+              // zero notes and no checkout history
+              navigateToItem(item.id);
             }}
             onPackageFound={(pkg) => {
               closeModal();

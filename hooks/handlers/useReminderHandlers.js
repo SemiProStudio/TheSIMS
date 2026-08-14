@@ -1,9 +1,15 @@
 // ============================================================================
 // Reminder Handlers
-// Extracted from App.jsx — manages item reminder CRUD
+// Extracted from App.jsx — manages item reminder CRUD.
+// Optimistic-with-rollback: every operation awaits its persist; failures
+// restore the previous reminders and toast. (The old handlers fired
+// complete/uncomplete/delete without awaiting and swallowed every failure —
+// a "completed" reminder came back due on reload, a deleted one resurrected,
+// and the audit entry was written whether or not the write happened.)
 // ============================================================================
 import { useCallback } from 'react';
 import { getTodayISO } from '../../utils';
+import { useToast } from '../../contexts/ToastContext.js';
 
 export function useReminderHandlers({
   selectedItem,
@@ -12,23 +18,35 @@ export function useReminderHandlers({
   currentUser,
   showConfirm,
 }) {
+  const { addToast } = useToast();
+
+  // Apply a reminders array to both state copies
+  const applyReminders = useCallback(
+    (itemId, reminders) => {
+      dataContext.patchInventoryItem(itemId, () => ({ reminders }));
+      setSelectedItem((prev) => (prev?.id === itemId ? { ...prev, reminders } : prev));
+    },
+    [dataContext, setSelectedItem],
+  );
+
   const addReminder = useCallback(
     async (reminder) => {
       if (!selectedItem) return;
 
       const tempId = reminder.id;
-      const updatedReminders = [...(selectedItem.reminders || []), reminder];
-
-      dataContext.patchInventoryItem(selectedItem.id, (item) => ({
-        reminders: [...(item.reminders || []), reminder],
-      }));
-      setSelectedItem((prev) => ({ ...prev, reminders: updatedReminders }));
+      const previousReminders = selectedItem.reminders || [];
+      applyReminders(selectedItem.id, [...previousReminders, reminder]);
 
       const dbResult = await dataContext.addItemReminder(selectedItem.id, {
         ...reminder,
         createdBy: currentUser.name,
       });
-      if (dbResult?.id && dbResult.id !== tempId) {
+      if (!dbResult) {
+        applyReminders(selectedItem.id, previousReminders);
+        addToast('Could not save the reminder. Please try again.', 'error');
+        return;
+      }
+      if (dbResult.id && dbResult.id !== tempId) {
         const swapId = (reminders) =>
           (reminders || []).map((r) => (r.id === tempId ? { ...r, id: dbResult.id } : r));
         dataContext.patchInventoryItem(selectedItem.id, (item) => ({
@@ -44,25 +62,43 @@ export function useReminderHandlers({
         itemId: selectedItem.id,
       });
     },
-    [selectedItem, setSelectedItem, currentUser, dataContext],
+    [selectedItem, setSelectedItem, currentUser, dataContext, applyReminders, addToast],
+  );
+
+  // Shared by complete/uncomplete: patch, await, roll back on failure
+  const setCompletion = useCallback(
+    async (reminderId, completed) => {
+      if (!selectedItem) return;
+
+      const previousReminders = selectedItem.reminders || [];
+      const reminder = previousReminders.find((r) => r.id === reminderId);
+      if (!reminder) return;
+
+      const completedDate = completed ? getTodayISO() : null;
+      applyReminders(
+        selectedItem.id,
+        previousReminders.map((r) => (r.id === reminderId ? { ...r, completed, completedDate } : r)),
+      );
+
+      const ok = await dataContext.updateItemReminder(reminderId, { completed, completedDate });
+      if (ok === null || ok === false) {
+        applyReminders(selectedItem.id, previousReminders);
+        addToast('Could not update the reminder. Please try again.', 'error');
+        return false;
+      }
+      return true;
+    },
+    [selectedItem, dataContext, applyReminders, addToast],
   );
 
   const completeReminder = useCallback(
-    (reminderId) => {
+    async (reminderId) => {
       if (!selectedItem) return;
-
       const reminder = (selectedItem.reminders || []).find((r) => r.id === reminderId);
       if (!reminder) return;
 
-      const updatedReminders = (selectedItem.reminders || []).map((r) =>
-        r.id === reminderId ? { ...r, completed: true, completedDate: getTodayISO() } : r,
-      );
-
-      dataContext.patchInventoryItem(selectedItem.id, () => ({
-        reminders: updatedReminders,
-      }));
-      setSelectedItem((prev) => ({ ...prev, reminders: updatedReminders }));
-      dataContext.updateItemReminder(reminderId, { completed: true, completedDate: getTodayISO() });
+      const ok = await setCompletion(reminderId, true);
+      if (!ok) return;
 
       dataContext.addAuditLog({
         type: 'reminder_completed',
@@ -71,27 +107,12 @@ export function useReminderHandlers({
         itemId: selectedItem.id,
       });
     },
-    [selectedItem, setSelectedItem, currentUser, dataContext],
+    [selectedItem, currentUser, dataContext, setCompletion],
   );
 
   const uncompleteReminder = useCallback(
-    (reminderId) => {
-      if (!selectedItem) return;
-
-      const reminder = (selectedItem.reminders || []).find((r) => r.id === reminderId);
-      if (!reminder) return;
-
-      const updatedReminders = (selectedItem.reminders || []).map((r) =>
-        r.id === reminderId ? { ...r, completed: false, completedDate: null } : r,
-      );
-
-      dataContext.patchInventoryItem(selectedItem.id, () => ({
-        reminders: updatedReminders,
-      }));
-      setSelectedItem((prev) => ({ ...prev, reminders: updatedReminders }));
-      dataContext.updateItemReminder(reminderId, { completed: false, completedDate: null });
-    },
-    [selectedItem, setSelectedItem, dataContext],
+    (reminderId) => setCompletion(reminderId, false),
+    [setCompletion],
   );
 
   const deleteReminder = useCallback(
@@ -105,20 +126,21 @@ export function useReminderHandlers({
         message: `Are you sure you want to delete "${reminder?.title || 'this reminder'}"?`,
         confirmText: 'Delete',
         variant: 'danger',
-        onConfirm: () => {
-          const updatedReminders = (selectedItem.reminders || []).filter(
-            (r) => r.id !== reminderId,
+        onConfirm: async () => {
+          const previousReminders = selectedItem.reminders || [];
+          applyReminders(
+            selectedItem.id,
+            previousReminders.filter((r) => r.id !== reminderId),
           );
-
-          dataContext.patchInventoryItem(selectedItem.id, () => ({
-            reminders: updatedReminders,
-          }));
-          setSelectedItem((prev) => ({ ...prev, reminders: updatedReminders }));
-          dataContext.deleteItemReminder(reminderId);
+          const ok = await dataContext.deleteItemReminder(reminderId);
+          if (ok === null || ok === false) {
+            applyReminders(selectedItem.id, previousReminders);
+            addToast('Could not delete the reminder. Please try again.', 'error');
+          }
         },
       });
     },
-    [selectedItem, dataContext, showConfirm, setSelectedItem],
+    [selectedItem, dataContext, showConfirm, applyReminders, addToast],
   );
 
   return { addReminder, completeReminder, uncompleteReminder, deleteReminder };

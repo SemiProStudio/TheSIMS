@@ -65,11 +65,27 @@ describe('clientNoteHandlers', () => {
 
   it('add: no second patch when the DB echoes the same id', async () => {
     const { hook, dataContext } = setup(
-      makeDataContext({ addClientNote: vi.fn().mockResolvedValue(null) }),
+      makeDataContext({ addClientNote: vi.fn(async (clientId, note) => ({ id: note.id })) }),
     );
 
     await act(() => hook.result.current.clientNoteHandlers.add('CL001', 'hello'));
     expect(dataContext.patchClient).toHaveBeenCalledTimes(1);
+  });
+
+  it('add: a failed persist rolls the optimistic note back (null = failure)', async () => {
+    const { hook, dataContext } = setup(
+      makeDataContext({ addClientNote: vi.fn().mockResolvedValue(null) }),
+    );
+
+    await act(() => hook.result.current.clientNoteHandlers.add('CL001', 'hello'));
+
+    // Optimistic patch + rollback patch — the note must NOT stay on screen
+    // pretending it saved
+    expect(dataContext.patchClient).toHaveBeenCalledTimes(2);
+    const rollbackUpdater = dataContext.patchClient.mock.calls[1][1];
+    const tempNote = dataContext.addClientNote.mock.calls[0][1];
+    const rolledBack = rollbackUpdater({ clientNotes: [{ ...tempNote }] });
+    expect(rolledBack.clientNotes).toHaveLength(0);
   });
 
   it('reply: persists with parentId', async () => {
