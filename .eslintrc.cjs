@@ -66,6 +66,8 @@ module.exports = {
     'dist/',
     'node_modules/',
     'coverage/',           // Auto-generated coverage reports
+    'playwright-report/',  // Playwright HTML report bundle
+    'test-results/',       // Playwright traces/screenshots
     'public/sw.js',        // Service worker runs in different context
     'supabase/functions/',  // Deno edge functions
     'e2e/',                // Playwright tests use different env

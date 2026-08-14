@@ -8,7 +8,8 @@
 // preview and print paths (ppi=300), rasterized via an SVG foreignObject.
 // ============================================================================
 
-import { ItemLabel, qrOffset, qrDisplaySize } from './ItemLabel.jsx';
+import { ItemLabel } from './ItemLabel.jsx';
+import { qrOffset, qrDisplaySize } from '../lib/labelMetrics.js';
 
 export const SHEET_DPI = 300;
 // Cricut Print-Then-Cut printable area inside the registration box (Letter)

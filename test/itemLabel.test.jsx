@@ -8,13 +8,9 @@
 
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import {
-  ItemLabel,
-  renderLabelsHTML,
-  qrDisplaySize,
-  qrOffset,
-  fitFontSize,
-} from '../components/ItemLabel.jsx';
+import { ItemLabel } from '../components/ItemLabel.jsx';
+import { renderLabelsHTML } from '../components/labelRender.jsx';
+import { qrDisplaySize, qrOffset, fitFontSize } from '../lib/labelMetrics.js';
 import { LABEL_FORMATS } from '../constants.js';
 
 const fmt = (id) => LABEL_FORMATS.find((f) => f.id === id);
