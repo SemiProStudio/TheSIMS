@@ -14,6 +14,7 @@
 
 import { test, expect } from './fixtures.js';
 import { E2E_PREFIX, adminDb } from './db.js';
+import { DEFAULT_ROLES } from '../constants.js';
 
 async function openAdmin(page, pages) {
   await page.goto('/');
@@ -88,6 +89,16 @@ test.describe('Roles lifecycle', () => {
         return data?.length || 0;
       })
       .toBe(1);
+
+    // Make the new role permission-identical to role_user BEFORE assigning
+    // the shared standard account to it. A fresh role defaults to VIEW on
+    // everything — including admin_* — so for the assign→delete window the
+    // standard user gained admin visibility, and any parallel test logged
+    // in as that account (auth.spec's "must NOT see Admin Panel") caught
+    // the escalation as a flake. Neutral permissions keep the window
+    // observably invisible to every other worker.
+    const roleUserPermissions = DEFAULT_ROLES.find((r) => r.id === 'role_user').permissions;
+    await db.from('roles').update({ permissions: roleUserPermissions }).eq('name', roleName);
 
     // ---- Assign the standard user ----
     const roleCard = page.locator('.card', { hasText: roleName }).first();
