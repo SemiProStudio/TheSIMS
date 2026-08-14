@@ -879,7 +879,16 @@ export function DataProvider({ children }) {
   const loadPackageNotes = useCallback(async (packageId) => {
     try {
       const notes = await packageNotesService.getByPackageId(packageId);
-      setPackages((prev) => prev.map((pkg) => (pkg.id === packageId ? { ...pkg, notes } : pkg)));
+      setPackages((prev) =>
+        prev.map((pkg) => {
+          if (pkg.id !== packageId) return pkg;
+          // MERGE, never replace — same in-flight race as loadClientNotes:
+          // an optimistic note added before this snapshot lands must survive
+          const serverIds = new Set(notes.map((n) => n.id));
+          const localOnly = (pkg.notes || []).filter((n) => !serverIds.has(n.id));
+          return { ...pkg, notes: [...notes, ...localOnly] };
+        }),
+      );
       return notes;
     } catch (err) {
       logError('Failed to load package notes:', err);
@@ -1032,7 +1041,19 @@ export function DataProvider({ children }) {
   const loadClientNotes = useCallback(async (clientId) => {
     try {
       const notes = await clientNotesService.getByClientId(clientId);
-      setClients((prev) => prev.map((c) => (c.id === clientId ? { ...c, clientNotes: notes } : c)));
+      setClients((prev) =>
+        prev.map((c) => {
+          if (c.id !== clientId) return c;
+          // MERGE, never replace: a note added optimistically while this
+          // fetch was in flight is not in the (older) server snapshot —
+          // replacing wholesale made it vanish from the screen even though
+          // the insert succeeded (deterministic on slow networks; CI caught
+          // it). Server rows win on id collision; local-only rows survive.
+          const serverIds = new Set(notes.map((n) => n.id));
+          const localOnly = (c.clientNotes || []).filter((n) => !serverIds.has(n.id));
+          return { ...c, clientNotes: [...notes, ...localOnly] };
+        }),
+      );
       return notes;
     } catch (err) {
       logError('Failed to load client notes:', err);

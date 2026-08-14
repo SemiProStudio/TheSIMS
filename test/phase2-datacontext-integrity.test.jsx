@@ -89,6 +89,16 @@ vi.mock('../lib/services.js', () => ({
     delete: vi.fn(() => Promise.resolve({})),
   },
   itemNotesService: { create: vi.fn(), softDelete: vi.fn() },
+  clientNotesService: {
+    getByClientId: vi.fn(() => Promise.resolve([])),
+    create: vi.fn(() => Promise.resolve({ id: 'note-db-1' })),
+    softDelete: vi.fn(),
+  },
+  packageNotesService: {
+    getByPackageId: vi.fn(() => Promise.resolve([])),
+    create: vi.fn(),
+    softDelete: vi.fn(),
+  },
   itemRemindersService: { create: vi.fn(), update: vi.fn(), delete: vi.fn() },
   notificationPreferencesService: { getByUserId: vi.fn(), upsert: vi.fn() },
   emailService: {
@@ -102,6 +112,7 @@ vi.mock('../lib/services.js', () => ({
 import {
   maintenanceService,
   clientsService,
+  clientNotesService,
   inventoryService,
 } from '../lib/services.js';
 import { storageService } from '../lib/storage.js';
@@ -214,5 +225,72 @@ describe('lazy loader error latch', () => {
     });
 
     expect(clientsService.getAll).toHaveBeenCalledTimes(1);
+  });
+});
+
+// -----------------------------------------------------------------------------
+// Client notes fetch must MERGE, not clobber
+// The detail view hydrates notes lazily; a note added optimistically while
+// that fetch was in flight used to be wiped by the older server snapshot
+// (saved to the DB but gone from the screen — deterministic on slow
+// networks; CI caught it on the clients round-trip spec).
+// -----------------------------------------------------------------------------
+
+describe('loadClientNotes merge (optimistic add during fetch)', () => {
+  it('keeps a note added while the fetch was in flight', async () => {
+    let resolveFetch;
+    clientNotesService.getByClientId.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFetch = resolve;
+      }),
+    );
+    await renderProvider();
+    await act(async () => {
+      await ctx.ensureClients();
+    });
+
+    let loadPromise;
+    act(() => {
+      loadPromise = ctx.loadClientNotes('client-1');
+    });
+
+    // Optimistic add lands while the fetch is still pending
+    act(() => {
+      ctx.patchClient('client-1', (c) => ({
+        clientNotes: [...(c.clientNotes || []), { id: 'temp-1', text: 'optimistic note' }],
+      }));
+    });
+
+    await act(async () => {
+      resolveFetch([{ id: 'server-1', text: 'older server note' }]);
+      await loadPromise;
+    });
+
+    const ids = ctx.clients.find((c) => c.id === 'client-1').clientNotes.map((n) => n.id);
+    expect(ids).toContain('server-1');
+    expect(ids).toContain('temp-1'); // wiped before the fix
+  });
+
+  it('does not duplicate a note the server snapshot already has', async () => {
+    clientNotesService.getByClientId.mockResolvedValueOnce([{ id: 'real-1', text: 'note' }]);
+    await renderProvider();
+    await act(async () => {
+      await ctx.ensureClients();
+    });
+
+    act(() => {
+      ctx.patchClient('client-1', () => ({
+        clientNotes: [{ id: 'real-1', text: 'note (already id-swapped locally)' }],
+      }));
+    });
+
+    await act(async () => {
+      await ctx.loadClientNotes('client-1');
+    });
+
+    const notes = ctx.clients.find((c) => c.id === 'client-1').clientNotes;
+    expect(notes.filter((n) => n.id === 'real-1')).toHaveLength(1);
+    // Server row wins on collision
+    expect(notes[0].text).toBe('note');
   });
 });
