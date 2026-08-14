@@ -225,7 +225,7 @@ test.describe.serial('scan-to-pack package units', () => {
     // Package label → packed
     await manual.fill('pkg-doc');
     await page.getByRole('button', { name: 'Pack', exact: true }).click();
-    await expect(page.getByText('1/2 packed')).toBeVisible();
+    await expect(page.getByText('1/2 packed', { exact: true })).toBeVisible();
 
     // DB truth: OUR list's junction row is packed
     await expect
@@ -248,7 +248,7 @@ test.describe.serial('scan-to-pack package units', () => {
     await manual.fill('CA1004');
     await page.getByRole('button', { name: 'Pack', exact: true }).click();
     await expect(page.getByText('Scan the package label')).toBeVisible();
-    await expect(page.getByText('1/2 packed')).toBeVisible();
+    await expect(page.getByText('1/2 packed', { exact: true })).toBeVisible();
 
     // Re-scanning the packed package reports Already Packed
     await manual.fill('pkg-doc');
