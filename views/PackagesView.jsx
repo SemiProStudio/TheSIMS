@@ -454,9 +454,14 @@ function PackagesView({
           });
         } catch (err) {
           logError('Failed to update package:', err);
-          addToast('Failed to update package — changes may not persist', 'error');
-          // Fallback to local state
-          dataContext.patchPackage(editingPackage.id, updates);
+          // Keep the editor OPEN and state untouched — the old path applied
+          // the rename locally anyway and closed, so the screen showed a
+          // change the reload would revert
+          addToast(
+            'Failed to update package: ' + (err.message || 'Please try again.'),
+            'error',
+          );
+          return;
         }
       } else {
         dataContext.patchPackage(editingPackage.id, updates);

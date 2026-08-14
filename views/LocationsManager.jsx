@@ -494,10 +494,16 @@ function LocationsManager({ locations, inventory, onSave, onClose, showConfirm }
     return flattenLocations(editLocations);
   }, [editLocations]);
 
-  // Save all changes — include full-path renames so items can follow
-  const handleSaveAll = () => {
+  // Save all changes — include full-path renames so items can follow.
+  // Close only after the save resolves — leaving immediately discarded the
+  // edit tree while the failure toast landed on the wrong page.
+  const handleSaveAll = async () => {
     const pathRenames = computeLocationPathRenames(locations, editLocations);
-    onSave(editLocations, pathRenames);
+    try {
+      await onSave(editLocations, pathRenames);
+    } catch {
+      return; // onSave already rolled back and toasted
+    }
     if (onClose) onClose();
   };
 

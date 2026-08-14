@@ -372,7 +372,13 @@ export const ItemFormPage = memo(function ItemFormPage({
               <Button variant="secondary" onClick={onBack}>
                 Cancel
               </Button>
-              <Button onClick={onSave} disabled={!isValid} icon={isEdit ? Save : Plus}>
+              <Button
+                // The hook toasts and rethrows on failure — swallow to avoid
+                // an unhandled rejection on every failed save
+                onClick={() => Promise.resolve(onSave()).catch(() => {})}
+                disabled={!isValid}
+                icon={isEdit ? Save : Plus}
+              >
                 {isEdit ? 'Save Changes' : 'Add Item'}
               </Button>
             </div>
@@ -686,9 +692,15 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
     });
   }, [editSpecs]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (hasDuplicates) return;
-    onSave(editSpecs, fieldRenames);
+    // Await and stay on failure — leaving immediately discarded the edits
+    // while the save's error toast landed on the wrong page
+    try {
+      await onSave(editSpecs, fieldRenames);
+    } catch {
+      return; // onSave already rolled back and toasted
+    }
     onBack();
   };
 
@@ -1225,8 +1237,12 @@ export const CategoriesPage = memo(function CategoriesPage({
         categoryRenames[row.key] = name;
       }
     });
-    onSave(newCategories, newSpecs, newSettings, categoryRenames);
-    onBack();
+    // Await and stay on failure — leaving immediately discarded the edits
+    // while the save's error toast landed on the wrong page
+    Promise.resolve(onSave(newCategories, newSpecs, newSettings, categoryRenames)).then(
+      () => onBack(),
+      () => {}, // onSave already rolled back and toasted
+    );
   };
 
   // Leaving with unsaved edits silently discarded them — confirm first

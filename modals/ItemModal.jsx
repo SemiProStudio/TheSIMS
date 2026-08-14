@@ -89,10 +89,12 @@ export const ItemModal = memo(function ItemModal({
     [isEdit, itemId, handleChange],
   );
 
-  // Handle save with validation
+  // Handle save with validation. The hook toasts and rethrows on failure so
+  // its own state stays honest — swallow here to avoid an unhandled
+  // rejection on every failed save (the modal stays open either way).
   const handleSave = () => {
     if (validateAll()) {
-      onSave();
+      Promise.resolve(onSave()).catch(() => {});
     }
   };
 

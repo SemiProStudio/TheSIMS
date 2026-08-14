@@ -226,7 +226,13 @@ export default function App() {
   );
 
   const handleLogout = useCallback(async () => {
-    await auth.signOut();
+    try {
+      await auth.signOut();
+    } catch (err) {
+      // Clear the local session regardless — a failed server sign-out must
+      // not leave the user stuck "logged in" with a dead button
+      logError('Sign-out failed (clearing local session anyway):', err);
+    }
     setIsLoggedIn(false);
     setCurrentUser(null);
   }, [auth]);
@@ -264,12 +270,16 @@ export default function App() {
         return next;
       });
       if (localOnly) return Promise.resolve();
+      // The queue never rejects (a rejection would wedge every later write)
+      // but resolves a success boolean so callers can skip audit entries and
+      // "saved" claims for writes that didn't happen
       profileWriteQueueRef.current = profileWriteQueueRef.current.then(() =>
         usersService.update(userId, { profile: merged }).then(
-          () => {},
+          () => true,
           (err) => {
             logError('Failed to save profile settings:', err);
             if (failureToast) addToast(failureToast, 'warning');
+            return false;
           },
         ),
       );
@@ -853,15 +863,18 @@ export default function App() {
       // The profile modal builds ONLY its branding fields — merge them into
       // the stored profile. Persisting it verbatim used to wipe
       // layoutPrefs/savedFilterViews/uiPrefs from the DB on every save.
-      await persistProfilePatch(updatedUser.profile || {}, {
+      const ok = await persistProfilePatch(updatedUser.profile || {}, {
         failureToast: 'Profile changes may not have saved',
       });
       patchUser(updatedUser.id, { profile: profileRef.current });
-      // Audit log
-      addAuditLog({
-        type: 'profile_updated',
-        description: `${updatedUser.name || 'User'} updated their profile`,
-      });
+      // Audit only what actually persisted — the entry used to be written
+      // even when the DB write failed
+      if (ok !== false) {
+        addAuditLog({
+          type: 'profile_updated',
+          description: `${updatedUser.name || 'User'} updated their profile`,
+        });
+      }
     },
     [persistProfilePatch, addAuditLog, patchUser],
   );
@@ -890,7 +903,8 @@ export default function App() {
         } catch (err) {
           logError('Failed to fetch notes for export:', err);
           addToast('Export failed: could not load item notes', 'error');
-          return;
+          // false = nothing was exported — the modal stays open
+          return false;
         }
       }
 
@@ -1005,8 +1019,12 @@ export default function App() {
       try {
         await dataContext.saveNotificationPreferences(currentUser.id, prefs);
       } catch (err) {
+        // Rethrow so the settings view keeps its unsaved-changes state — the
+        // old swallow patched the user anyway, so the UI asserted "saved"
+        // over preferences that reverted on reload
         logError('Failed to save notification preferences:', err);
-        addToast('Notification preferences may not have saved', 'warning');
+        addToast('Notification preferences did not save. Please try again.', 'error');
+        throw err;
       }
       patchUser(currentUser.id, { notificationPreferences: prefs });
       setCurrentUser((prev) => ({ ...prev, notificationPreferences: prefs }));

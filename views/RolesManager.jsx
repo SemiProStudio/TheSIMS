@@ -625,9 +625,11 @@ const UserAssignmentModal = memo(function UserAssignmentModal({
     });
   };
 
-  const handleSave = () => {
-    onSave(role.id, [...selectedUsers]);
-    onClose();
+  const handleSave = async () => {
+    // assignUsersToRole returns a success boolean — close only on success so
+    // a failed assignment doesn't silently discard the selection
+    const ok = await onSave(role.id, [...selectedUsers]);
+    if (ok !== false) onClose();
   };
 
   return (
@@ -709,8 +711,11 @@ function RolesManager({
     setShowEditor(true);
   };
 
-  const handleSave = (roleData) => {
-    onSaveRole?.(roleData);
+  const handleSave = async (roleData) => {
+    // saveRole returns a success boolean (persist-first) — the editor used
+    // to close regardless, discarding the permission matrix on failure
+    const ok = await onSaveRole?.(roleData);
+    if (ok === false) return;
     setShowEditor(false);
     setEditingRole(null);
   };

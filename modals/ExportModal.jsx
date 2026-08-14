@@ -157,9 +157,12 @@ export const ExportModal = memo(function ExportModal({
 
         <Button
           fullWidth
-          onClick={() => {
-            onExport({ format, columns, includeBranding, scope });
-            onClose();
+          onClick={async () => {
+            // Close only after the export finished — the modal used to close
+            // before the async work, so a failed notes fetch toasted into a
+            // screen with no modal left to retry from
+            const result = await onExport({ format, columns, includeBranding, scope });
+            if (result !== false) onClose();
           }}
           icon={Download}
         >

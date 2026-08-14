@@ -825,6 +825,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               inventory={inventory}
               showConfirm={showConfirm}
               onSave={async (newLocations, pathRenames = []) => {
+                // Snapshot for rollback — the optimistic replace used to
+                // stay in state after a failed sync, diverging from the DB
+                // until reload (categories/specs already roll back)
+                const previousLocations = locations;
                 replaceLocations(newLocations);
                 try {
                   await locationsService.syncAll(newLocations);
@@ -835,7 +839,8 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                   });
                 } catch (err) {
                   logError('Failed to save locations:', err);
-                  addToast('Failed to save locations', 'error');
+                  replaceLocations(previousLocations);
+                  addToast('Failed to save locations — changes reverted', 'error');
                   return;
                 }
                 // Items store locations as plain strings — renames (of a

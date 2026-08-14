@@ -521,7 +521,10 @@ export function DataProvider({ children }) {
     try {
       await auditLogService.create(newEntry);
     } catch (err) {
+      // No local append on failure — the view used to show phantom entries
+      // that existed nowhere but this session
       logError('Failed to create audit log:', err);
+      return;
     }
 
     setAuditLog((prev) => [newEntry, ...prev]);
@@ -874,6 +877,9 @@ export function DataProvider({ children }) {
                 dueBack: checkoutData.dueBack,
                 checkoutProject: checkoutData.project,
                 checkoutClientId: checkoutData.clientId,
+                // Mirror the server-side increment_checkout_count RPC — the
+                // list copy used to lag the detail copy until the next poll
+                checkoutCount: (item.checkoutCount || 0) + 1,
               }
             : item,
         ),

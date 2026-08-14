@@ -215,12 +215,21 @@ function LabelsView({ inventory, packages = [], user, uiPrefs, onSaveUiPrefs }) 
     const items = getSelectedEntries();
     if (items.length === 0) return;
 
-    const labelsHTML = await buildLabelsHTML(
-      items,
-      selectedFormat,
-      selectionTab === 'kits',
-      selectionTab === 'packages',
-    );
+    // The PNG path guards its QR generation; this one silently died on
+    // failure, leaving a dead Print button
+    let labelsHTML;
+    try {
+      labelsHTML = await buildLabelsHTML(
+        items,
+        selectedFormat,
+        selectionTab === 'kits',
+        selectionTab === 'packages',
+      );
+    } catch (err) {
+      logError('Failed to build labels for print:', err);
+      addToast('Could not generate labels. Please try again.', 'error');
+      return;
+    }
 
     openPrintWindow({
       title: 'Labels',

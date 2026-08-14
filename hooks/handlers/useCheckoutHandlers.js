@@ -86,10 +86,12 @@ export function useCheckoutHandlers({
           ...prev,
           status: STATUS.CHECKED_OUT,
           checkedOutTo: borrowerName,
+          checkedOutToUserId: currentUser?.id || null,
           checkedOutDate: checkedOutDate,
           dueBack: dueDate,
           checkoutProject: project,
           checkoutProjectType: projectType,
+          checkoutClientId: clientId || null,
           checkoutCount: (prev.checkoutCount || 0) + 1,
         }));
       }
@@ -199,9 +201,11 @@ export function useCheckoutHandlers({
           status: newStatus,
           condition: condition,
           checkedOutTo: null,
+          checkedOutToUserId: null,
           checkedOutDate: null,
           dueBack: null,
           checkoutProject: null,
+          checkoutClientId: null,
         }));
       }
 
@@ -345,15 +349,14 @@ export function useCheckoutHandlers({
         }
       } catch (err) {
         logError('Failed to save maintenance:', err);
-        // Rollback optimistic update
+        // Rollback optimistic update. The modal STAYS OPEN with the typed
+        // record intact — CheckIn/CheckOut in this file set that contract,
+        // but this path closed and discarded the form on failure.
         dataContext.patchInventoryItem(itemId, { maintenanceHistory: prevHistory });
         if (selectedItem?.id === itemId) {
           setSelectedItem((prev) => ({ ...prev, maintenanceHistory: prevHistory }));
         }
-        addToast('Maintenance save failed — changes reverted', 'error');
-        closeModal();
-        setMaintenanceItem(null);
-        setEditingMaintenanceRecord(null);
+        addToast('Maintenance save failed: ' + (err.message || 'Please try again.'), 'error');
         return; // Don't write audit/change log entries for a failed save
       }
 
