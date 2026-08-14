@@ -1,14 +1,32 @@
 // ============================================================================
 // Activity Report Panel View
-// Checkout activity, usage statistics, and trending items
+// Checkout activity over time (real checkout_history events), usage
+// statistics, and trending items. The lifetime counters the report used to
+// stop at gain a time axis: a trailing-window trend, day-of-week pattern,
+// and a 30/90/365-day range selector.
 // ============================================================================
 
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Download, BarChart3, TrendingUp, LogOut, Package } from 'lucide-react';
+import { Download, BarChart3, TrendingUp, LogOut, Package, CalendarDays } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, isOverdue, sanitizeCSVCell } from '../utils';
+import { formatDate, downloadCSV } from '../utils';
 import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
+import { ReportBranding } from '../components/ReportBranding.jsx';
+import { TrendChart, ColumnChart, HBarChart } from '../components/charts.jsx';
+import {
+  computeActivityStats,
+  bucketEvents,
+  dayOfWeekCounts,
+  csvForActivity,
+} from '../lib/reportData.js';
+import { useData } from '../contexts/DataContext.js';
+
+const RANGE_OPTIONS = [
+  { days: 30, label: '30 days' },
+  { days: 90, label: '90 days' },
+  { days: 365, label: '12 months' },
+];
 
 export const ActivityReportPanel = memo(function ActivityReportPanel({
   inventory,
@@ -16,115 +34,70 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
   onViewItem,
   onBack,
 }) {
-  // Compile checkout activity across all items
-  const activityData = useMemo(() => {
-    const totalCheckouts = inventory.reduce((sum, i) => sum + (i.checkoutCount || 0), 0);
-    const currentlyOut = inventory.filter((i) => i.status === 'checked-out');
+  const { ensureCheckoutActivity, checkoutEvents, checkoutEventsLoaded } = useData();
+  const [rangeDays, setRangeDays] = useState(90);
 
-    // Most checked-out items (top 15)
-    const topItems = [...inventory]
-      .filter((i) => (i.checkoutCount || 0) > 0)
-      .sort((a, b) => (b.checkoutCount || 0) - (a.checkoutCount || 0))
-      .slice(0, 15);
+  useEffect(() => {
+    ensureCheckoutActivity();
+  }, [ensureCheckoutActivity]);
 
-    // Never checked out
-    const neverCheckedOut = inventory.filter((i) => !i.checkoutCount || i.checkoutCount === 0);
+  const activityData = useMemo(() => computeActivityStats(inventory), [inventory]);
 
-    // Items by checkout frequency
-    const frequencyBuckets = { 0: 0, '1-5': 0, '6-10': 0, '11-25': 0, '26-50': 0, '50+': 0 };
-    inventory.forEach((i) => {
-      const count = i.checkoutCount || 0;
-      if (count === 0) frequencyBuckets['0']++;
-      else if (count <= 5) frequencyBuckets['1-5']++;
-      else if (count <= 10) frequencyBuckets['6-10']++;
-      else if (count <= 25) frequencyBuckets['11-25']++;
-      else if (count <= 50) frequencyBuckets['26-50']++;
-      else frequencyBuckets['50+']++;
-    });
+  // Checkout events only — checkins would double-count every cycle
+  const checkoutsInWindow = useMemo(
+    () => checkoutEvents.filter((e) => e.action === 'checkout'),
+    [checkoutEvents],
+  );
+  const trendSeries = useMemo(
+    () => bucketEvents(checkoutsInWindow, { days: rangeDays }),
+    [checkoutsInWindow, rangeDays],
+  );
+  const trendTotal = useMemo(
+    () => trendSeries.reduce((sum, b) => sum + b.value, 0),
+    [trendSeries],
+  );
+  const dowSeries = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    start.setDate(start.getDate() - (rangeDays - 1));
+    return dayOfWeekCounts(
+      checkoutsInWindow.filter((e) => {
+        const d = new Date(e.timestamp);
+        return d >= start && d <= now;
+      }),
+    );
+  }, [checkoutsInWindow, rangeDays]);
 
-    // Checkout activity by category
-    const byCategory = {};
-    inventory.forEach((item) => {
-      const cat = item.category || 'Uncategorized';
-      if (!byCategory[cat]) {
-        byCategory[cat] = { checkouts: 0, items: 0 };
-      }
-      byCategory[cat].checkouts += item.checkoutCount || 0;
-      byCategory[cat].items++;
-    });
+  const frequencyBars = useMemo(() => {
+    return Object.entries(activityData.frequencyBuckets).map(([range, count]) => ({
+      label: range === '0' ? 'Never' : `${range} times`,
+      value: count,
+      color: range === '0' ? colors.textMuted : colors.primary,
+    }));
+  }, [activityData.frequencyBuckets]);
 
-    // Currently checked out details
-    const checkedOutDetails = currentlyOut
-      .sort((a, b) => new Date(a.dueBack || '9999') - new Date(b.dueBack || '9999'))
-      .map((item) => ({
-        id: item.id,
-        name: item.name,
-        brand: item.brand,
-        borrower: item.checkedOutTo || 'Unknown',
-        checkedOutDate: item.checkedOutDate,
-        dueBack: item.dueBack,
-        project: item.checkoutProject,
-        isOverdue: isOverdue(item.dueBack),
-      }));
+  const categoryBars = useMemo(
+    () =>
+      Object.entries(activityData.byCategory)
+        .sort((a, b) => b[1].checkouts - a[1].checkouts)
+        .map(([category, data]) => ({
+          label: `${category} (${data.items} items)`,
+          value: data.checkouts,
+          color: colors.accent1,
+        })),
+    [activityData.byCategory],
+  );
 
-    // Utilization rate: items that have been checked out at least once
-    const utilizedCount = inventory.filter((i) => (i.checkoutCount || 0) > 0).length;
-    const utilizationRate =
-      inventory.length > 0 ? Math.round((utilizedCount / inventory.length) * 100) : 0;
-
-    return {
-      totalCheckouts,
-      currentlyOut: currentlyOut.length,
-      topItems,
-      neverCheckedOut: neverCheckedOut.length,
-      frequencyBuckets,
-      byCategory,
-      checkedOutDetails,
-      utilizationRate,
-    };
-  }, [inventory]);
-
-  // Export CSV
   const handleExport = () => {
-    const headers = [
-      'Item ID',
-      'Name',
-      'Brand',
-      'Category',
-      'Status',
-      'Checkout Count',
-      'Currently Checked Out To',
-      'Checked Out Date',
-      'Due Back',
-      'Project',
-    ];
-    const rows = [...inventory]
-      .sort((a, b) => (b.checkoutCount || 0) - (a.checkoutCount || 0))
-      .map((item) => [
-        item.id,
-        item.name,
-        item.brand || '',
-        item.category || '',
-        item.status || '',
-        item.checkoutCount || 0,
-        item.checkedOutTo || '',
-        item.checkedOutDate || '',
-        item.dueBack || '',
-        item.checkoutProject || '',
-      ]);
+    const { headers, rows, filename } = csvForActivity(inventory);
+    downloadCSV(headers, rows, filename);
+  };
 
-    const csvContent = [
-      headers.map((h) => sanitizeCSVCell(h)).join(','),
-      ...rows.map((row) => row.map((cell) => sanitizeCSVCell(cell)).join(',')),
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `activity-report-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+  const handleRowKeyDown = (event, itemId) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onViewItem(itemId);
+    }
   };
 
   return (
@@ -141,55 +114,7 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
         }
       />
 
-      {/* Profile branding for print/export */}
-      {currentUser?.profile &&
-        (() => {
-          const p = currentUser.profile;
-          const sf = p.showFields || {};
-          const hasContent = Object.entries(sf).some(([k, v]) => v && p[k]);
-          if (!hasContent) return null;
-          return (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: spacing[4],
-                padding: spacing[3],
-                marginBottom: spacing[4],
-                borderBottom: `1px solid ${colors.borderLight}`,
-              }}
-            >
-              {sf.logo && p.logo && (
-                <img src={p.logo} alt="" style={{ height: 36, objectFit: 'contain' }} />
-              )}
-              <div>
-                {sf.businessName && p.businessName && (
-                  <div
-                    style={{
-                      fontWeight: typography.fontWeight.semibold,
-                      color: colors.textPrimary,
-                    }}
-                  >
-                    {p.businessName}
-                  </div>
-                )}
-                <div
-                  style={{
-                    fontSize: typography.fontSize.xs,
-                    color: colors.textMuted,
-                    display: 'flex',
-                    gap: spacing[3],
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  {sf.displayName && p.displayName && <span>{p.displayName}</span>}
-                  {sf.phone && p.phone && <span>{p.phone}</span>}
-                  {sf.email && p.email && <span>{p.email}</span>}
-                </div>
-              </div>
-            </div>
-          );
-        })()}
+      <ReportBranding profile={currentUser?.profile} />
 
       {/* Summary Stats */}
       <div
@@ -225,6 +150,74 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
           color={activityData.neverCheckedOut > 0 ? colors.warning : colors.textMuted}
         />
       </div>
+
+      {/* Checkout trend over time */}
+      <Card padding={false} style={{ marginBottom: spacing[5] }}>
+        <CardHeader
+          title={`Checkout Trend — ${trendTotal} in the last ${
+            RANGE_OPTIONS.find((r) => r.days === rangeDays)?.label
+          }`}
+          icon={CalendarDays}
+          action={
+            <div style={{ display: 'flex', gap: spacing[1] }} role="group" aria-label="Date range">
+              {RANGE_OPTIONS.map(({ days, label }) => (
+                <button
+                  key={days}
+                  type="button"
+                  onClick={() => setRangeDays(days)}
+                  aria-pressed={rangeDays === days}
+                  style={{
+                    padding: `${spacing[1]}px ${spacing[3]}px`,
+                    borderRadius: borderRadius.md,
+                    border: `1px solid ${rangeDays === days ? colors.primary : colors.border}`,
+                    background:
+                      rangeDays === days ? `${withOpacity(colors.primary, 20)}` : 'transparent',
+                    color: rangeDays === days ? colors.primary : colors.textSecondary,
+                    fontSize: typography.fontSize.xs,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          }
+        />
+        <div style={{ padding: spacing[4] }}>
+          {!checkoutEventsLoaded ? (
+            <p
+              style={{
+                margin: 0,
+                textAlign: 'center',
+                color: colors.textMuted,
+                fontSize: typography.fontSize.sm,
+              }}
+              role="status"
+            >
+              Loading checkout history…
+            </p>
+          ) : trendTotal === 0 ? (
+            <p
+              style={{
+                margin: 0,
+                textAlign: 'center',
+                color: colors.textMuted,
+                fontSize: typography.fontSize.sm,
+              }}
+            >
+              No checkouts in this period
+            </p>
+          ) : (
+            <TrendChart
+              data={trendSeries}
+              color={colors.primary}
+              ariaLabel={`Checkouts per ${
+                rangeDays <= 45 ? 'day' : rangeDays <= 180 ? 'week' : 'month'
+              } over the last ${rangeDays} days`}
+            />
+          )}
+        </div>
+      </Card>
 
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Main content */}
@@ -296,7 +289,10 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
                     {activityData.topItems.map((item, idx) => (
                       <tr
                         key={item.id}
+                        className="report-tr"
+                        tabIndex={0}
                         onClick={() => onViewItem(item.id)}
+                        onKeyDown={(e) => handleRowKeyDown(e, item.id)}
                         style={{
                           borderBottom: `1px solid ${colors.borderLight}`,
                           cursor: 'pointer',
@@ -335,7 +331,7 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
                             style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}
                           >
                             {item.id}
-                            {item.brand ? ` \u2022 ${item.brand}` : ''}
+                            {item.brand ? ` • ${item.brand}` : ''}
                           </div>
                         </td>
                         <td style={{ padding: spacing[3] }}>
@@ -382,13 +378,14 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
               <CardHeader title="Currently Checked Out" icon={LogOut} />
               <div style={{ maxHeight: 300, overflowY: 'auto' }}>
                 {activityData.checkedOutDetails.map((item) => (
-                  <div
+                  <button
+                    type="button"
+                    className="report-row"
                     key={item.id}
                     onClick={() => onViewItem(item.id)}
                     style={{
                       padding: spacing[3],
                       borderBottom: `1px solid ${colors.borderLight}`,
-                      cursor: 'pointer',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
@@ -406,7 +403,7 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
                       </div>
                       <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
                         {item.borrower}
-                        {item.project ? ` \u2022 ${item.project}` : ''}
+                        {item.project ? ` • ${item.project}` : ''}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -427,7 +424,7 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
                         </div>
                       )}
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </Card>
@@ -436,56 +433,40 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
 
         {/* Sidebar */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
+          {/* Busiest days */}
+          <Card padding={false}>
+            <CardHeader title="Checkouts by Day of Week" />
+            <div style={{ padding: spacing[4] }}>
+              {!checkoutEventsLoaded ? (
+                <p
+                  style={{
+                    margin: 0,
+                    textAlign: 'center',
+                    color: colors.textMuted,
+                    fontSize: typography.fontSize.sm,
+                  }}
+                >
+                  Loading…
+                </p>
+              ) : (
+                <ColumnChart
+                  data={dowSeries}
+                  color={colors.accent1}
+                  ariaLabel={`Checkouts by day of week over the last ${rangeDays} days`}
+                />
+              )}
+            </div>
+          </Card>
+
           {/* Checkout Frequency Distribution */}
           <Card padding={false}>
             <CardHeader title="Checkout Frequency" />
             <div style={{ padding: spacing[4] }}>
-              {Object.entries(activityData.frequencyBuckets).map(([range, count]) => {
-                const maxCount = Math.max(...Object.values(activityData.frequencyBuckets));
-                return (
-                  <div key={range} style={{ marginBottom: spacing[3] }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        marginBottom: spacing[1],
-                      }}
-                    >
-                      <span
-                        style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}
-                      >
-                        {range === '0' ? 'Never' : `${range} times`}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: typography.fontSize.sm,
-                          fontWeight: typography.fontWeight.medium,
-                          color: colors.textPrimary,
-                        }}
-                      >
-                        {count} items
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        height: 6,
-                        background: colors.borderLight,
-                        borderRadius: borderRadius.full,
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: '100%',
-                          width: maxCount > 0 ? `${(count / maxCount) * 100}%` : '0%',
-                          background: range === '0' ? colors.textMuted : colors.primary,
-                          borderRadius: borderRadius.full,
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+              <HBarChart
+                data={frequencyBars}
+                formatValue={(v) => `${v} items`}
+                ariaLabel="Items grouped by lifetime checkout count"
+              />
             </div>
           </Card>
 
@@ -493,51 +474,10 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
           <Card padding={false}>
             <CardHeader title="Checkouts by Category" />
             <div style={{ padding: spacing[4] }}>
-              {Object.entries(activityData.byCategory)
-                .sort((a, b) => b[1].checkouts - a[1].checkouts)
-                .map(([category, data]) => (
-                  <div
-                    key={category}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: spacing[2],
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: typography.fontSize.sm,
-                        color: colors.textSecondary,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        maxWidth: 150,
-                      }}
-                    >
-                      {category}
-                    </span>
-                    <div style={{ textAlign: 'right' }}>
-                      <span
-                        style={{
-                          fontSize: typography.fontSize.sm,
-                          fontWeight: typography.fontWeight.medium,
-                          color: colors.textPrimary,
-                        }}
-                      >
-                        {data.checkouts}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: typography.fontSize.xs,
-                          color: colors.textMuted,
-                          marginLeft: spacing[1],
-                        }}
-                      >
-                        ({data.items} items)
-                      </span>
-                    </div>
-                  </div>
-                ))}
+              <HBarChart
+                data={categoryBars}
+                ariaLabel="Lifetime checkouts per category"
+              />
             </div>
           </Card>
         </div>

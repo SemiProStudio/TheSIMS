@@ -9,6 +9,7 @@ import {
   inventoryService,
   reservationsService,
   maintenanceService,
+  checkoutHistoryService,
   itemNotesService,
   itemRemindersService,
   clientsService,
@@ -67,6 +68,11 @@ export function DataProvider({ children }) {
   const [clientsLoaded, setClientsLoaded] = useState(false);
   const [auditLogLoaded, setAuditLogLoaded] = useState(false);
   const [packListsLoaded, setPackListsLoaded] = useState(false);
+  // Full maintenance history (Tier 2 carries pending-only) and the trailing
+  // year of checkout events — both loaded on demand by the Reports views
+  const [maintenanceLoaded, setMaintenanceLoaded] = useState(false);
+  const [checkoutEvents, setCheckoutEvents] = useState([]);
+  const [checkoutEventsLoaded, setCheckoutEventsLoaded] = useState(false);
 
   // =============================================================================
   // DATA LOADING FUNCTION (Tiered)
@@ -248,6 +254,50 @@ export function DataProvider({ children }) {
     if (packListsLoaded) return;
     return lazyLoad('packLists', () => packListsService.getAll(), setPackLists, setPackListsLoaded);
   }, [packListsLoaded, lazyLoad]);
+
+  // Full maintenance history for the Reports views. Tier 2 merges only
+  // PENDING records (dashboard needs), so cost/vendor stats computed from
+  // items would be blind to completed work — and would mutate as ItemDetail
+  // visits merged per-item history in. Merge-by-id keeps records the server
+  // snapshot doesn't know yet (a create landing while this fetch is in
+  // flight — the notes-clobber lesson).
+  const ensureMaintenance = useCallback(async () => {
+    if (maintenanceLoaded) return;
+    return lazyLoad(
+      'maintenance',
+      () => maintenanceService.getAll(),
+      (records) => {
+        const byItemId = {};
+        records.forEach((r) => {
+          if (!byItemId[r.itemId]) byItemId[r.itemId] = [];
+          byItemId[r.itemId].push(r);
+        });
+        setInventory((prev) =>
+          prev.map((item) => {
+            const serverRecords = byItemId[item.id] || [];
+            const serverIds = new Set(serverRecords.map((r) => r.id));
+            const localOnly = (item.maintenanceHistory || []).filter((r) => !serverIds.has(r.id));
+            return { ...item, maintenanceHistory: [...serverRecords, ...localOnly] };
+          }),
+        );
+      },
+      setMaintenanceLoaded,
+    );
+  }, [maintenanceLoaded, lazyLoad]);
+
+  // Trailing year of checkout_history events for activity charts. One fetch
+  // covers every range selector (30/90/365 days) — views filter locally.
+  const ensureCheckoutActivity = useCallback(async () => {
+    if (checkoutEventsLoaded) return;
+    const since = new Date();
+    since.setDate(since.getDate() - 365);
+    return lazyLoad(
+      'checkoutActivity',
+      () => checkoutHistoryService.getRecent(since.toISOString()),
+      setCheckoutEvents,
+      setCheckoutEventsLoaded,
+    );
+  }, [checkoutEventsLoaded, lazyLoad]);
 
   // =============================================================================
   // INITIAL DATA LOAD
@@ -1321,6 +1371,9 @@ export function DataProvider({ children }) {
       auditLogLoaded,
       packListsLoaded,
       clientsLoaded,
+      maintenanceLoaded,
+      checkoutEvents,
+      checkoutEventsLoaded,
 
       // Refresh functions
       refreshData: loadData,
@@ -1331,6 +1384,8 @@ export function DataProvider({ children }) {
       getClientById,
       ensureAuditLog,
       ensurePackLists,
+      ensureMaintenance,
+      ensureCheckoutActivity,
 
       // Local State Patch Operations (optimistic UI updates)
       patchInventoryItem,
@@ -1438,12 +1493,17 @@ export function DataProvider({ children }) {
       auditLogLoaded,
       packListsLoaded,
       clientsLoaded,
+      maintenanceLoaded,
+      checkoutEvents,
+      checkoutEventsLoaded,
       loadData,
       refreshStaleData,
       ensureClients,
       getClientById,
       ensureAuditLog,
       ensurePackLists,
+      ensureMaintenance,
+      ensureCheckoutActivity,
       updateItem,
       createItem,
       deleteItem,
