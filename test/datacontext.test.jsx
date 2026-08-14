@@ -30,8 +30,32 @@ vi.mock('../lib/services.js', () => ({
     create: vi.fn((item) => Promise.resolve(item)),
     update: vi.fn((id, updates) => Promise.resolve({ id, ...updates })),
     delete: vi.fn((id) => Promise.resolve({ id })),
-    checkOut: vi.fn((id, data) => Promise.resolve({ id, status: 'checked-out', ...data })),
-    checkIn: vi.fn((id, data) => Promise.resolve({ id, status: 'available', ...data })),
+    // Real service returns { item, historyEvent } — the history row is
+    // mirrored into the cached activity window by DataContext
+    checkOut: vi.fn((id, data) =>
+      Promise.resolve({
+        item: { id, status: 'checked-out', ...data },
+        historyEvent: {
+          id: `evt-out-${id}`,
+          itemId: id,
+          action: 'checkout',
+          type: 'checkout',
+          timestamp: '2026-08-14T10:00:00.000Z',
+        },
+      }),
+    ),
+    checkIn: vi.fn((id, data) =>
+      Promise.resolve({
+        item: { id, status: 'available', ...data },
+        historyEvent: {
+          id: `evt-in-${id}`,
+          itemId: id,
+          action: 'checkin',
+          type: 'return',
+          timestamp: '2026-08-14T11:00:00.000Z',
+        },
+      }),
+    ),
     getSince: vi.fn(() => Promise.resolve([])),
     getIds: vi.fn(() => Promise.resolve(new Set(['CAM001', 'LENS001']))),
     getByIdWithDetails: vi.fn((id) =>
@@ -104,6 +128,7 @@ vi.mock('../lib/services.js', () => ({
   },
   checkoutHistoryService: {
     create: vi.fn((r) => Promise.resolve(r)),
+    getRecent: vi.fn(() => Promise.resolve([])),
   },
   notificationPreferencesService: {
     getByUserId: vi.fn(() => Promise.resolve(null)),
@@ -1015,5 +1040,192 @@ describe('useData Hook', () => {
     expect(() => render(<BadComponent />)).toThrow();
 
     consoleSpy.mockRestore();
+  });
+});
+
+// =============================================================================
+// Lazy-Cache Coherence Tests
+// The Activity/Maintenance report caches must stay coherent through mutations
+// and mid-session reloads (whole-app hardening round, DATA-1/DATA-2)
+// =============================================================================
+
+describe('Checkout activity cache coherence', () => {
+  async function setup() {
+    let capturedContext;
+    render(
+      <DataProvider>
+        <TestConsumer
+          onContextReady={(ctx) => {
+            capturedContext = ctx;
+          }}
+        />
+      </DataProvider>,
+    );
+    await waitFor(() => {
+      expect(capturedContext?.checkOutItem).toBeDefined();
+      expect(capturedContext?.inventory?.length).toBeGreaterThan(0);
+    });
+    return () => capturedContext;
+  }
+
+  it('checkOutItem mirrors the created history event into checkoutEvents', async () => {
+    const ctx = await setup();
+
+    await act(async () => {
+      await ctx().checkOutItem('CAM001', { userName: 'Alice', userId: 'u1' });
+    });
+
+    expect(ctx().checkoutEvents.map((e) => e.id)).toContain('evt-out-CAM001');
+  });
+
+  it('checkInItem mirrors the created history event into checkoutEvents', async () => {
+    const ctx = await setup();
+
+    await act(async () => {
+      await ctx().checkOutItem('CAM001', { userName: 'Alice', userId: 'u1' });
+      await ctx().checkInItem('CAM001', { returnedBy: 'Alice', userId: 'u1', condition: 'good' });
+    });
+
+    const ids = ctx().checkoutEvents.map((e) => e.id);
+    expect(ids).toContain('evt-out-CAM001');
+    expect(ids).toContain('evt-in-CAM001');
+  });
+
+  it('a missing history row (insert failed) adds no phantom event', async () => {
+    const { inventoryService } = await import('../lib/services.js');
+    inventoryService.checkOut.mockResolvedValueOnce({
+      item: { id: 'CAM001', status: 'checked-out' },
+      historyEvent: null,
+    });
+    const ctx = await setup();
+
+    await act(async () => {
+      await ctx().checkOutItem('CAM001', { userName: 'Alice', userId: 'u1' });
+    });
+
+    expect(ctx().checkoutEvents).toHaveLength(0);
+  });
+
+  it('ensureCheckoutActivity merges by id — session events survive a stale snapshot', async () => {
+    const { checkoutHistoryService } = await import('../lib/services.js');
+    // Snapshot fetched from the server does NOT include the event created
+    // this session (fetch raced the insert)
+    checkoutHistoryService.getRecent.mockResolvedValue([
+      { id: 'srv-1', itemId: 'LENS001', action: 'checkout', timestamp: '2026-08-01T09:00:00Z' },
+    ]);
+    const ctx = await setup();
+
+    await act(async () => {
+      await ctx().checkOutItem('CAM001', { userName: 'Alice', userId: 'u1' });
+    });
+    await act(async () => {
+      await ctx().ensureCheckoutActivity();
+    });
+
+    const ids = ctx().checkoutEvents.map((e) => e.id);
+    expect(ids).toContain('srv-1');
+    expect(ids).toContain('evt-out-CAM001'); // not clobbered by the snapshot
+    expect(ctx().checkoutEventsLoaded).toBe(true);
+  });
+});
+
+describe('Mid-session reload re-hydration', () => {
+  async function setup() {
+    let capturedContext;
+    render(
+      <DataProvider>
+        <TestConsumer
+          onContextReady={(ctx) => {
+            capturedContext = ctx;
+          }}
+        />
+      </DataProvider>,
+    );
+    await waitFor(() => {
+      expect(capturedContext?.refreshData).toBeDefined();
+      expect(capturedContext?.inventory?.length).toBeGreaterThan(0);
+    });
+    return () => capturedContext;
+  }
+
+  it('refreshData re-hydrates full maintenance history instead of stranding the latch', async () => {
+    const { maintenanceService } = await import('../lib/services.js');
+    const fullHistory = [
+      { id: 'm1', itemId: 'CAM001', type: 'Repair', status: 'completed', cost: 100 },
+      { id: 'm2', itemId: 'CAM001', type: 'Cleaning', status: 'scheduled', cost: 0 },
+    ];
+    maintenanceService.getAll.mockResolvedValue(fullHistory);
+    const ctx = await setup();
+
+    await act(async () => {
+      await ctx().ensureMaintenance();
+    });
+    expect(ctx().maintenanceLoaded).toBe(true);
+    expect(ctx().inventory.find((i) => i.id === 'CAM001').maintenanceHistory).toHaveLength(2);
+
+    // The old bug: refreshData rebuilt inventory from slim rows + pending-only
+    // maintenance while maintenanceLoaded stayed true — completed records
+    // vanished for the rest of the session.
+    await act(async () => {
+      await ctx().refreshData();
+    });
+
+    expect(ctx().maintenanceLoaded).toBe(true);
+    const item = ctx().inventory.find((i) => i.id === 'CAM001');
+    expect(item.maintenanceHistory.map((r) => r.id)).toEqual(['m1', 'm2']);
+  });
+
+  it('refreshData drops the latch honestly when re-hydration fails', async () => {
+    const { maintenanceService } = await import('../lib/services.js');
+    maintenanceService.getAll.mockResolvedValue([
+      { id: 'm1', itemId: 'CAM001', type: 'Repair', status: 'completed', cost: 100 },
+    ]);
+    const ctx = await setup();
+
+    await act(async () => {
+      await ctx().ensureMaintenance();
+    });
+    expect(ctx().maintenanceLoaded).toBe(true);
+
+    maintenanceService.getAll.mockRejectedValue(new Error('network down'));
+    await act(async () => {
+      await ctx().refreshData();
+    });
+
+    // Latch dropped → report views show loading and the next ensure retries
+    expect(ctx().maintenanceLoaded).toBe(false);
+
+    maintenanceService.getAll.mockResolvedValue([
+      { id: 'm1', itemId: 'CAM001', type: 'Repair', status: 'completed', cost: 100 },
+    ]);
+    await act(async () => {
+      await ctx().ensureMaintenance();
+    });
+    expect(ctx().maintenanceLoaded).toBe(true);
+    expect(ctx().inventory.find((i) => i.id === 'CAM001').maintenanceHistory).toHaveLength(1);
+  });
+
+  it('refreshData refreshes the checkout-activity window when it was loaded', async () => {
+    const { checkoutHistoryService } = await import('../lib/services.js');
+    checkoutHistoryService.getRecent.mockResolvedValue([
+      { id: 'srv-1', itemId: 'CAM001', action: 'checkout', timestamp: '2026-08-01T09:00:00Z' },
+    ]);
+    const ctx = await setup();
+
+    await act(async () => {
+      await ctx().ensureCheckoutActivity();
+    });
+    expect(ctx().checkoutEvents.map((e) => e.id)).toEqual(['srv-1']);
+
+    checkoutHistoryService.getRecent.mockResolvedValue([
+      { id: 'srv-1', itemId: 'CAM001', action: 'checkout', timestamp: '2026-08-01T09:00:00Z' },
+      { id: 'srv-2', itemId: 'LENS001', action: 'checkin', timestamp: '2026-08-13T10:00:00Z' },
+    ]);
+    await act(async () => {
+      await ctx().refreshData();
+    });
+
+    expect(ctx().checkoutEvents.map((e) => e.id)).toEqual(['srv-1', 'srv-2']);
+    expect(ctx().checkoutEventsLoaded).toBe(true);
   });
 });

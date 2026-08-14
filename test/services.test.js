@@ -582,6 +582,86 @@ describe('maintenanceService', () => {
       expect(result).toEqual({ id: 'maint-1' });
     });
   });
+
+  describe('update', () => {
+    // The edit modal hands back its full camelCase form record with join
+    // artifacts. PostgREST rejects unknown columns (PGRST204), so the service
+    // must map to snake_case and whitelist to real columns — the old
+    // passthrough made EVERY maintenance edit fail at the database.
+    it('maps camelCase form records to real columns and strips junk', async () => {
+      let capturedPayload = null;
+      const chain = {
+        update: vi.fn((payload) => {
+          capturedPayload = payload;
+          return chain;
+        }),
+        eq: vi.fn(() => chain),
+        select: vi.fn(() => chain),
+        single: vi.fn(() => Promise.resolve({ data: { id: 'maint-1' }, error: null })),
+      };
+      getSupabase.mockResolvedValueOnce({ from: vi.fn(() => chain) });
+
+      await maintenanceService.update('maint-1', {
+        id: 'maint-1',
+        itemId: 'CAM001',
+        type: 'Repair',
+        description: 'Shutter replacement',
+        vendor: 'CamFix',
+        vendorContact: 'fix@camfix.com',
+        cost: 250,
+        scheduledDate: '2026-08-01',
+        completedDate: '', // empty date input → null, not ''
+        status: 'in-progress',
+        notes: 'awaiting part',
+        warrantyWork: true,
+        item: { id: 'CAM001', name: 'Camera' }, // joined row from getAll
+        user: 'UI alias', // transform-added alias
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-02T00:00:00Z', // trigger-managed
+      });
+
+      expect(capturedPayload).toEqual({
+        item_id: 'CAM001',
+        type: 'Repair',
+        description: 'Shutter replacement',
+        vendor: 'CamFix',
+        vendor_contact: 'fix@camfix.com',
+        cost: 250,
+        scheduled_date: '2026-08-01',
+        completed_date: null,
+        status: 'in-progress',
+        notes: 'awaiting part',
+        warranty_work: true,
+      });
+    });
+
+    it('passes hand-built snake_case payloads through unchanged', async () => {
+      let capturedPayload = null;
+      const chain = {
+        update: vi.fn((payload) => {
+          capturedPayload = payload;
+          return chain;
+        }),
+        eq: vi.fn(() => chain),
+        select: vi.fn(() => chain),
+        single: vi.fn(() => Promise.resolve({ data: { id: 'maint-1' }, error: null })),
+      };
+      getSupabase.mockResolvedValueOnce({ from: vi.fn(() => chain) });
+
+      // updateMaintenanceStatus builds this shape directly
+      await maintenanceService.update('maint-1', {
+        status: 'completed',
+        completed_date: '2026-08-14',
+        notes: 'done',
+      });
+
+      expect(capturedPayload).toEqual({
+        status: 'completed',
+        completed_date: '2026-08-14',
+        notes: 'done',
+      });
+    });
+  });
 });
 
 // =============================================================================
