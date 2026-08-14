@@ -30,10 +30,21 @@ const inventory = [
   },
 ];
 
+const packages = [
+  {
+    id: 'pkg-interview',
+    name: 'Interview Kit - 2 Person',
+    category: 'Audio',
+    items: ['CA1001', 'LE1002', 'LI1001'],
+  },
+];
+
 function renderModal(overrides = {}) {
   const props = {
     inventory,
+    packages,
     onItemFound: vi.fn(),
+    onPackageFound: vi.fn(),
     onQuickCheckout: vi.fn(),
     onQuickCheckin: vi.fn(),
     onClose: vi.fn(),
@@ -120,5 +131,52 @@ describe('QRScannerModal quick actions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Scan Another Item' }));
     expect(screen.getByLabelText(/enter code manually/i)).toBeInTheDocument();
     expect(screen.queryByText('Cinema Camera')).not.toBeInTheDocument();
+  });
+
+  it('hides quick actions when the callbacks are withheld (view-only roles)', () => {
+    renderModal({ onQuickCheckout: undefined, onQuickCheckin: undefined });
+    lookup('CA1001');
+    expect(screen.queryByRole('button', { name: /Quick Check Out/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View Full Details' })).toBeInTheDocument();
+  });
+});
+
+describe('QRScannerModal package labels', () => {
+  it('resolves a package id to the package card (no checkout actions)', () => {
+    renderModal();
+    lookup('pkg-interview');
+    expect(screen.getByText('Interview Kit - 2 Person')).toBeInTheDocument();
+    expect(screen.getByText('3 items • Audio')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Quick Check Out/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Quick Check In/ })).not.toBeInTheDocument();
+  });
+
+  it('resolves a pasted package deep-link URL', () => {
+    renderModal();
+    lookup(buildItemQRData('pkg-interview', 'https://sims.example.com'));
+    expect(screen.getByText('Interview Kit - 2 Person')).toBeInTheDocument();
+  });
+
+  it('routes View Package through onPackageFound', () => {
+    const { onPackageFound } = renderModal();
+    lookup('pkg-interview');
+    fireEvent.click(screen.getByRole('button', { name: 'View Package' }));
+    expect(onPackageFound).toHaveBeenCalledWith(expect.objectContaining({ id: 'pkg-interview' }));
+  });
+
+  it('Scan Another Item works from the package card too', () => {
+    renderModal();
+    lookup('pkg-interview');
+    fireEvent.click(screen.getByRole('button', { name: 'Scan Another Item' }));
+    expect(screen.getByLabelText(/enter code manually/i)).toBeInTheDocument();
+    expect(screen.queryByText('Interview Kit - 2 Person')).not.toBeInTheDocument();
+  });
+
+  it('truncates very long unknown codes in the error message', () => {
+    renderModal();
+    lookup(`https://foreign.example.com/${'z'.repeat(80)}`);
+    const error = screen.getByText(/No item found with code/);
+    expect(error.textContent).toContain('…');
+    expect(error.textContent.length).toBeLessThan(90);
   });
 });

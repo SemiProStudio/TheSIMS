@@ -431,42 +431,45 @@ function Sidebar({
             />
           ))}
 
-          {/* Scan QR Code - in main nav */}
-          <button
-            onClick={onOpenScanner}
-            className="sidebar-nav-btn"
-            title={collapsed ? 'Scan QR Code' : undefined}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: collapsed ? 0 : spacing[3],
-              width: '100%',
-              padding: `${spacing[3]}px ${collapsed ? spacing[3] : spacing[4]}px`,
-              background: 'transparent',
-              border: 'none',
-              borderRadius: borderRadius.lg,
-              color: colors.textSecondary,
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontSize: typography.fontSize.sm,
-              transition: 'all 150ms ease',
-              justifyContent: collapsed ? 'center' : 'flex-start',
-            }}
-          >
-            <ScanLine size={18} style={{ flexShrink: 0 }} />
-            <span
-              className="sidebar-nav-label"
+          {/* Scan QR Code - in main nav. The scanner's found card is item
+              detail information, so it follows the item_details permission */}
+          {canView('item_details') && (
+            <button
+              onClick={onOpenScanner}
+              className="sidebar-nav-btn"
+              title={collapsed ? 'Scan QR Code' : undefined}
               style={{
-                opacity: collapsed ? 0 : 1,
-                width: collapsed ? 0 : 'auto',
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                transition: 'opacity 0.2s ease, width 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: collapsed ? 0 : spacing[3],
+                width: '100%',
+                padding: `${spacing[3]}px ${collapsed ? spacing[3] : spacing[4]}px`,
+                background: 'transparent',
+                border: 'none',
+                borderRadius: borderRadius.lg,
+                color: colors.textSecondary,
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontSize: typography.fontSize.sm,
+                transition: 'all 150ms ease',
+                justifyContent: collapsed ? 'center' : 'flex-start',
               }}
             >
-              Scan QR Code
-            </span>
-          </button>
+              <ScanLine size={18} style={{ flexShrink: 0 }} />
+              <span
+                className="sidebar-nav-label"
+                style={{
+                  opacity: collapsed ? 0 : 1,
+                  width: collapsed ? 0 : 'auto',
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap',
+                  transition: 'opacity 0.2s ease, width 0.2s ease',
+                }}
+              >
+                Scan QR Code
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Admin Section */}

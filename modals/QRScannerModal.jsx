@@ -1,20 +1,25 @@
 // ============================================================================
 // QR Scanner Modal
-// Camera-based QR code scanning with quick checkout/checkin actions
+// Camera-based QR code scanning with quick checkout/checkin actions.
+// Resolves item AND package labels — both encode the same /?item=<id> deep
+// link (see lib/qrData.js).
 // ============================================================================
 
-import { memo, useState } from 'react';
+import { memo, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
+import { Flashlight } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { getStatusColor } from '../utils';
 import { Badge, Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 import { useQRScanner } from '../hooks/useQRScanner.js';
-import { parseScannedCode } from '../lib/qrData.js';
+import { parseScannedCode, resolveScannedCode, truncateScannedCode } from '../lib/qrData.js';
 
 export const QRScannerModal = memo(function QRScannerModal({
   inventory,
+  packages,
   onItemFound,
+  onPackageFound,
   onQuickCheckout,
   onQuickCheckin,
   onClose,
@@ -22,36 +27,45 @@ export const QRScannerModal = memo(function QRScannerModal({
   const [lookupError, setLookupError] = useState(null);
   const [lastScanned, setLastScanned] = useState(null);
   const [manualCode, setManualCode] = useState('');
-  const [foundItem, setFoundItem] = useState(null);
+  // { type: 'item' | 'package', entity } — what the last scan resolved to
+  const [found, setFound] = useState(null);
+  // Whether the current find came from the camera — Scan Another restarts
+  // the camera for camera finds, but must not surprise a manual-entry user
+  // with a permission prompt
+  const foundViaCameraRef = useRef(false);
 
-  const findByCode = (code) =>
-    inventory.find(
-      (i) =>
-        i.id.toLowerCase() === code.toLowerCase() ||
-        i.serialNumber?.toLowerCase() === code.toLowerCase(),
-    );
-
-  // Camera lifecycle, throttled decode, and dedupe live in the shared hook;
-  // the onCode callback always sees current props/state.
-  const { videoRef, canvasRef, scanning, cameraError, startScanning, stopScanning } = useQRScanner({
+  // Camera lifecycle, throttled decode, dedupe, and torch live in the shared
+  // hook; the onCode callback always sees current props/state.
+  const {
+    videoRef,
+    canvasRef,
+    scanning,
+    cameraError,
+    startScanning,
+    stopScanning,
+    torchSupported,
+    torchOn,
+    toggleTorch,
+  } = useQRScanner({
     onCode: (raw) => {
       const code = parseScannedCode(raw);
       setLastScanned(code);
-      const item = findByCode(code);
-      if (item) {
+      const target = resolveScannedCode(code, inventory, packages);
+      if (target) {
         stopScanning();
-        setFoundItem(item);
+        foundViaCameraRef.current = true;
+        setFound(target);
         setLookupError(null);
       } else {
         // Keep scanning — the dedupe window lets the user re-aim and retry.
-        setLookupError(`No item found for code "${code}"`);
+        setLookupError(`No item found for code "${truncateScannedCode(code)}"`);
       }
     },
   });
 
   const handleStartCamera = () => {
     setLookupError(null);
-    setFoundItem(null);
+    setFound(null);
     startScanning();
   };
 
@@ -59,24 +73,31 @@ export const QRScannerModal = memo(function QRScannerModal({
   const handleManualLookup = () => {
     if (!manualCode.trim()) return;
 
-    const item = findByCode(parseScannedCode(manualCode));
-    if (item) {
-      setFoundItem(item);
+    const target = resolveScannedCode(parseScannedCode(manualCode), inventory, packages);
+    if (target) {
+      foundViaCameraRef.current = false;
+      setFound(target);
       setLookupError(null);
     } else {
-      setLookupError(`No item found with code "${manualCode}"`);
+      setLookupError(`No item found with code "${truncateScannedCode(manualCode)}"`);
     }
   };
 
-  // Reset to scan another item
+  // Reset to scan the next label; camera finds resume scanning immediately
   const handleScanAnother = () => {
-    setFoundItem(null);
+    setFound(null);
     setManualCode('');
     setLastScanned(null);
+    if (foundViaCameraRef.current) {
+      foundViaCameraRef.current = false;
+      startScanning();
+    }
   };
 
   const error = cameraError || lookupError;
 
+  const foundItem = found?.type === 'item' ? found.entity : null;
+  const foundPackage = found?.type === 'package' ? found.entity : null;
   const isCheckedOut = foundItem?.status === 'checked-out';
   const isAvailable = foundItem?.status === 'available';
 
@@ -96,8 +117,69 @@ export const QRScannerModal = memo(function QRScannerModal({
         }}
       />
       <div style={{ padding: spacing[4] }}>
-        {/* FOUND ITEM CARD - Quick Actions */}
-        {foundItem ? (
+        {/* FOUND PACKAGE CARD */}
+        {foundPackage ? (
+          <div>
+            <div
+              style={{
+                background: `${withOpacity(colors.accent2, 10)}`,
+                border: `1px solid ${withOpacity(colors.accent2, 30)}`,
+                borderRadius: borderRadius.lg,
+                padding: spacing[4],
+                marginBottom: spacing[4],
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  gap: spacing[1],
+                  marginBottom: spacing[1],
+                  flexWrap: 'wrap',
+                }}
+              >
+                <Badge text={foundPackage.id} color={colors.accent2} />
+                <Badge text="Package" color={colors.accent2} />
+              </div>
+              <div
+                style={{
+                  fontWeight: typography.fontWeight.medium,
+                  color: colors.textPrimary,
+                  fontSize: typography.fontSize.base,
+                }}
+              >
+                {foundPackage.name}
+              </div>
+              <div style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>
+                {foundPackage.items?.length || 0} items
+                {foundPackage.category ? ` • ${foundPackage.category}` : ''}
+              </div>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: spacing[2],
+                marginBottom: spacing[4],
+              }}
+            >
+              <Button
+                fullWidth
+                onClick={() => onPackageFound(foundPackage)}
+                style={{ justifyContent: 'center' }}
+              >
+                View Package
+              </Button>
+              <Button
+                fullWidth
+                variant="secondary"
+                onClick={handleScanAnother}
+                style={{ justifyContent: 'center' }}
+              >
+                Scan Another Item
+              </Button>
+            </div>
+          </div>
+        ) : foundItem ? (
           <div>
             {/* Item Summary Card */}
             <div
@@ -319,6 +401,28 @@ export const QRScannerModal = memo(function QRScannerModal({
                   >
                     Scanning...
                   </div>
+                  {/* Torch toggle — rear cameras that support it */}
+                  {torchSupported && (
+                    <button
+                      onClick={toggleTorch}
+                      aria-label={torchOn ? 'Turn flashlight off' : 'Turn flashlight on'}
+                      aria-pressed={torchOn}
+                      style={{
+                        position: 'absolute',
+                        top: spacing[2],
+                        right: spacing[2],
+                        background: torchOn ? colors.primary : 'rgba(0,0,0,0.7)',
+                        border: 'none',
+                        borderRadius: borderRadius.md,
+                        padding: spacing[2],
+                        color: '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                      }}
+                    >
+                      <Flashlight size={18} />
+                    </button>
+                  )}
                 </>
               )}
 
@@ -457,11 +561,21 @@ QRScannerModal.propTypes = {
       checkout: PropTypes.object,
     }),
   ).isRequired,
+  /** Packages — package labels encode their pkg id in the same deep link */
+  packages: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      items: PropTypes.array,
+    }),
+  ),
   /** Callback when an item is found (navigate to details) */
   onItemFound: PropTypes.func.isRequired,
-  /** Callback for quick checkout action */
+  /** Callback when a package is found (navigate to the Packages view) */
+  onPackageFound: PropTypes.func.isRequired,
+  /** Callback for quick checkout action (omit to hide — permission-gated) */
   onQuickCheckout: PropTypes.func,
-  /** Callback for quick check-in action */
+  /** Callback for quick check-in action (omit to hide — permission-gated) */
   onQuickCheckin: PropTypes.func,
   /** Callback to close modal */
   onClose: PropTypes.func.isRequired,

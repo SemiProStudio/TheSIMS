@@ -14,7 +14,9 @@ import { useNavigationContext } from './contexts/NavigationContext.js';
 import { useFilterContext } from './contexts/FilterContext.js';
 import { useModalContext } from './contexts/ModalContext.js';
 import { useData } from './contexts/DataContext.js';
+import { usePermissions, canAccessView } from './contexts/PermissionsContext.js';
 import { PermissionGate } from './contexts/PermissionsContext.jsx';
+import { colors } from './theme.js';
 import { ViewLoading } from './components/Loading.jsx';
 
 // Core (eagerly loaded)
@@ -192,6 +194,34 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     dataContext,
     addAuditLog,
   });
+
+  const { canView, canEdit } = usePermissions();
+
+  // Navigation guard: hiding a sidebar button is not a barrier — the QR
+  // scanner, deep links, and restored state all set currentView directly.
+  // Views the role can't see are refused at render (VIEW_PERMISSIONS).
+  if (!canAccessView(currentView, { canView, canEdit })) {
+    return (
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+        }}
+      >
+        <div role="alert" style={{ textAlign: 'center', color: colors.textSecondary }}>
+          <h2 style={{ color: colors.textPrimary, marginBottom: 8 }}>Access restricted</h2>
+          <p style={{ margin: 0 }}>
+            Your role doesn&apos;t have access to this page. Ask an administrator if you think this
+            is a mistake.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ flex: 1, minHeight: 0 }}>
@@ -651,9 +681,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         <Suspense fallback={<ViewLoading message="Loading Themes..." />}>
           <ThemeSelector
             onBack={() => setCurrentView(VIEWS.DASHBOARD)}
-            onPersistCustomTheme={(customTheme) =>
-              handlers.updateUiPrefs?.({ customTheme })
-            }
+            onPersistCustomTheme={(customTheme) => handlers.updateUiPrefs?.({ customTheme })}
           />
         </Suspense>
       )}

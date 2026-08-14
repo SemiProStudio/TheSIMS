@@ -22,6 +22,7 @@ import {
   CheckSquare,
   Square,
   ScanLine,
+  Flashlight,
   X,
   RotateCcw,
   ArrowUpDown,
@@ -47,7 +48,7 @@ import { ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
 import { error as logError } from '../lib/logger.js';
 import { openPrintWindow } from '../lib/printUtil.js';
 import { buildPackListExportHTML } from './packListExport.js';
-import { parseScannedCode } from '../lib/qrData.js';
+import { parseScannedCode, truncateScannedCode } from '../lib/qrData.js';
 import { useQRScanner } from '../hooks/useQRScanner.js';
 
 function PackListsView({
@@ -709,6 +710,48 @@ function PackListsView({
     [setSelectedList, dataContext, addToast],
   );
 
+  // Package twin of handleTogglePacked — same ref-based freshness, same
+  // optimistic update + rollback. Until the pack_list_packages.is_packed
+  // migration has run, the persist fails and this honestly reports it.
+  const handleTogglePackagePacked = useCallback(
+    async (packageId) => {
+      const current = selectedListRef.current;
+      if (!current) return false;
+      const packedPackages = current.packedPackages || [];
+      const isPacked = packedPackages.includes(packageId);
+      const newPackedPackages = isPacked
+        ? packedPackages.filter((id) => id !== packageId)
+        : [...packedPackages, packageId];
+
+      const updatedList = { ...current, packedPackages: newPackedPackages };
+      selectedListRef.current = updatedList;
+      setSelectedList(updatedList);
+      dataContext.patchPackList(current.id, { packedPackages: newPackedPackages });
+
+      if (dataContext?.togglePackListPackagePacked) {
+        try {
+          await dataContext.togglePackListPackagePacked(current.id, packageId, !isPacked);
+        } catch (err) {
+          logError('Failed to toggle package packed state:', err);
+          const latest = selectedListRef.current;
+          if (latest?.id === current.id) {
+            const revertedPacked = isPacked
+              ? [...(latest.packedPackages || []), packageId]
+              : (latest.packedPackages || []).filter((id) => id !== packageId);
+            const revertedList = { ...latest, packedPackages: revertedPacked };
+            selectedListRef.current = revertedList;
+            setSelectedList(revertedList);
+            dataContext.patchPackList(current.id, { packedPackages: revertedPacked });
+          }
+          addToast('Failed to save packed state — try again', 'error');
+          return false;
+        }
+      }
+      return true;
+    },
+    [setSelectedList, dataContext, addToast],
+  );
+
   // Reset all packed items — persist-first: only clear local state (and
   // toast success) after the DB accepted the reset
   const [confirmReset, setConfirmReset] = useState(false);
@@ -1080,9 +1123,13 @@ function PackListsView({
       .map((id) => packages.find((p) => p.id === id))
       .filter(Boolean);
     const packedItems = selectedList.packedItems || [];
-    const packedCount = listItems.filter((i) => packedItems.includes(i.id)).length;
-    const packProgress =
-      listItems.length > 0 ? Math.round((packedCount / listItems.length) * 100) : 0;
+    const packedPackages = selectedList.packedPackages || [];
+    // Packages are pack units too — progress counts them alongside items
+    const packedCount =
+      listItems.filter((i) => packedItems.includes(i.id)).length +
+      listPackages.filter((p) => packedPackages.includes(p.id)).length;
+    const packTotal = listItems.length + listPackages.length;
+    const packProgress = packTotal > 0 ? Math.round((packedCount / packTotal) * 100) : 0;
 
     // Fulfillability: items that can't simply be pulled off the shelf, and
     // quantity-tracked items where the list asks for more than is in stock
@@ -1219,7 +1266,7 @@ function PackListsView({
                   color: packProgress === 100 ? colors.success : colors.textMuted,
                 }}
               >
-                {packedCount}/{listItems.length} packed ({packProgress}%)
+                {packedCount}/{packTotal} packed ({packProgress}%)
               </span>
             </div>
             <div
@@ -1256,9 +1303,39 @@ function PackListsView({
               Packages Included:
             </h4>
             <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
-              {listPackages.map((pkg) => (
-                <Badge key={pkg.id} text={pkg.name} color={colors.accent2} />
-              ))}
+              {listPackages.map((pkg) => {
+                const isPacked = packedPackages.includes(pkg.id);
+                if (!canEditPackLists) {
+                  return (
+                    <Badge
+                      key={pkg.id}
+                      text={isPacked ? `✓ ${pkg.name}` : pkg.name}
+                      color={isPacked ? colors.success : colors.accent2}
+                    />
+                  );
+                }
+                return (
+                  <button
+                    key={pkg.id}
+                    onClick={() => handleTogglePackagePacked(pkg.id)}
+                    aria-pressed={isPacked}
+                    aria-label={`${pkg.name} — mark ${isPacked ? 'unpacked' : 'packed'}`}
+                    title={isPacked ? 'Mark unpacked' : 'Mark packed'}
+                    style={{
+                      background: withOpacity(isPacked ? colors.success : colors.accent2, 15),
+                      color: isPacked ? colors.success : colors.accent2,
+                      border: `1px solid ${withOpacity(isPacked ? colors.success : colors.accent2, 40)}`,
+                      borderRadius: borderRadius.full,
+                      padding: `${spacing[1]}px ${spacing[3]}px`,
+                      fontSize: typography.fontSize.sm,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {isPacked ? '✓ ' : ''}
+                    {pkg.name}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -1500,8 +1577,11 @@ function PackListsView({
         {showScanToPack && (
           <ScanToPackOverlay
             listItems={listItems}
+            listPackages={listPackages}
             packedItems={packedItems}
+            packedPackages={packedPackages}
             onTogglePacked={handleTogglePacked}
+            onTogglePackagePacked={handleTogglePackagePacked}
             onClose={() => setShowScanToPack(false)}
           />
         )}
@@ -1656,10 +1736,19 @@ function PackListsView({
 // ============================================================================
 // Scan to Pack Overlay
 // Full-screen scanner optimized for rapid pack scanning — scans a QR label,
-// auto-marks the item as packed, flashes a confirmation, and continues.
+// auto-marks the item (or package — their labels resolve here too) as
+// packed, flashes a confirmation, and continues.
 // ============================================================================
-function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) {
-  const [scanLog, setScanLog] = useState([]); // { id, name, status: 'packed'|'already'|'not-found' }
+function ScanToPackOverlay({
+  listItems,
+  listPackages,
+  packedItems,
+  packedPackages,
+  onTogglePacked,
+  onTogglePackagePacked,
+  onClose,
+}) {
+  const [scanLog, setScanLog] = useState([]); // { id, name, status: 'packed'|'already'|'in-package'|'not-found'|'failed' }
   const [flashItem, setFlashItem] = useState(null); // briefly shows last scanned item
   const [manualCode, setManualCode] = useState('');
   const flashTimeoutRef = useRef(null);
@@ -1674,18 +1763,94 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
     return map;
   }, [listItems]);
 
-  const packedCount = listItems.filter((i) => packedItems.includes(i.id)).length;
+  // Packages on this list, by id — their labels encode the pkg id
+  const listPackageMap = useMemo(() => {
+    const map = new Map();
+    (listPackages || []).forEach((pkg) => map.set(pkg.id.toLowerCase(), pkg));
+    return map;
+  }, [listPackages]);
+
+  // Items that are on the list INSIDE a package (by id — labels encode ids).
+  // Scanning one is acknowledged instead of reported "Not in List"; the
+  // package itself is the pack unit, so nothing is toggled.
+  const packageContentsMap = useMemo(() => {
+    const map = new Map();
+    (listPackages || []).forEach((pkg) => {
+      (pkg.items || []).forEach((itemId) => {
+        const key = String(itemId).toLowerCase();
+        if (!map.has(key)) map.set(key, pkg);
+      });
+    });
+    return map;
+  }, [listPackages]);
+
+  const packedCount =
+    listItems.filter((i) => packedItems.includes(i.id)).length +
+    (listPackages || []).filter((p) => (packedPackages || []).includes(p.id)).length;
+  const packTotal = listItems.length + (listPackages || []).length;
 
   // Process a scanned/entered code
   const processCode = useCallback(
     (code) => {
       const item = listItemMap.get(code.toLowerCase());
+      const pkg = !item ? listPackageMap.get(code.toLowerCase()) : null;
+
+      if (!item && pkg) {
+        if ((packedPackages || []).includes(pkg.id)) {
+          setScanLog((prev) =>
+            [{ id: pkg.id, name: pkg.name, status: 'already', ts: Date.now() }, ...prev].slice(
+              0,
+              50,
+            ),
+          );
+          setFlashItem({ name: pkg.name, status: 'already' });
+        } else {
+          const ts = Date.now();
+          setScanLog((prev) =>
+            [{ id: pkg.id, name: pkg.name, status: 'packed', ts }, ...prev].slice(0, 50),
+          );
+          setFlashItem({ name: pkg.name, status: 'packed' });
+          Promise.resolve(onTogglePackagePacked(pkg.id)).then((ok) => {
+            if (ok === false) {
+              setScanLog((prev) =>
+                prev.map((entry) =>
+                  entry.ts === ts && entry.id === pkg.id ? { ...entry, status: 'failed' } : entry,
+                ),
+              );
+              setFlashItem({ name: pkg.name, status: 'failed' });
+              if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+              flashTimeoutRef.current = setTimeout(() => setFlashItem(null), 1500);
+            }
+          });
+        }
+        if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+        flashTimeoutRef.current = setTimeout(() => setFlashItem(null), 1500);
+        return;
+      }
 
       if (!item) {
-        setScanLog((prev) =>
-          [{ id: code, name: code, status: 'not-found', ts: Date.now() }, ...prev].slice(0, 50),
-        );
-        setFlashItem({ name: code, status: 'not-found' });
+        const containerPkg = packageContentsMap.get(code.toLowerCase());
+        if (containerPkg) {
+          // Item travels inside a listed package — scan the package label
+          setScanLog((prev) =>
+            [
+              {
+                id: code,
+                name: `In package: ${containerPkg.name}`,
+                status: 'in-package',
+                ts: Date.now(),
+              },
+              ...prev,
+            ].slice(0, 50),
+          );
+          setFlashItem({ name: containerPkg.name, status: 'in-package' });
+        } else {
+          const shown = truncateScannedCode(code);
+          setScanLog((prev) =>
+            [{ id: shown, name: shown, status: 'not-found', ts: Date.now() }, ...prev].slice(0, 50),
+          );
+          setFlashItem({ name: shown, status: 'not-found' });
+        }
       } else if (packedItems.includes(item.id)) {
         setScanLog((prev) =>
           [{ id: item.id, name: item.name, status: 'already', ts: Date.now() }, ...prev].slice(
@@ -1720,13 +1885,32 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
       if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
       flashTimeoutRef.current = setTimeout(() => setFlashItem(null), 1500);
     },
-    [listItemMap, packedItems, onTogglePacked],
+    [
+      listItemMap,
+      listPackageMap,
+      packageContentsMap,
+      packedItems,
+      packedPackages,
+      onTogglePacked,
+      onTogglePackagePacked,
+    ],
   );
 
-  // Camera lifecycle, throttled decode, dedupe-with-rescan, and fresh-closure
-  // dispatch all live in the shared hook. parseScannedCode maps deep-link QR
-  // payloads (new labels encode /?item=<id> URLs) back to the item code.
-  const { videoRef, canvasRef, scanning, cameraError, startScanning, stopScanning } = useQRScanner({
+  // Camera lifecycle, throttled decode, dedupe-with-rescan, torch, and
+  // fresh-closure dispatch all live in the shared hook. parseScannedCode
+  // maps deep-link QR payloads (new labels encode /?item=<id> URLs) back to
+  // the item code.
+  const {
+    videoRef,
+    canvasRef,
+    scanning,
+    cameraError,
+    startScanning,
+    stopScanning,
+    torchSupported,
+    torchOn,
+    toggleTorch,
+  } = useQRScanner({
     onCode: (raw) => processCode(parseScannedCode(raw)),
   });
 
@@ -1749,7 +1933,9 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
       ? colors.success
       : flashItem?.status === 'already'
         ? colors.warning
-        : colors.danger;
+        : flashItem?.status === 'in-package'
+          ? colors.accent2
+          : colors.danger;
 
   return (
     <div className="modal-backdrop" style={{ ...styles.modal, zIndex: 1000 }}>
@@ -1778,7 +1964,7 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
             <div
               style={{ fontSize: typography.fontSize.sm, color: colors.textMuted, marginTop: 2 }}
             >
-              {packedCount}/{listItems.length} packed
+              {packedCount}/{packTotal} packed
             </div>
           </div>
           <button
@@ -1854,6 +2040,28 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
                 >
                   Point camera at QR label...
                 </div>
+                {/* Torch toggle — rear cameras that support it */}
+                {torchSupported && (
+                  <button
+                    onClick={toggleTorch}
+                    aria-label={torchOn ? 'Turn flashlight off' : 'Turn flashlight on'}
+                    aria-pressed={torchOn}
+                    style={{
+                      position: 'absolute',
+                      top: spacing[2],
+                      right: spacing[2],
+                      background: torchOn ? colors.primary : 'rgba(0,0,0,0.7)',
+                      border: 'none',
+                      borderRadius: borderRadius.md,
+                      padding: spacing[2],
+                      color: '#fff',
+                      cursor: 'pointer',
+                      display: 'flex',
+                    }}
+                  >
+                    <Flashlight size={18} />
+                  </button>
+                )}
               </>
             )}
 
@@ -1912,7 +2120,9 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
                         ? '✓ Already Packed'
                         : flashItem.status === 'failed'
                           ? '✗ Save Failed — Rescan'
-                          : '✗ Not in List'}
+                          : flashItem.status === 'in-package'
+                            ? '• Inside a Package — Scan Its Label'
+                            : '✗ Not in List'}
                   </div>
                   <div style={{ fontSize: typography.fontSize.sm, marginTop: 4, opacity: 0.8 }}>
                     {flashItem.name}
@@ -2020,12 +2230,20 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
                             ? colors.success
                             : entry.status === 'already'
                               ? colors.warning
-                              : colors.danger,
+                              : entry.status === 'in-package'
+                                ? colors.accent2
+                                : colors.danger,
                         fontWeight: typography.fontWeight.semibold,
                         minWidth: 16,
                       }}
                     >
-                      {entry.status === 'packed' ? '✓' : entry.status === 'already' ? '–' : '✗'}
+                      {entry.status === 'packed'
+                        ? '✓'
+                        : entry.status === 'already'
+                          ? '–'
+                          : entry.status === 'in-package'
+                            ? '•'
+                            : '✗'}
                     </span>
                     <span style={{ flex: 1, color: colors.textPrimary }}>{entry.name}</span>
                     <span style={{ color: colors.textMuted, fontSize: typography.fontSize.xs }}>
@@ -2035,7 +2253,9 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
                           ? 'Already packed'
                           : entry.status === 'failed'
                             ? 'Save failed — rescan'
-                            : 'Not in list'}
+                            : entry.status === 'in-package'
+                              ? 'Scan the package label'
+                              : 'Not in list'}
                     </span>
                   </div>
                 ))}
@@ -2050,8 +2270,12 @@ function ScanToPackOverlay({ listItems, packedItems, onTogglePacked, onClose }) 
 
 ScanToPackOverlay.propTypes = {
   listItems: PropTypes.array.isRequired,
+  /** Packages on this list — their labels resolve as pack units */
+  listPackages: PropTypes.array,
   packedItems: PropTypes.array.isRequired,
+  packedPackages: PropTypes.array,
   onTogglePacked: PropTypes.func.isRequired,
+  onTogglePackagePacked: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
 };
 

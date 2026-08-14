@@ -37,6 +37,11 @@ export function useQRScanner({ onCode, rescanAfterMs = 2000 }) {
 
   const [scanning, setScanning] = useState(false);
   const [cameraError, setCameraError] = useState(null);
+  // Torch (flashlight) — supported on most phone rear cameras; scanning
+  // labels in dark storage is a core workflow.
+  const [torchSupported, setTorchSupported] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+  const torchOnRef = useRef(false);
 
   const onCodeRef = useRef(onCode);
   onCodeRef.current = onCode;
@@ -49,7 +54,25 @@ export function useQRScanner({ onCode, rescanAfterMs = 2000 }) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
+    torchOnRef.current = false;
+    setTorchOn(false);
+    setTorchSupported(false);
     setScanning(false);
+  }, []);
+
+  const toggleTorch = useCallback(async () => {
+    const track = streamRef.current?.getVideoTracks?.()[0];
+    if (!track) return;
+    const next = !torchOnRef.current;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: next }] });
+      torchOnRef.current = next;
+      setTorchOn(next);
+    } catch (err) {
+      // Torch unavailable after all (some devices advertise but refuse) —
+      // leave the state as-is rather than lying about the light being on
+      logError('Torch toggle failed:', err);
+    }
   }, []);
 
   const scanFrame = useCallback(() => {
@@ -99,6 +122,7 @@ export function useQRScanner({ onCode, rescanAfterMs = 2000 }) {
       await videoRef.current.play();
       if (sessionRef.current !== session) return; // stopped during play(); tracks already stopped
       lastCodeRef.current = null;
+      setTorchSupported(!!stream.getVideoTracks()[0]?.getCapabilities?.().torch);
       setScanning(true);
       scanFrame();
     } catch (err) {
@@ -119,5 +143,15 @@ export function useQRScanner({ onCode, rescanAfterMs = 2000 }) {
     };
   }, [stopScanning]);
 
-  return { videoRef, canvasRef, scanning, cameraError, startScanning, stopScanning };
+  return {
+    videoRef,
+    canvasRef,
+    scanning,
+    cameraError,
+    startScanning,
+    stopScanning,
+    torchSupported,
+    torchOn,
+    toggleTorch,
+  };
 }

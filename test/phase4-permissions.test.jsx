@@ -9,8 +9,8 @@
 import { describe, it, expect } from 'vitest';
 import { render, renderHook, screen } from '@testing-library/react';
 import { PermissionsProvider, PermissionGate } from '../contexts/PermissionsContext.jsx';
-import { usePermissions } from '../contexts/PermissionsContext.js';
-import { DEFAULT_ROLES, PERMISSION_LEVELS } from '../constants.js';
+import { usePermissions, canAccessView } from '../contexts/PermissionsContext.js';
+import { DEFAULT_ROLES, PERMISSION_LEVELS, VIEWS } from '../constants.js';
 
 function renderPermissions(currentUser, roles = DEFAULT_ROLES) {
   const wrapper = ({ children }) => (
@@ -35,10 +35,9 @@ describe('hasPermission — deny by default', () => {
   });
 
   it('treats a function missing from the role permissions as hidden', () => {
-    const { result } = renderPermissions(
-      { id: 'u1', roleId: 'custom' },
-      [{ id: 'custom', permissions: { dashboard: PERMISSION_LEVELS.VIEW } }],
-    );
+    const { result } = renderPermissions({ id: 'u1', roleId: 'custom' }, [
+      { id: 'custom', permissions: { dashboard: PERMISSION_LEVELS.VIEW } },
+    ]);
     expect(result.current.canView('dashboard')).toBe(true);
     expect(result.current.canView('admin_users')).toBe(false);
     expect(result.current.getPermissionLevel('admin_users')).toBe(PERMISSION_LEVELS.HIDE);
@@ -151,5 +150,68 @@ describe('PermissionGate', () => {
   it('requireEdit blocks a view-only user', () => {
     gate({ id: 'u1', roleId: 'role_user' }, { permission: 'gear_list', requireEdit: true });
     expect(screen.queryByText('secret content')).not.toBeInTheDocument();
+  });
+});
+
+// =============================================================================
+// canAccessView — the navigation guard (QR round)
+// Sidebar hiding is not a barrier: the scanner, deep links, and restored
+// state set currentView directly. These pin the render-time guard.
+// =============================================================================
+
+describe('canAccessView (navigation guard)', () => {
+  const guards = (currentUser, roles = DEFAULT_ROLES) => {
+    const { result } = renderPermissions(currentUser, roles);
+    const { canView, canEdit } = result.current;
+    return (view) => canAccessView(view, { canView, canEdit });
+  };
+
+  it('lets the standard user into views their role can see', () => {
+    const allowed = guards({ id: 'u1', roleId: 'role_user' });
+    expect(allowed(VIEWS.DASHBOARD)).toBe(true);
+    expect(allowed(VIEWS.GEAR_DETAIL)).toBe(true);
+    expect(allowed(VIEWS.SCHEDULE)).toBe(true);
+  });
+
+  it('blocks direct navigation to views hidden from the role', () => {
+    const allowed = guards({ id: 'u1', roleId: 'role_user' });
+    expect(allowed(VIEWS.REPORTS)).toBe(false);
+    expect(allowed(VIEWS.USERS)).toBe(false);
+    expect(allowed(VIEWS.ROLES_MANAGE)).toBe(false);
+  });
+
+  it('ADD_ITEM requires EDIT, not just VIEW (role_user has gear_list VIEW)', () => {
+    expect(guards({ id: 'u1', roleId: 'role_user' })(VIEWS.ADD_ITEM)).toBe(false);
+    expect(guards({ id: 'u1', roleId: 'role_admin' })(VIEWS.ADD_ITEM)).toBe(true);
+  });
+
+  it('personal views stay open to everyone (theme, notifications, layout)', () => {
+    const allowed = guards({ id: 'u1', roleId: 'role_user' });
+    expect(allowed(VIEWS.THEME_SELECTOR)).toBe(true);
+    expect(allowed(VIEWS.NOTIFICATIONS)).toBe(true);
+    expect(allowed(VIEWS.CUSTOMIZE_DASHBOARD)).toBe(true);
+  });
+
+  it('the Admin hub opens for ANY admin permission (mirrors the sidebar)', () => {
+    const roles = [
+      ...DEFAULT_ROLES,
+      {
+        id: 'role_cat_only',
+        permissions: {
+          dashboard: PERMISSION_LEVELS.VIEW,
+          admin_categories: PERMISSION_LEVELS.EDIT,
+        },
+      },
+    ];
+    expect(guards({ id: 'u1', roleId: 'role_cat_only' }, roles)(VIEWS.ADMIN)).toBe(true);
+    expect(guards({ id: 'u1', roleId: 'role_user' })(VIEWS.ADMIN)).toBe(false);
+  });
+
+  it('reservation detail follows the schedule permission', () => {
+    const roles = [{ id: 'role_no_schedule', permissions: { dashboard: PERMISSION_LEVELS.VIEW } }];
+    expect(guards({ id: 'u1', roleId: 'role_user' })(VIEWS.RESERVATION_DETAIL)).toBe(true);
+    expect(guards({ id: 'u1', roleId: 'role_no_schedule' }, roles)(VIEWS.RESERVATION_DETAIL)).toBe(
+      false,
+    );
   });
 });
