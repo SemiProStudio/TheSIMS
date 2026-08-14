@@ -7,14 +7,18 @@
 // Only ZZZ E2E data is created; cleanupTestData purges it.
 // =============================================================================
 import { test, expect, STORAGE_STATE } from './fixtures.js';
-import { cleanupTestData, adminDb, E2E_PREFIX } from './db.js';
+import { adminDb, E2E_PREFIX } from './db.js';
 
 const CREATED_NAME = `${E2E_PREFIX} Created Client`;
 const RENAMED_NAME = `${E2E_PREFIX} Renamed Client`;
 
 test.describe.serial('client lifecycle', () => {
+  // Scoped cleanup: the global cleanupTestData purge runs at run START in
+  // auth.setup; calling it here mid-run deletes OTHER specs' live ZZZ data
+  // on parallel workers (client_notes cascade on client delete)
   test.afterAll(async () => {
-    await cleanupTestData();
+    const db = await adminDb();
+    await db.from('clients').delete().in('name', [CREATED_NAME, RENAMED_NAME]);
   });
 
   test('create persists with a DB-generated id', async ({ page, pages }) => {

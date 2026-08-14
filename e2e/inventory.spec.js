@@ -87,7 +87,9 @@ test.describe('Inventory Management', () => {
     test('opens the item detail from the list', async ({ page, pages }) => {
       await pages.gearList.openItem('LE1001', 'Sony 24-70mm f/2.8 GM II');
       await pages.itemDetail.expectItemDetail();
-      await expect(page.locator('h1').filter({ hasText: 'Sony 24-70mm f/2.8 GM II' })).toBeVisible();
+      await expect(
+        page.locator('h1').filter({ hasText: 'Sony 24-70mm f/2.8 GM II' }),
+      ).toBeVisible();
       await expect(page.getByText('LE1001').first()).toBeVisible();
     });
 
@@ -178,7 +180,7 @@ test.describe('Inventory Management', () => {
 
   test.describe('Edit Item', () => {
     test('opens the edit form with current values', async ({ page, pages }) => {
-      const name = `${E2E_PREFIX} EditOpen`;
+      const name = `${E2E_PREFIX} EditOpen ${Date.now()}`;
       const id = await createTestItem({ name });
       try {
         await reloadIntoGearList(page, pages);
@@ -196,7 +198,7 @@ test.describe('Inventory Management', () => {
     });
 
     test('updates an item name', async ({ page, pages }) => {
-      const name = `${E2E_PREFIX} EditSave`;
+      const name = `${E2E_PREFIX} EditSave ${Date.now()}`;
       const id = await createTestItem({ name });
       try {
         await reloadIntoGearList(page, pages);
@@ -223,13 +225,14 @@ test.describe('Inventory Management', () => {
 
   test.describe('Bulk Selection', () => {
     test('selects items and shows the selection toolbar', async ({ page, pages }) => {
-      const nameA = `${E2E_PREFIX} Bulk A`;
-      const nameB = `${E2E_PREFIX} Bulk B`;
+      const stamp = Date.now();
+      const nameA = `${E2E_PREFIX} Bulk ${stamp} A`;
+      const nameB = `${E2E_PREFIX} Bulk ${stamp} B`;
       const idA = await createTestItem({ name: nameA });
       const idB = await createTestItem({ name: nameB });
       try {
         await reloadIntoGearList(page, pages);
-        await pages.gearList.search(E2E_PREFIX);
+        await pages.gearList.search(`${E2E_PREFIX} Bulk ${stamp}`);
 
         await page.getByRole('button', { name: 'Multiple Selection' }).click();
         await pages.gearList.itemRow(nameA).click();
@@ -254,11 +257,11 @@ test.describe('Inventory Management', () => {
       page,
       pages,
     }) => {
-      const name = `${E2E_PREFIX} Bulk Delete`;
+      const name = `${E2E_PREFIX} Bulk Delete ${Date.now()}`;
       const id = await createTestItem({ name });
       try {
         await reloadIntoGearList(page, pages);
-        await pages.gearList.search(E2E_PREFIX);
+        await pages.gearList.search(name);
 
         await page.getByRole('button', { name: 'Multiple Selection' }).click();
         await pages.gearList.itemRow(name).click();

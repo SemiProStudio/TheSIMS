@@ -12,7 +12,7 @@
 // REQUIRES the reservations.group_id migration on the test project.
 // =============================================================================
 import { test, expect, pickDate } from './fixtures.js';
-import { createTestItem, cleanupTestData, adminDb, E2E_PREFIX } from './db.js';
+import { createTestItem, adminDb, E2E_PREFIX, deleteTestItem } from './db.js';
 
 const PROJECT = `${E2E_PREFIX} Sched Group`;
 const ITEM_A = `${E2E_PREFIX} SchedItemA`;
@@ -27,8 +27,11 @@ test.describe.serial('multi-item reservation lifecycle', () => {
     itemBId = await createTestItem({ name: ITEM_B });
   });
 
+  // Scoped cleanup — deleteTestItem removes each item's reservations too;
+  // the global purge belongs to auth.setup at run start only
   test.afterAll(async () => {
-    await cleanupTestData();
+    await deleteTestItem(itemAId);
+    await deleteTestItem(itemBId);
   });
 
   test('create → group entry → edit updates all rows → checkout warns → cancel releases', async ({
@@ -140,10 +143,7 @@ test.describe.serial('multi-item reservation lifecycle', () => {
       timeout: 10000,
     });
     await page.getByRole('button', { name: 'Cancel Reservation' }).click();
-    await page
-      .getByRole('alertdialog')
-      .getByRole('button', { name: 'Cancel Reservation' })
-      .click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Cancel Reservation' }).click();
 
     // Soft-cancel: rows keep history with status='cancelled'
     await expect
@@ -163,10 +163,7 @@ test.describe.serial('multi-item reservation lifecycle', () => {
     await expect
       .poll(
         async () => {
-          const { data } = await db
-            .from('inventory')
-            .select('status')
-            .in('id', [itemAId, itemBId]);
+          const { data } = await db.from('inventory').select('status').in('id', [itemAId, itemBId]);
           return data?.map((r) => r.status).join(',');
         },
         { timeout: 10000 },
