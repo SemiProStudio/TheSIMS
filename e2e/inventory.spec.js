@@ -96,7 +96,7 @@ test.describe('Inventory Management', () => {
       await pages.gearList.openItem('LE1001', 'Sony 24-70mm f/2.8 GM II');
       await pages.itemDetail.expectItemDetail();
       await expect(
-        page.locator('h1').filter({ hasText: 'Sony 24-70mm f/2.8 GM II' }),
+        page.locator('h2').filter({ hasText: 'Sony 24-70mm f/2.8 GM II' }),
       ).toBeVisible();
       await expect(page.getByText('LE1001').first()).toBeVisible();
     });
@@ -105,7 +105,7 @@ test.describe('Inventory Management', () => {
       await pages.gearList.openItem('AU1001', 'Sennheiser MKH 416');
       await pages.itemDetail.expectItemDetail();
 
-      await expect(page.locator('h1').filter({ hasText: 'Sennheiser MKH 416' })).toBeVisible();
+      await expect(page.locator('h2').filter({ hasText: 'Sennheiser MKH 416' })).toBeVisible();
       // Available item: admin sees Check Out, Edit, and QR actions
       await expect(page.getByRole('button', { name: 'Check Out', exact: true })).toBeVisible();
       await expect(page.getByRole('button', { name: 'Edit', exact: true })).toBeVisible();
@@ -222,7 +222,7 @@ test.describe('Inventory Management', () => {
 
         // The modal closes and the detail heading shows the new name
         await expect(modal).toBeHidden();
-        await expect(page.locator('h1').filter({ hasText: `${name} Updated` })).toBeVisible({
+        await expect(page.locator('h2').filter({ hasText: `${name} Updated` })).toBeVisible({
           timeout: 10000,
         });
       } finally {

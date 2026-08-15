@@ -353,10 +353,9 @@ function Sidebar({
                 transition: 'opacity 0.2s ease, width 0.2s ease',
               }}
             >
-              {/* Deliberately the app-wide h1 (accessibility.spec pins this).
-                  Detail views (item, reservation) ALSO render h1 entity names
-                  — resolving that duplication needs an app-wide heading pass,
-                  deferred from the 2026-08-15 item-detail round. */}
+              {/* The app-wide h1 — the ONLY one per page (accessibility.spec
+                  pins the count). Every view, detail pages included, renders
+                  its title as h2 under it. */}
               <h1
                 style={{
                   margin: 0,

@@ -187,15 +187,18 @@ function ReservationDetail({
               <Badge text={reservation.projectType || 'Project'} color={colors.accent2} />
               {isOverdue && <Badge text="OVERDUE" color={colors.danger} />}
             </div>
-            <h1
+            {/* h2 like every other view's page title — the sidebar brand is
+                the app-wide h1, and an h1 here made two per page */}
+            <h2
               style={{
                 margin: `0 0 ${spacing[2]}px`,
                 fontSize: typography.fontSize['3xl'],
+                fontWeight: typography.fontWeight.bold,
                 color: colors.textPrimary,
               }}
             >
               {reservation.project}
-            </h1>
+            </h2>
             <p style={{ color: colors.textSecondary, margin: `0 0 ${spacing[4]}px` }}>
               {itemCount > 1 ? `${itemCount} items reserved` : `${item.name} - ${item.brand}`}
             </p>

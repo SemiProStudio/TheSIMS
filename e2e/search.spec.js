@@ -55,7 +55,7 @@ test.describe('Global search', () => {
       .click({ timeout: 10000 });
 
     // Reservation detail
-    await expect(page.locator('h1:has-text("Wedding - Smith/Jones")')).toBeVisible({
+    await expect(page.locator('h2:has-text("Wedding - Smith/Jones")')).toBeVisible({
       timeout: 15000,
     });
 
@@ -70,7 +70,7 @@ test.describe('Global search', () => {
     await page.getByRole('button', { name: 'View Sony A7S III' }).click({ timeout: 10000 });
 
     // Item detail with the search-aware back label
-    await expect(page.locator('h1:has-text("Sony A7S III")')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('h2:has-text("Sony A7S III")')).toBeVisible({ timeout: 15000 });
     await page.getByRole('button', { name: 'Back to Search' }).click();
 
     // The search survives the round-trip

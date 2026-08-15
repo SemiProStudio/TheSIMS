@@ -65,7 +65,7 @@ test.describe.serial('multi-item reservation lifecycle', () => {
     await expect(modal).toBeHidden({ timeout: 10000 });
 
     // Lands on the reservation detail
-    await expect(page.locator(`h1:has-text("${PROJECT}")`)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`h2:has-text("${PROJECT}")`)).toBeVisible({ timeout: 10000 });
     await expect(page.locator('text=2 items reserved')).toBeVisible();
 
     // DB truth: two rows, one shared group_id, creator recorded
@@ -106,7 +106,7 @@ test.describe.serial('multi-item reservation lifecycle', () => {
 
     // --- Edit the group: rename must hit BOTH rows ---
     await page.locator(`text=${PROJECT}`).first().click();
-    await expect(page.locator(`h1:has-text("${PROJECT}")`)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`h2:has-text("${PROJECT}")`)).toBeVisible({ timeout: 10000 });
     await page.getByRole('button', { name: 'Edit Reservation' }).click();
     await expect(modal).toBeVisible();
     await modal
@@ -145,7 +145,7 @@ test.describe.serial('multi-item reservation lifecycle', () => {
     await pages.dashboard.navigateTo('Schedule');
     await expect(page.locator('h2:has-text("Schedule")')).toBeVisible({ timeout: 10000 });
     await page.locator(`text=${PROJECT} RENAMED`).first().click();
-    await expect(page.locator(`h1:has-text("${PROJECT} RENAMED")`)).toBeVisible({
+    await expect(page.locator(`h2:has-text("${PROJECT} RENAMED")`)).toBeVisible({
       timeout: 10000,
     });
     await page.getByRole('button', { name: 'Cancel Reservation' }).click();
