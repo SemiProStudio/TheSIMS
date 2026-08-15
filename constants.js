@@ -187,7 +187,6 @@ export const VIEWS = {
   REPORTS: 'reports',
   AUDIT_LOG: 'auditlog',
   CHANGE_LOG: 'changelog',
-  OVERDUE: 'overdue',
   NOTIFICATIONS: 'notifications',
   INVENTORY_REPORT: 'inventory-report',
   ACTIVITY_REPORT: 'activity-report',
@@ -196,7 +195,6 @@ export const VIEWS = {
   INSURANCE_REPORT: 'insurance-report',
   LOCATIONS_MANAGE: 'locations-manage',
   ROLES_MANAGE: 'roles-manage',
-  KIT_DETAIL: 'kit-detail',
   ADD_ITEM: 'add-item',
   EDIT_SPECS: 'edit-specs',
   EDIT_CATEGORIES: 'edit-categories',
@@ -379,75 +377,6 @@ export const CATEGORY_PREFIXES = {
 // trackSerialNumbers: whether items require serial numbers
 // trackReorderPoint: whether to show reorder point field (only for consumables)
 // defaultLocation: default storage location for new items in this category
-export const DEFAULT_CATEGORY_SETTINGS = {
-  Cameras: {
-    trackQuantity: false,
-    trackSerialNumbers: true,
-    trackReorderPoint: false,
-    lowStockThreshold: 0,
-  },
-  Lenses: {
-    trackQuantity: false,
-    trackSerialNumbers: true,
-    trackReorderPoint: false,
-    lowStockThreshold: 0,
-  },
-  Lighting: {
-    trackQuantity: true,
-    trackSerialNumbers: false,
-    trackReorderPoint: false,
-    lowStockThreshold: 2,
-  },
-  Audio: {
-    trackQuantity: true,
-    trackSerialNumbers: false,
-    trackReorderPoint: false,
-    lowStockThreshold: 2,
-  },
-  Support: {
-    trackQuantity: true,
-    trackSerialNumbers: false,
-    trackReorderPoint: false,
-    lowStockThreshold: 1,
-  },
-  Accessories: {
-    trackQuantity: true,
-    trackSerialNumbers: false,
-    trackReorderPoint: false,
-    lowStockThreshold: 3,
-  },
-  Storage: {
-    trackQuantity: true,
-    trackSerialNumbers: false,
-    trackReorderPoint: false,
-    lowStockThreshold: 5,
-  },
-  Grip: {
-    trackQuantity: true,
-    trackSerialNumbers: false,
-    trackReorderPoint: false,
-    lowStockThreshold: 2,
-  },
-  Monitors: {
-    trackQuantity: false,
-    trackSerialNumbers: true,
-    trackReorderPoint: false,
-    lowStockThreshold: 0,
-  },
-  Power: {
-    trackQuantity: true,
-    trackSerialNumbers: false,
-    trackReorderPoint: false,
-    lowStockThreshold: 3,
-  },
-  Consumables: {
-    trackQuantity: true,
-    trackSerialNumbers: false,
-    trackReorderPoint: true,
-    lowStockThreshold: 5,
-  },
-};
-
 // Default settings for new categories
 export const DEFAULT_NEW_CATEGORY_SETTINGS = {
   trackQuantity: false,

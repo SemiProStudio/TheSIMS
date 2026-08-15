@@ -115,69 +115,6 @@ export function PermissionsProvider({ children, currentUser, roles }) {
   return <PermissionsContext.Provider value={value}>{children}</PermissionsContext.Provider>;
 }
 
-// Access denied component
-export function AccessDenied({ functionId, currentLevel, requiredLevel, message }) {
-  const funcInfo =
-    APP_FUNCTIONS[Object.keys(APP_FUNCTIONS).find((k) => APP_FUNCTIONS[k].id === functionId)];
-
-  const levelMessages = {
-    [PERMISSION_LEVELS.VIEW]: 'view',
-    [PERMISSION_LEVELS.EDIT]: 'edit',
-  };
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '48px 24px',
-        textAlign: 'center',
-      }}
-    >
-      <div
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: '50%',
-          background: 'rgba(239, 68, 68, 0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 16,
-          color: '#ef4444',
-        }}
-      >
-        <svg
-          width="32"
-          height="32"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-      </div>
-      <h3 style={{ margin: '0 0 8px', color: '#1f2937', fontSize: typography.fontSize.xl }}>
-        Access Restricted
-      </h3>
-      <p style={{ margin: '0 0 16px', color: '#6b7280', maxWidth: 400 }}>
-        {message ||
-          (currentLevel === PERMISSION_LEVELS.HIDE
-            ? `You don't have permission to access ${funcInfo?.name || 'this feature'}.`
-            : `You have ${currentLevel} access to ${funcInfo?.name || 'this feature'}, but ${levelMessages[requiredLevel]} access is required for this action.`)}
-      </p>
-      <p style={{ margin: 0, color: '#9ca3af', fontSize: typography.fontSize.base }}>
-        Contact your administrator if you need access.
-      </p>
-    </div>
-  );
-}
-
 // Component to show view-only message
 export function ViewOnlyBanner({ functionId }) {
   const { canEdit } = usePermissions();

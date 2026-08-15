@@ -1488,7 +1488,6 @@ export function DataProvider({ children }) {
       error,
       dataLoaded,
       tier2Loaded,
-      lastLoadedAt,
 
       // Data
       inventory,
@@ -1512,7 +1511,6 @@ export function DataProvider({ children }) {
 
       // Refresh functions
       refreshData: loadData,
-      refreshStaleData,
 
       // Lazy-load functions — call these before accessing the data
       ensureClients,
@@ -1613,7 +1611,6 @@ export function DataProvider({ children }) {
       error,
       dataLoaded,
       tier2Loaded,
-      lastLoadedAt,
       inventory,
       packages,
       packLists,
@@ -1633,7 +1630,6 @@ export function DataProvider({ children }) {
       checkoutEventsLoaded,
       lazyErrors,
       loadData,
-      refreshStaleData,
       ensureClients,
       getClientById,
       ensureAuditLog,

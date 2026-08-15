@@ -8,13 +8,9 @@ import {
   isNonEmptyString,
   isValidLength,
   sanitizeString,
-  isValidNumber,
-  parseNumber,
   parseCurrency,
   isValidDate,
   isValidDateRange,
-  isFutureDate,
-  isPastDate,
   isValidStatus,
   isValidCondition,
   isValidCategory,
@@ -85,48 +81,6 @@ describe('sanitizeString', () => {
   });
 });
 
-// =============================================================================
-// Number Validators
-// =============================================================================
-
-describe('isValidNumber', () => {
-  it('should accept valid numbers', () => {
-    expect(isValidNumber(5, 0, 10)).toBe(true);
-    expect(isValidNumber('3.14', 0, 10)).toBe(true);
-    expect(isValidNumber(0, 0, 10)).toBe(true);
-    expect(isValidNumber(10, 0, 10)).toBe(true);
-  });
-
-  it('should reject numbers outside range', () => {
-    expect(isValidNumber(-1, 0, 10)).toBe(false);
-    expect(isValidNumber(11, 0, 10)).toBe(false);
-  });
-
-  it('should reject non-numeric values', () => {
-    expect(isValidNumber('abc')).toBe(false);
-    expect(isValidNumber(NaN)).toBe(false);
-    expect(isValidNumber('')).toBe(false);
-  });
-
-  it('should work with defaults (no min/max)', () => {
-    expect(isValidNumber(999999)).toBe(true);
-    expect(isValidNumber(-999999)).toBe(true);
-  });
-});
-
-describe('parseNumber', () => {
-  it('should parse valid numbers', () => {
-    expect(parseNumber('42')).toBe(42);
-    expect(parseNumber(3.14)).toBe(3.14);
-  });
-
-  it('should return default for invalid values', () => {
-    expect(parseNumber('abc')).toBe(0);
-    expect(parseNumber('abc', 99)).toBe(99);
-    expect(parseNumber(NaN, -1)).toBe(-1);
-  });
-});
-
 describe('parseCurrency', () => {
   it('should parse dollar amounts', () => {
     expect(parseCurrency('$1,234.56')).toBe(1234.56);
@@ -185,51 +139,6 @@ describe('isValidDateRange', () => {
   it('should reject invalid dates', () => {
     expect(isValidDateRange('bad', '2024-01-01')).toBe(false);
     expect(isValidDateRange('2024-01-01', 'bad')).toBe(false);
-  });
-});
-
-describe('isFutureDate', () => {
-  it('should accept future dates', () => {
-    const future = new Date();
-    future.setFullYear(future.getFullYear() + 1);
-    expect(isFutureDate(future.toISOString())).toBe(true);
-  });
-
-  it('should accept today', () => {
-    const today = new Date();
-    // Set to noon to avoid edge case
-    today.setHours(12, 0, 0, 0);
-    expect(isFutureDate(today.toISOString())).toBe(true);
-  });
-
-  it('should reject past dates', () => {
-    expect(isFutureDate('2020-01-01')).toBe(false);
-  });
-
-  it('should reject invalid dates', () => {
-    expect(isFutureDate('not-a-date')).toBe(false);
-    expect(isFutureDate(null)).toBe(false);
-  });
-});
-
-describe('isPastDate', () => {
-  it('should accept past dates', () => {
-    expect(isPastDate('2020-01-01')).toBe(true);
-  });
-
-  it('should accept today', () => {
-    const today = new Date();
-    today.setHours(12, 0, 0, 0);
-    expect(isPastDate(today.toISOString())).toBe(true);
-  });
-
-  it('should reject far future dates', () => {
-    expect(isPastDate('2099-12-31')).toBe(false);
-  });
-
-  it('should reject invalid dates', () => {
-    expect(isPastDate('not-a-date')).toBe(false);
-    expect(isPastDate(null)).toBe(false);
   });
 });
 

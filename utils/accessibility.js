@@ -1,6 +1,10 @@
 // ============================================================================
 // Accessibility Utilities
-// Color contrast checking, screen reader announcements, and theme validation
+// Color contrast checking / theme validation (WCAG 2.1) and the two
+// screen-reader announcements the app actually makes. The wider
+// announce*/focusAndAnnounce/trapFocus family that used to live here had no
+// importers (ModalBase hand-rolls its own focus trap) — deleted in the
+// 2026-08-14 dead-export sweep.
 // ============================================================================
 
 // ============================================================================
@@ -178,6 +182,9 @@ export function getContrastSummary(validationResults) {
 
 // ============================================================================
 // Screen Reader Announcements
+// The two live consumers: ThemeContext + CustomThemeEditor call announce(),
+// Sidebar calls announcePageChange(). The wider announce*/trapFocus family
+// that used to live here had no importers and was deleted 2026-08-14.
 // ============================================================================
 
 let announcerElement = null;
@@ -226,200 +233,9 @@ export function announce(message, politeness = 'polite') {
 }
 
 /**
- * Announce an assertive (important) message
- * @param {string} message
- */
-export function announceAssertive(message) {
-  announce(message, 'assertive');
-}
-
-// ============================================================================
-// Common Announcement Helpers
-// ============================================================================
-
-/**
- * Announce when an item is added
- * @param {string} itemName - Name of the added item
- * @param {string} context - Context (e.g., "inventory", "cart")
- */
-export function announceAdded(itemName, context = '') {
-  announce(`${itemName} added${context ? ` to ${context}` : ''}`);
-}
-
-/**
- * Announce when an item is removed
- * @param {string} itemName
- * @param {string} context
- */
-export function announceRemoved(itemName, context = '') {
-  announce(`${itemName} removed${context ? ` from ${context}` : ''}`);
-}
-
-/**
- * Announce when content is loading
- * @param {string} content - What's loading
- */
-export function announceLoading(content = 'Content') {
-  announce(`${content} loading`);
-}
-
-/**
- * Announce when content is loaded
- * @param {string} content - What was loaded
- * @param {number} count - Optional count of items
- */
-export function announceLoaded(content = 'Content', count = null) {
-  if (count !== null) {
-    announce(`${content} loaded. ${count} items found.`);
-  } else {
-    announce(`${content} loaded`);
-  }
-}
-
-/**
- * Announce an error
- * @param {string} errorMessage
- */
-export function announceError(errorMessage) {
-  announceAssertive(`Error: ${errorMessage}`);
-}
-
-/**
- * Announce a success message
- * @param {string} message
- */
-export function announceSuccess(message) {
-  announce(message);
-}
-
-/**
- * Announce page/view navigation
+ * Announce a page/view navigation
  * @param {string} pageName
  */
 export function announcePageChange(pageName) {
   announce(`Navigated to ${pageName}`);
 }
-
-/**
- * Announce modal open/close
- * @param {string} modalName
- * @param {boolean} isOpen
- */
-export function announceModal(modalName, isOpen) {
-  if (isOpen) {
-    announce(`${modalName} dialog opened`);
-  } else {
-    announce(`${modalName} dialog closed`);
-  }
-}
-
-/**
- * Announce selection change
- * @param {string} itemName
- * @param {boolean} isSelected
- */
-export function announceSelection(itemName, isSelected) {
-  announce(`${itemName} ${isSelected ? 'selected' : 'deselected'}`);
-}
-
-/**
- * Announce filter/sort change
- * @param {string} filterType
- * @param {string} value
- */
-export function announceFilterChange(filterType, value) {
-  announce(`${filterType} changed to ${value}`);
-}
-
-// ============================================================================
-// Focus Management
-// ============================================================================
-
-/**
- * Move focus to an element and announce it
- * @param {HTMLElement} element
- * @param {string} announcement - Optional announcement
- */
-export function focusAndAnnounce(element, announcement = '') {
-  if (!element) return;
-
-  element.focus();
-  if (announcement) {
-    announce(announcement);
-  }
-}
-
-/**
- * Trap focus within a container (for modals)
- * @param {HTMLElement} container
- * @returns {Function} Cleanup function
- */
-export function trapFocus(container) {
-  if (!container) return () => {};
-
-  const focusableSelectors = [
-    'button:not([disabled])',
-    'input:not([disabled])',
-    'select:not([disabled])',
-    'textarea:not([disabled])',
-    'a[href]',
-    '[tabindex]:not([tabindex="-1"])',
-  ].join(', ');
-
-  const focusableElements = container.querySelectorAll(focusableSelectors);
-  const firstFocusable = focusableElements[0];
-  const lastFocusable = focusableElements[focusableElements.length - 1];
-
-  const handleKeyDown = (e) => {
-    if (e.key !== 'Tab') return;
-
-    if (e.shiftKey) {
-      if (document.activeElement === firstFocusable) {
-        e.preventDefault();
-        lastFocusable?.focus();
-      }
-    } else {
-      if (document.activeElement === lastFocusable) {
-        e.preventDefault();
-        firstFocusable?.focus();
-      }
-    }
-  };
-
-  container.addEventListener('keydown', handleKeyDown);
-
-  // Focus the first focusable element
-  firstFocusable?.focus();
-
-  return () => {
-    container.removeEventListener('keydown', handleKeyDown);
-  };
-}
-
-export default {
-  // Contrast
-  hexToRgb,
-  getLuminance,
-  getContrastRatio,
-  checkContrast,
-  getContrastStatus,
-  validateThemeContrast,
-  getContrastSummary,
-  CONTRAST_PAIRS,
-  // Announcements
-  announce,
-  announceAssertive,
-  announceAdded,
-  announceRemoved,
-  announceLoading,
-  announceLoaded,
-  announceError,
-  announceSuccess,
-  announcePageChange,
-  announceModal,
-  announceSelection,
-  announceFilterChange,
-  // Focus
-  focusAndAnnounce,
-  trapFocus,
-};

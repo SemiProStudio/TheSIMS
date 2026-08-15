@@ -558,28 +558,6 @@ export const filterByCategory = (items, categories) => {
   return items.filter((item) => cats.includes(item.category));
 };
 
-/**
- * Filter items by status
- * @param {Array} items - Items to filter
- * @param {string|string[]} statuses - Status or statuses to filter by
- * @returns {Array} Filtered items
- */
-export const filterByStatus = (items, statuses) => {
-  if (!statuses || statuses === 'all') return items;
-  const stats = Array.isArray(statuses) ? statuses : [statuses];
-  if (stats.length === 0) return items;
-
-  // Handle OVERDUE status specially - it's a computed state, not stored status
-  if (stats.includes('overdue')) {
-    const today = getTodayISO();
-    return items.filter(
-      (item) => item.status === 'checked-out' && item.dueBack && item.dueBack < today,
-    );
-  }
-
-  return items.filter((item) => stats.includes(item.status));
-};
-
 // ============================================================================
 // Note Utilities (recursive tree operations)
 // ============================================================================
@@ -696,41 +674,6 @@ export function computeLocationPathRenames(originalTree, editedTree) {
 // ============================================================================
 // Reminder Utilities
 // ============================================================================
-
-/**
- * Get next due date based on recurrence pattern
- * @param {string} currentDueDate - Current due date (ISO string)
- * @param {string} recurrence - Recurrence type (weekly, monthly, etc.)
- * @returns {string|null} Next due date or null if no recurrence
- */
-export const getNextDueDate = (currentDueDate, recurrence) => {
-  const date = parseLocalDate(currentDueDate);
-
-  switch (recurrence) {
-    case 'weekly':
-      date.setDate(date.getDate() + 7);
-      break;
-    case 'biweekly':
-      date.setDate(date.getDate() + 14);
-      break;
-    case 'monthly':
-      date.setMonth(date.getMonth() + 1);
-      break;
-    case 'quarterly':
-      date.setMonth(date.getMonth() + 3);
-      break;
-    case 'biannual':
-      date.setMonth(date.getMonth() + 6);
-      break;
-    case 'yearly':
-      date.setFullYear(date.getFullYear() + 1);
-      break;
-    default:
-      return null;
-  }
-
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-};
 
 /**
  * Check if a reminder is due (today or past)

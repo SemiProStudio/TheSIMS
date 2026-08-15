@@ -27,7 +27,6 @@ import {
   addReplyToNote,
   markNoteDeleted,
   findNoteById,
-  getNextDueDate,
   parseSmartPaste,
   validateCSVData,
   exportToCSV,
@@ -446,44 +445,6 @@ describe('Status and Condition Color Edge Cases', () => {
     it('should return muted color for unknown condition', () => {
       const result = getConditionColor('unknown');
       expect(result).toBeDefined();
-    });
-  });
-});
-
-// =============================================================================
-// Maintenance Schedule Edge Cases
-// =============================================================================
-
-describe('Maintenance Schedule Edge Cases', () => {
-  describe('getNextDueDate', () => {
-    it('should handle null last date', () => {
-      const result = getNextDueDate(null, 'monthly');
-      expect(result).toBeDefined();
-    });
-
-    it('should handle null interval', () => {
-      const result = getNextDueDate('2024-01-01', null);
-      expect(result).toBeDefined();
-    });
-
-    it('should handle unknown interval', () => {
-      const result = getNextDueDate('2024-01-01', 'unknown');
-      expect(result).toBeDefined();
-    });
-
-    it('should calculate monthly interval', () => {
-      const result = getNextDueDate('2024-01-15', 'monthly');
-      expect(result).toMatch(/2024-02/);
-    });
-
-    it('should calculate quarterly interval', () => {
-      const result = getNextDueDate('2024-01-15', 'quarterly');
-      expect(result).toMatch(/2024-04/);
-    });
-
-    it('should calculate yearly interval', () => {
-      const result = getNextDueDate('2024-01-15', 'yearly');
-      expect(result).toMatch(/2025-01/);
     });
   });
 });

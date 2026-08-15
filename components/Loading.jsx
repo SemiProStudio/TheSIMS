@@ -1,11 +1,11 @@
 // =============================================================================
 // Loading Components
-// Spinners, skeletons, and loading indicators
+// Spinner and the two loading shells the app actually mounts (modal overlay,
+// lazy-view fallback). The skeleton/progress/inline family that used to live
+// here had no importers — deleted in the 2026-08-14 dead-export sweep.
 // Colors come from the theme CSS variables (index.css :root provides dark
 // fallbacks for anything rendered before ThemeContext applies a theme).
 // =============================================================================
-
-import React from 'react';
 
 // =============================================================================
 // SPINNER
@@ -47,162 +47,7 @@ export function Spinner({ size = 40, color = 'var(--primary)', className = '' })
 }
 
 // =============================================================================
-// FULL PAGE LOADING
-// =============================================================================
-export function FullPageLoading({ message = 'Loading...' }) {
-  return (
-    <div style={styles.fullPage}>
-      <Spinner size={48} />
-      <p style={styles.message}>{message}</p>
-    </div>
-  );
-}
-
-// =============================================================================
-// CONTENT LOADING
-// =============================================================================
-export function ContentLoading({ message = 'Loading...', minHeight = '200px' }) {
-  return (
-    <div style={{ ...styles.content, minHeight }}>
-      <Spinner size={32} />
-      <p style={styles.contentMessage}>{message}</p>
-    </div>
-  );
-}
-
-// =============================================================================
-// SKELETON LOADER
-// =============================================================================
-export function Skeleton({
-  width = '100%',
-  height = '20px',
-  borderRadius = '4px',
-  className = '',
-}) {
-  return (
-    <div
-      className={className}
-      style={{
-        width,
-        height,
-        borderRadius,
-        backgroundColor: 'var(--bg-light)',
-        animation: 'pulse 2s ease-in-out infinite',
-      }}
-    >
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-// =============================================================================
-// SKELETON CARD
-// =============================================================================
-export function SkeletonCard() {
-  return (
-    <div style={styles.skeletonCard}>
-      <Skeleton height="120px" borderRadius="8px" />
-      <div style={{ marginTop: '12px' }}>
-        <Skeleton width="70%" height="16px" />
-      </div>
-      <div style={{ marginTop: '8px' }}>
-        <Skeleton width="40%" height="14px" />
-      </div>
-    </div>
-  );
-}
-
-// =============================================================================
-// SKELETON TABLE
-// =============================================================================
-export function SkeletonTable({ rows = 5 }) {
-  return (
-    <div style={styles.skeletonTable}>
-      {/* Header */}
-      <div style={styles.skeletonTableHeader}>
-        <Skeleton width="15%" height="14px" />
-        <Skeleton width="25%" height="14px" />
-        <Skeleton width="20%" height="14px" />
-        <Skeleton width="15%" height="14px" />
-        <Skeleton width="15%" height="14px" />
-      </div>
-
-      {/* Rows */}
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} style={styles.skeletonTableRow}>
-          <Skeleton width="15%" height="12px" />
-          <Skeleton width="25%" height="12px" />
-          <Skeleton width="20%" height="12px" />
-          <Skeleton width="15%" height="12px" />
-          <Skeleton width="15%" height="12px" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// =============================================================================
-// SKELETON LIST
-// =============================================================================
-export function SkeletonList({ items = 5 }) {
-  return (
-    <div style={styles.skeletonList}>
-      {Array.from({ length: items }).map((_, i) => (
-        <div key={i} style={styles.skeletonListItem}>
-          <Skeleton width="40px" height="40px" borderRadius="8px" />
-          <div style={{ flex: 1, marginLeft: '12px' }}>
-            <Skeleton width="60%" height="14px" />
-            <Skeleton width="40%" height="12px" style={{ marginTop: '6px' }} />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// =============================================================================
-// INLINE LOADING
-// =============================================================================
-export function InlineLoading({ text = 'Loading' }) {
-  return (
-    <span style={styles.inline}>
-      <Spinner size={16} />
-      <span style={{ marginLeft: '8px' }}>{text}</span>
-    </span>
-  );
-}
-
-// =============================================================================
-// BUTTON LOADING
-// =============================================================================
-export function ButtonLoading({ size = 16, color = 'currentColor' }) {
-  return <Spinner size={size} color={color} />;
-}
-
-// =============================================================================
-// PROGRESS BAR
-// =============================================================================
-export function ProgressBar({ progress = 0, color = 'var(--primary)' }) {
-  return (
-    <div style={styles.progressContainer}>
-      <div
-        style={{
-          ...styles.progressBar,
-          width: `${Math.min(100, Math.max(0, progress))}%`,
-          backgroundColor: color,
-        }}
-      />
-    </div>
-  );
-}
-
-// =============================================================================
-// MODAL LOADING - Suspense fallback for lazy-loaded modals
+// MODAL LOADING - Loading overlay for lazy-loaded modals
 // =============================================================================
 export function ModalLoading() {
   return (
@@ -228,101 +73,9 @@ export function ViewLoading({ message = 'Loading view...' }) {
 }
 
 // =============================================================================
-// SUSPENSE WRAPPER - Helper component for consistent Suspense boundaries
-// =============================================================================
-export function SuspenseView({ children, fallback }) {
-  return <React.Suspense fallback={fallback || <ViewLoading />}>{children}</React.Suspense>;
-}
-
-export function SuspenseModal({ children }) {
-  return <React.Suspense fallback={<ModalLoading />}>{children}</React.Suspense>;
-}
-
-// =============================================================================
 // STYLES
 // =============================================================================
 const styles = {
-  fullPage: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100vh',
-    backgroundColor: 'var(--bg-dark)',
-    color: 'var(--text-muted)',
-    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  },
-  message: {
-    marginTop: '16px',
-    fontSize: '16px',
-    color: 'var(--text-muted)',
-  },
-  content: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px',
-    color: 'var(--text-muted)',
-  },
-  contentMessage: {
-    marginTop: '12px',
-    fontSize: '14px',
-    color: 'var(--text-muted)',
-  },
-  skeletonCard: {
-    backgroundColor: 'var(--bg-medium)',
-    borderRadius: '12px',
-    padding: '16px',
-  },
-  skeletonTable: {
-    backgroundColor: 'var(--bg-medium)',
-    borderRadius: '8px',
-    padding: '16px',
-  },
-  skeletonTableHeader: {
-    display: 'flex',
-    gap: '16px',
-    paddingBottom: '12px',
-    borderBottom: '1px solid var(--border)',
-    marginBottom: '12px',
-  },
-  skeletonTableRow: {
-    display: 'flex',
-    gap: '16px',
-    padding: '12px 0',
-    borderBottom: '1px solid var(--border-light)',
-  },
-  skeletonList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  skeletonListItem: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '12px',
-    backgroundColor: 'var(--bg-medium)',
-    borderRadius: '8px',
-  },
-  inline: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    color: 'var(--text-muted)',
-    fontSize: '14px',
-  },
-  progressContainer: {
-    width: '100%',
-    height: '4px',
-    backgroundColor: 'var(--bg-light)',
-    borderRadius: '2px',
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: '2px',
-    transition: 'width 0.3s ease',
-  },
   modalBackdrop: {
     position: 'fixed',
     inset: 0,
@@ -359,21 +112,4 @@ const styles = {
     fontSize: '14px',
     color: 'var(--text-muted)',
   },
-};
-
-export default {
-  Spinner,
-  FullPageLoading,
-  ContentLoading,
-  Skeleton,
-  SkeletonCard,
-  SkeletonTable,
-  SkeletonList,
-  InlineLoading,
-  ButtonLoading,
-  ProgressBar,
-  ModalLoading,
-  ViewLoading,
-  SuspenseView,
-  SuspenseModal,
 };

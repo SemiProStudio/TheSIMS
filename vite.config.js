@@ -37,9 +37,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Vendor chunks
+          // Vendor chunks. @supabase/supabase-js is deliberately absent:
+          // it's only ever dynamic-imported, so naming it here did nothing.
           'vendor-react': ['react', 'react-dom'],
-          'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-icons': ['lucide-react'],
         },
       },
