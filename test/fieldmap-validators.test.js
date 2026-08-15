@@ -245,7 +245,7 @@ describe('toDb', () => {
   });
 
   it('converts empty string to null for reminder date columns', () => {
-    const reminder = { dueDate: '', completedAt: '' };
+    const reminder = { dueDate: '', completedDate: '' };
     const result = toDb(reminder, REMINDER_FIELD_MAP, { partial: true });
     expect(result.due_date).toBeNull();
     expect(result.completed_at).toBeNull();

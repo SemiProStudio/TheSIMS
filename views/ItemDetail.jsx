@@ -27,7 +27,14 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, formatMoney, getStatusColor, getConditionColor, getStatusLabel } from '../utils';
+import {
+  formatDate,
+  formatMoney,
+  getStatusColor,
+  getConditionColor,
+  getStatusLabel,
+  countVisibleNotes,
+} from '../utils';
 import { ITEM_DETAIL_SECTIONS } from '../constants.js';
 import { Badge, Card, Button, CollapsibleSection, BackButton } from '../components/ui.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
@@ -916,7 +923,7 @@ function ItemDetail({
             key="notes"
             title="Notes"
             icon={MessageSquare}
-            badge={(item.notes || []).length}
+            badge={countVisibleNotes(item.notes)}
             badgeColor={notesColor}
             headerColor={notesColor}
             collapsed={isCollapsed('notes')}

@@ -600,6 +600,19 @@ export const markNoteDeleted = (notes, noteId) => {
 };
 
 /**
+ * Count the notes a reader can actually see: non-deleted notes at every
+ * depth. Raw array length counted soft-deleted stubs and missed replies,
+ * so section badges rarely matched the visible thread.
+ * @param {Array} notes - Threaded notes (roots with nested replies)
+ * @returns {number} Visible note count
+ */
+export const countVisibleNotes = (notes) =>
+  (notes || []).reduce(
+    (sum, note) => sum + (note.deleted ? 0 : 1) + countVisibleNotes(note.replies),
+    0,
+  );
+
+/**
  * Find a note by ID in a nested structure
  * @param {Array} notes - Array of notes
  * @param {string} noteId - ID of note to find

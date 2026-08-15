@@ -41,17 +41,37 @@ const Note = memo(function Note({
   );
 
   if (note.deleted) {
+    // The stub must still render its thread — early-returning before the
+    // replies block made every reply under a deleted parent unreachable
+    // even though markNoteDeleted preserves them.
     return (
-      <div
-        style={{
-          padding: spacing[3],
-          marginLeft: depth * spacing[5],
-          color: colors.textMuted,
-          fontStyle: 'italic',
-          fontSize: typography.fontSize.sm,
-        }}
-      >
-        [Note deleted]
+      <div style={{ marginLeft: depth * spacing[5] }}>
+        <div
+          style={{
+            padding: spacing[3],
+            color: colors.textMuted,
+            fontStyle: 'italic',
+            fontSize: typography.fontSize.sm,
+          }}
+        >
+          [Note deleted]
+        </div>
+        {note.replies && note.replies.length > 0 && (
+          <div>
+            {note.replies.map((reply) => (
+              <Note
+                key={reply.id}
+                note={reply}
+                depth={depth + 1}
+                onReply={onReply}
+                onDelete={onDelete}
+                user={user}
+                panelColor={panelColor}
+                readOnly={readOnly}
+              />
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -173,8 +193,9 @@ const Note = memo(function Note({
         </div>
         )}
 
-        {/* Reply Input */}
-        {showReplyInput && (
+        {/* Reply Input — readOnly guard covers the edge where permissions
+            flip while a reply box is already open */}
+        {showReplyInput && !readOnly && (
           <div
             style={{
               display: 'flex',
