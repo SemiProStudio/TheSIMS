@@ -95,8 +95,14 @@ test.describe.serial('multi-item reservation lifecycle', () => {
     // --- One grouped entry on the schedule ---
     await page.locator('button:has-text("Back")').first().click();
     await expect(page.locator('h2:has-text("Schedule")')).toBeVisible({ timeout: 10000 });
+    // Exactly ONE entry proves the rows grouped (two entries would mean the
+    // group split). Do NOT assert the "2 items" sub-label here: the week-view
+    // bar hides it when the visible segment spans a single day, which is
+    // simply what happens whenever "today" is the last day of the displayed
+    // week — this failed every Saturday (and every US-evening UTC CI run).
+    // The group's 2-item truth is asserted on the detail page above and by
+    // the group-wide edit below.
     await expect(page.locator(`text=${PROJECT}`)).toHaveCount(1);
-    await expect(page.locator('text=2 items').first()).toBeVisible();
 
     // --- Edit the group: rename must hit BOTH rows ---
     await page.locator(`text=${PROJECT}`).first().click();
