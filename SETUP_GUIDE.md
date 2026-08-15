@@ -74,7 +74,14 @@ Verify: Go to **Table Editor** — you should see tables like `inventory`, `pack
 
 - `supabase/functions/send-email/index.ts`
 - `supabase/functions/due-date-reminder/index.ts`
+- `supabase/functions/admin-create-user/index.ts`
 - `supabase/functions/_shared/utils.ts`
+
+> `admin-create-user` isn't about email: it lets admins create user
+> accounts server-side so **public signups can be disabled** in
+> Authentication settings (recommended — with signups enabled, anyone with
+> the app's anon key can create an account). Without it, Add User falls
+> back to the public signup endpoint.
 
 If you want email notifications:
 
