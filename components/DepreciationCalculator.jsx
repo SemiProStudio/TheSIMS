@@ -3,8 +3,8 @@
 // Calculates and displays item depreciation using multiple methods
 // ============================================================================
 
-import { memo, useState, useMemo } from 'react';
-import { TrendingDown, Info, ChevronDown, ChevronUp } from 'lucide-react';
+import { memo, useState, useMemo, useId } from 'react';
+import { Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import {
   formatMoney,
@@ -12,7 +12,7 @@ import {
   DEFAULT_USEFUL_LIFE,
   DEPRECIATION_METHODS,
 } from '../utils';
-import { Badge, Card, CardHeader, Button } from './ui.jsx';
+import { Badge, Button } from './ui.jsx';
 import { Select } from './Select.jsx';
 
 // Depreciation Calculator Component
@@ -22,6 +22,8 @@ function DepreciationCalculator({ item, onUpdateValue }) {
   const [salvagePercent, setSalvagePercent] = useState(10); // 10% salvage value default
   const [showSchedule, setShowSchedule] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const usefulLifeId = useId();
+  const salvageId = useId();
 
   const salvageValue = (item.purchasePrice * salvagePercent) / 100;
 
@@ -38,16 +40,16 @@ function DepreciationCalculator({ item, onUpdateValue }) {
     );
   }, [item.purchasePrice, item.purchaseDate, usefulLife, salvageValue, method]);
 
+  // No inner Card/CardHeader in either branch — this component renders inside
+  // ItemDetail's "Depreciation" CollapsibleSection, and its own titled card
+  // produced a doubled header and border
   if (!item.purchasePrice || !item.purchaseDate) {
     return (
-      <Card padding={false}>
-        <CardHeader title="Depreciation" icon={TrendingDown} />
-        <div style={{ padding: spacing[4], textAlign: 'center', color: colors.textMuted }}>
-          <p style={{ margin: 0, fontSize: typography.fontSize.sm }}>
-            Purchase price and date required to calculate depreciation.
-          </p>
-        </div>
-      </Card>
+      <div style={{ padding: spacing[4], textAlign: 'center', color: colors.textMuted }}>
+        <p style={{ margin: 0, fontSize: typography.fontSize.sm }}>
+          Purchase price and date required to calculate depreciation.
+        </p>
+      </div>
     );
   }
 
@@ -58,13 +60,14 @@ function DepreciationCalculator({ item, onUpdateValue }) {
   };
 
   return (
-    <Card padding={false}>
-      <CardHeader
-        title="Depreciation Calculator"
-        icon={TrendingDown}
-        action={
+    <div>
+      <div style={{ padding: spacing[4] }}>
+        {/* Method explainer toggle */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button
             onClick={() => setShowInfo(!showInfo)}
+            aria-label="About depreciation methods"
+            aria-expanded={showInfo}
             style={{
               background: 'none',
               border: 'none',
@@ -75,9 +78,7 @@ function DepreciationCalculator({ item, onUpdateValue }) {
           >
             <Info size={16} />
           </button>
-        }
-      />
-      <div style={{ padding: spacing[4] }}>
+        </div>
         {/* Info panel */}
         {showInfo && (
           <div
@@ -121,23 +122,32 @@ function DepreciationCalculator({ item, onUpdateValue }) {
             />
           </div>
           <div>
-            <label style={{ ...styles.label, fontSize: typography.fontSize.xs }}>
+            <label
+              htmlFor={usefulLifeId}
+              style={{ ...styles.label, fontSize: typography.fontSize.xs }}
+            >
               Useful Life (years)
             </label>
             <input
+              id={usefulLifeId}
               type="number"
               value={usefulLife}
-              onChange={(e) => setUsefulLife(Math.max(1, parseInt(e.target.value) || 1))}
+              // Clamp to the advertised max — min/max attributes are advisory
+              // for typed input, and 9999 built a 9999-row schedule
+              onChange={(e) =>
+                setUsefulLife(Math.max(1, Math.min(30, parseInt(e.target.value) || 1)))
+              }
               min="1"
               max="30"
               style={{ ...styles.input, fontSize: typography.fontSize.sm, padding: spacing[2] }}
             />
           </div>
           <div>
-            <label style={{ ...styles.label, fontSize: typography.fontSize.xs }}>
+            <label htmlFor={salvageId} style={{ ...styles.label, fontSize: typography.fontSize.xs }}>
               Salvage Value (%)
             </label>
             <input
+              id={salvageId}
               type="number"
               value={salvagePercent}
               onChange={(e) =>
@@ -356,8 +366,12 @@ function DepreciationCalculator({ item, onUpdateValue }) {
               </div>
             </div>
 
-            {/* Update value button */}
-            {Math.abs(item.currentValue - depreciation.currentValue) > 1 && onUpdateValue && (
+            {/* Update value button. A missing currentValue counts as "differs"
+                — NaN > 1 was false, so exactly the items with no value yet
+                could never adopt the calculated one */}
+            {onUpdateValue &&
+              (item.currentValue == null ||
+                Math.abs(item.currentValue - depreciation.currentValue) > 1) && (
               <Button
                 variant="secondary"
                 size="sm"
@@ -500,7 +514,7 @@ function DepreciationCalculator({ item, onUpdateValue }) {
           </>
         )}
       </div>
-    </Card>
+    </div>
   );
 }
 

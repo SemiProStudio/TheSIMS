@@ -36,16 +36,20 @@ export const OptimizedImage = memo(function OptimizedImage({
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isInView, setIsInView] = useState(!lazy);
-  const imgRef = useRef(null);
   const containerRef = useRef(null);
   const triedFullSizeRef = useRef(false);
 
   // Get the appropriate URL based on size
   const imageUrl = size === 'thumbnail' ? getThumbnailUrl(src) : src;
 
-  // Intersection Observer for lazy loading
+  // Intersection Observer for lazy loading. `lazy` flipping to false must
+  // show the image immediately — the observer never fires for it otherwise.
   useEffect(() => {
-    if (!lazy || isInView) return;
+    if (!lazy) {
+      setIsInView(true);
+      return undefined;
+    }
+    if (isInView || typeof IntersectionObserver === 'undefined') return undefined;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -67,12 +71,13 @@ export const OptimizedImage = memo(function OptimizedImage({
     return () => observer.disconnect();
   }, [lazy, isInView]);
 
-  // Reset state when src changes
+  // Reset state when the rendered URL changes — keying on src alone left a
+  // stale full-size retry flag behind a thumbnail↔full size switch
   useEffect(() => {
     setIsLoaded(false);
     setHasError(false);
     triedFullSizeRef.current = false;
-  }, [src]);
+  }, [src, size]);
 
   const handleLoad = (e) => {
     setIsLoaded(true);
@@ -92,13 +97,15 @@ export const OptimizedImage = memo(function OptimizedImage({
     onError?.(e);
   };
 
-  // Default placeholder
+  // Default placeholder. bgLight is a real theme token — the old
+  // colors.surfaceHover never existed, so loading/error states rendered
+  // fully transparent instead of a neutral box.
   const defaultPlaceholder = (
     <div
       style={{
         width: width || '100%',
         height: height || '100%',
-        backgroundColor: colors.surfaceHover,
+        backgroundColor: colors.bgLight,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -115,7 +122,7 @@ export const OptimizedImage = memo(function OptimizedImage({
     height: height || '100%',
     position: 'relative',
     overflow: 'hidden',
-    backgroundColor: colors.surfaceHover,
+    backgroundColor: colors.bgLight,
     borderRadius: borderRadius.md,
     ...style,
   };
@@ -139,23 +146,9 @@ export const OptimizedImage = memo(function OptimizedImage({
 
   return (
     <div ref={containerRef} style={containerStyle} className={className}>
-      {/* Placeholder while loading */}
-      {!isLoaded && !hasError && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-          }}
-        >
-          {placeholder || defaultPlaceholder}
-        </div>
-      )}
-
-      {/* Error state */}
-      {hasError && !isLoaded && (
+      {/* Placeholder while loading or after an error (the defaultPlaceholder
+          shows the warning glyph when hasError) */}
+      {!isLoaded && (
         <div
           style={{
             position: 'absolute',
@@ -172,7 +165,6 @@ export const OptimizedImage = memo(function OptimizedImage({
       {/* Actual image - only load when in view */}
       {isInView && (
         <img
-          ref={imgRef}
           src={imageUrl}
           alt={alt}
           style={imageStyle}
