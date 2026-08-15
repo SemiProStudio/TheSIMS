@@ -638,6 +638,75 @@ describe('DataProvider', () => {
   });
 
   // =============================================================================
+  // Lazy-load error signaling (deferred-hardening round, HONEST-7)
+  // A failed lazy layer must SAY so — views used to show a permanent spinner
+  // (ClientsView) or silently-empty data (AuditLogView) with no retry.
+  // =============================================================================
+
+  describe('Lazy-load error signaling', () => {
+    it('a failed ensureClients sets lazyErrors.clients and leaves the layer unloaded', async () => {
+      const { clientsService } = await import('../lib/services.js');
+      clientsService.getAll.mockRejectedValueOnce(new Error('network down'));
+
+      let capturedContext = null;
+      render(
+        <DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
+      );
+
+      await waitFor(() => {
+        expect(capturedContext?.ensureClients).toBeDefined();
+      });
+
+      await act(async () => {
+        await capturedContext.ensureClients();
+      });
+
+      expect(capturedContext.lazyErrors?.clients).toBe(true);
+      expect(capturedContext.clientsLoaded).toBe(false);
+    });
+
+    it('a retry clears the flag and loads the layer', async () => {
+      const { clientsService } = await import('../lib/services.js');
+      clientsService.getAll.mockRejectedValueOnce(new Error('network down'));
+
+      let capturedContext = null;
+      render(
+        <DataProvider>
+          <TestConsumer
+            onContextReady={(ctx) => {
+              capturedContext = ctx;
+            }}
+          />
+        </DataProvider>,
+      );
+
+      await waitFor(() => {
+        expect(capturedContext?.ensureClients).toBeDefined();
+      });
+
+      await act(async () => {
+        await capturedContext.ensureClients();
+      });
+      expect(capturedContext.lazyErrors?.clients).toBe(true);
+
+      // The mock is back to resolving — the retry succeeds
+      await act(async () => {
+        await capturedContext.ensureClients();
+      });
+
+      expect(capturedContext.lazyErrors?.clients).toBe(false);
+      expect(capturedContext.clientsLoaded).toBe(true);
+      expect(capturedContext.clients).toContainEqual(expect.objectContaining({ id: 'client-1' }));
+    });
+  });
+
+  // =============================================================================
   // Notification Operation Tests
   // =============================================================================
 

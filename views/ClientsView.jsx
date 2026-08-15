@@ -37,6 +37,7 @@ import {
 import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from '../modals/ModalBase.jsx';
 import NotesSection from '../components/NotesSection.jsx';
+import LoadErrorBanner from '../components/LoadErrorBanner.jsx';
 import { useData } from '../contexts/DataContext.js';
 import { useNavigationContext } from '../contexts/NavigationContext.js';
 import { useToast } from '../contexts/ToastContext.js';
@@ -650,6 +651,7 @@ function ClientsView({
   // Lazy data starts as [] — without this flag the view can't tell "still
   // fetching" from "no clients exist" and shows a misleading empty state
   const clientsLoaded = dataContext?.clientsLoaded !== false;
+  const clientsLoadFailed = Boolean(ctxData?.lazyErrors?.clients);
 
   // Lazy-load clients on mount
   useEffect(() => {
@@ -956,7 +958,12 @@ function ClientsView({
       </Card>
 
       {/* Client List */}
-      {!clientsLoaded && clients.length === 0 ? (
+      {clientsLoadFailed && clients.length === 0 ? (
+        <LoadErrorBanner
+          message="Couldn't load clients. Check your connection and try again."
+          onRetry={() => ensureClients?.()}
+        />
+      ) : !clientsLoaded && clients.length === 0 ? (
         <Card
           role="status"
           style={{ textAlign: 'center', padding: spacing[8], color: colors.textMuted }}
