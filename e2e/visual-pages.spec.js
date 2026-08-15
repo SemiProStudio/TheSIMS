@@ -136,6 +136,37 @@ test.describe('Visual Regression - Pages', () => {
         maxDiffPixels: 300,
       });
     });
+
+    test('item detail should match baseline', async ({ page }) => {
+      // Seeded lens LE1001 — stable fields, no drifting relative dates in
+      // the top viewport (the depreciation age sits below the fold)
+      await page.getByText('LE1001').first().click();
+      await expect(
+        page.locator('h1').filter({ hasText: 'Sony 24-70mm f/2.8 GM II' }),
+      ).toBeVisible();
+      // Detail hydration (notes/reservations/history) must settle first
+      await page.waitForTimeout(1000);
+
+      await expect(page).toHaveScreenshot('item-detail.png', {
+        maxDiffPixels: 300,
+      });
+    });
+
+    test('item detail on mobile should match baseline', async ({ page }) => {
+      await page.getByText('LE1001').first().click();
+      await expect(
+        page.locator('h1').filter({ hasText: 'Sony 24-70mm f/2.8 GM II' }),
+      ).toBeVisible();
+      await page.waitForTimeout(1000);
+      // Below the 900px breakpoint the sections must render as one column
+      // in the configured order (the two-column stack used to scramble it)
+      await page.setViewportSize({ width: 375, height: 667 });
+      await page.waitForTimeout(500);
+
+      await expect(page).toHaveScreenshot('item-detail-mobile.png', {
+        maxDiffPixels: 300,
+      });
+    });
   });
 
   test.describe('Schedule View', () => {
