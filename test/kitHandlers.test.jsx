@@ -303,3 +303,61 @@ describe('selectImage', () => {
     expect(params.closeModal).toHaveBeenCalled();
   });
 });
+
+// =============================================================================
+// updateItemValue — the depreciation calculator's "Update Current Value"
+// wrote only local state until 2026-08-15 (looked applied, reverted on
+// reload). Same persist-first contract as every other inventory write here.
+// =============================================================================
+describe('updateItemValue', () => {
+  function buildValueParams(overrides = {}) {
+    return buildParams({
+      inventory: [{ id: 'CAM001', name: 'Camera', currentValue: 2800 }],
+      selectedItem: { id: 'CAM001', name: 'Camera', currentValue: 2800 },
+      ...overrides,
+    });
+  }
+
+  it('persists via updateItem, mirrors selectedItem, and logs the change', async () => {
+    const params = buildValueParams();
+    const { result } = renderHook(() => useKitHandlers(params));
+
+    await act(async () => {
+      await result.current.updateItemValue('CAM001', 1502);
+    });
+
+    expect(params.dataContext.updateItem).toHaveBeenCalledWith('CAM001', { currentValue: 1502 });
+    expect(params.setSelectedItem).toHaveBeenCalled();
+    expect(params.addChangeLog).toHaveBeenCalledTimes(1);
+    const logged = params.addChangeLog.mock.calls[0][0];
+    expect(logged.changes[0]).toEqual({ field: 'currentValue', oldValue: 2800, newValue: 1502 });
+  });
+
+  it('failure: toast, no selectedItem mirror, no change log', async () => {
+    const params = buildValueParams();
+    params.dataContext.updateItem.mockRejectedValueOnce(new Error('RLS denied'));
+    const { result } = renderHook(() => useKitHandlers(params));
+
+    await act(async () => {
+      await result.current.updateItemValue('CAM001', 1502);
+    });
+
+    expect(addToastMock).toHaveBeenCalledWith(expect.stringContaining('current value'), 'error');
+    expect(params.setSelectedItem).not.toHaveBeenCalled();
+    expect(params.addChangeLog).not.toHaveBeenCalled();
+  });
+
+  it('no-ops on unchanged, non-finite, or unknown-item values', async () => {
+    const params = buildValueParams();
+    const { result } = renderHook(() => useKitHandlers(params));
+
+    await act(async () => {
+      await result.current.updateItemValue('CAM001', 2800); // unchanged
+      await result.current.updateItemValue('CAM001', NaN);
+      await result.current.updateItemValue('NOPE01', 1000); // not in inventory
+    });
+
+    expect(params.dataContext.updateItem).not.toHaveBeenCalled();
+    expect(params.addChangeLog).not.toHaveBeenCalled();
+  });
+});

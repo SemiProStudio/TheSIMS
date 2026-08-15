@@ -6,7 +6,15 @@
 // =============================================================================
 
 import { test, expect } from './fixtures.js';
-import { adminDb, createTestItem, deleteTestItem, deleteItemsByExactName, E2E_PREFIX } from './db.js';
+import {
+  adminDb,
+  createTestItem,
+  deleteTestItem,
+  deleteItemsByExactName,
+  addTestReminder,
+  addTestMaintenance,
+  E2E_PREFIX,
+} from './db.js';
 
 test.describe('Inventory Management', () => {
   test.beforeEach(async ({ page, pages }) => {
@@ -281,6 +289,254 @@ test.describe('Inventory Management', () => {
       } finally {
         await deleteTestItem(kitId);
         await deleteTestItem(memberId);
+      }
+    });
+  });
+
+  test.describe('Item Detail Sections', () => {
+    // Item-detail hardening round (2026-08-15): these flows had no E2E
+    // coverage at all — including the depreciation value update, which
+    // wrote only local state and silently reverted on reload.
+
+    test('depreciation "Update Current Value" persists to the DB', async ({ page, pages }) => {
+      const stamp = Date.now();
+      const name = `${E2E_PREFIX} Value ${stamp}`;
+      const twoYearsAgo = new Date(Date.now() - 730 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 10);
+      const itemId = await createTestItem({
+        name,
+        columns: { purchase_price: 1000, purchase_date: twoYearsAgo, current_value: 1000 },
+      });
+      const db = await adminDb();
+
+      try {
+        await reloadIntoGearList(page, pages);
+        await pages.gearList.openItem(itemId, name);
+        await pages.itemDetail.expectItemDetail();
+
+        const updateButton = page.getByRole('button', { name: /Update Current Value to/ });
+        await updateButton.scrollIntoViewIfNeeded();
+        await updateButton.click();
+
+        // The write goes through dataContext.updateItem — the DB row moves
+        await expect
+          .poll(
+            async () => {
+              const { data } = await db
+                .from('inventory')
+                .select('current_value')
+                .eq('id', itemId)
+                .single();
+              return Number(data?.current_value);
+            },
+            { timeout: 10000 },
+          )
+          .toBeLessThan(1000);
+
+        // After a full reload the saved value matches the calculation, so
+        // the update button no longer offers itself
+        await reloadIntoGearList(page, pages);
+        await pages.gearList.openItem(itemId, name);
+        await pages.itemDetail.expectItemDetail();
+        await expect(page.getByRole('button', { name: /Update Current Value to/ })).toHaveCount(0);
+      } finally {
+        await deleteTestItem(itemId);
+      }
+    });
+
+    test('notes: add renders and persists; delete leaves an honest stub', async ({
+      page,
+      pages,
+    }) => {
+      const stamp = Date.now();
+      const name = `${E2E_PREFIX} Notes ${stamp}`;
+      const noteText = `${E2E_PREFIX} note body ${stamp}`;
+      const itemId = await createTestItem({ name });
+      const db = await adminDb();
+
+      try {
+        await reloadIntoGearList(page, pages);
+        await pages.gearList.openItem(itemId, name);
+        await pages.itemDetail.expectItemDetail();
+
+        await page.getByLabel('Add a note').fill(noteText);
+        await page.getByRole('button', { name: 'Submit note' }).click();
+        // The note ALSO appears as a timeline event now — pin the assertion
+        // to the notes section's paragraph
+        await expect(page.getByRole('paragraph').filter({ hasText: noteText })).toBeVisible();
+
+        // Persisted, not just local state
+        await expect
+          .poll(
+            async () => {
+              const { data } = await db.from('item_notes').select('id').eq('item_id', itemId);
+              return (data || []).length;
+            },
+            { timeout: 10000 },
+          )
+          .toBe(1);
+
+        await page.getByRole('button', { name: 'Delete' }).click();
+        await expect(page.getByText('[Note deleted]')).toBeVisible();
+      } finally {
+        await deleteTestItem(itemId); // item_notes cascade on inventory delete
+      }
+    });
+
+    test('reminders: complete and uncomplete round-trip through the DB', async ({
+      page,
+      pages,
+    }) => {
+      const stamp = Date.now();
+      const name = `${E2E_PREFIX} Rem ${stamp}`;
+      const itemId = await createTestItem({ name });
+      await addTestReminder(itemId, { title: `${E2E_PREFIX} CheckMe ${stamp}`, dueInDays: 2 });
+      const db = await adminDb();
+
+      const reminderCompleted = async () => {
+        const { data } = await db
+          .from('item_reminders')
+          .select('completed')
+          .eq('item_id', itemId)
+          .single();
+        return data?.completed;
+      };
+
+      try {
+        await reloadIntoGearList(page, pages);
+        await pages.gearList.openItem(itemId, name);
+        await pages.itemDetail.expectItemDetail();
+
+        await page.getByLabel('Mark complete').click();
+        await expect.poll(reminderCompleted, { timeout: 10000 }).toBe(true);
+
+        await page.getByLabel('Mark incomplete').click();
+        await expect.poll(reminderCompleted, { timeout: 10000 }).toBe(false);
+      } finally {
+        await deleteTestItem(itemId);
+      }
+    });
+
+    test('maintenance: the Edit action reaches the modal and persists changes', async ({
+      page,
+      pages,
+    }) => {
+      // The edit path was dead-wired until this round (prop name mismatch,
+      // no Edit control) — this pins the whole chain
+      const stamp = Date.now();
+      const name = `${E2E_PREFIX} Maint ${stamp}`;
+      const itemId = await createTestItem({ name });
+      await addTestMaintenance(itemId, { status: 'scheduled', inDays: 5 });
+      const db = await adminDb();
+
+      try {
+        await reloadIntoGearList(page, pages);
+        await pages.gearList.openItem(itemId, name);
+        await pages.itemDetail.expectItemDetail();
+
+        await page.getByLabel(/Toggle maintenance details/).click();
+        // First 'Edit' is the item header's; the expanded entry's is last
+        await page.getByRole('button', { name: 'Edit', exact: true }).last().click();
+
+        const description = page.getByPlaceholder('Describe the maintenance work...');
+        await description.fill(`${E2E_PREFIX} edited description`);
+        await page.getByRole('button', { name: 'Update Record' }).click();
+
+        await expect
+          .poll(
+            async () => {
+              const { data } = await db
+                .from('maintenance_records')
+                .select('description')
+                .eq('item_id', itemId)
+                .single();
+              return data?.description;
+            },
+            { timeout: 10000 },
+          )
+          .toBe(`${E2E_PREFIX} edited description`);
+      } finally {
+        await deleteTestItem(itemId);
+      }
+    });
+
+    test('required accessories: add and remove persist to the DB row', async ({ page, pages }) => {
+      const stamp = Date.now();
+      const name = `${E2E_PREFIX} AccHost ${stamp}`;
+      const accName = `${E2E_PREFIX} AccPart ${stamp}`;
+      const itemId = await createTestItem({ name });
+      const accId = await createTestItem({ name: accName });
+      const db = await adminDb();
+
+      const accessories = async () => {
+        const { data } = await db
+          .from('inventory')
+          .select('required_accessories')
+          .eq('id', itemId)
+          .single();
+        return data?.required_accessories || [];
+      };
+
+      try {
+        await reloadIntoGearList(page, pages);
+        await pages.gearList.openItem(itemId, name);
+        await pages.itemDetail.expectItemDetail();
+
+        await page.getByRole('button', { name: 'Add Required Accessory' }).click();
+        await page.locator('input[placeholder="Search items..."]').first().fill(accId);
+        await page.locator('label').filter({ hasText: accName }).click();
+        await page.getByRole('button', { name: 'Add (1)' }).click();
+        await expect.poll(async () => (await accessories()).join(','), { timeout: 10000 }).toBe(
+          accId,
+        );
+
+        await page.getByLabel(`Remove ${accName} from required accessories`).click();
+        await expect.poll(async () => (await accessories()).length, { timeout: 10000 }).toBe(0);
+      } finally {
+        await deleteTestItem(itemId);
+        await deleteTestItem(accId);
+      }
+    });
+
+    test('packages: adding the item from the detail page writes the junction row', async ({
+      page,
+      pages,
+    }) => {
+      const stamp = Date.now();
+      const name = `${E2E_PREFIX} PkgItem ${stamp}`;
+      const pkgName = `${E2E_PREFIX} Pkg ${stamp}`;
+      const pkgId = `zzz-e2e-pkg-${stamp}`;
+      const itemId = await createTestItem({ name });
+      const db = await adminDb();
+      const { error: pkgError } = await db.from('packages').insert({ id: pkgId, name: pkgName });
+      if (pkgError) throw new Error(`test package insert failed: ${pkgError.message}`);
+
+      try {
+        await reloadIntoGearList(page, pages);
+        await pages.gearList.openItem(itemId, name);
+        await pages.itemDetail.expectItemDetail();
+
+        await page.getByLabel('Select package').click();
+        await page.getByRole('option', { name: new RegExp(pkgName) }).click();
+        await page.getByRole('button', { name: 'Add', exact: true }).click();
+
+        await expect(page.getByText('This item is included in:')).toBeVisible();
+        await expect
+          .poll(
+            async () => {
+              const { data } = await db
+                .from('package_items')
+                .select('item_id')
+                .eq('package_id', pkgId);
+              return (data || []).map((r) => r.item_id).join(',');
+            },
+            { timeout: 10000 },
+          )
+          .toBe(itemId);
+      } finally {
+        await db.from('packages').delete().eq('id', pkgId); // junction cascades
+        await deleteTestItem(itemId);
       }
     });
   });

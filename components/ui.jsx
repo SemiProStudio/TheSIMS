@@ -90,10 +90,12 @@ export const Badge = memo(function Badge({ text, children, color = colors.primar
     md: { padding: '4px 10px', fontSize: '11px' },
   };
 
-  const content = text || children;
+  // Nullish check, not truthiness: <Badge text={0} /> must render "0"
+  // (kit/accessory counts of zero used to vanish entirely)
+  const content = text !== undefined && text !== null && text !== '' ? text : children;
 
   // Don't render if no content
-  if (!content) return null;
+  if (content === undefined || content === null || content === '') return null;
 
   return (
     <span
@@ -129,7 +131,6 @@ export const Button = memo(
       danger = false,
       fullWidth = false,
       icon: Icon,
-      iconOnly = false,
       'aria-label': ariaLabel,
       onClick,
       style: customStyle,
@@ -150,10 +151,6 @@ export const Button = memo(
       .filter(Boolean)
       .join(' ');
 
-    // Icon-only buttons must have aria-label
-    const isIconOnly = iconOnly || (Icon && !children);
-    const accessibleLabel = ariaLabel || (isIconOnly ? 'Button' : undefined);
-
     return (
       <button
         ref={ref}
@@ -162,7 +159,11 @@ export const Button = memo(
         disabled={disabled}
         onClick={onClick}
         type={type}
-        aria-label={accessibleLabel}
+        // Icon-only buttons need their aria-label from the CALLER — the old
+        // 'Button' fallback was a meaningless accessible name that also hid
+        // missing labels from audits (a repo scan found no icon-only call
+        // site without one)
+        aria-label={ariaLabel}
         aria-disabled={disabled || undefined}
         {...props}
       >
@@ -315,7 +316,9 @@ export const CollapsibleSection = memo(function CollapsibleSection({
           type="button"
           className="collapsible-toggle"
           aria-expanded={!collapsed}
-          aria-controls={contentId}
+          // Only reference the content while it exists — the collapsed state
+          // unmounts it, and a dangling aria-controls id helps no one
+          aria-controls={collapsed ? undefined : contentId}
           onClick={(e) => {
             e.stopPropagation(); // header onClick would toggle a second time
             onToggleCollapse?.();

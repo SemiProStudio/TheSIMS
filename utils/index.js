@@ -600,6 +600,19 @@ export const markNoteDeleted = (notes, noteId) => {
 };
 
 /**
+ * Count the notes a reader can actually see: non-deleted notes at every
+ * depth. Raw array length counted soft-deleted stubs and missed replies,
+ * so section badges rarely matched the visible thread.
+ * @param {Array} notes - Threaded notes (roots with nested replies)
+ * @returns {number} Visible note count
+ */
+export const countVisibleNotes = (notes) =>
+  (notes || []).reduce(
+    (sum, note) => sum + (note.deleted ? 0 : 1) + countVisibleNotes(note.replies),
+    0,
+  );
+
+/**
  * Find a note by ID in a nested structure
  * @param {Array} notes - Array of notes
  * @param {string} noteId - ID of note to find
@@ -797,7 +810,9 @@ export const calculateDepreciation = (
   }
   const purchase = new Date(purchaseDate);
   const today = new Date();
-  const ageInYears = (today - purchase) / (365.25 * 24 * 60 * 60 * 1000);
+  // Clamp: a future purchase date used to yield a negative age, negative
+  // depreciation, and a "current value" above the purchase price
+  const ageInYears = Math.max(0, (today - purchase) / (365.25 * 24 * 60 * 60 * 1000));
   const ageInMonths = Math.floor(ageInYears * 12);
 
   const depreciableAmount = purchasePrice - salvageValue;
@@ -849,14 +864,14 @@ export const calculateDepreciation = (
 
         remainingValue = startValue - yearDepreciation;
 
-        // Track total depreciation up to current age
-        if (year <= Math.ceil(ageInYears)) {
-          if (year < Math.ceil(ageInYears)) {
-            totalDepreciation += yearDepreciation;
-          } else {
-            // Partial year
-            totalDepreciation += yearDepreciation * (ageInYears - Math.floor(ageInYears));
-          }
+        // Track total depreciation up to current age. Completed years count
+        // in full; only the year in progress is fractional — the old
+        // ceil/floor arms credited 0 for the final year at exact
+        // anniversaries (a 3.0-year-old asset got 2 years of depreciation).
+        if (year <= Math.floor(ageInYears)) {
+          totalDepreciation += yearDepreciation;
+        } else if (year === Math.floor(ageInYears) + 1) {
+          totalDepreciation += yearDepreciation * (ageInYears - Math.floor(ageInYears));
         }
 
         schedule.push({
@@ -900,13 +915,12 @@ export const calculateDepreciation = (
 
         ddbRemainingValue = startValue - yearDepreciation;
 
-        // Track total depreciation up to current age
-        if (year <= Math.ceil(ageInYears)) {
-          if (year < Math.ceil(ageInYears)) {
-            totalDepreciation += yearDepreciation;
-          } else {
-            totalDepreciation += yearDepreciation * (ageInYears - Math.floor(ageInYears));
-          }
+        // Same completed-years + fractional-current-year accounting as the
+        // declining-balance branch above
+        if (year <= Math.floor(ageInYears)) {
+          totalDepreciation += yearDepreciation;
+        } else if (year === Math.floor(ageInYears) + 1) {
+          totalDepreciation += yearDepreciation * (ageInYears - Math.floor(ageInYears));
         }
 
         schedule.push({
@@ -940,6 +954,9 @@ export const calculateDepreciation = (
     ageInYears,
     ageInMonths,
     schedule,
-    percentDepreciated: (totalDepreciation / depreciableAmount) * 100,
+    // 100% salvage (or a zero price) makes depreciableAmount 0 — 0/0 used to
+    // surface as "NaN%" and an invalid NaN-width progress bar
+    percentDepreciated:
+      depreciableAmount > 0 ? (totalDepreciation / depreciableAmount) * 100 : 0,
   };
 };

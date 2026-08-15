@@ -12,14 +12,37 @@ import {
   MessageSquare,
   Calendar,
   Bell,
-  AlertTriangle,
-  DollarSign,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, formatDateTime, formatMoney } from '../utils';
+import { formatDate, formatDateTime, formatMoney, parseLocalDate } from '../utils';
+import { MAINTENANCE_STATUS } from '../constants.js';
 import { Badge } from './ui.jsx';
+
+// Drop empty detail rows — rendering String(undefined) printed literal
+// "undefined" next to every absent field. Returns null when nothing survives
+// so the card doesn't offer an expand chevron over an empty block.
+const pruneDetails = (details) => {
+  const entries = Object.entries(details).filter(
+    ([, v]) => v !== undefined && v !== null && v !== '',
+  );
+  return entries.length > 0 ? Object.fromEntries(entries) : null;
+};
+
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+// Date-only strings (reservation start, reminder due) must parse as LOCAL
+// midnight — new Date('2026-08-16') is UTC midnight, which shifted same-day
+// events against real timestamps by the UTC offset (the H15 class).
+const eventTime = (d) => {
+  if (!d) return 0;
+  const t = (DATE_ONLY.test(d) ? parseLocalDate(d) : new Date(d)).getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
+
+// Date-only events have no meaningful time — showing ", 12:00 AM" implied one
+const formatEventDate = (d) => (DATE_ONLY.test(d || '') ? formatDate(d) : formatDateTime(d));
 
 // Event type configuration
 const EVENT_TYPES = {
@@ -41,12 +64,6 @@ const EVENT_TYPES = {
     label: 'Maintenance Scheduled',
     category: 'maintenance',
   },
-  maintenance_started: {
-    icon: Wrench,
-    color: colors.checkedOut,
-    label: 'Maintenance Started',
-    category: 'maintenance',
-  },
   maintenance_completed: {
     icon: Wrench,
     color: colors.available,
@@ -57,6 +74,12 @@ const EVENT_TYPES = {
     icon: MessageSquare,
     color: colors.accent1,
     label: 'Note Added',
+    category: 'notes',
+  },
+  note_reply: {
+    icon: MessageSquare,
+    color: colors.accent1,
+    label: 'Reply Added',
     category: 'notes',
   },
   reservation_created: {
@@ -77,18 +100,9 @@ const EVENT_TYPES = {
     label: 'Reminder Completed',
     category: 'reminders',
   },
-  condition_changed: {
-    icon: AlertTriangle,
-    color: colors.danger,
-    label: 'Condition Changed',
-    category: 'status',
-  },
-  value_updated: {
-    icon: DollarSign,
-    color: colors.accent1,
-    label: 'Value Updated',
-    category: 'value',
-  },
+  // maintenance_started / condition_changed / value_updated were defined here
+  // for years but no code path ever emitted them — removed 2026-08-15. The
+  // unknown-type fallback below covers any stray stored value.
 };
 
 // Single timeline event component
@@ -143,6 +157,20 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
       >
         <div
           onClick={() => event.details && setExpanded(!expanded)}
+          role={event.details ? 'button' : undefined}
+          tabIndex={event.details ? 0 : undefined}
+          aria-expanded={event.details ? expanded : undefined}
+          aria-label={event.details ? `Toggle details: ${event.summary}` : undefined}
+          onKeyDown={
+            event.details
+              ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setExpanded(!expanded);
+                  }
+                }
+              : undefined
+          }
           style={{
             background: colors.bgCard,
             border: `1px solid ${colors.borderLight}`,
@@ -168,7 +196,7 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
               <span style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                {formatDateTime(event.date)}
+                {formatEventDate(event.date)}
               </span>
               {event.details && (
                 <span style={{ color: colors.textMuted }}>
@@ -224,8 +252,8 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
                     {key.replace(/([A-Z])/g, ' $1').trim()}
                   </span>
                   <span style={{ fontSize: typography.fontSize.xs, color: colors.textSecondary }}>
-                    {typeof value === 'number' && key.toLowerCase().includes('cost')
-                      ? formatMoney(value)
+                    {key.toLowerCase().includes('cost') && Number.isFinite(Number(value))
+                      ? formatMoney(Number(value))
                       : String(value)}
                   </span>
                 </div>
@@ -246,7 +274,10 @@ function ItemTimeline({ item }) {
   const allEvents = useMemo(() => {
     const events = [];
 
-    // Add checkout history events
+    // Add checkout history events. Only fields checkout_history actually has:
+    // dueDate/damageReported/conditionChanged never existed on these rows, so
+    // the old detail block rendered "Due Date undefined" and the damage arm
+    // was dead.
     if (item.checkoutHistory) {
       item.checkoutHistory.forEach((entry) => {
         if (entry.type === 'checkout') {
@@ -256,70 +287,72 @@ function ItemTimeline({ item }) {
             date: entry.checkedOutDate,
             summary: `Checked out to ${entry.borrowerName}${entry.project ? ` for ${entry.project}` : ''}`,
             user: entry.borrowerName,
-            details: {
+            details: pruneDetails({
               project: entry.project,
-              dueDate: entry.dueDate,
+              condition: entry.conditionAtAction,
               notes: entry.notes,
-            },
+            }),
           });
         } else if (entry.type === 'return') {
           events.push({
             id: `return-${entry.id}`,
             type: 'checkin',
             date: entry.returnDate,
-            summary: `Returned by ${entry.returnedBy}${entry.conditionChanged ? ' - condition changed' : ''}`,
+            summary: `Returned by ${entry.returnedBy}`,
             user: entry.returnedBy,
-            important: entry.damageReported,
-            details: entry.damageReported
-              ? {
-                  conditionAtReturn: entry.conditionAtReturn,
-                  damageReported: 'Yes',
-                  damageDescription: entry.damageDescription,
-                }
-              : null,
+            details: pruneDetails({
+              condition: entry.conditionAtAction,
+              notes: entry.notes,
+            }),
           });
         }
       });
     }
 
-    // Add maintenance history events
+    // Add maintenance history events. Cancelled records used to keep their
+    // "Maintenance Scheduled" entry with no hint of the cancellation.
     if (item.maintenanceHistory) {
       (item.maintenanceHistory || []).forEach((record) => {
         // Add scheduled event
-        if (record.scheduledDate) {
+        if (record.scheduledDate && record.status !== MAINTENANCE_STATUS.CANCELLED) {
           events.push({
             id: `maint-sched-${record.id}`,
             type: 'maintenance_scheduled',
             date: record.createdAt || record.scheduledDate,
-            summary: `${record.type}: ${record.description}`,
-            details: {
+            summary: record.description ? `${record.type}: ${record.description}` : record.type,
+            details: pruneDetails({
               vendor: record.vendor,
               estimatedCost: record.cost,
               scheduledFor: record.scheduledDate,
-            },
+            }),
           });
         }
 
         // Add completed event if completed
-        if (record.status === 'completed' && record.completedDate) {
+        if (record.status === MAINTENANCE_STATUS.COMPLETED && record.completedDate) {
           events.push({
             id: `maint-done-${record.id}`,
             type: 'maintenance_completed',
             date: record.completedDate,
             summary: `${record.type} completed${record.vendor ? ` by ${record.vendor}` : ''}`,
-            details: {
+            details: pruneDetails({
               description: record.description,
               cost: record.cost,
               warrantyWork: record.warrantyWork ? 'Yes' : 'No',
               notes: record.notes,
-            },
+            }),
           });
         }
       });
     }
 
-    // Add notes events
+    // Add notes events. item.notes is threaded (roots with nested replies) —
+    // replies never appeared in the timeline until they were flattened here.
     if (item.notes) {
+      const truncate = (text) => {
+        const t = text || '';
+        return t.length > 100 ? t.substring(0, 100) + '...' : t;
+      };
       (item.notes || [])
         .filter((n) => !n.deleted)
         .forEach((note) => {
@@ -327,9 +360,20 @@ function ItemTimeline({ item }) {
             id: `note-${note.id}`,
             type: 'note_added',
             date: note.date,
-            summary: note.text.length > 100 ? note.text.substring(0, 100) + '...' : note.text,
+            summary: truncate(note.text),
             user: note.user,
           });
+          (note.replies || [])
+            .filter((r) => !r.deleted)
+            .forEach((reply) => {
+              events.push({
+                id: `note-reply-${reply.id}`,
+                type: 'note_reply',
+                date: reply.date,
+                summary: truncate(reply.text),
+                user: reply.user,
+              });
+            });
         });
     }
 
@@ -342,36 +386,39 @@ function ItemTimeline({ item }) {
           date: res.start, // Use start date as the event date
           summary: `Reserved for ${res.project} (${formatDate(res.start)} - ${formatDate(res.end)})`,
           user: res.user,
-          details: {
+          details: pruneDetails({
             project: res.project,
             projectType: res.projectType,
             startDate: res.start,
             endDate: res.end,
             location: res.location,
-          },
+          }),
         });
       });
     }
 
-    // Add reminder events
+    // Add reminder events. The field is completedDate (see REMINDER_FIELD_MAP
+    // and useReminderHandlers) — reading completedAt dated every completed
+    // reminder on its DUE date and sorted it into the wrong position.
     if (item.reminders) {
       (item.reminders || []).forEach((rem) => {
         events.push({
           id: `rem-${rem.id}`,
           type: rem.completed ? 'reminder_completed' : 'reminder_created',
-          date: rem.completed ? rem.completedAt || rem.dueDate : rem.createdAt || rem.dueDate,
+          date: rem.completed ? rem.completedDate || rem.dueDate : rem.createdAt || rem.dueDate,
           summary: rem.title + (rem.description ? `: ${rem.description}` : ''),
-          details: {
+          details: pruneDetails({
             dueDate: rem.dueDate,
             recurrence: rem.recurrence,
             completed: rem.completed ? 'Yes' : 'No',
-          },
+          }),
         });
       });
     }
 
-    // Sort by date descending (newest first)
-    events.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Sort by date descending (newest first) — via eventTime so date-only
+    // strings compare in local time like the real timestamps around them
+    events.sort((a, b) => eventTime(b.date) - eventTime(a.date));
 
     return events;
   }, [item]);

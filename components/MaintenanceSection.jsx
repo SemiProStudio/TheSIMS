@@ -15,6 +15,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Edit3,
 } from 'lucide-react';
 import { MAINTENANCE_STATUS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
@@ -59,7 +60,7 @@ const formatStatus = (status) => {
 const MaintenanceEntry = memo(function MaintenanceEntry({
   entry,
   onComplete,
-  _onEdit,
+  onEdit,
   panelColor,
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -83,9 +84,20 @@ const MaintenanceEntry = memo(function MaintenanceEntry({
         overflow: 'hidden',
       }}
     >
-      {/* Header - always visible */}
+      {/* Header - always visible; a real keyboard control (records were
+          unexpandable without a mouse) */}
       <div
         onClick={() => setExpanded(!expanded)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        aria-label={`Toggle maintenance details: ${entry.description || entry.type}`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setExpanded(!expanded);
+          }
+        }}
         style={{
           padding: spacing[3],
           cursor: 'pointer',
@@ -118,7 +130,9 @@ const MaintenanceEntry = memo(function MaintenanceEntry({
               marginBottom: spacing[1],
             }}
           >
-            <Badge text={entry.type} color={statusColor} size="xs" />
+            {/* Type in a neutral tone — coloring it with the STATUS color made
+                type and status read as one merged badge */}
+            <Badge text={entry.type} color={colors.textSecondary} size="xs" />
             <Badge text={formatStatus(entry.status)} color={statusColor} size="xs" />
             {entry.warrantyWork && <Badge text="Warranty" color={colors.available} size="xs" />}
           </div>
@@ -231,10 +245,10 @@ const MaintenanceEntry = memo(function MaintenanceEntry({
               </div>
             )}
 
-            {/* Actions — omitted when the parent passes no handler (view-only) */}
-            {onComplete && (isScheduled || isInProgress) && (
+            {/* Actions — omitted when the parent passes no handlers (view-only) */}
+            {((onComplete && (isScheduled || isInProgress)) || onEdit) && (
               <div style={{ display: 'flex', gap: spacing[2], marginTop: spacing[3] }}>
-                {isScheduled && (
+                {onComplete && isScheduled && (
                   <Button
                     size="sm"
                     variant="secondary"
@@ -246,7 +260,7 @@ const MaintenanceEntry = memo(function MaintenanceEntry({
                     Start Work
                   </Button>
                 )}
-                {isInProgress && (
+                {onComplete && isInProgress && (
                   <Button
                     size="sm"
                     onClick={(e) => {
@@ -256,6 +270,19 @@ const MaintenanceEntry = memo(function MaintenanceEntry({
                     icon={Check}
                   >
                     Mark Complete
+                  </Button>
+                )}
+                {onEdit && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    icon={Edit3}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(entry);
+                    }}
+                  >
+                    Edit
                   </Button>
                 )}
               </div>
@@ -287,7 +314,11 @@ function MaintenanceSection({
     (m) => m.status === MAINTENANCE_STATUS.SCHEDULED || m.status === MAINTENANCE_STATUS.IN_PROGRESS,
   ).length;
 
-  // Sort: pending first, then by date descending
+  // Sort: pending first, then by date descending. The || 0 keeps the
+  // comparator stable when a record has none of the three dates (NaN
+  // comparisons made the sort order undefined).
+  const recordTime = (m) =>
+    new Date(m.completedDate || m.scheduledDate || m.createdAt).getTime() || 0;
   const sortedHistory = [...maintenanceHistory].sort((a, b) => {
     // Pending items first
     const aIsPending =
@@ -298,12 +329,10 @@ function MaintenanceSection({
     if (!aIsPending && bIsPending) return 1;
 
     // Then by date
-    const aDate = a.completedDate || a.scheduledDate || a.createdAt;
-    const bDate = b.completedDate || b.scheduledDate || b.createdAt;
-    return new Date(bDate) - new Date(aDate);
+    return recordTime(b) - recordTime(a);
   });
 
-  const content = (
+  return (
     <>
       <div style={{ padding: spacing[4] }}>
         {/* Summary stats */}
@@ -403,8 +432,6 @@ function MaintenanceSection({
       </div>
     </>
   );
-
-  return content;
 }
 
 export default memo(MaintenanceSection);

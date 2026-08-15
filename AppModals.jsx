@@ -236,7 +236,10 @@ export default memo(function AppModals({ handlers, currentUser }) {
           <ProfileModal user={currentUser} onSave={updateUserProfile} onClose={closeModal} />
         )}
 
-        {activeModal === MODALS.IMAGE_SELECT && (
+        {/* Upload writes the inventory row — modal-layer gate matches the
+            RLS key, so no future openModal caller can offer view-only users
+            an upload whose save can only fail */}
+        {activeModal === MODALS.IMAGE_SELECT && canEdit('gear_list') && (
           <ImageSelectorModal
             images={[]}
             currentImage={selectedItem?.image}
@@ -250,15 +253,23 @@ export default memo(function AppModals({ handlers, currentUser }) {
           <ImagePreviewModal
             imageSrc={selectedItem.image}
             itemName={selectedItem.name}
-            onReplace={() => {
-              closeModal();
-              // Small delay so the first modal closes before the next opens
-              setTimeout(() => openModal(MODALS.IMAGE_SELECT), 50);
-            }}
-            onRemove={() => {
-              selectImage(null);
-              closeModal();
-            }}
+            onReplace={
+              canEdit('gear_list')
+                ? () => {
+                    closeModal();
+                    // Small delay so the first modal closes before the next opens
+                    setTimeout(() => openModal(MODALS.IMAGE_SELECT), 50);
+                  }
+                : undefined
+            }
+            onRemove={
+              canEdit('gear_list')
+                ? () => {
+                    selectImage(null);
+                    closeModal();
+                  }
+                : undefined
+            }
             onClose={closeModal}
           />
         )}
