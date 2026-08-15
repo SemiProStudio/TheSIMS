@@ -142,7 +142,7 @@ test.describe('Visual Regression - Pages', () => {
       // the top viewport (the depreciation age sits below the fold)
       await page.getByText('LE1001').first().click();
       await expect(
-        page.locator('h1').filter({ hasText: 'Sony 24-70mm f/2.8 GM II' }),
+        page.locator('h2').filter({ hasText: 'Sony 24-70mm f/2.8 GM II' }),
       ).toBeVisible();
       // Detail hydration (notes/reservations/history) must settle first
       await page.waitForTimeout(1000);
@@ -155,7 +155,7 @@ test.describe('Visual Regression - Pages', () => {
     test('item detail on mobile should match baseline', async ({ page }) => {
       await page.getByText('LE1001').first().click();
       await expect(
-        page.locator('h1').filter({ hasText: 'Sony 24-70mm f/2.8 GM II' }),
+        page.locator('h2').filter({ hasText: 'Sony 24-70mm f/2.8 GM II' }),
       ).toBeVisible();
       await page.waitForTimeout(1000);
       // Below the 900px breakpoint the sections must render as one column

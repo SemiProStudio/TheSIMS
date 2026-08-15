@@ -243,7 +243,7 @@ test.describe('Dashboard Panels', () => {
     await result.click();
 
     await pages.itemDetail.expectItemDetail();
-    await expect(page.locator('h1').filter({ hasText: 'Sony FX6' })).toBeVisible();
+    await expect(page.locator('h2').filter({ hasText: 'Sony FX6' })).toBeVisible();
   });
 });
 

@@ -172,7 +172,7 @@ test.describe('Navigation', () => {
       // Open a seeded item deterministically
       await pages.gearList.openItem('CA1001', 'Sony A7S III');
       await pages.itemDetail.expectItemDetail();
-      await expect(page.locator('h1').filter({ hasText: 'Sony A7S III' })).toBeVisible();
+      await expect(page.locator('h2').filter({ hasText: 'Sony A7S III' })).toBeVisible();
 
       await pages.itemDetail.goBack();
       await expect(

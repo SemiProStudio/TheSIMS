@@ -209,10 +209,20 @@ test.describe('Accessibility', () => {
       await expect(skipLink).toBeFocused();
     });
 
-    test('headings start at h1 and include the page heading', async ({ page }) => {
-      // The sidebar brand renders the h1; views render h2 page titles
-      expect(await page.locator('h1').count()).toBeGreaterThanOrEqual(1);
+    test('exactly one h1 per page, with h2 page titles', async ({ page }) => {
+      // The sidebar brand is the app-wide h1; every view (including detail
+      // pages) renders an h2 title. Detail pages carried a SECOND h1 entity
+      // name until the 2026-08-15 heading-hierarchy pass.
+      expect(await page.locator('h1').count()).toBe(1);
       await expect(page.locator('h2:has-text("Dashboard")')).toBeVisible();
+
+      // Item detail — the historical double-h1 offender
+      await page.getByRole('button', { name: 'Gear List' }).click();
+      await page.getByText('LE1001').first().click();
+      await expect(
+        page.locator('h2').filter({ hasText: 'Sony 24-70mm f/2.8 GM II' }),
+      ).toBeVisible();
+      expect(await page.locator('h1').count()).toBe(1);
     });
   });
 
