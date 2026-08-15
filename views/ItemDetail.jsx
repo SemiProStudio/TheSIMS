@@ -290,8 +290,10 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
         </p>
       )}
 
-      {/* Add accessories panel */}
-      {showAddPanel ? (
+      {/* Add accessories panel — the whole flow gates on the handler, like
+          KitContentsSection: without gear_list edit the button used to render
+          anyway and "Add (n)" silently did nothing */}
+      {onAddAccessory && (showAddPanel ? (
         <div
           style={{
             background: withOpacity(effectivePanelColor, 10),
@@ -367,7 +369,7 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
         <Button variant="secondary" onClick={() => setShowAddPanel(true)} icon={Plus} fullWidth>
           Add Required Accessory
         </Button>
-      )}
+      ))}
     </div>
   );
 });
@@ -1286,45 +1288,69 @@ function ItemDetail({
       {/* Full-width Item Header Card */}
       <Card padding={false} style={{ marginBottom: spacing[5], overflow: 'hidden' }}>
         <div className="item-detail-header" style={{ display: 'flex', minHeight: 280 }}>
-          {/* Image */}
-          <div
-            className="item-detail-image"
-            onClick={onSelectImage}
-            style={{
-              width: 320,
-              minWidth: 320,
-              background: `${withOpacity(colors.primary, 10)}`,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            {item.image ? (
-              <OptimizedImage
-                src={item.image}
-                alt={item.name}
-                size="full"
-                style={{ width: '100%', height: '100%' }}
-                objectFit="cover"
-                lazy={false}
-              />
-            ) : (
-              <>
-                <Upload size={48} color={colors.textMuted} />
-                <span
-                  style={{
-                    color: colors.textMuted,
-                    fontSize: typography.fontSize.sm,
-                    marginTop: spacing[2],
-                  }}
-                >
-                  Click to add image
-                </span>
-              </>
-            )}
-          </div>
+          {/* Image. Clickable only when the click leads somewhere legitimate:
+              an existing image opens the preview for everyone; the empty state
+              offers the UPLOAD modal, which is an inventory-row write — so it
+              gates on gear_list edit (view-only users used to get the full
+              upload dialog whose save could only fail at RLS). */}
+          {(() => {
+            const imageClickable = Boolean(onSelectImage) && (item.image ? true : canEditGear);
+            return (
+              <div
+                className="item-detail-image"
+                onClick={imageClickable ? onSelectImage : undefined}
+                role={imageClickable ? 'button' : undefined}
+                tabIndex={imageClickable ? 0 : undefined}
+                aria-label={
+                  imageClickable ? (item.image ? 'View item image' : 'Add item image') : undefined
+                }
+                onKeyDown={
+                  imageClickable
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onSelectImage();
+                        }
+                      }
+                    : undefined
+                }
+                style={{
+                  width: 320,
+                  minWidth: 320,
+                  background: `${withOpacity(colors.primary, 10)}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: imageClickable ? 'pointer' : 'default',
+                }}
+              >
+                {item.image ? (
+                  <OptimizedImage
+                    src={item.image}
+                    alt={item.name}
+                    size="full"
+                    style={{ width: '100%', height: '100%' }}
+                    objectFit="cover"
+                    lazy={false}
+                  />
+                ) : (
+                  <>
+                    <Upload size={48} color={colors.textMuted} />
+                    <span
+                      style={{
+                        color: colors.textMuted,
+                        fontSize: typography.fontSize.sm,
+                        marginTop: spacing[2],
+                      }}
+                    >
+                      {canEditGear ? 'Click to add image' : 'No image'}
+                    </span>
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Info */}
           <div

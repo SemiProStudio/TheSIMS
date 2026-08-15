@@ -16,7 +16,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, formatDateTime, formatMoney } from '../utils';
+import { formatDate, formatDateTime, formatMoney, parseLocalDate } from '../utils';
 import { MAINTENANCE_STATUS } from '../constants.js';
 import { Badge } from './ui.jsx';
 
@@ -34,14 +34,10 @@ const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
 // Date-only strings (reservation start, reminder due) must parse as LOCAL
 // midnight — new Date('2026-08-16') is UTC midnight, which shifted same-day
-// events against real timestamps by the UTC offset.
+// events against real timestamps by the UTC offset (the H15 class).
 const eventTime = (d) => {
   if (!d) return 0;
-  if (DATE_ONLY.test(d)) {
-    const [y, m, day] = d.split('-').map(Number);
-    return new Date(y, m - 1, day).getTime();
-  }
-  const t = new Date(d).getTime();
+  const t = (DATE_ONLY.test(d) ? parseLocalDate(d) : new Date(d)).getTime();
   return Number.isNaN(t) ? 0 : t;
 };
 

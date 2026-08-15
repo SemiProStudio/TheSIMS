@@ -76,40 +76,47 @@ const ImagePreviewModal = memo(function ImagePreviewModal({
         />
       </div>
 
-      {/* Action buttons */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          display: 'flex',
-          gap: spacing[3],
-          marginTop: spacing[4],
-        }}
-      >
-        <Button
-          variant="secondary"
-          onClick={onReplace}
-          icon={Pencil}
+      {/* Action buttons — absent handlers mean a view-only caller: the
+          preview stays, the write actions don't render */}
+      {(onReplace || onRemove) && (
+        <div
+          onClick={(e) => e.stopPropagation()}
           style={{
-            background: 'rgba(255,255,255,0.1)',
-            borderColor: 'rgba(255,255,255,0.2)',
-            color: '#fff',
+            display: 'flex',
+            gap: spacing[3],
+            marginTop: spacing[4],
           }}
         >
-          Replace Image
-        </Button>
-        <Button
-          variant="secondary"
-          danger
-          onClick={onRemove}
-          icon={Trash2}
-          style={{
-            background: 'rgba(239, 68, 68, 0.15)',
-            borderColor: 'rgba(239, 68, 68, 0.3)',
-          }}
-        >
-          Remove Image
-        </Button>
-      </div>
+          {onReplace && (
+            <Button
+              variant="secondary"
+              onClick={onReplace}
+              icon={Pencil}
+              style={{
+                background: 'rgba(255,255,255,0.1)',
+                borderColor: 'rgba(255,255,255,0.2)',
+                color: '#fff',
+              }}
+            >
+              Replace Image
+            </Button>
+          )}
+          {onRemove && (
+            <Button
+              variant="secondary"
+              danger
+              onClick={onRemove}
+              icon={Trash2}
+              style={{
+                background: 'rgba(239, 68, 68, 0.15)',
+                borderColor: 'rgba(239, 68, 68, 0.3)',
+              }}
+            >
+              Remove Image
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 });
@@ -117,8 +124,8 @@ const ImagePreviewModal = memo(function ImagePreviewModal({
 ImagePreviewModal.propTypes = {
   imageSrc: PropTypes.string.isRequired,
   itemName: PropTypes.string,
-  onReplace: PropTypes.func.isRequired,
-  onRemove: PropTypes.func.isRequired,
+  onReplace: PropTypes.func,
+  onRemove: PropTypes.func,
   onClose: PropTypes.func.isRequired,
 };
 
