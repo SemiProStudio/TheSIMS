@@ -172,6 +172,9 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     deleteReservation,
     addRequiredAccessories,
     removeRequiredAccessory,
+    setKitStatus,
+    addKitItems,
+    removeKitItem,
     addItemToPackage,
     reservePackage,
     updateMaintenanceStatus,
@@ -335,6 +338,9 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onAddToPackage={addItemToPackage}
           onAddAccessory={addRequiredAccessories}
           onRemoveAccessory={removeRequiredAccessory}
+          onSetKitStatus={setKitStatus}
+          onAddKitItems={addKitItems}
+          onRemoveKitItem={removeKitItem}
           onViewItem={navigateToItem}
           onSelectImage={() =>
             selectedItem?.image ? openModal(MODALS.IMAGE_PREVIEW) : openModal(MODALS.IMAGE_SELECT)

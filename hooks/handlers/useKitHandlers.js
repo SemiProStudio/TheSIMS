@@ -1,10 +1,9 @@
 // ============================================================================
-// Accessories & Image Handlers
-// Extracted from App.jsx — manages required accessories and item images.
-// (The kit/container handlers that used to live here were deleted: they only
-// ever patched React state — no DB column has ever existed for childItemIds/
-// parentKitId — and the KitSection UI that called them was unmounted, so the
-// whole chain was a dead feature masquerading as saved.)
+// Kit, Accessories & Image Handlers
+// Extracted from App.jsx — manages kit contents, required accessories and
+// item images. (The original kit chain was deleted 2026-08-14 because it only
+// patched React state against columns that never existed; these handlers are
+// the rebuild on the real is_kit/kit_contents columns, persist-first.)
 // ============================================================================
 import { useCallback } from 'react';
 import { error as logError } from '../../lib/logger.js';
@@ -19,6 +18,131 @@ export function useKitHandlers({
   addChangeLog,
 }) {
   const { addToast } = useToast();
+
+  // ---- Kit contents ----
+  // A kit is a container item: is_kit flags it, kit_contents holds member
+  // item ids. Same persist-first contract as everything else: updateItem
+  // writes the DB and patches inventory state; only then mirror selectedItem
+  // and write the change log.
+
+  const setKitStatus = useCallback(
+    async (itemId, isKit) => {
+      const targetItem = inventory.find((i) => i.id === itemId);
+      if (!targetItem || Boolean(targetItem.isKit) === Boolean(isKit)) return;
+
+      try {
+        // Contents are kept when demoting — toggling back restores the kit
+        await dataContext.updateItem(itemId, { isKit });
+      } catch (err) {
+        logError('Failed to update kit status:', err);
+        addToast('Could not update the kit status. Please try again.', 'error');
+        return;
+      }
+
+      if (selectedItem?.id === itemId) {
+        setSelectedItem((prev) => ({ ...prev, isKit }));
+      }
+
+      addChangeLog({
+        type: 'updated',
+        itemId,
+        itemType: 'item',
+        itemName: targetItem.name,
+        description: isKit ? 'Marked as a kit' : 'No longer a kit',
+        changes: [{ field: 'isKit', oldValue: String(!isKit), newValue: String(isKit) }],
+      });
+    },
+    [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext, addToast],
+  );
+
+  const addKitItems = useCallback(
+    async (itemId, memberIds) => {
+      if (!itemId || !memberIds || memberIds.length === 0) return;
+
+      const targetItem = inventory.find((i) => i.id === itemId);
+      if (!targetItem) return;
+
+      // Defensive guards the UI also enforces: no self-containment, no
+      // nesting kits inside kits, no duplicates
+      const existing = targetItem.kitItems || [];
+      const additions = memberIds.filter((id) => {
+        if (id === itemId) return false;
+        const member = inventory.find((i) => i.id === id);
+        return member && !member.isKit;
+      });
+      const newKitItems = [...new Set([...existing, ...additions])];
+      if (newKitItems.length === existing.length) return;
+
+      try {
+        await dataContext.updateItem(itemId, { kitItems: newKitItems });
+      } catch (err) {
+        logError('Failed to save kit contents:', err);
+        addToast('Could not save the kit contents. Please try again.', 'error');
+        return;
+      }
+
+      if (selectedItem?.id === itemId) {
+        setSelectedItem((prev) => ({ ...prev, kitItems: newKitItems }));
+      }
+
+      const addedItems = additions.map((id) => inventory.find((i) => i.id === id)).filter(Boolean);
+      addChangeLog({
+        type: 'updated',
+        itemId,
+        itemType: 'item',
+        itemName: targetItem.name,
+        description: `Added ${addedItems.length} item${addedItems.length === 1 ? '' : 's'} to kit`,
+        changes: addedItems.map((member) => ({
+          field: 'kitItems',
+          oldValue: null,
+          newValue: `${member.name} (${member.id})`,
+        })),
+      });
+    },
+    [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext, addToast],
+  );
+
+  const removeKitItem = useCallback(
+    async (itemId, memberId) => {
+      if (!itemId || !memberId) return;
+
+      const targetItem = inventory.find((i) => i.id === itemId);
+      if (!targetItem) return;
+
+      const existing = targetItem.kitItems || [];
+      const newKitItems = existing.filter((id) => id !== memberId);
+      if (newKitItems.length === existing.length) return;
+
+      try {
+        await dataContext.updateItem(itemId, { kitItems: newKitItems });
+      } catch (err) {
+        logError('Failed to remove kit item:', err);
+        addToast('Could not remove the item from the kit. Please try again.', 'error');
+        return;
+      }
+
+      if (selectedItem?.id === itemId) {
+        setSelectedItem((prev) => ({ ...prev, kitItems: newKitItems }));
+      }
+
+      const removedItem = inventory.find((i) => i.id === memberId);
+      addChangeLog({
+        type: 'updated',
+        itemId,
+        itemType: 'item',
+        itemName: targetItem.name,
+        description: `Removed from kit: ${removedItem ? removedItem.name : memberId}`,
+        changes: [
+          {
+            field: 'kitItems',
+            oldValue: removedItem ? `${removedItem.name} (${removedItem.id})` : memberId,
+            newValue: null,
+          },
+        ],
+      });
+    },
+    [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext, addToast],
+  );
 
   // ---- Required Accessories ----
   // Persist-first through the real update path. The old handlers only patched
@@ -152,6 +276,9 @@ export function useKitHandlers({
   );
 
   return {
+    setKitStatus,
+    addKitItems,
+    removeKitItem,
     addRequiredAccessories,
     removeRequiredAccessory,
     selectImage,

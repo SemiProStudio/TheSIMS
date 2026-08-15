@@ -283,12 +283,15 @@ export const ITEM_DETAIL_SECTIONS = {
   NOTES: { id: 'notes', label: 'Notes', order: 2 },
   REMINDERS: { id: 'reminders', label: 'Reminders', order: 3 },
   REQUIRED_ACCESSORIES: { id: 'requiredAccessories', label: 'Required Accessories', order: 4 },
-  PACKAGES: { id: 'packages', label: 'Packages', order: 5 },
-  MAINTENANCE: { id: 'maintenance', label: 'Maintenance', order: 6 },
-  TIMELINE: { id: 'timeline', label: 'Item Timeline', order: 7 },
-  CHECKOUT_HISTORY: { id: 'checkoutHistory', label: 'Checkout History', order: 8 },
-  VALUE: { id: 'value', label: 'Value & Purchase', order: 9 },
-  DEPRECIATION: { id: 'depreciation', label: 'Depreciation', order: 10 },
+  // New sections default to visible for users with saved layout prefs —
+  // ItemDetail falls back to this order when a section id has no stored pref
+  KIT_CONTENTS: { id: 'kitContents', label: 'Kit Contents', order: 5 },
+  PACKAGES: { id: 'packages', label: 'Packages', order: 6 },
+  MAINTENANCE: { id: 'maintenance', label: 'Maintenance', order: 7 },
+  TIMELINE: { id: 'timeline', label: 'Item Timeline', order: 8 },
+  CHECKOUT_HISTORY: { id: 'checkoutHistory', label: 'Checkout History', order: 9 },
+  VALUE: { id: 'value', label: 'Value & Purchase', order: 10 },
+  DEPRECIATION: { id: 'depreciation', label: 'Depreciation', order: 11 },
 };
 
 // Helper to create default section prefs (visible, not collapsed, default order)

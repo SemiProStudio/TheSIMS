@@ -51,6 +51,126 @@ function buildParams(overrides = {}) {
   };
 }
 
+describe('kit contents (setKitStatus / addKitItems / removeKitItem)', () => {
+  const kitInventory = [
+    { id: 'BAG001', name: 'Camera Bag', isKit: true, kitItems: ['CAM001'] },
+    { id: 'CAM001', name: 'Camera' },
+    { id: 'CHG001', name: 'Charger' },
+    { id: 'BAG002', name: 'Other Bag', isKit: true, kitItems: [] },
+  ];
+
+  function buildKitParams(overrides = {}) {
+    return buildParams({
+      inventory: kitInventory,
+      selectedItem: { id: 'BAG001', name: 'Camera Bag', isKit: true, kitItems: ['CAM001'] },
+      ...overrides,
+    });
+  }
+
+  it('setKitStatus persists the flag and logs, keeping contents on demote', async () => {
+    const params = buildKitParams();
+    const { result } = renderHook(() => useKitHandlers(params));
+
+    await act(async () => {
+      await result.current.setKitStatus('BAG001', false);
+    });
+
+    // Only isKit is written — kit_contents survives so re-promoting restores
+    expect(params.dataContext.updateItem).toHaveBeenCalledWith('BAG001', { isKit: false });
+    expect(params.setSelectedItem).toHaveBeenCalled();
+    expect(params.addChangeLog).toHaveBeenCalledTimes(1);
+  });
+
+  it('setKitStatus is a no-op when the flag already matches', async () => {
+    const params = buildKitParams();
+    const { result } = renderHook(() => useKitHandlers(params));
+
+    await act(async () => {
+      await result.current.setKitStatus('BAG001', true);
+    });
+
+    expect(params.dataContext.updateItem).not.toHaveBeenCalled();
+    expect(params.addChangeLog).not.toHaveBeenCalled();
+  });
+
+  it('setKitStatus failure: toast, no state patch, no change log', async () => {
+    const params = buildKitParams();
+    params.dataContext.updateItem.mockRejectedValueOnce(new Error('RLS denied'));
+    const { result } = renderHook(() => useKitHandlers(params));
+
+    await act(async () => {
+      await result.current.setKitStatus('BAG001', false);
+    });
+
+    expect(addToastMock).toHaveBeenCalledWith(expect.stringContaining('kit status'), 'error');
+    expect(params.setSelectedItem).not.toHaveBeenCalled();
+    expect(params.addChangeLog).not.toHaveBeenCalled();
+  });
+
+  it('addKitItems merges, dedupes, and drops self and other kits', async () => {
+    const params = buildKitParams();
+    const { result } = renderHook(() => useKitHandlers(params));
+
+    await act(async () => {
+      // CAM001 already a member, BAG001 is self, BAG002 is a kit — only
+      // CHG001 survives the guards
+      await result.current.addKitItems('BAG001', ['CHG001', 'CAM001', 'BAG001', 'BAG002']);
+    });
+
+    expect(params.dataContext.updateItem).toHaveBeenCalledWith('BAG001', {
+      kitItems: ['CAM001', 'CHG001'],
+    });
+    expect(params.addChangeLog).toHaveBeenCalledTimes(1);
+  });
+
+  it('addKitItems is a no-op when every id is filtered out', async () => {
+    const params = buildKitParams();
+    const { result } = renderHook(() => useKitHandlers(params));
+
+    await act(async () => {
+      await result.current.addKitItems('BAG001', ['CAM001', 'BAG002']);
+    });
+
+    expect(params.dataContext.updateItem).not.toHaveBeenCalled();
+  });
+
+  it('addKitItems failure: toast, no change log', async () => {
+    const params = buildKitParams();
+    params.dataContext.updateItem.mockRejectedValueOnce(new Error('down'));
+    const { result } = renderHook(() => useKitHandlers(params));
+
+    await act(async () => {
+      await result.current.addKitItems('BAG001', ['CHG001']);
+    });
+
+    expect(addToastMock).toHaveBeenCalledWith(expect.stringContaining('kit contents'), 'error');
+    expect(params.addChangeLog).not.toHaveBeenCalled();
+  });
+
+  it('removeKitItem persists the pruned list and logs the removal', async () => {
+    const params = buildKitParams();
+    const { result } = renderHook(() => useKitHandlers(params));
+
+    await act(async () => {
+      await result.current.removeKitItem('BAG001', 'CAM001');
+    });
+
+    expect(params.dataContext.updateItem).toHaveBeenCalledWith('BAG001', { kitItems: [] });
+    expect(params.addChangeLog).toHaveBeenCalledTimes(1);
+  });
+
+  it('removeKitItem is a no-op for a non-member', async () => {
+    const params = buildKitParams();
+    const { result } = renderHook(() => useKitHandlers(params));
+
+    await act(async () => {
+      await result.current.removeKitItem('BAG001', 'CHG001');
+    });
+
+    expect(params.dataContext.updateItem).not.toHaveBeenCalled();
+  });
+});
+
 describe('addRequiredAccessories', () => {
   it('persists the merged list through dataContext.updateItem before logging', async () => {
     const params = buildParams();

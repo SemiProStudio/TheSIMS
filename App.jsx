@@ -774,7 +774,14 @@ export default function App() {
     addChangeLog,
   });
 
-  const { addRequiredAccessories, removeRequiredAccessory, selectImage } = useKitHandlers({
+  const {
+    setKitStatus,
+    addKitItems,
+    removeKitItem,
+    addRequiredAccessories,
+    removeRequiredAccessory,
+    selectImage,
+  } = useKitHandlers({
     inventory,
     selectedItem,
     setSelectedItem,
@@ -1075,6 +1082,9 @@ export default function App() {
       deleteReservation,
       saveReservation,
       reservePackage,
+      setKitStatus,
+      addKitItems,
+      removeKitItem,
       addRequiredAccessories,
       removeRequiredAccessory,
       selectImage,
@@ -1120,6 +1130,9 @@ export default function App() {
       deleteReservation,
       saveReservation,
       reservePackage,
+      setKitStatus,
+      addKitItems,
+      removeKitItem,
       addRequiredAccessories,
       removeRequiredAccessory,
       selectImage,

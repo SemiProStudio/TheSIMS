@@ -22,6 +22,7 @@ import {
   History,
   Settings,
   Package,
+  Boxes,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
@@ -48,6 +49,7 @@ const SECTION_COLORS = {
   depreciation: 'var(--sidebar-item6)',
   timeline: 'var(--sidebar-item2)',
   addToKit: 'var(--sidebar-item4)',
+  kitContents: 'var(--sidebar-item4)',
 };
 
 // Helper to create item style with panel-colored background
@@ -363,6 +365,244 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
   );
 });
 
+// Kit Contents Section Component — a kit is a container item (is_kit) whose
+// member item ids live in kit_contents. Editing callbacks are absent for
+// roles without gear_list edit; the section then renders read-only.
+const KitContentsSection = memo(function KitContentsSection({
+  item,
+  inventory,
+  onSetKitStatus,
+  onAddKitItems,
+  onRemoveKitItem,
+  onViewItem,
+  panelColor,
+}) {
+  const [showAddPanel, setShowAddPanel] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedIds, setSelectedIds] = useState([]);
+
+  const effectivePanelColor = panelColor && panelColor.length > 0 ? panelColor : colors.primary;
+  const itemStyle = getItemStyle(effectivePanelColor);
+
+  const kitMembers = useMemo(() => {
+    if (!item.kitItems) return [];
+    return item.kitItems.map((id) => inventory.find((i) => i.id === id)).filter(Boolean);
+  }, [item.kitItems, inventory]);
+
+  // Items eligible for membership: not this item, not another kit, not
+  // already a member
+  const availableItems = useMemo(() => {
+    const existingIds = new Set(item.kitItems || []);
+    existingIds.add(item.id);
+
+    return inventory.filter((i) => {
+      if (existingIds.has(i.id)) return false;
+      if (i.isKit) return false; // kits don't nest
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return i.name.toLowerCase().includes(q) || i.id.toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [inventory, item.id, item.kitItems, searchQuery]);
+
+  const handleToggleSelect = (id) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+  };
+
+  const handleAddSelected = () => {
+    if (selectedIds.length > 0 && onAddKitItems) {
+      onAddKitItems(item.id, selectedIds);
+      setSelectedIds([]);
+      setShowAddPanel(false);
+      setSearchQuery('');
+    }
+  };
+
+  if (!item.isKit) {
+    return (
+      <div style={{ padding: spacing[3] }}>
+        <p
+          style={{
+            color: colors.textMuted,
+            textAlign: 'center',
+            fontSize: typography.fontSize.sm,
+            margin: `0 0 ${onSetKitStatus ? spacing[3] : 0}px`,
+            padding: spacing[3],
+          }}
+        >
+          This item is not a kit. Kits are container items — a camera bag, a
+          lighting case — whose contents print together on kit labels.
+        </p>
+        {onSetKitStatus && (
+          <Button
+            variant="secondary"
+            onClick={() => onSetKitStatus(item.id, true)}
+            icon={Boxes}
+            fullWidth
+          >
+            Convert to Kit
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: spacing[3] }}>
+      {kitMembers.length > 0 ? (
+        <div style={{ marginBottom: spacing[3] }}>
+          {kitMembers.map((member) => (
+            <div key={member.id} style={itemStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+                <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => onViewItem?.(member.id)}>
+                  <div
+                    style={{
+                      fontSize: typography.fontSize.sm,
+                      fontWeight: typography.fontWeight.medium,
+                      color: colors.textPrimary,
+                    }}
+                  >
+                    {member.name}
+                  </div>
+                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                    {member.id} • {member.category}
+                  </div>
+                </div>
+                <Badge
+                  text={getStatusLabel(member.status)}
+                  color={getStatusColor(member.status)}
+                  size="sm"
+                />
+                {onRemoveKitItem && (
+                  <button
+                    onClick={() => onRemoveKitItem(item.id, member.id)}
+                    aria-label={`Remove ${member.name} from kit`}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: colors.textMuted,
+                      cursor: 'pointer',
+                      padding: spacing[1],
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p
+          style={{
+            color: colors.textMuted,
+            textAlign: 'center',
+            fontSize: typography.fontSize.sm,
+            margin: `0 0 ${spacing[3]}px`,
+            padding: spacing[3],
+          }}
+        >
+          This kit is empty
+        </p>
+      )}
+
+      {showAddPanel ? (
+        <div
+          style={{
+            background: withOpacity(effectivePanelColor, 10),
+            borderRadius: borderRadius.md,
+            padding: spacing[3],
+            border: `1px solid ${withOpacity(effectivePanelColor, 30)}`,
+          }}
+        >
+          <div style={{ marginBottom: spacing[2] }}>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search items..."
+              style={{ ...styles.input, width: '100%' }}
+            />
+          </div>
+          <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: spacing[2] }}>
+            {availableItems.slice(0, 50).map((i) => (
+              <label
+                key={i.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: spacing[2],
+                  padding: spacing[2],
+                  cursor: 'pointer',
+                  borderRadius: borderRadius.sm,
+                  background: selectedIds.includes(i.id)
+                    ? withOpacity(effectivePanelColor, 20)
+                    : 'transparent',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(i.id)}
+                  onChange={() => handleToggleSelect(i.id)}
+                  style={{ accentColor: colors.primary }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
+                    {i.name}
+                  </div>
+                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                    {i.id}
+                  </div>
+                </div>
+              </label>
+            ))}
+            {availableItems.length === 0 && (
+              <p style={{ color: colors.textMuted, textAlign: 'center', padding: spacing[2] }}>
+                No items found
+              </p>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowAddPanel(false);
+                setSelectedIds([]);
+                setSearchQuery('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleAddSelected} disabled={selectedIds.length === 0} icon={Plus}>
+              Add ({selectedIds.length})
+            </Button>
+          </div>
+        </div>
+      ) : (
+        (onAddKitItems || onSetKitStatus) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
+            {onAddKitItems && (
+              <Button variant="secondary" onClick={() => setShowAddPanel(true)} icon={Plus} fullWidth>
+                Add Items to Kit
+              </Button>
+            )}
+            {onSetKitStatus && (
+              <Button
+                variant="secondary"
+                onClick={() => onSetKitStatus(item.id, false)}
+                fullWidth
+              >
+                No Longer a Kit
+              </Button>
+            )}
+          </div>
+        )
+      )}
+    </div>
+  );
+});
+
 function ItemDetail({
   item,
   inventory,
@@ -393,6 +633,9 @@ function ItemDetail({
   onUpdateValue,
   onAddAccessory,
   onRemoveAccessory,
+  onSetKitStatus,
+  onAddKitItems,
+  onRemoveKitItem,
   onAddToPackage,
   onViewItem,
   onCustomizeLayout,
@@ -770,6 +1013,32 @@ function ItemDetail({
               onRemoveAccessory={canEditGear ? onRemoveAccessory : undefined}
               onViewItem={onViewItem}
               panelColor={accessoriesColor}
+            />
+          </CollapsibleSection>
+        );
+
+      case 'kitContents':
+        const kitColor = SECTION_COLORS.kitContents;
+        return (
+          <CollapsibleSection
+            key="kitContents"
+            title="Kit Contents"
+            icon={Boxes}
+            badge={item.isKit ? (item.kitItems || []).length : 0}
+            badgeColor={kitColor}
+            headerColor={kitColor}
+            collapsed={isCollapsed('kitContents')}
+            onToggleCollapse={() => toggleCollapse('kitContents')}
+            padding={false}
+          >
+            <KitContentsSection
+              item={item}
+              inventory={inventory}
+              onSetKitStatus={canEditGear ? onSetKitStatus : undefined}
+              onAddKitItems={canEditGear ? onAddKitItems : undefined}
+              onRemoveKitItem={canEditGear ? onRemoveKitItem : undefined}
+              onViewItem={onViewItem}
+              panelColor={kitColor}
             />
           </CollapsibleSection>
         );

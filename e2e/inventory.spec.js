@@ -6,7 +6,7 @@
 // =============================================================================
 
 import { test, expect } from './fixtures.js';
-import { createTestItem, deleteTestItem, deleteItemsByExactName, E2E_PREFIX } from './db.js';
+import { adminDb, createTestItem, deleteTestItem, deleteItemsByExactName, E2E_PREFIX } from './db.js';
 
 test.describe('Inventory Management', () => {
   test.beforeEach(async ({ page, pages }) => {
@@ -219,6 +219,68 @@ test.describe('Inventory Management', () => {
         });
       } finally {
         await deleteTestItem(id);
+      }
+    });
+  });
+
+  test.describe('Kit Contents', () => {
+    // The 2026-08-14 rebuild on the real is_kit/kit_contents columns — the
+    // original kit UI only patched React state, so every kit vanished on
+    // reload. Each step asserts the DB row, not just the screen.
+    test('convert to kit → add member → remove member → demote', async ({ page, pages }) => {
+      const stamp = Date.now();
+      const kitName = `${E2E_PREFIX} Kit ${stamp}`;
+      const memberName = `${E2E_PREFIX} KitMember ${stamp}`;
+      const kitId = await createTestItem({ name: kitName });
+      const memberId = await createTestItem({ name: memberName });
+      const db = await adminDb();
+
+      const kitRow = async () => {
+        const { data } = await db
+          .from('inventory')
+          .select('is_kit, kit_contents')
+          .eq('id', kitId)
+          .single();
+        return data;
+      };
+
+      try {
+        await reloadIntoGearList(page, pages);
+        await pages.gearList.openItem(kitId, kitName);
+        await pages.itemDetail.expectItemDetail();
+
+        // Starts as a plain item
+        await page.getByRole('button', { name: 'Convert to Kit' }).click();
+        await expect(page.getByRole('button', { name: 'Add Items to Kit' })).toBeVisible();
+        await expect.poll(async () => (await kitRow()).is_kit, { timeout: 10000 }).toBe(true);
+
+        // Add a member through the picker
+        await page.getByRole('button', { name: 'Add Items to Kit' }).click();
+        await page.locator('input[placeholder="Search items..."]').fill(memberId);
+        await page.locator('label').filter({ hasText: memberName }).click();
+        await page.getByRole('button', { name: 'Add (1)' }).click();
+        await expect
+          .poll(async () => (await kitRow()).kit_contents?.join(','), { timeout: 10000 })
+          .toBe(memberId);
+
+        // The member renders with its status and a remove control
+        await expect(page.getByLabel(`Remove ${memberName} from kit`)).toBeVisible();
+
+        // Kit badge shows up in the gear list's kit filter path too — the
+        // DB row is what GearList/Labels/Search all read
+        await page.getByLabel(`Remove ${memberName} from kit`).click();
+        await expect
+          .poll(async () => ((await kitRow()).kit_contents || []).length, { timeout: 10000 })
+          .toBe(0);
+        await expect(page.locator('text=This kit is empty')).toBeVisible();
+
+        // Demote — contents already empty, flag flips back
+        await page.getByRole('button', { name: 'No Longer a Kit' }).click();
+        await expect(page.getByRole('button', { name: 'Convert to Kit' })).toBeVisible();
+        await expect.poll(async () => (await kitRow()).is_kit, { timeout: 10000 }).toBe(false);
+      } finally {
+        await deleteTestItem(kitId);
+        await deleteTestItem(memberId);
       }
     });
   });
