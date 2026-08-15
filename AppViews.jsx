@@ -270,6 +270,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
 
       {currentView === VIEWS.GEAR_DETAIL && selectedItem && (
         <ItemDetail
+          // Remount per item: internal state (expanded specs, depreciation
+          // inputs, add-panel selections) must not leak from one item into
+          // the next when navigating via kit members / accessories
+          key={selectedItem.id}
           item={selectedItem}
           inventory={inventory}
           packages={packages}

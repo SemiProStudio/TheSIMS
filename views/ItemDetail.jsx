@@ -40,6 +40,7 @@ import { Badge, Card, Button, CollapsibleSection, BackButton } from '../componen
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import { Select } from '../components/Select.jsx';
 import NotesSection from '../components/NotesSection.jsx';
+import { useMediaQuery } from '../hooks/useMediaQuery.js';
 import RemindersSection from '../components/RemindersSection.jsx';
 import MaintenanceSection from '../components/MaintenanceSection.jsx';
 import ItemTimeline from '../components/ItemTimeline.jsx';
@@ -1263,8 +1264,17 @@ function ItemDetail({
     }
   };
 
-  const leftColumnSections = sortedSections.filter((_, idx) => idx % 2 === 0);
-  const rightColumnSections = sortedSections.filter((_, idx) => idx % 2 === 1);
+  // ≤900px matches the .responsive-two-col single-column breakpoint. When the
+  // CSS stacks the grid, the sections must render as ONE list in the user's
+  // configured order — stacking the two column divs whole used to scramble it
+  // to 0,2,4,…,1,3,5 (Reservations, order 1, rendered 7th on a phone).
+  const isSingleColumn = useMediaQuery('(max-width: 900px)');
+  const sectionColumns = isSingleColumn
+    ? [sortedSections]
+    : [
+        sortedSections.filter((_, idx) => idx % 2 === 0),
+        sortedSections.filter((_, idx) => idx % 2 === 1),
+      ];
 
   return (
     <>
@@ -1466,14 +1476,16 @@ function ItemDetail({
         </div>
       </Card>
 
-      {/* Two-column layout for sections */}
+      {/* Two-column layout for sections (one column ≤900px, in true order) */}
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-          {leftColumnSections.map((sectionId) => renderSection(sectionId))}
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-          {rightColumnSections.map((sectionId) => renderSection(sectionId))}
-        </div>
+        {sectionColumns.map((column, columnIdx) => (
+          <div
+            key={columnIdx}
+            style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}
+          >
+            {column.map((sectionId) => renderSection(sectionId))}
+          </div>
+        ))}
       </div>
     </>
   );
