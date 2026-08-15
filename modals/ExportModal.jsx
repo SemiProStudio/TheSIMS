@@ -9,6 +9,7 @@ import { Download } from 'lucide-react';
 import { colors, styles, spacing, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
+import { INVENTORY_COLUMNS } from '../lib/inventoryCsv.js';
 
 export const ExportModal = memo(function ExportModal({
   onExport,
@@ -18,29 +19,17 @@ export const ExportModal = memo(function ExportModal({
   allowNotes = true,
 }) {
   const [format, setFormat] = useState('csv');
-  const [columns, setColumns] = useState(['id', 'name', 'category', 'status', 'value']);
+  const [columns, setColumns] = useState(['id', 'name', 'category', 'status', 'currentValue']);
   const [includeBranding, setIncludeBranding] = useState(false);
   // A lingering gear-list selection narrows the scope — give the user a
   // one-click way out instead of a silent surprise
   const [scope, setScope] = useState(selectionCount > 0 ? 'selection' : 'all');
 
+  // Columns come from the shared inventory definition (lib/inventoryCsv.js);
+  // notes is this exporter's own extension — the text is item_details data,
+  // fetched lazily and hidden from roles that can't view it
   const allColumns = [
-    { id: 'id', label: 'ID' },
-    { id: 'name', label: 'Name' },
-    { id: 'brand', label: 'Brand' },
-    { id: 'category', label: 'Category' },
-    { id: 'status', label: 'Status' },
-    { id: 'condition', label: 'Condition' },
-    { id: 'location', label: 'Location' },
-    { id: 'purchaseDate', label: 'Purchase Date' },
-    { id: 'purchasePrice', label: 'Purchase $' },
-    { id: 'value', label: 'Current Value' },
-    { id: 'serialNumber', label: 'Serial #' },
-    // Without these two, an export-then-reimport reset every quantity-tracked
-    // item to 1 and dropped reorder points entirely
-    { id: 'quantity', label: 'Quantity' },
-    { id: 'reorderPoint', label: 'Reorder Point' },
-    // Note text is item_details data — hidden from roles that can't view it
+    ...INVENTORY_COLUMNS.map(({ id, label }) => ({ id, label })),
     ...(allowNotes ? [{ id: 'notes', label: 'Notes' }] : []),
   ];
 
