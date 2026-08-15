@@ -780,6 +780,7 @@ export default function App() {
     removeKitItem,
     addRequiredAccessories,
     removeRequiredAccessory,
+    updateItemValue,
     selectImage,
   } = useKitHandlers({
     inventory,
@@ -1074,6 +1075,7 @@ export default function App() {
       removeKitItem,
       addRequiredAccessories,
       removeRequiredAccessory,
+      updateItemValue,
       selectImage,
       addItemToPackage,
       updateMaintenanceStatus,
@@ -1122,6 +1124,7 @@ export default function App() {
       removeKitItem,
       addRequiredAccessories,
       removeRequiredAccessory,
+      updateItemValue,
       selectImage,
       addItemToPackage,
       updateMaintenanceStatus,

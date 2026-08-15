@@ -234,6 +234,42 @@ export function useKitHandlers({
     [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext, addToast],
   );
 
+  // ---- Current value ----
+  // The depreciation calculator's "Update Current Value" wrote only local
+  // state until 2026-08-15 — the value looked applied and reverted on reload.
+
+  const updateItemValue = useCallback(
+    async (itemId, newValue) => {
+      const targetItem = inventory.find((i) => i.id === itemId);
+      if (!targetItem || !Number.isFinite(newValue)) return;
+      if (targetItem.currentValue === newValue) return;
+
+      try {
+        await dataContext.updateItem(itemId, { currentValue: newValue });
+      } catch (err) {
+        logError('Failed to update item value:', err);
+        addToast('Could not update the current value. Please try again.', 'error');
+        return;
+      }
+
+      if (selectedItem?.id === itemId) {
+        setSelectedItem((prev) => ({ ...prev, currentValue: newValue }));
+      }
+
+      addChangeLog({
+        type: 'updated',
+        itemId,
+        itemType: 'item',
+        itemName: targetItem.name,
+        description: `Current value updated to $${newValue}`,
+        changes: [
+          { field: 'currentValue', oldValue: targetItem.currentValue ?? null, newValue },
+        ],
+      });
+    },
+    [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext, addToast],
+  );
+
   // ---- Image ----
 
   const selectImage = useCallback(
@@ -281,6 +317,7 @@ export function useKitHandlers({
     removeKitItem,
     addRequiredAccessories,
     removeRequiredAccessory,
+    updateItemValue,
     selectImage,
   };
 }

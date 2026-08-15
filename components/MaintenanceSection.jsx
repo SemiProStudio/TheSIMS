@@ -15,6 +15,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Edit3,
 } from 'lucide-react';
 import { MAINTENANCE_STATUS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
@@ -59,7 +60,7 @@ const formatStatus = (status) => {
 const MaintenanceEntry = memo(function MaintenanceEntry({
   entry,
   onComplete,
-  _onEdit,
+  onEdit,
   panelColor,
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -231,10 +232,10 @@ const MaintenanceEntry = memo(function MaintenanceEntry({
               </div>
             )}
 
-            {/* Actions — omitted when the parent passes no handler (view-only) */}
-            {onComplete && (isScheduled || isInProgress) && (
+            {/* Actions — omitted when the parent passes no handlers (view-only) */}
+            {((onComplete && (isScheduled || isInProgress)) || onEdit) && (
               <div style={{ display: 'flex', gap: spacing[2], marginTop: spacing[3] }}>
-                {isScheduled && (
+                {onComplete && isScheduled && (
                   <Button
                     size="sm"
                     variant="secondary"
@@ -246,7 +247,7 @@ const MaintenanceEntry = memo(function MaintenanceEntry({
                     Start Work
                   </Button>
                 )}
-                {isInProgress && (
+                {onComplete && isInProgress && (
                   <Button
                     size="sm"
                     onClick={(e) => {
@@ -256,6 +257,19 @@ const MaintenanceEntry = memo(function MaintenanceEntry({
                     icon={Check}
                   >
                     Mark Complete
+                  </Button>
+                )}
+                {onEdit && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    icon={Edit3}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(entry);
+                    }}
+                  >
+                    Edit
                   </Button>
                 )}
               </div>

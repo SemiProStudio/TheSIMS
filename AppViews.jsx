@@ -87,7 +87,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     currentView,
     setCurrentView,
     selectedItem,
-    setSelectedItem,
     selectedPackage,
     setSelectedPackage,
     selectedPackList,
@@ -137,7 +136,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     packLists,
     updateCategories,
     updateSpecs,
-    patchInventoryItem,
     replaceLocations,
   } = dataContext;
 
@@ -175,6 +173,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     setKitStatus,
     addKitItems,
     removeKitItem,
+    updateItemValue,
     addItemToPackage,
     reservePackage,
     updateMaintenanceStatus,
@@ -331,10 +330,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onAddMaintenance={openMaintenanceModal}
           onUpdateMaintenance={openMaintenanceEditModal}
           onCompleteMaintenance={updateMaintenanceStatus}
-          onUpdateValue={(newValue) => {
-            patchInventoryItem(selectedItem.id, { currentValue: newValue });
-            setSelectedItem((prev) => ({ ...prev, currentValue: newValue }));
-          }}
+          onUpdateValue={(newValue) => updateItemValue(selectedItem.id, newValue)}
           onAddToPackage={addItemToPackage}
           onAddAccessory={addRequiredAccessories}
           onRemoveAccessory={removeRequiredAccessory}
