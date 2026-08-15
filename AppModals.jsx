@@ -390,7 +390,11 @@ export default memo(function AppModals({ handlers, currentUser }) {
               // own login with the account they just created.
               if (auth?.adminCreateUser && newUser.password) {
                 try {
-                  const { user: createdUser, needsEmailConfirmation } = await auth.adminCreateUser(
+                  const {
+                    user: createdUser,
+                    needsEmailConfirmation,
+                    roleApplied,
+                  } = await auth.adminCreateUser(
                     newUser.email,
                     newUser.password,
                     newUser.name,
@@ -398,11 +402,13 @@ export default memo(function AppModals({ handlers, currentUser }) {
                   );
 
                   // Apply the chosen role for real: handle_new_user hardcodes
-                  // role_user on signup (fail-safe by design), so the admin's
-                  // selection needs this second, admin-authorized update —
-                  // without it the account silently stayed Standard User
-                  // while the panel showed the chosen role.
-                  if (createdUser?.id && newUser.roleId && newUser.roleId !== 'role_user') {
+                  // role_user on signup (fail-safe by design). The edge
+                  // function applies the role server-side (roleApplied);
+                  // only the legacy signUp fallback still needs this second,
+                  // admin-authorized update — without it the account silently
+                  // stayed Standard User while the panel showed the chosen
+                  // role.
+                  if (!roleApplied && createdUser?.id && newUser.roleId && newUser.roleId !== 'role_user') {
                     try {
                       const { usersService } = await import('./lib/services.js');
                       await usersService.updateRole(createdUser.id, newUser.roleId);
