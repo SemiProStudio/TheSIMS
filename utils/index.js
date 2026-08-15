@@ -3,7 +3,13 @@
 // Pure functions with no side effects for data transformation and formatting
 // ============================================================================
 
-import { CATEGORY_PREFIXES, STATUS, STATUS_LABELS, CONDITION } from '../constants.js';
+import {
+  CATEGORY_PREFIXES,
+  STATUS,
+  STATUS_LABELS,
+  CONDITION,
+  MAINTENANCE_STATUS,
+} from '../constants.js';
 import { colors } from '../theme.js';
 
 // ============================================================================
@@ -370,6 +376,26 @@ export const getStatusColor = (status) => {
  * @returns {string}
  */
 export const getStatusLabel = (status) => STATUS_LABELS[status] || status;
+
+/**
+ * Color for a maintenance record status. Lives here (not in the component
+ * file) so fast refresh keeps working — component files must only export
+ * components.
+ */
+export const getMaintenanceStatusColor = (status) => {
+  switch (status) {
+    case MAINTENANCE_STATUS.COMPLETED:
+      return colors.available;
+    case MAINTENANCE_STATUS.IN_PROGRESS:
+      return colors.checkedOut;
+    case MAINTENANCE_STATUS.SCHEDULED:
+      return colors.primary;
+    case MAINTENANCE_STATUS.CANCELLED:
+      return colors.textMuted;
+    default:
+      return colors.textMuted;
+  }
+};
 
 /**
  * Get the color for a given condition

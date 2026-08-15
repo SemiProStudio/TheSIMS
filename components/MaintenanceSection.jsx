@@ -18,26 +18,10 @@ import {
 } from 'lucide-react';
 import { MAINTENANCE_STATUS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, formatMoney } from '../utils';
+import { formatDate, formatMoney, getMaintenanceStatusColor } from '../utils';
 import { Badge, Button } from './ui.jsx';
 
 // Get status color for maintenance
-// Exported: MaintenanceReportView shares this map (it used to carry an
-// identical private copy — a classic pre-drift duplicate)
-export const getMaintenanceStatusColor = (status) => {
-  switch (status) {
-    case MAINTENANCE_STATUS.COMPLETED:
-      return colors.available;
-    case MAINTENANCE_STATUS.IN_PROGRESS:
-      return colors.checkedOut;
-    case MAINTENANCE_STATUS.SCHEDULED:
-      return colors.primary;
-    case MAINTENANCE_STATUS.CANCELLED:
-      return colors.textMuted;
-    default:
-      return colors.textMuted;
-  }
-};
 
 // Get status icon
 const getMaintenanceStatusIcon = (status) => {

@@ -10,7 +10,7 @@ import { memo, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Wrench, Clock, AlertTriangle, DollarSign, Building2, Download } from 'lucide-react';
 import { colors, spacing, typography } from '../theme.js';
-import { formatDate, formatMoney, downloadCSV } from '../utils';
+import { formatDate, formatMoney, downloadCSV, getMaintenanceStatusColor } from '../utils';
 import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
 import { ReportBranding } from '../components/ReportBranding.jsx';
 import { ColumnChart, HBarChart } from '../components/charts.jsx';
@@ -22,7 +22,7 @@ import {
   csvForMaintenance,
 } from '../lib/reportData.js';
 import { useData } from '../contexts/DataContext.js';
-import { getMaintenanceStatusColor } from '../components/MaintenanceSection.jsx';
+
 
 export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
   inventory,

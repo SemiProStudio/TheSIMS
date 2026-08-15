@@ -154,7 +154,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     handleSaveLayoutPrefs,
     handleSaveFilterViews,
     createItem,
-    deleteItem,
     openEditItem,
     handleBulkAction,
     openCheckoutModal,
