@@ -353,7 +353,9 @@ function Sidebar({
                 transition: 'opacity 0.2s ease, width 0.2s ease',
               }}
             >
-              <h1
+              {/* Not an h1 — the page's own heading (item name, view title)
+                  owns that level; two h1s per page confused AT outlines */}
+              <div
                 style={{
                   margin: 0,
                   fontSize: typography.fontSize.lg,
@@ -362,7 +364,7 @@ function Sidebar({
                 }}
               >
                 S.I.M.S.
-              </h1>
+              </div>
               <p
                 style={{
                   margin: 0,

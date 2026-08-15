@@ -3,7 +3,7 @@
 // Reusable threaded notes with replies
 // ============================================================================
 
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useRef } from 'react';
 import { Plus, Reply, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate } from '../utils';
@@ -21,12 +21,16 @@ const Note = memo(function Note({
   const [isExpanded, setIsExpanded] = useState(true);
   const [showReplyInput, setShowReplyInput] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const replyToggleRef = useRef(null);
 
   const handleSubmitReply = useCallback(() => {
     if (replyText.trim()) {
       onReply(note.id, replyText);
       setReplyText('');
       setShowReplyInput(false);
+      // The autofocused input unmounts — without this, keyboard focus
+      // dropped to <body> after every reply
+      replyToggleRef.current?.focus();
     }
   }, [note.id, replyText, onReply]);
 
@@ -103,7 +107,10 @@ const Note = memo(function Note({
         >
           {hasReplies && (
             <button
+              type="button"
               onClick={() => setIsExpanded(!isExpanded)}
+              aria-label={isExpanded ? 'Collapse replies' : 'Expand replies'}
+              aria-expanded={isExpanded}
               style={{
                 background: 'none',
                 border: 'none',
@@ -157,6 +164,7 @@ const Note = memo(function Note({
           }}
         >
           <button
+            ref={replyToggleRef}
             onClick={() => setShowReplyInput(!showReplyInput)}
             style={{
               display: 'flex',
@@ -208,6 +216,7 @@ const Note = memo(function Note({
               onChange={(e) => setReplyText(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Write a reply..."
+              aria-label="Write a reply"
               style={{
                 ...styles.input,
                 flex: 1,
@@ -290,6 +299,7 @@ function NotesSection({
             onChange={(e) => setNewNoteText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Add a note..."
+            aria-label="Add a note"
             style={{
               ...styles.input,
               flex: 1,
@@ -297,7 +307,12 @@ function NotesSection({
               fontSize: typography.fontSize.sm,
             }}
           />
-          <button onClick={handleSubmitNote} disabled={!newNoteText.trim()} className="btn">
+          <button
+            onClick={handleSubmitNote}
+            disabled={!newNoteText.trim()}
+            className="btn"
+            aria-label="Submit note"
+          >
             <Plus size={16} />
           </button>
         </div>

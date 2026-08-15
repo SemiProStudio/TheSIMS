@@ -3,7 +3,7 @@
 // Allows users to set one-time or recurring reminders for items
 // ============================================================================
 
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useId } from 'react';
 import { Bell, Plus, Trash2, Calendar, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, generateId, getTodayISO, isReminderDue } from '../utils';
@@ -172,6 +172,7 @@ const ReminderItem = memo(function ReminderItem({
               <button
                 onClick={() => onUncomplete(reminder.id)}
                 title="Mark incomplete"
+                aria-label="Mark incomplete"
                 style={{
                   ...styles.btnSec,
                   padding: spacing[1],
@@ -194,6 +195,7 @@ const ReminderItem = memo(function ReminderItem({
             <button
               onClick={() => onDelete(reminder.id)}
               title="Delete reminder"
+              aria-label="Delete reminder"
               style={{
                 ...styles.btnSec,
                 padding: spacing[1],
@@ -218,13 +220,22 @@ const AddReminderForm = memo(function AddReminderForm({ onAdd, onCancel }) {
     recurrence: 'none',
   });
   const [touched, setTouched] = useState({});
+  const titleInputId = useId();
+  const descriptionInputId = useId();
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = () => {
-    if (!form.title.trim() || !form.dueDate) return;
+    // Mark everything touched so the field errors actually show — the old
+    // touched.dueDate was never set anywhere (DatePicker has no onBlur), so
+    // the date error styling was unreachable and the disabled button gave
+    // no hint about what was missing
+    if (!form.title.trim() || !form.dueDate) {
+      setTouched({ title: true, dueDate: true });
+      return;
+    }
 
     onAdd({
       id: generateId(),
@@ -237,7 +248,6 @@ const AddReminderForm = memo(function AddReminderForm({ onAdd, onCancel }) {
     });
   };
 
-  const isValid = form.title.trim() && form.dueDate;
   const showTitleError = touched.title && !form.title.trim();
   const showDateError = touched.dueDate && !form.dueDate;
 
@@ -252,10 +262,14 @@ const AddReminderForm = memo(function AddReminderForm({ onAdd, onCancel }) {
       }}
     >
       <div style={{ marginBottom: spacing[3] }}>
-        <label style={{ ...styles.label, color: showTitleError ? colors.danger : undefined }}>
+        <label
+          htmlFor={titleInputId}
+          style={{ ...styles.label, color: showTitleError ? colors.danger : undefined }}
+        >
           Reminder Title <span style={{ color: colors.danger }}>*</span>
         </label>
         <input
+          id={titleInputId}
           type="text"
           value={form.title}
           onChange={(e) => handleChange('title', e.target.value)}
@@ -269,8 +283,11 @@ const AddReminderForm = memo(function AddReminderForm({ onAdd, onCancel }) {
       </div>
 
       <div style={{ marginBottom: spacing[3] }}>
-        <label style={styles.label}>Description (optional)</label>
+        <label htmlFor={descriptionInputId} style={styles.label}>
+          Description (optional)
+        </label>
         <input
+          id={descriptionInputId}
           type="text"
           value={form.description}
           onChange={(e) => handleChange('description', e.target.value)}
@@ -316,7 +333,9 @@ const AddReminderForm = memo(function AddReminderForm({ onAdd, onCancel }) {
         <Button variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit} disabled={!isValid} icon={Plus}>
+        {/* Always enabled: an invalid submit marks the fields touched so the
+            errors explain what's missing (a disabled button explained nothing) */}
+        <Button onClick={handleSubmit} icon={Plus}>
           Add Reminder
         </Button>
       </div>

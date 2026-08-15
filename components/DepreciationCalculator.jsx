@@ -417,26 +417,31 @@ function DepreciationCalculator({ item, onUpdateValue }) {
                   <thead>
                     <tr style={{ borderBottom: `1px solid ${colors.borderLight}` }}>
                       <th
+                        scope="col"
                         style={{ padding: spacing[2], textAlign: 'left', color: colors.textMuted }}
                       >
                         Year
                       </th>
                       <th
+                        scope="col"
                         style={{ padding: spacing[2], textAlign: 'right', color: colors.textMuted }}
                       >
                         Start Value
                       </th>
                       <th
+                        scope="col"
                         style={{ padding: spacing[2], textAlign: 'right', color: colors.textMuted }}
                       >
                         Depreciation
                       </th>
                       <th
+                        scope="col"
                         style={{ padding: spacing[2], textAlign: 'right', color: colors.textMuted }}
                       >
                         End Value
                       </th>
                       <th
+                        scope="col"
                         style={{ padding: spacing[2], textAlign: 'right', color: colors.textMuted }}
                       >
                         Accumulated

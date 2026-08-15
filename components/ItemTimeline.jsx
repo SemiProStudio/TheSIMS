@@ -157,6 +157,20 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
       >
         <div
           onClick={() => event.details && setExpanded(!expanded)}
+          role={event.details ? 'button' : undefined}
+          tabIndex={event.details ? 0 : undefined}
+          aria-expanded={event.details ? expanded : undefined}
+          aria-label={event.details ? `Toggle details: ${event.summary}` : undefined}
+          onKeyDown={
+            event.details
+              ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setExpanded(!expanded);
+                  }
+                }
+              : undefined
+          }
           style={{
             background: colors.bgCard,
             border: `1px solid ${colors.borderLight}`,

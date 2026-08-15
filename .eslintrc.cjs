@@ -70,6 +70,7 @@ module.exports = {
     'test-results/',       // Playwright traces/screenshots
     'public/sw.js',        // Service worker runs in different context
     'supabase/functions/',  // Deno edge functions
+    'admin-create-user-dashboard-paste.ts', // untracked Deno deploy artifact (dashboard paste copy)
     'e2e/',                // Playwright tests use different env
     'test/',               // Test files validated by vitest, not ESLint
     '*.config.js',

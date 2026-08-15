@@ -244,7 +244,19 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
           {requiredAccessories.map((acc) => (
             <div key={acc.id} style={itemStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-                <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => onViewItem?.(acc.id)}>
+                <div
+                  style={{ flex: 1, cursor: 'pointer' }}
+                  onClick={() => onViewItem?.(acc.id)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`View ${acc.name}`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onViewItem?.(acc.id);
+                    }
+                  }}
+                >
                   <div
                     style={{
                       fontSize: typography.fontSize.sm,
@@ -262,6 +274,7 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
                 {onRemoveAccessory && (
                   <button
                     onClick={() => onRemoveAccessory(item.id, acc.id)}
+                    aria-label={`Remove ${acc.name} from required accessories`}
                     style={{
                       background: 'none',
                       border: 'none',
@@ -465,7 +478,19 @@ const KitContentsSection = memo(function KitContentsSection({
           {kitMembers.map((member) => (
             <div key={member.id} style={itemStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-                <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => onViewItem?.(member.id)}>
+                <div
+                  style={{ flex: 1, cursor: 'pointer' }}
+                  onClick={() => onViewItem?.(member.id)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`View ${member.name}`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onViewItem?.(member.id);
+                    }
+                  }}
+                >
                   <div
                     style={{
                       fontSize: typography.fontSize.sm,
@@ -746,6 +771,12 @@ function ItemDetail({
       .map((s) => s.id);
   }, [layoutPrefs]);
 
+  // ≤900px matches the .responsive-two-col single-column breakpoint. When the
+  // CSS stacks the grid, the sections must render as ONE list in the user's
+  // configured order — stacking the two column divs whole used to scramble it
+  // to 0,2,4,…,1,3,5 (Reservations, order 1, rendered 7th on a phone).
+  const isSingleColumn = useMediaQuery('(max-width: 900px)');
+
   if (!item) return null;
 
   const renderSection = (sectionId) => {
@@ -865,6 +896,15 @@ function ItemDetail({
                   <div
                     key={r.id}
                     onClick={() => onViewReservation?.(r)}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View reservation ${r.project}`}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onViewReservation?.(r);
+                      }
+                    }}
                     style={{ ...getItemStyle(reservationsColor), cursor: 'pointer' }}
                   >
                     <div
@@ -900,6 +940,7 @@ function ItemDetail({
                             e.stopPropagation();
                             onDeleteReservation(item.id, r.id);
                           }}
+                          aria-label={`Delete reservation ${r.project}`}
                           style={{
                             background: 'none',
                             border: 'none',
@@ -1264,11 +1305,6 @@ function ItemDetail({
     }
   };
 
-  // ≤900px matches the .responsive-two-col single-column breakpoint. When the
-  // CSS stacks the grid, the sections must render as ONE list in the user's
-  // configured order — stacking the two column divs whole used to scramble it
-  // to 0,2,4,…,1,3,5 (Reservations, order 1, rendered 7th on a phone).
-  const isSingleColumn = useMediaQuery('(max-width: 900px)');
   const sectionColumns = isSingleColumn
     ? [sortedSections]
     : [

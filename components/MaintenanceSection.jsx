@@ -84,9 +84,20 @@ const MaintenanceEntry = memo(function MaintenanceEntry({
         overflow: 'hidden',
       }}
     >
-      {/* Header - always visible */}
+      {/* Header - always visible; a real keyboard control (records were
+          unexpandable without a mouse) */}
       <div
         onClick={() => setExpanded(!expanded)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        aria-label={`Toggle maintenance details: ${entry.description || entry.type}`}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setExpanded(!expanded);
+          }
+        }}
         style={{
           padding: spacing[3],
           cursor: 'pointer',
