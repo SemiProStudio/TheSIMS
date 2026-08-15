@@ -252,8 +252,8 @@ const TimelineEvent = memo(function TimelineEvent({ event, isLast }) {
                     {key.replace(/([A-Z])/g, ' $1').trim()}
                   </span>
                   <span style={{ fontSize: typography.fontSize.xs, color: colors.textSecondary }}>
-                    {typeof value === 'number' && key.toLowerCase().includes('cost')
-                      ? formatMoney(value)
+                    {key.toLowerCase().includes('cost') && Number.isFinite(Number(value))
+                      ? formatMoney(Number(value))
                       : String(value)}
                   </span>
                 </div>

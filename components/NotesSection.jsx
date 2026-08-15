@@ -14,7 +14,6 @@ const Note = memo(function Note({
   depth = 0,
   onReply,
   onDelete,
-  user,
   panelColor,
   readOnly = false,
 }) {
@@ -69,7 +68,6 @@ const Note = memo(function Note({
                 depth={depth + 1}
                 onReply={onReply}
                 onDelete={onDelete}
-                user={user}
                 panelColor={panelColor}
                 readOnly={readOnly}
               />
@@ -242,7 +240,6 @@ const Note = memo(function Note({
               depth={depth + 1}
               onReply={onReply}
               onDelete={onDelete}
-              user={user}
               panelColor={panelColor}
               readOnly={readOnly}
             />
@@ -259,7 +256,6 @@ function NotesSection({
   onAddNote,
   onReply,
   onDelete,
-  user,
   panelColor,
   readOnly = false,
 }) {
@@ -338,7 +334,6 @@ function NotesSection({
                 note={note}
                 onReply={onReply}
                 onDelete={onDelete}
-                user={user}
                 panelColor={panelColor}
                 readOnly={readOnly}
               />

@@ -348,7 +348,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onViewReservation={(r) => navigateToReservation(r, selectedItem)}
           onCustomizeLayout={() => setCurrentView(VIEWS.CUSTOMIZE_ITEM_DETAIL)}
           onToggleCollapse={handleToggleCollapse}
-          user={currentUser}
         />
       )}
 

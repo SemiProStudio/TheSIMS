@@ -34,6 +34,7 @@ import {
   getConditionColor,
   getStatusLabel,
   countVisibleNotes,
+  isOverdue,
 } from '../utils';
 import { ITEM_DETAIL_SECTIONS } from '../constants.js';
 import { Badge, Card, Button, CollapsibleSection, BackButton } from '../components/ui.jsx';
@@ -56,7 +57,7 @@ const SECTION_COLORS = {
   maintenance: 'var(--sidebar-item5)',
   depreciation: 'var(--sidebar-item6)',
   timeline: 'var(--sidebar-item2)',
-  addToKit: 'var(--sidebar-item4)',
+  accessories: 'var(--sidebar-item4)',
   kitContents: 'var(--sidebar-item4)',
 };
 
@@ -69,8 +70,10 @@ const getItemStyle = (panelColor) => ({
   marginBottom: spacing[2],
 });
 
-// Add to Kit/Package Section Component - add item to packages
-const AddToKitSection = memo(function AddToKitSection({
+// Packages Section Component — membership in package groupings. ("Kit" now
+// means an is_kit container item with kit_contents; this section's copy no
+// longer borrows the word.)
+const PackagesSection = memo(function PackagesSection({
   item,
   packages,
   onAddToPackage,
@@ -135,9 +138,10 @@ const AddToKitSection = memo(function AddToKitSection({
         </div>
       )}
 
-      {/* Add to package dropdown — hidden entirely for roles without
-          gear_list edit (package membership is an inventory-side write) */}
-      {!onAddToPackage ? null : availablePackages.length === 0 ? (
+      {/* View-only roles (no gear_list edit) get no add control — but an
+          item in no packages must still say so instead of rendering an
+          empty section body */}
+      {!onAddToPackage ? (
         containingPackages.length === 0 && (
           <div
             style={{
@@ -147,7 +151,20 @@ const AddToKitSection = memo(function AddToKitSection({
               fontSize: typography.fontSize.sm,
             }}
           >
-            No kits or packages available.
+            This item is not in any packages.
+          </div>
+        )
+      ) : availablePackages.length === 0 ? (
+        containingPackages.length === 0 && (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: spacing[4],
+              color: colors.textMuted,
+              fontSize: typography.fontSize.sm,
+            }}
+          >
+            No packages available.
           </div>
         )
       ) : (
@@ -159,21 +176,21 @@ const AddToKitSection = memo(function AddToKitSection({
               marginBottom: spacing[2],
             }}
           >
-            Add to a kit or package:
+            Add to a package:
           </div>
           <div style={{ display: 'flex', gap: spacing[2], alignItems: 'flex-start' }}>
             <Select
               value={selectedPackageId}
               onChange={(e) => setSelectedPackageId(e.target.value)}
               options={[
-                { value: '', label: 'Select a kit/package...' },
+                { value: '', label: 'Select a package...' },
                 ...availablePackages.map((pkg) => ({
                   value: pkg.id,
                   label: `${pkg.name} (${pkg.items?.length || 0} items)`,
                 })),
               ]}
               style={{ flex: 1 }}
-              aria-label="Select kit or package"
+              aria-label="Select package"
             />
             <Button onClick={handleAddToPackage} disabled={!selectedPackageId} icon={Plus}>
               Add
@@ -675,7 +692,6 @@ function ItemDetail({
   onViewItem,
   onCustomizeLayout,
   onToggleCollapse,
-  user,
 }) {
   const { canEdit } = usePermissions();
   // Gate each control by the SAME key RLS enforces on its write:
@@ -732,10 +748,16 @@ function ItemDetail({
       trackSerialNumbers: true,
     };
 
-    const baseSpecs = [
-      { name: 'Location', value: item.location || '-' },
-      { name: 'Serial Number', value: item.serialNumber || '-' },
-    ];
+    // Show '-' only for genuinely absent values — `|| '-'` swallowed 0
+    const displayValue = (v) => (v === undefined || v === null || v === '' ? '-' : v);
+
+    const baseSpecs = [{ name: 'Location', value: displayValue(item.location) }];
+
+    // Serial row only for categories that track serials (the setting was
+    // read here for years and never applied)
+    if (catSettings.trackSerialNumbers !== false) {
+      baseSpecs.push({ name: 'Serial Number', value: displayValue(item.serialNumber) });
+    }
 
     // Add quantity info if category tracks it
     if (catSettings.trackQuantity) {
@@ -748,7 +770,7 @@ function ItemDetail({
     // Add category-specific specs
     const specEntries = catSpecs.map((spec) => ({
       name: spec.name,
-      value: item.specs?.[spec.name] || '-',
+      value: displayValue(item.specs?.[spec.name]),
     }));
 
     return [...baseSpecs, ...specEntries];
@@ -979,7 +1001,6 @@ function ItemDetail({
               onAddNote={onAddNote}
               onReply={onReplyNote}
               onDelete={onDeleteNote}
-              user={user}
               panelColor={notesColor}
               readOnly={!canEditItems}
             />
@@ -1044,7 +1065,7 @@ function ItemDetail({
         );
 
       case 'requiredAccessories':
-        const accessoriesColor = SECTION_COLORS.addToKit;
+        const accessoriesColor = SECTION_COLORS.accessories;
         return (
           <CollapsibleSection
             key="requiredAccessories"
@@ -1095,7 +1116,7 @@ function ItemDetail({
         );
 
       case 'packages':
-        const packagesColor = SECTION_COLORS.addToKit;
+        const packagesColor = SECTION_COLORS.accessories;
         const packagesContainingItem = (packages || []).filter(
           (pkg) => pkg.items && pkg.items.includes(item.id),
         ).length;
@@ -1111,7 +1132,7 @@ function ItemDetail({
             onToggleCollapse={() => toggleCollapse('packages')}
             padding={false}
           >
-            <AddToKitSection
+            <PackagesSection
               item={item}
               packages={packages}
               onAddToPackage={canEditGear ? onAddToPackage : undefined}
@@ -1159,57 +1180,90 @@ function ItemDetail({
           </CollapsibleSection>
         );
 
-      case 'checkoutHistory':
-        if (!item.checkoutHistory || item.checkoutHistory.length === 0) return null;
+      case 'checkoutHistory': {
+        // Always render — this was the only section that vanished when empty,
+        // which made the Customize screen's visibility toggle look broken
         const checkoutColor = SECTION_COLORS.timeline;
+        const historyCount = (item.checkoutHistory || []).length;
         return (
           <CollapsibleSection
             key="checkoutHistory"
             title="Checkout History"
             icon={Clock}
-            badge={item.checkoutHistory.length}
+            badge={historyCount}
             badgeColor={checkoutColor}
             headerColor={checkoutColor}
             collapsed={isCollapsed('checkoutHistory')}
             onToggleCollapse={() => toggleCollapse('checkoutHistory')}
           >
-            <div style={{ maxHeight: 280, overflowY: 'auto' }}>
-              {[...item.checkoutHistory]
-                .reverse()
-                .slice(0, 8)
-                .map((entry, idx) => (
-                  <div key={entry.id || idx} style={getItemStyle(checkoutColor)}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: spacing[1],
-                      }}
-                    >
-                      <Badge
-                        text={entry.type === 'checkout' ? 'Out' : 'In'}
-                        color={entry.type === 'checkout' ? colors.checkedOut : colors.available}
-                        size="xs"
-                      />
-                      <span
-                        style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}
+            {historyCount === 0 ? (
+              <p
+                style={{
+                  color: colors.textMuted,
+                  textAlign: 'center',
+                  fontSize: typography.fontSize.sm,
+                  margin: 0,
+                  padding: spacing[4],
+                }}
+              >
+                No checkout history
+              </p>
+            ) : (
+              <div style={{ maxHeight: 280, overflowY: 'auto' }}>
+                {[...item.checkoutHistory]
+                  .reverse()
+                  .slice(0, 8)
+                  .map((entry, idx) => (
+                    <div key={entry.id || idx} style={getItemStyle(checkoutColor)}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: spacing[1],
+                        }}
                       >
-                        {formatDate(
-                          entry.type === 'checkout' ? entry.checkedOutDate : entry.returnDate,
-                        )}
-                      </span>
+                        <Badge
+                          text={entry.type === 'checkout' ? 'Out' : 'In'}
+                          color={entry.type === 'checkout' ? colors.checkedOut : colors.available}
+                          size="xs"
+                        />
+                        <span
+                          style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}
+                        >
+                          {formatDate(
+                            entry.type === 'checkout' ? entry.checkedOutDate : entry.returnDate,
+                          )}
+                        </span>
+                      </div>
+                      <div
+                        style={{ fontSize: typography.fontSize.base, color: colors.textPrimary }}
+                      >
+                        {entry.type === 'checkout'
+                          ? entry.borrowerName || 'Unknown'
+                          : `Returned by ${entry.returnedBy || 'Unknown'}`}
+                      </div>
                     </div>
-                    <div style={{ fontSize: typography.fontSize.base, color: colors.textPrimary }}>
-                      {entry.type === 'checkout'
-                        ? entry.borrowerName || 'Unknown'
-                        : `Returned by ${entry.returnedBy || 'Unknown'}`}
-                    </div>
-                  </div>
-                ))}
-            </div>
+                  ))}
+                {historyCount > 8 && (
+                  <p
+                    style={{
+                      color: colors.textMuted,
+                      textAlign: 'center',
+                      fontSize: typography.fontSize.xs,
+                      margin: 0,
+                      padding: spacing[2],
+                    }}
+                  >
+                    Showing the latest 8 of {historyCount} — the Item Timeline has the full
+                    history
+                  </p>
+                )}
+              </div>
+            )}
           </CollapsibleSection>
         );
+      }
 
       case 'value':
         const valueColor = SECTION_COLORS.depreciation;
@@ -1503,7 +1557,14 @@ function ItemDetail({
                 {item.dueBack && (
                   <>
                     <span style={{ color: colors.textMuted }}> • Due </span>
-                    <span style={{ color: colors.danger }}>{formatDate(item.dueBack)}</span>
+                    {/* Red only once it's actually late */}
+                    <span
+                      style={{
+                        color: isOverdue(item.dueBack) ? colors.danger : colors.textPrimary,
+                      }}
+                    >
+                      {formatDate(item.dueBack)}
+                    </span>
                   </>
                 )}
               </div>

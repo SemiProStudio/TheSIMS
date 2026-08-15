@@ -46,7 +46,8 @@ const props = {
   user: { id: 'u1', name: 'Tester' },
 };
 
-// Default section order (checkoutHistory self-hides while empty)
+// Default section order — all 12 sections render (Checkout History shows an
+// empty state rather than self-hiding since the polish batch)
 const DEFAULT_ORDER = [
   'Specifications',
   'Reservations',
@@ -57,6 +58,7 @@ const DEFAULT_ORDER = [
   'Packages',
   'Maintenance',
   'Item Timeline',
+  'Checkout History',
   'Value & Purchase',
   'Depreciation',
 ];
@@ -87,21 +89,9 @@ describe('ItemDetail section columns', () => {
     mediaState.matches = false;
     const { container } = render(<ItemDetail {...props} />);
 
-    // DOM order = left column (even indexes) then right column (odd indexes).
-    // The split runs over all 12 configured sections — the empty Checkout
-    // History (index 9) still occupies its odd slot but renders nothing.
-    expect(renderedTitles(container)).toEqual([
-      'Specifications',
-      'Notes',
-      'Required Accessories',
-      'Packages',
-      'Item Timeline',
-      'Value & Purchase',
-      'Reservations',
-      'Reminders',
-      'Kit Contents',
-      'Maintenance',
-      'Depreciation',
-    ]);
+    // DOM order = left column (even indexes) then right column (odd indexes)
+    const evens = DEFAULT_ORDER.filter((_, i) => i % 2 === 0);
+    const odds = DEFAULT_ORDER.filter((_, i) => i % 2 === 1);
+    expect(renderedTitles(container)).toEqual([...evens, ...odds]);
   });
 });

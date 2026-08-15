@@ -3,7 +3,7 @@
 // Allows users to set one-time or recurring reminders for items
 // ============================================================================
 
-import { memo, useState, useCallback, useId } from 'react';
+import { memo, useState, useCallback, useId, useMemo } from 'react';
 import { Bell, Plus, Trash2, Calendar, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, generateId, getTodayISO, isReminderDue } from '../utils';
@@ -148,7 +148,11 @@ const ReminderItem = memo(function ReminderItem({
               </span>
             )}
 
-            {reminder.recurrence !== 'none' && (
+            {/* Only for a KNOWN recurrence — undefined (legacy rows) passed
+                the old !== 'none' check and rendered a label-less orphan icon */}
+            {RECURRENCE_OPTIONS.some(
+              (o) => o.value === reminder.recurrence && o.value !== 'none',
+            ) && (
               <span
                 style={{
                   fontSize: typography.fontSize.xs,
@@ -363,23 +367,28 @@ function RemindersSection({
     [onAddReminder, onToggleAddForm],
   );
 
-  // Sort reminders: incomplete due first, then incomplete not due, then completed
-  const sortedReminders = [...reminders].sort((a, b) => {
-    // Completed items go to the bottom
-    if (a.completed && !b.completed) return 1;
-    if (!a.completed && b.completed) return -1;
+  // Sort reminders: incomplete due first, then incomplete not due, then
+  // completed. Memoized, and || 0 keeps the comparator stable for a
+  // reminder with no dueDate (NaN made the order undefined).
+  const sortedReminders = useMemo(() => {
+    const dueTime = (r) => new Date(r.dueDate).getTime() || 0;
+    return [...reminders].sort((a, b) => {
+      // Completed items go to the bottom
+      if (a.completed && !b.completed) return 1;
+      if (!a.completed && b.completed) return -1;
 
-    // For incomplete items, due first
-    if (!a.completed && !b.completed) {
-      const aDue = isReminderDue(a);
-      const bDue = isReminderDue(b);
-      if (aDue && !bDue) return -1;
-      if (!aDue && bDue) return 1;
-    }
+      // For incomplete items, due first
+      if (!a.completed && !b.completed) {
+        const aDue = isReminderDue(a);
+        const bDue = isReminderDue(b);
+        if (aDue && !bDue) return -1;
+        if (!aDue && bDue) return 1;
+      }
 
-    // Then by date
-    return new Date(a.dueDate) - new Date(b.dueDate);
-  });
+      // Then by date
+      return dueTime(a) - dueTime(b);
+    });
+  }, [reminders]);
 
   return (
     <>

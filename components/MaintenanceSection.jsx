@@ -130,7 +130,9 @@ const MaintenanceEntry = memo(function MaintenanceEntry({
               marginBottom: spacing[1],
             }}
           >
-            <Badge text={entry.type} color={statusColor} size="xs" />
+            {/* Type in a neutral tone — coloring it with the STATUS color made
+                type and status read as one merged badge */}
+            <Badge text={entry.type} color={colors.textSecondary} size="xs" />
             <Badge text={formatStatus(entry.status)} color={statusColor} size="xs" />
             {entry.warrantyWork && <Badge text="Warranty" color={colors.available} size="xs" />}
           </div>
@@ -312,7 +314,11 @@ function MaintenanceSection({
     (m) => m.status === MAINTENANCE_STATUS.SCHEDULED || m.status === MAINTENANCE_STATUS.IN_PROGRESS,
   ).length;
 
-  // Sort: pending first, then by date descending
+  // Sort: pending first, then by date descending. The || 0 keeps the
+  // comparator stable when a record has none of the three dates (NaN
+  // comparisons made the sort order undefined).
+  const recordTime = (m) =>
+    new Date(m.completedDate || m.scheduledDate || m.createdAt).getTime() || 0;
   const sortedHistory = [...maintenanceHistory].sort((a, b) => {
     // Pending items first
     const aIsPending =
@@ -323,12 +329,10 @@ function MaintenanceSection({
     if (!aIsPending && bIsPending) return 1;
 
     // Then by date
-    const aDate = a.completedDate || a.scheduledDate || a.createdAt;
-    const bDate = b.completedDate || b.scheduledDate || b.createdAt;
-    return new Date(bDate) - new Date(aDate);
+    return recordTime(b) - recordTime(a);
   });
 
-  const content = (
+  return (
     <>
       <div style={{ padding: spacing[4] }}>
         {/* Summary stats */}
@@ -428,8 +432,6 @@ function MaintenanceSection({
       </div>
     </>
   );
-
-  return content;
 }
 
 export default memo(MaintenanceSection);
