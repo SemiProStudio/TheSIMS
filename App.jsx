@@ -774,7 +774,14 @@ export default function App() {
     addChangeLog,
   });
 
-  const { addRequiredAccessories, removeRequiredAccessory, selectImage } = useKitHandlers({
+  const {
+    setKitStatus,
+    addKitItems,
+    removeKitItem,
+    addRequiredAccessories,
+    removeRequiredAccessory,
+    selectImage,
+  } = useKitHandlers({
     inventory,
     selectedItem,
     setSelectedItem,
@@ -904,27 +911,14 @@ export default function App() {
       }
 
       const escHtml = escapeHtml;
-      const columnLabels = {
-        id: 'ID',
-        name: 'Name',
-        brand: 'Brand',
-        category: 'Category',
-        status: 'Status',
-        condition: 'Condition',
-        location: 'Location',
-        purchaseDate: 'Purchase Date',
-        purchasePrice: 'Purchase Price',
-        value: 'Current Value',
-        serialNumber: 'Serial #',
-        quantity: 'Quantity',
-        reorderPoint: 'Reorder Point',
-        notes: 'Notes',
-      };
-      // Resolve a column value from an item
+      // Labels and getters come from the shared inventory column definition;
+      // notes is this exporter's own lazily-fetched extension
+      const { inventoryColumnById } = await import('./lib/inventoryCsv.js');
+      const columnLabel = (col) =>
+        col === 'notes' ? 'Notes' : inventoryColumnById[col]?.label || col;
       const getCellValue = (item, col) => {
-        if (col === 'value') return item.currentValue;
         if (col === 'notes') return (notesByItemId?.[item.id] || []).join('; ');
-        return item[col];
+        return inventoryColumnById[col] ? inventoryColumnById[col].value(item) : item[col];
       };
       const timestamp = getTodayISO();
 
@@ -932,7 +926,7 @@ export default function App() {
         // The one shared CSV writer — this used to hand-roll the same
         // sanitize/blob/anchor dance downloadCSV already does
         downloadCSV(
-          options.columns.map((col) => columnLabels[col] || col),
+          options.columns.map((col) => columnLabel(col)),
           items.map((i) => options.columns.map((col) => getCellValue(i, col))),
           `inventory-${timestamp}.csv`,
         );
@@ -966,7 +960,7 @@ export default function App() {
         const headerRow = options.columns
           .map(
             (col) =>
-              `<th style="padding:8px 12px;text-align:left;border-bottom:2px solid #333;font-size:12px;">${escHtml(columnLabels[col] || col)}</th>`,
+              `<th style="padding:8px 12px;text-align:left;border-bottom:2px solid #333;font-size:12px;">${escHtml(columnLabel(col))}</th>`,
           )
           .join('');
         const bodyRows = items
@@ -1075,6 +1069,9 @@ export default function App() {
       deleteReservation,
       saveReservation,
       reservePackage,
+      setKitStatus,
+      addKitItems,
+      removeKitItem,
       addRequiredAccessories,
       removeRequiredAccessory,
       selectImage,
@@ -1120,6 +1117,9 @@ export default function App() {
       deleteReservation,
       saveReservation,
       reservePackage,
+      setKitStatus,
+      addKitItems,
+      removeKitItem,
       addRequiredAccessories,
       removeRequiredAccessory,
       selectImage,

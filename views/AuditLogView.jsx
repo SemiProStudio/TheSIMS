@@ -11,6 +11,7 @@ import { formatDateTime } from '../utils';
 import { useData } from '../contexts/DataContext.js';
 import { Badge, Card, EmptyState, PageHeader, SearchInput } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
+import LoadErrorBanner from '../components/LoadErrorBanner.jsx';
 
 // Event type → color mapping for meaningful badge differentiation
 const EVENT_COLORS = {
@@ -75,7 +76,8 @@ const getEventTypes = (auditLog) => {
 const ITEMS_PER_PAGE = 50;
 
 export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {
-  const { ensureAuditLog } = useData();
+  const { ensureAuditLog, auditLogLoaded, lazyErrors } = useData();
+  const auditLogLoadFailed = Boolean(lazyErrors?.auditLog);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
@@ -168,7 +170,19 @@ export const AuditLogPanel = memo(function AuditLogPanel({ auditLog, onBack }) {
         </div>
       </Card>
 
-      {filteredLog.length === 0 ? (
+      {auditLogLoadFailed && auditLog.length === 0 ? (
+        <LoadErrorBanner
+          message="Couldn't load the audit log. Check your connection and try again."
+          onRetry={() => ensureAuditLog()}
+        />
+      ) : !auditLogLoaded && auditLog.length === 0 ? (
+        <Card
+          role="status"
+          style={{ textAlign: 'center', padding: spacing[8], color: colors.textMuted }}
+        >
+          Loading audit log...
+        </Card>
+      ) : filteredLog.length === 0 ? (
         <EmptyState
           icon={Clock}
           title={searchQuery || selectedType ? 'No Matching Events' : 'No Events Yet'}

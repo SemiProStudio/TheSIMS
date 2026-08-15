@@ -23,6 +23,7 @@ import { colors, spacing, borderRadius, typography, withOpacity } from '../theme
 import { formatMoney, downloadCSV, getStatusColor } from '../utils';
 import { STATUS_LABELS } from '../constants.js';
 import { Card, Button, PageHeader } from '../components/ui.jsx';
+import LoadErrorBanner from '../components/LoadErrorBanner.jsx';
 import { DonutChart, Sparkline } from '../components/charts.jsx';
 import {
   computeAlertData,
@@ -86,6 +87,7 @@ export const ReportsPanel = memo(function ReportsPanel({
     checkoutEvents,
     checkoutEventsLoaded,
     categorySettings,
+    lazyErrors,
   } = useData();
 
   // Lazy-load everything the cards visualize
@@ -94,6 +96,17 @@ export const ReportsPanel = memo(function ReportsPanel({
     ensureMaintenance();
     ensureCheckoutActivity();
   }, [ensureClients, ensureMaintenance, ensureCheckoutActivity]);
+
+  // Any failed lazy layer leaves the hub cards silently short of data — one
+  // combined banner retries whichever layers actually failed
+  const failedLayers = ['clients', 'maintenance', 'checkoutActivity'].filter(
+    (key) => lazyErrors?.[key],
+  );
+  const retryFailedLayers = () => {
+    if (lazyErrors?.clients) ensureClients();
+    if (lazyErrors?.maintenance) ensureMaintenance();
+    if (lazyErrors?.checkoutActivity) ensureCheckoutActivity();
+  };
 
   const inventoryStats = useMemo(() => computeInventoryStats(inventory), [inventory]);
   const alertData = useMemo(
@@ -166,6 +179,12 @@ export const ReportsPanel = memo(function ReportsPanel({
           </Button>
         }
       />
+      {failedLayers.length > 0 && (
+        <LoadErrorBanner
+          message="Some report data failed to load — the cards below may be incomplete."
+          onRetry={retryFailedLayers}
+        />
+      )}
       <div
         style={{
           display: 'grid',

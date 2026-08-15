@@ -709,8 +709,11 @@ CREATE POLICY "read_audit_log" ON audit_log FOR SELECT TO authenticated
 -- Uses has_permission() to enforce the same role-based permissions as the UI
 -- =============================================================================
 
--- Users can update their own profile, admins can update any user
-CREATE POLICY "update_users" ON users FOR UPDATE TO authenticated USING (id = (select auth.uid()) OR is_admin());
+-- Users can update their own profile, user admins can update any user.
+-- Role (role_id) changes are additionally guarded by guard_role_escalation
+-- below — RLS cannot restrict columns.
+CREATE POLICY "update_users" ON users FOR UPDATE TO authenticated
+  USING (id = (select auth.uid()) OR has_permission('admin_users', 'edit'));
 
 -- Inventory: requires gear_list edit permission
 CREATE POLICY "write_inventory" ON inventory FOR INSERT TO authenticated WITH CHECK (has_permission('gear_list', 'edit'));
@@ -826,23 +829,30 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Admin-only policies (per-action to avoid duplicate SELECT paths with read_* policies)
-CREATE POLICY "admin_insert_roles" ON roles FOR INSERT TO authenticated WITH CHECK (is_admin());
-CREATE POLICY "admin_update_roles" ON roles FOR UPDATE TO authenticated USING (is_admin());
-CREATE POLICY "admin_delete_roles" ON roles FOR DELETE TO authenticated USING (is_admin());
+-- Admin-surface policies (per-action to avoid duplicate SELECT paths with
+-- read_* policies). Keyed on has_permission('admin_*','edit') so custom roles
+-- granted an admin key can actually save — matching the client's gates.
+-- Reconciled 2026-08-14 (was the literal is_admin()).
+CREATE POLICY "admin_insert_roles" ON roles FOR INSERT TO authenticated WITH CHECK (has_permission('admin_roles', 'edit'));
+CREATE POLICY "admin_update_roles" ON roles FOR UPDATE TO authenticated USING (has_permission('admin_roles', 'edit'));
+CREATE POLICY "admin_delete_roles" ON roles FOR DELETE TO authenticated USING (has_permission('admin_roles', 'edit'));
+CREATE POLICY "admin_insert_categories" ON categories FOR INSERT TO authenticated WITH CHECK (has_permission('admin_categories', 'edit'));
+CREATE POLICY "admin_update_categories" ON categories FOR UPDATE TO authenticated USING (has_permission('admin_categories', 'edit'));
+CREATE POLICY "admin_delete_categories" ON categories FOR DELETE TO authenticated USING (has_permission('admin_categories', 'edit'));
+CREATE POLICY "admin_insert_specs" ON specs FOR INSERT TO authenticated WITH CHECK (has_permission('admin_specs', 'edit'));
+CREATE POLICY "admin_update_specs" ON specs FOR UPDATE TO authenticated USING (has_permission('admin_specs', 'edit'));
+CREATE POLICY "admin_delete_specs" ON specs FOR DELETE TO authenticated USING (has_permission('admin_specs', 'edit'));
+CREATE POLICY "admin_delete_locations" ON locations FOR DELETE TO authenticated USING (has_permission('admin_locations', 'edit'));
+
+-- Inventory DELETE deliberately stays is_admin(): the permission model has no
+-- "delete" level and item deletion is destructive; the client surfaces blocked
+-- deletes honestly (inventoryService.delete detects 0-row deletes).
 CREATE POLICY "admin_delete_inventory" ON inventory FOR DELETE TO authenticated USING (is_admin());
-CREATE POLICY "admin_insert_categories" ON categories FOR INSERT TO authenticated WITH CHECK (is_admin());
-CREATE POLICY "admin_update_categories" ON categories FOR UPDATE TO authenticated USING (is_admin());
-CREATE POLICY "admin_delete_categories" ON categories FOR DELETE TO authenticated USING (is_admin());
-CREATE POLICY "admin_insert_specs" ON specs FOR INSERT TO authenticated WITH CHECK (is_admin());
-CREATE POLICY "admin_update_specs" ON specs FOR UPDATE TO authenticated USING (is_admin());
-CREATE POLICY "admin_delete_specs" ON specs FOR DELETE TO authenticated USING (is_admin());
-CREATE POLICY "admin_delete_locations" ON locations FOR DELETE TO authenticated USING (is_admin());
 
 -- Admin user management
-CREATE POLICY "admin_insert_users" ON users FOR INSERT TO authenticated WITH CHECK (is_admin());
+CREATE POLICY "admin_insert_users" ON users FOR INSERT TO authenticated WITH CHECK (has_permission('admin_users', 'edit'));
 -- admin_update_users merged into update_users policy above
-CREATE POLICY "admin_delete_users" ON users FOR DELETE TO authenticated USING (is_admin());
+CREATE POLICY "admin_delete_users" ON users FOR DELETE TO authenticated USING (has_permission('admin_users', 'edit'));
 
 -- Notification preferences: users manage their own
 CREATE POLICY "Users can view own notification preferences" ON notification_preferences
@@ -914,6 +924,32 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+-- Guard role changes on users: RLS cannot restrict columns, so update_users'
+-- self arm would otherwise let any user set role_id = 'role_admin' on their
+-- own row from the browser console. (Originally added in the 2026-08-10
+-- security-hardening migration; keyed to has_permission 2026-08-14.)
+CREATE OR REPLACE FUNCTION prevent_role_escalation()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.role_id IS DISTINCT FROM OLD.role_id THEN
+    -- auth.uid() IS NULL means a trusted server-side context (service role /
+    -- SQL editor), which bypasses RLS anyway. For authenticated users, only
+    -- user administrators may change role assignments — including their own.
+    IF (SELECT auth.uid()) IS NOT NULL AND NOT has_permission('admin_users', 'edit') THEN
+      RAISE EXCEPTION 'Only user administrators can change user roles'
+        USING ERRCODE = '42501';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS guard_role_escalation ON users;
+CREATE TRIGGER guard_role_escalation
+  BEFORE UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION prevent_role_escalation();
 
 -- Function to update location path when parent changes
 CREATE OR REPLACE FUNCTION update_location_path()

@@ -40,6 +40,7 @@ import {
   PageHeader,
 } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
+import LoadErrorBanner from '../components/LoadErrorBanner.jsx';
 import { useData } from '../contexts/DataContext.js';
 import { useToast } from '../contexts/ToastContext.js';
 import { usePermissions } from '../contexts/PermissionsContext.js';
@@ -73,6 +74,7 @@ function PackListsView({
   // Lazy data starts as [] — without this flag the view can't tell "still
   // fetching" from "user has no pack lists" and shows a misleading empty state
   const packListsLoaded = dataContext?.packListsLoaded !== false;
+  const packListsLoadFailed = Boolean(ctxData?.lazyErrors?.packLists);
 
   // Lazy-load pack lists on mount
   useEffect(() => {
@@ -1642,7 +1644,12 @@ function PackListsView({
 
       <div style={{ borderBottom: `1px solid ${colors.border}`, marginBottom: spacing[4] }} />
 
-      {!packListsLoaded && packLists.length === 0 ? (
+      {packListsLoadFailed && packLists.length === 0 ? (
+        <LoadErrorBanner
+          message="Couldn't load pack lists. Check your connection and try again."
+          onRetry={() => ensurePackLists?.()}
+        />
+      ) : !packListsLoaded && packLists.length === 0 ? (
         <div
           role="status"
           style={{ textAlign: 'center', padding: spacing[8], color: colors.textMuted }}

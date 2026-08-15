@@ -26,12 +26,10 @@ import {
   isLowStock,
   matchesStatusSelection,
   filterByCategory,
-  filterByStatus,
   addReplyToNote,
   markNoteDeleted,
   findNoteById,
   flattenLocations,
-  getNextDueDate,
   isReminderDue,
   calculateDepreciation,
   DEPRECIATION_METHODS,
@@ -558,36 +556,6 @@ describe('filterByCategory', () => {
   });
 });
 
-describe('filterByStatus', () => {
-  const items = [
-    { id: '1', status: 'available' },
-    { id: '2', status: 'checked-out', dueBack: '2020-01-01' }, // overdue
-    { id: '3', status: 'reserved' },
-    { id: '4', status: 'checked-out', dueBack: '2099-12-31' }, // not overdue
-  ];
-
-  it('should filter by single status', () => {
-    const result = filterByStatus(items, 'available');
-    expect(result).toHaveLength(1);
-  });
-
-  it('should filter by multiple statuses', () => {
-    const result = filterByStatus(items, ['available', 'reserved']);
-    expect(result).toHaveLength(2);
-  });
-
-  it('should return all items for "all"', () => {
-    const result = filterByStatus(items, 'all');
-    expect(result).toHaveLength(4);
-  });
-
-  it('should handle special "overdue" status', () => {
-    const result = filterByStatus(items, ['overdue']);
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe('2');
-  });
-});
-
 // =============================================================================
 // Note Utility Tests
 // =============================================================================
@@ -716,52 +684,6 @@ describe('flattenLocations', () => {
   it('should handle empty array', () => {
     const result = flattenLocations([]);
     expect(result).toHaveLength(0);
-  });
-});
-
-// =============================================================================
-// Reminder Utility Tests
-// =============================================================================
-
-describe('getNextDueDate', () => {
-  it('should add 7 days for weekly recurrence', () => {
-    const result = getNextDueDate('2025-01-01', 'weekly');
-    expect(result).toBe('2025-01-08');
-  });
-
-  it('should add 14 days for biweekly recurrence', () => {
-    const result = getNextDueDate('2025-01-01', 'biweekly');
-    expect(result).toBe('2025-01-15');
-  });
-
-  it('should add 1 month for monthly recurrence', () => {
-    const result = getNextDueDate('2025-01-15', 'monthly');
-    expect(result).toBe('2025-02-15');
-  });
-
-  it('should add 3 months for quarterly recurrence', () => {
-    const result = getNextDueDate('2025-01-15', 'quarterly');
-    expect(result).toBe('2025-04-15');
-  });
-
-  it('should add 6 months for biannual recurrence', () => {
-    const result = getNextDueDate('2025-01-15', 'biannual');
-    expect(result).toBe('2025-07-15');
-  });
-
-  it('should add 1 year for yearly recurrence', () => {
-    const result = getNextDueDate('2025-01-15', 'yearly');
-    expect(result).toBe('2026-01-15');
-  });
-
-  it('should return null for no recurrence', () => {
-    const result = getNextDueDate('2025-01-01', 'none');
-    expect(result).toBeNull();
-  });
-
-  it('should return null for invalid recurrence', () => {
-    const result = getNextDueDate('2025-01-01', 'invalid');
-    expect(result).toBeNull();
   });
 });
 

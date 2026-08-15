@@ -13,6 +13,7 @@ import { colors, spacing, typography } from '../theme.js';
 import { formatDate, formatMoney, downloadCSV, getMaintenanceStatusColor } from '../utils';
 import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
 import { ReportBranding } from '../components/ReportBranding.jsx';
+import LoadErrorBanner from '../components/LoadErrorBanner.jsx';
 import { ColumnChart, HBarChart } from '../components/charts.jsx';
 import {
   collectMaintenanceRecords,
@@ -30,7 +31,8 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
   onViewItem,
   onBack,
 }) {
-  const { ensureMaintenance, maintenanceLoaded } = useData();
+  const { ensureMaintenance, maintenanceLoaded, lazyErrors } = useData();
+  const maintenanceLoadFailed = Boolean(lazyErrors?.maintenance);
 
   useEffect(() => {
     ensureMaintenance();
@@ -93,18 +95,25 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
 
       <ReportBranding profile={currentUser?.profile} />
 
-      {!maintenanceLoaded && (
-        <div
-          style={{
-            padding: spacing[3],
-            marginBottom: spacing[4],
-            fontSize: typography.fontSize.sm,
-            color: colors.textMuted,
-          }}
-          role="status"
-        >
-          Loading full maintenance history…
-        </div>
+      {maintenanceLoadFailed ? (
+        <LoadErrorBanner
+          message="Couldn't load the full maintenance history — this report only covers pending records."
+          onRetry={() => ensureMaintenance()}
+        />
+      ) : (
+        !maintenanceLoaded && (
+          <div
+            style={{
+              padding: spacing[3],
+              marginBottom: spacing[4],
+              fontSize: typography.fontSize.sm,
+              color: colors.textMuted,
+            }}
+            role="status"
+          >
+            Loading full maintenance history…
+          </div>
+        )
       )}
 
       {/* Summary Stats */}

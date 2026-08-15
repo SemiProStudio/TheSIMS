@@ -73,6 +73,10 @@ export function DataProvider({ children }) {
   const [maintenanceLoaded, setMaintenanceLoaded] = useState(false);
   const [checkoutEvents, setCheckoutEvents] = useState([]);
   const [checkoutEventsLoaded, setCheckoutEventsLoaded] = useState(false);
+  // Per-layer lazy-load failure flags, keyed by lazyLoad()'s key. A failed
+  // layer stays unloaded (so ensure* retries), but without this signal the
+  // consuming views rendered a permanent spinner or a silently-empty list.
+  const [lazyErrors, setLazyErrors] = useState({});
 
   // Ref mirrors of the two report latches: loadData (a []-dep callback) must
   // know whether the lazy layers were hydrated so a mid-session refresh can
@@ -278,6 +282,10 @@ export function DataProvider({ children }) {
     const inflight = lazyLoadsRef.current[key];
     if (inflight) return inflight;
 
+    // Clear the failure flag as the attempt STARTS so a retry drops the
+    // error banner back to the normal loading state while it runs
+    setLazyErrors((prev) => (prev[key] ? { ...prev, [key]: false } : prev));
+
     const promise = (async () => {
       try {
         const data = await fetcher();
@@ -285,6 +293,7 @@ export function DataProvider({ children }) {
         setLoaded(true);
         log(`[DataContext] Lazy-loaded ${key}:`, data?.length || 0);
       } catch (err) {
+        setLazyErrors((prev) => ({ ...prev, [key]: true }));
         logError(`[DataContext] Failed to lazy-load ${key} (will retry on next access):`, err);
       } finally {
         lazyLoadsRef.current[key] = null;
@@ -1479,7 +1488,6 @@ export function DataProvider({ children }) {
       error,
       dataLoaded,
       tier2Loaded,
-      lastLoadedAt,
 
       // Data
       inventory,
@@ -1499,10 +1507,10 @@ export function DataProvider({ children }) {
       maintenanceLoaded,
       checkoutEvents,
       checkoutEventsLoaded,
+      lazyErrors,
 
       // Refresh functions
       refreshData: loadData,
-      refreshStaleData,
 
       // Lazy-load functions — call these before accessing the data
       ensureClients,
@@ -1603,7 +1611,6 @@ export function DataProvider({ children }) {
       error,
       dataLoaded,
       tier2Loaded,
-      lastLoadedAt,
       inventory,
       packages,
       packLists,
@@ -1621,8 +1628,8 @@ export function DataProvider({ children }) {
       maintenanceLoaded,
       checkoutEvents,
       checkoutEventsLoaded,
+      lazyErrors,
       loadData,
-      refreshStaleData,
       ensureClients,
       getClientById,
       ensureAuditLog,

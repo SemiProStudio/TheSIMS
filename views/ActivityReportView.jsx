@@ -13,6 +13,7 @@ import { colors, spacing, borderRadius, typography, withOpacity } from '../theme
 import { formatDate, downloadCSV, getTodayISO } from '../utils';
 import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
 import { ReportBranding } from '../components/ReportBranding.jsx';
+import LoadErrorBanner from '../components/LoadErrorBanner.jsx';
 import { TrendChart, ColumnChart, HBarChart } from '../components/charts.jsx';
 import {
   computeActivityStats,
@@ -34,7 +35,8 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
   onViewItem,
   onBack,
 }) {
-  const { ensureCheckoutActivity, checkoutEvents, checkoutEventsLoaded } = useData();
+  const { ensureCheckoutActivity, checkoutEvents, checkoutEventsLoaded, lazyErrors } = useData();
+  const checkoutActivityLoadFailed = Boolean(lazyErrors?.checkoutActivity);
   const [rangeDays, setRangeDays] = useState(90);
 
   useEffect(() => {
@@ -134,6 +136,13 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
       />
 
       <ReportBranding profile={currentUser?.profile} />
+
+      {checkoutActivityLoadFailed && (
+        <LoadErrorBanner
+          message="Couldn't load checkout activity — the charts below are missing history."
+          onRetry={() => ensureCheckoutActivity()}
+        />
+      )}
 
       {/* Summary Stats */}
       <div

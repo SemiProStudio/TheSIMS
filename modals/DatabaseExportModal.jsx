@@ -22,26 +22,15 @@ import {
   assembleBackup,
 } from '../lib/backupExport.js';
 import { error as logError } from '../lib/logger.js';
+import { INVENTORY_COLUMNS } from '../lib/inventoryCsv.js';
 
 const ALL_TABLES = BACKUP_SECTIONS.flatMap((s) => s.tables);
 
-// Inventory-only CSV flavor: raw rows → the camelCase headers the CSV
-// importer recognizes, so this export round-trips back in.
-const INVENTORY_CSV_COLUMNS = [
-  ['id', (r) => r.id],
-  ['name', (r) => r.name],
-  ['brand', (r) => r.brand],
-  ['category', (r) => r.category_name],
-  ['status', (r) => r.status],
-  ['condition', (r) => r.condition],
-  ['location', (r) => r.location_display],
-  ['purchaseDate', (r) => r.purchase_date],
-  ['purchasePrice', (r) => r.purchase_price],
-  ['currentValue', (r) => r.current_value],
-  ['serialNumber', (r) => r.serial_number],
-  ['quantity', (r) => r.quantity],
-  ['reorderPoint', (r) => r.reorder_point],
-];
+// Inventory-only CSV flavor: raw DB rows → the camelCase id headers the CSV
+// importer recognizes, so this export round-trips back in. Columns come from
+// the shared inventory definition (lib/inventoryCsv.js); this exporter uses
+// ids as headers and the dbValue getters (it fetches raw snake_case rows).
+const INVENTORY_CSV_COLUMNS = INVENTORY_COLUMNS.map((c) => [c.id, c.dbValue]);
 
 export const DatabaseExportModal = memo(function DatabaseExportModal({ onClose }) {
   const [exportFormat, setExportFormat] = useState('json');
