@@ -171,10 +171,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     deleteReminder,
     openEditReservation,
     deleteReservation,
-    setItemAsKit,
-    addItemsToKit,
-    removeItemFromKit,
-    clearKitItems,
     addRequiredAccessories,
     removeRequiredAccessory,
     addItemToPackage,
@@ -305,7 +301,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onCheckout={openCheckoutModal}
           onCheckin={openCheckinModal}
           onEdit={openEditItem}
-          onDelete={deleteItem}
           onShowQR={() => openModal(MODALS.QR_CODE)}
           onAddReservation={() => {
             resetReservationForm();
@@ -338,11 +333,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             patchInventoryItem(selectedItem.id, { currentValue: newValue });
             setSelectedItem((prev) => ({ ...prev, currentValue: newValue }));
           }}
-          onSetAsKit={setItemAsKit}
-          onAddToKit={addItemsToKit}
           onAddToPackage={addItemToPackage}
-          onRemoveFromKit={removeItemFromKit}
-          onClearKit={clearKitItems}
           onAddAccessory={addRequiredAccessories}
           onRemoveAccessory={removeRequiredAccessory}
           onViewItem={navigateToItem}
@@ -508,13 +499,15 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         </Suspense>
       )}
 
-      <PermissionGate permission="admin_users">
-        {currentView === VIEWS.ADMIN && (
-          <Suspense fallback={<ViewLoading message="Loading Admin Panel..." />}>
-            <AdminPanel setCurrentView={setCurrentView} />
-          </Suspense>
-        )}
-      </PermissionGate>
+      {/* The hub opens for ANY admin permission (same rule as the view guard
+          and the sidebar — it used to demand admin_users specifically, which
+          left e.g. a categories-only role a blank page and no path to its own
+          editor). AdminPanel filters its cards per permission. */}
+      {currentView === VIEWS.ADMIN && canAccessView(VIEWS.ADMIN, { canView, canEdit }) && (
+        <Suspense fallback={<ViewLoading message="Loading Admin Panel..." />}>
+          <AdminPanel setCurrentView={setCurrentView} />
+        </Suspense>
+      )}
 
       <PermissionGate permission="gear_list" requireEdit>
         {currentView === VIEWS.ADD_ITEM && (
@@ -535,7 +528,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         )}
       </PermissionGate>
 
-      <PermissionGate permission="admin_specs">
+      <PermissionGate permission="admin_specs" requireEdit>
         {currentView === VIEWS.EDIT_SPECS && (
           <Suspense fallback={<ViewLoading message="Loading Specs Editor..." />}>
             <SpecsPage
@@ -598,7 +591,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         )}
       </PermissionGate>
 
-      <PermissionGate permission="admin_categories">
+      <PermissionGate permission="admin_categories" requireEdit>
         {currentView === VIEWS.EDIT_CATEGORIES && (
           <Suspense fallback={<ViewLoading message="Loading Categories..." />}>
             <CategoriesPage
@@ -693,6 +686,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               users={users}
               roles={roles}
               currentUserId={currentUser?.id}
+              readOnly={!canEdit('admin_users')}
               onAddUser={() => openModal(MODALS.ADD_USER)}
               onChangeRole={changeUserRole}
               onDeleteUser={(userId) => {
@@ -822,7 +816,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         )}
       </PermissionGate>
 
-      <PermissionGate permission="admin_locations">
+      <PermissionGate permission="admin_locations" requireEdit>
         {currentView === VIEWS.LOCATIONS_MANAGE && (
           <Suspense fallback={<ViewLoading message="Loading Locations..." />}>
             <LocationsManager
@@ -830,6 +824,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               inventory={inventory}
               showConfirm={showConfirm}
               onSave={async (newLocations, pathRenames = []) => {
+                // Snapshot for rollback — the optimistic replace used to
+                // stay in state after a failed sync, diverging from the DB
+                // until reload (categories/specs already roll back)
+                const previousLocations = locations;
                 replaceLocations(newLocations);
                 try {
                   await locationsService.syncAll(newLocations);
@@ -840,7 +838,8 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                   });
                 } catch (err) {
                   logError('Failed to save locations:', err);
-                  addToast('Failed to save locations', 'error');
+                  replaceLocations(previousLocations);
+                  addToast('Failed to save locations — changes reverted', 'error');
                   return;
                 }
                 // Items store locations as plain strings — renames (of a
@@ -889,7 +888,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         )}
       </PermissionGate>
 
-      <PermissionGate permission="admin_roles">
+      <PermissionGate permission="admin_roles" requireEdit>
         {currentView === VIEWS.ROLES_MANAGE && (
           <Suspense fallback={<ViewLoading message="Loading Roles..." />}>
             <RolesManager

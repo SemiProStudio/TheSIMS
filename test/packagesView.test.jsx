@@ -24,6 +24,14 @@ vi.mock('../contexts/DataContext.js', () => ({
 vi.mock('../contexts/ToastContext.js', () => ({
   useToast: () => ({ addToast: mockAddToast }),
 }));
+// The view gates mutations on gear_list edit and reserving on schedule edit;
+// these tests exercise the full-permission surface
+vi.mock('../contexts/PermissionsContext.js', () => ({
+  usePermissions: () => ({ canView: () => true, canEdit: () => true }),
+}));
+vi.mock('../contexts/PermissionsContext.jsx', () => ({
+  ViewOnlyBanner: () => null,
+}));
 
 const { default: PackagesView } = await import('../views/PackagesView.jsx');
 

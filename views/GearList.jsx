@@ -32,15 +32,13 @@ import {
   withOpacity,
   zIndex,
 } from '../theme.js';
-import {
-  getStatusColor,
+import { getStatusColor,
   filterBySearch,
   filterByCategory,
   matchesStatusSelection,
   formatDate,
   getTodayISO,
-  generateId,
-} from '../utils';
+  generateId, getStatusLabel } from '../utils';
 import {
   Badge,
   Card,
@@ -474,7 +472,7 @@ const GridItem = memo(function GridItem({
             }}
           >
             <Badge text={item.id} color={colors.primary} size="xs" />
-            <Badge text={item.status} color={getStatusColor(item.status)} size="xs" />
+            <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} size="xs" />
             {item.isKit && <Badge text="Kit" color={colors.accent1} size="xs" />}
           </div>
           <h4
@@ -576,7 +574,7 @@ const ListItem = memo(function ListItem({
           }}
         >
           <Badge text={item.id} color={colors.primary} />
-          <Badge text={item.status} color={getStatusColor(item.status)} />
+          <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
           <Badge text={item.category} color={colors.accent2} />
           {item.isKit && <Badge text="Kit" color={colors.accent1} />}
           {isOverdue && <Badge text="Overdue" color={colors.danger} />}

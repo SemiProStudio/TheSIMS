@@ -416,6 +416,37 @@ describe('validateItem (extended)', () => {
     expect(result.errors.category).toBeTruthy();
   });
 
+  it('skipCategoryCheck trusts the caller for admin-added categories', () => {
+    // The service layer only knows the hardcoded defaults; entry points
+    // validate against the live DB list and pass skipCategoryCheck
+    const result = validateItem(
+      { name: 'Drone X', category: 'Drones' },
+      { skipCategoryCheck: true },
+    );
+    expect(result.isValid).toBe(true);
+
+    // A missing category is still an error even when the check is skipped
+    const missing = validateItem({ name: 'Drone X' }, { skipCategoryCheck: true });
+    expect(missing.isValid).toBe(false);
+    expect(missing.errors.category).toBeTruthy();
+  });
+
+  it('validates currentValue — the field real items actually carry', () => {
+    const negative = validateItem({ ...validItem, currentValue: -50 });
+    expect(negative.isValid).toBe(false);
+    expect(negative.errors.currentValue).toBeTruthy();
+
+    const tooBig = validateItem({ ...validItem, currentValue: 99999999 });
+    expect(tooBig.isValid).toBe(false);
+    expect(tooBig.errors.currentValue).toBeTruthy();
+
+    const fine = validateItem({ ...validItem, currentValue: 1200 });
+    expect(fine.isValid).toBe(true);
+
+    const empty = validateItem({ ...validItem, currentValue: '' });
+    expect(empty.isValid).toBe(true);
+  });
+
   it('should skip undefined/null/empty value fields', () => {
     const result = validateItem({ ...validItem, value: undefined });
     expect(result.isValid).toBe(true);

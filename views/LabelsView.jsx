@@ -9,6 +9,7 @@
 import { memo, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Printer, Download, Check } from 'lucide-react';
 import { LABEL_FORMATS } from '../constants.js';
+import { getTodayISO } from '../utils';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Card, CardHeader, Button, SearchInput, Badge, PageHeader } from '../components/ui.jsx';
 import { ItemLabel } from '../components/ItemLabel.jsx';
@@ -215,12 +216,21 @@ function LabelsView({ inventory, packages = [], user, uiPrefs, onSaveUiPrefs }) 
     const items = getSelectedEntries();
     if (items.length === 0) return;
 
-    const labelsHTML = await buildLabelsHTML(
-      items,
-      selectedFormat,
-      selectionTab === 'kits',
-      selectionTab === 'packages',
-    );
+    // The PNG path guards its QR generation; this one silently died on
+    // failure, leaving a dead Print button
+    let labelsHTML;
+    try {
+      labelsHTML = await buildLabelsHTML(
+        items,
+        selectedFormat,
+        selectionTab === 'kits',
+        selectionTab === 'packages',
+      );
+    } catch (err) {
+      logError('Failed to build labels for print:', err);
+      addToast('Could not generate labels. Please try again.', 'error');
+      return;
+    }
 
     openPrintWindow({
       title: 'Labels',
@@ -251,7 +261,7 @@ function LabelsView({ inventory, packages = [], user, uiPrefs, onSaveUiPrefs }) 
         qrDataURLs,
       });
 
-      const date = new Date().toISOString().split('T')[0];
+      const date = getTodayISO();
       for (let i = 0; i < svgs.length; i++) {
         const blob = await rasterizeSheetToPNG(svgs[i], width, height, qrDraws[i]);
         const url = URL.createObjectURL(blob);

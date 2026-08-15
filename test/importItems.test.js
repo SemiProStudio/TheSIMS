@@ -62,8 +62,8 @@ describe('buildImportItems', () => {
     const { items, errors } = build(
       ['name', 'category'],
       [
-        ['A', 'cameras'],
-        ['B', 'Snacks'],
+        ['Item A', 'cameras'],
+        ['Item B', 'Snacks'],
       ],
     );
     expect(items).toHaveLength(1);
@@ -75,10 +75,10 @@ describe('buildImportItems', () => {
     const { items, errors } = build(
       ['name', 'category', 'status', 'condition'],
       [
-        ['A', 'Cameras', 'Available', 'Good'],
-        ['B', 'Cameras', 'Checked Out', 'EXCELLENT'],
-        ['C', 'Cameras', 'broken', ''],
-        ['D', 'Cameras', '', 'mint'],
+        ['Item A', 'Cameras', 'Available', 'Good'],
+        ['Item B', 'Cameras', 'Checked Out', 'EXCELLENT'],
+        ['Item C', 'Cameras', 'broken', ''],
+        ['Item D', 'Cameras', '', 'mint'],
       ],
     );
     expect(items.map((i) => i.status)).toEqual(['available', 'checked-out']);
@@ -90,7 +90,7 @@ describe('buildImportItems', () => {
   });
 
   it('never stores derived statuses', () => {
-    const { errors } = build(['name', 'category', 'status'], [['A', 'Cameras', 'overdue']]);
+    const { errors } = build(['name', 'category', 'status'], [['Item A', 'Cameras', 'overdue']]);
     expect(errors).toEqual(['Row 2: Invalid status "overdue"']);
   });
 
@@ -98,9 +98,9 @@ describe('buildImportItems', () => {
     const { items, warnings } = build(
       ['name', 'category', 'purchaseDate'],
       [
-        ['A', 'Cameras', '2023-06-15'],
-        ['B', 'Cameras', 'June 15, 2023'],
-        ['C', 'Cameras', 'not a date'],
+        ['Item A', 'Cameras', '2023-06-15'],
+        ['Item B', 'Cameras', 'June 15, 2023'],
+        ['Item C', 'Cameras', 'not a date'],
       ],
     );
     expect(items[0].purchaseDate).toBe('2023-06-15');
@@ -113,11 +113,72 @@ describe('buildImportItems', () => {
   it('parses currency-formatted prices and warns on garbage', () => {
     const { items, warnings } = build(
       ['name', 'category', 'Purchase Price', 'Current Value'],
-      [['A', 'Cameras', '$3,498', 'lots']],
+      [['Item A', 'Cameras', '$3,498', 'lots']],
     );
     expect(items[0].purchasePrice).toBe(3498);
     expect(items[0].currentValue).toBe(0);
     expect(warnings.some((w) => w.includes('Unreadable current value'))).toBe(true);
+  });
+
+  // Preflight must mirror validateItem's blocking rules — a row that passes
+  // preflight but throws at persist time strands a partial batch behind it
+  it('blocks names outside the 2-100 character persist rule', () => {
+    const { items, errors } = build(
+      ['name', 'category'],
+      [
+        ['X', 'Cameras'],
+        ['A'.repeat(101), 'Cameras'],
+        ['OK Camera', 'Cameras'],
+      ],
+    );
+    expect(errors).toEqual([
+      'Row 2: Name must be between 2 and 100 characters',
+      'Row 3: Name must be between 2 and 100 characters',
+    ]);
+    expect(items).toHaveLength(1);
+  });
+
+  it('blocks negative prices and out-of-range current values', () => {
+    const { items, errors } = build(
+      ['name', 'category', 'purchasePrice', 'currentValue'],
+      [
+        ['Cam A', 'Cameras', '-500', '100'],
+        ['Cam B', 'Cameras', '500', '-100'],
+        ['Cam C', 'Cameras', '500', '99999999'],
+        ['Cam D', 'Cameras', '500', '400'],
+      ],
+    );
+    expect(errors).toEqual([
+      'Row 2: Purchase price cannot be negative',
+      'Row 3: Current value cannot be negative',
+      'Row 4: Current value exceeds maximum allowed',
+    ]);
+    expect(items).toHaveLength(1);
+    expect(items[0].name).toBe('Cam D');
+  });
+
+  it('normalizes non-ISO dates from LOCAL components — no UTC day shift', () => {
+    const prevTZ = process.env.TZ;
+    // UTC+14: local midnight is the previous day in UTC, the worst case for
+    // the old toISOString() normalization
+    process.env.TZ = 'Pacific/Kiritimati';
+    try {
+      const probe = new Date('6/15/2023');
+      if (probe.getTimezoneOffset() !== -840) {
+        // Runtime ignored the mid-process TZ change — the shift can't be
+        // exercised here; the darwin/linux runners we use do honor it.
+        return;
+      }
+      const { items, warnings } = build(
+        ['name', 'category', 'purchaseDate'],
+        [['Cam', 'Cameras', '6/15/2023']],
+      );
+      expect(items[0].purchaseDate).toBe('2023-06-15');
+      expect(warnings).toContain('Row 2: Purchase date "6/15/2023" read as 2023-06-15');
+    } finally {
+      if (prevTZ === undefined) delete process.env.TZ;
+      else process.env.TZ = prevTZ;
+    }
   });
 
   it('strips the export formula guard from values', () => {
@@ -130,9 +191,9 @@ describe('buildImportItems', () => {
     const { warnings } = build(
       ['name', 'category', 'serialNumber'],
       [
-        ['A', 'Cameras', 'SN-1'],
-        ['B', 'Cameras', 'sn-1'],
-        ['C', 'Cameras', 'SN-EXISTING'],
+        ['Item A', 'Cameras', 'SN-1'],
+        ['Item B', 'Cameras', 'sn-1'],
+        ['Item C', 'Cameras', 'SN-EXISTING'],
       ],
       { existingSerials: ['SN-existing'] },
     );
@@ -142,7 +203,7 @@ describe('buildImportItems', () => {
   it('collects specs columns and the note text', () => {
     const { items } = build(
       ['name', 'category', 'spec:Mount', 'notes'],
-      [['A', 'Lenses', 'RF', 'imported note']],
+      [['Item A', 'Lenses', 'RF', 'imported note']],
     );
     expect(items[0].specs).toEqual({ Mount: 'RF' });
     expect(items[0].importNote).toBe('imported note');

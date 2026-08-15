@@ -10,7 +10,7 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Download, BarChart3, TrendingUp, LogOut, Package, CalendarDays } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, downloadCSV } from '../utils';
+import { formatDate, downloadCSV, getTodayISO } from '../utils';
 import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
 import { ReportBranding } from '../components/ReportBranding.jsx';
 import { TrendChart, ColumnChart, HBarChart } from '../components/charts.jsx';
@@ -41,6 +41,19 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
     ensureCheckoutActivity();
   }, [ensureCheckoutActivity]);
 
+  // "Today" ticks hourly and on tab re-focus (Dashboard's pattern) — a tab
+  // left open past midnight kept yesterday's chart windows
+  const [todayTick, setTodayTick] = useState(() => getTodayISO());
+  useEffect(() => {
+    const update = () => setTodayTick(getTodayISO());
+    const id = setInterval(update, 60 * 60 * 1000);
+    document.addEventListener('visibilitychange', update);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', update);
+    };
+  }, []);
+
   const activityData = useMemo(() => computeActivityStats(inventory), [inventory]);
 
   // Checkout events only — checkins would double-count every cycle
@@ -50,7 +63,8 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
   );
   const trendSeries = useMemo(
     () => bucketEvents(checkoutsInWindow, { days: rangeDays }),
-    [checkoutsInWindow, rangeDays],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- todayTick re-anchors the "today"-based window after midnight
+    [checkoutsInWindow, rangeDays, todayTick],
   );
   const trendTotal = useMemo(
     () => trendSeries.reduce((sum, b) => sum + b.value, 0),
@@ -60,13 +74,18 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     start.setDate(start.getDate() - (rangeDays - 1));
+    // Same closure as bucketEvents: END of the current day — closing at the
+    // current instant made this chart and the trend beside it disagree on
+    // events stamped minutes ahead by a colleague's clock
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     return dayOfWeekCounts(
       checkoutsInWindow.filter((e) => {
         const d = new Date(e.timestamp);
-        return d >= start && d <= now;
+        return d >= start && d <= end;
       }),
     );
-  }, [checkoutsInWindow, rangeDays]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- todayTick re-anchors the "today"-based window after midnight
+  }, [checkoutsInWindow, rangeDays, todayTick]);
 
   const frequencyBars = useMemo(() => {
     return Object.entries(activityData.frequencyBuckets).map(([range, count]) => ({

@@ -17,7 +17,7 @@ import {
   Package,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, getStatusColor, getTodayISO } from '../utils';
+import { formatDate, getStatusColor, getTodayISO, getStatusLabel } from '../utils';
 import { Badge, Card, CardHeader, Button } from '../components/ui.jsx';
 import NotesSection from '../components/NotesSection.jsx';
 import { usePermissions } from '../contexts/PermissionsContext.js';
@@ -457,7 +457,7 @@ function ReservationDetail({
                     </div>
                     <div style={{ display: 'flex', gap: spacing[1] }}>
                       <Badge text={itm.id} color={colors.primary} size="sm" />
-                      <Badge text={itm.status} color={getStatusColor(itm.status)} size="sm" />
+                      <Badge text={getStatusLabel(itm.status)} color={getStatusColor(itm.status)} size="sm" />
                     </div>
                   </div>
                 </div>

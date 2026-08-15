@@ -5,6 +5,7 @@
 
 import { memo, useState } from 'react';
 import PropTypes from 'prop-types';
+import { getTodayISO } from '../utils';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Badge, Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
@@ -64,7 +65,7 @@ export const CheckInModal = memo(function CheckInModal({ item, currentUser, onCh
       returnNotes: formData.returnNotes.trim(),
       damageReported: formData.damageReported,
       damageDescription: formData.damageDescription.trim(),
-      returnDate: new Date().toISOString().split('T')[0],
+      returnDate: getTodayISO(),
       returnTime: new Date().toLocaleTimeString(),
     });
   };

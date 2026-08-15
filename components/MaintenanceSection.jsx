@@ -22,7 +22,9 @@ import { formatDate, formatMoney } from '../utils';
 import { Badge, Button } from './ui.jsx';
 
 // Get status color for maintenance
-const getMaintenanceStatusColor = (status) => {
+// Exported: MaintenanceReportView shares this map (it used to carry an
+// identical private copy — a classic pre-drift duplicate)
+export const getMaintenanceStatusColor = (status) => {
   switch (status) {
     case MAINTENANCE_STATUS.COMPLETED:
       return colors.available;
@@ -245,8 +247,8 @@ const MaintenanceEntry = memo(function MaintenanceEntry({
               </div>
             )}
 
-            {/* Actions */}
-            {(isScheduled || isInProgress) && (
+            {/* Actions — omitted when the parent passes no handler (view-only) */}
+            {onComplete && (isScheduled || isInProgress) && (
               <div style={{ display: 'flex', gap: spacing[2], marginTop: spacing[3] }}>
                 {isScheduled && (
                   <Button
@@ -377,19 +379,22 @@ function MaintenanceSection({
           </div>
         )}
 
-        {/* Add Record Button - always at top */}
-        <Button
-          variant="secondary"
-          onClick={onAddMaintenance}
-          icon={Plus}
-          style={{
-            width: '100%',
-            justifyContent: 'center',
-            marginBottom: sortedHistory.length > 0 ? spacing[3] : 0,
-          }}
-        >
-          Add Record
-        </Button>
+        {/* Add Record Button — omitted for view-only roles (the parent passes
+            no handler when the role lacks item_details edit) */}
+        {onAddMaintenance && (
+          <Button
+            variant="secondary"
+            onClick={onAddMaintenance}
+            icon={Plus}
+            style={{
+              width: '100%',
+              justifyContent: 'center',
+              marginBottom: sortedHistory.length > 0 ? spacing[3] : 0,
+            }}
+          >
+            Add Record
+          </Button>
+        )}
 
         {/* Maintenance entries */}
         <div style={{ maxHeight: 400, overflowY: 'auto' }}>

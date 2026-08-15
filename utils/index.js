@@ -3,7 +3,7 @@
 // Pure functions with no side effects for data transformation and formatting
 // ============================================================================
 
-import { CATEGORY_PREFIXES, STATUS, CONDITION } from '../constants.js';
+import { CATEGORY_PREFIXES, STATUS, STATUS_LABELS, CONDITION } from '../constants.js';
 import { colors } from '../theme.js';
 
 // ============================================================================
@@ -105,13 +105,22 @@ export const formatDateTime = (date) => {
 };
 
 /**
+ * Format a Date as its LOCAL calendar date (YYYY-MM-DD).
+ * The one shared implementation — `toISOString().split('T')[0]` is the UTC
+ * date, which is tomorrow's date every evening west of Greenwich and
+ * yesterday's east of it. Calendar-date writes and comparisons must use
+ * this (or getTodayISO); toISOString stamps are for timestamps only.
+ * @param {Date} d
+ * @returns {string}
+ */
+export const toLocalYMD = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/**
  * Get today's date as ISO string (YYYY-MM-DD)
  * @returns {string}
  */
-export const getTodayISO = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
+export const getTodayISO = () => toLocalYMD(new Date());
 
 /**
  * Check if a date is before today
@@ -346,9 +355,21 @@ export const getStatusColor = (status) => {
     [STATUS.RESERVED]: colors.reserved,
     [STATUS.NEEDS_ATTENTION]: colors.needsAttention,
     [STATUS.MISSING]: colors.missing,
+    // Derived statuses — filter chips for Overdue/Low Stock rendered muted
+    // gray because only stored statuses had colors
+    [STATUS.OVERDUE]: colors.checkedOut,
+    [STATUS.LOW_STOCK]: colors.warning,
   };
   return statusColors[status] || colors.textMuted;
 };
+
+/**
+ * Human-readable status label — stored values are slugs ("checked-out") and
+ * must never be shown raw. The one shared lookup for badges and chips.
+ * @param {string} status
+ * @returns {string}
+ */
+export const getStatusLabel = (status) => STATUS_LABELS[status] || status;
 
 /**
  * Get the color for a given condition
@@ -714,8 +735,12 @@ export const isReminderDue = (reminder) => {
 export function sanitizeCSVCell(value) {
   if (value === null || value === undefined) return '""';
   let str = String(value);
-  // Prefix formula-triggering characters to prevent CSV injection
-  if (/^[=+\-@\t\r]/.test(str)) {
+  // Prefix formula-triggering characters to prevent CSV injection. Values
+  // that ALREADY start with an apostrophe-plus-formula-char get one more —
+  // the importer's stripFormulaGuard removes exactly one, so guard/strip is
+  // a true inverse (a stored '=B2 used to lose its apostrophe on the first
+  // round trip).
+  if (/^[=+\-@\t\r]/.test(str) || /^'[=+\-@\t\r]/.test(str)) {
     str = "'" + str;
   }
   // Escape double quotes and always wrap in quotes

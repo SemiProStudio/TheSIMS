@@ -16,7 +16,6 @@ vi.mock('../lib/supabase.js', () => ({
 // Import services after mocking
 import {
   notificationPreferencesService,
-  notificationLogService,
   emailService,
   inventoryService,
   clientsService,
@@ -124,57 +123,6 @@ describe('notificationPreferencesService', () => {
 // =============================================================================
 // Notification Log Service Tests
 // =============================================================================
-
-describe('notificationLogService', () => {
-  describe('getByUserId', () => {
-    it('should return notifications array', async () => {
-      const logs = [{ id: 'log-1', user_id: 'user-123' }];
-      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(logs));
-      const result = await notificationLogService.getByUserId('user-123');
-      expect(result).toEqual(logs);
-    });
-
-    it('should accept limit parameter', async () => {
-      getSupabase.mockResolvedValueOnce(createMockSupabaseClient([]));
-      const result = await notificationLogService.getByUserId('user-123', 10);
-      expect(result).toEqual([]);
-    });
-  });
-
-  describe('create', () => {
-    it('should return created notification', async () => {
-      const notification = {
-        user_id: 'user-123',
-        email: 'test@example.com',
-        notification_type: 'checkout_confirmation',
-        subject: 'Test Subject',
-      };
-      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(notification));
-      const result = await notificationLogService.create(notification);
-      expect(result).toEqual(notification);
-    });
-  });
-
-  describe('updateStatus', () => {
-    it('should return updated status', async () => {
-      const returnData = { id: 'log-123', status: 'sent' };
-      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(returnData));
-      const result = await notificationLogService.updateStatus('log-123', 'sent');
-      expect(result).toEqual(returnData);
-    });
-
-    it('should handle error message parameter', async () => {
-      const returnData = { id: 'log-123', status: 'failed' };
-      getSupabase.mockResolvedValueOnce(createMockSupabaseClient(returnData));
-      const result = await notificationLogService.updateStatus(
-        'log-123',
-        'failed',
-        'Network error',
-      );
-      expect(result).toEqual(returnData);
-    });
-  });
-});
 
 // =============================================================================
 // Email Service Tests
@@ -299,27 +247,6 @@ describe('emailService', () => {
     });
   });
 
-  describe('sendDueDateReminder', () => {
-    it('should call send with correct template', async () => {
-      const sendSpy = vi.spyOn(emailService, 'send').mockResolvedValue({ success: true });
-
-      await emailService.sendDueDateReminder({
-        borrowerEmail: 'test@example.com',
-        borrowerName: 'Test User',
-        item: { id: 'CAM001', name: 'Camera', brand: 'Canon' },
-        dueDate: '2024-01-22',
-        checkoutDate: '2024-01-15',
-      });
-
-      expect(sendSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          templateKey: 'due_date_reminder',
-        }),
-      );
-
-      sendSpy.mockRestore();
-    });
-  });
 });
 
 // =============================================================================
@@ -580,6 +507,101 @@ describe('maintenanceService', () => {
       getSupabase.mockResolvedValueOnce(createMockSupabaseClient(null));
       const result = await maintenanceService.delete('maint-1');
       expect(result).toEqual({ id: 'maint-1' });
+    });
+  });
+
+  describe('inventory delete honesty', () => {
+    // RLS-filtered deletes "succeed" with zero rows — the DELETE policy is
+    // admin-only, so a non-admin bulk delete looked successful in the UI
+    // while every item came back on reload
+    it('throws when RLS silently filters the delete to zero rows', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient([]));
+      await expect(inventoryService.delete('CAM001')).rejects.toThrow(/administrator access/);
+    });
+
+    it('succeeds when the row was actually deleted', async () => {
+      getSupabase.mockResolvedValueOnce(createMockSupabaseClient([{ id: 'CAM001' }]));
+      await expect(inventoryService.delete('CAM001')).resolves.toEqual({ id: 'CAM001' });
+    });
+  });
+
+  describe('update', () => {
+    // The edit modal hands back its full camelCase form record with join
+    // artifacts. PostgREST rejects unknown columns (PGRST204), so the service
+    // must map to snake_case and whitelist to real columns — the old
+    // passthrough made EVERY maintenance edit fail at the database.
+    it('maps camelCase form records to real columns and strips junk', async () => {
+      let capturedPayload = null;
+      const chain = {
+        update: vi.fn((payload) => {
+          capturedPayload = payload;
+          return chain;
+        }),
+        eq: vi.fn(() => chain),
+        select: vi.fn(() => chain),
+        single: vi.fn(() => Promise.resolve({ data: { id: 'maint-1' }, error: null })),
+      };
+      getSupabase.mockResolvedValueOnce({ from: vi.fn(() => chain) });
+
+      await maintenanceService.update('maint-1', {
+        id: 'maint-1',
+        itemId: 'CAM001',
+        type: 'Repair',
+        description: 'Shutter replacement',
+        vendor: 'CamFix',
+        vendorContact: 'fix@camfix.com',
+        cost: 250,
+        scheduledDate: '2026-08-01',
+        completedDate: '', // empty date input → null, not ''
+        status: 'in-progress',
+        notes: 'awaiting part',
+        warrantyWork: true,
+        item: { id: 'CAM001', name: 'Camera' }, // joined row from getAll
+        user: 'UI alias', // transform-added alias
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-02T00:00:00Z', // trigger-managed
+      });
+
+      expect(capturedPayload).toEqual({
+        item_id: 'CAM001',
+        type: 'Repair',
+        description: 'Shutter replacement',
+        vendor: 'CamFix',
+        vendor_contact: 'fix@camfix.com',
+        cost: 250,
+        scheduled_date: '2026-08-01',
+        completed_date: null,
+        status: 'in-progress',
+        notes: 'awaiting part',
+        warranty_work: true,
+      });
+    });
+
+    it('passes hand-built snake_case payloads through unchanged', async () => {
+      let capturedPayload = null;
+      const chain = {
+        update: vi.fn((payload) => {
+          capturedPayload = payload;
+          return chain;
+        }),
+        eq: vi.fn(() => chain),
+        select: vi.fn(() => chain),
+        single: vi.fn(() => Promise.resolve({ data: { id: 'maint-1' }, error: null })),
+      };
+      getSupabase.mockResolvedValueOnce({ from: vi.fn(() => chain) });
+
+      // updateMaintenanceStatus builds this shape directly
+      await maintenanceService.update('maint-1', {
+        status: 'completed',
+        completed_date: '2026-08-14',
+        notes: 'done',
+      });
+
+      expect(capturedPayload).toEqual({
+        status: 'completed',
+        completed_date: '2026-08-14',
+        notes: 'done',
+      });
     });
   });
 });

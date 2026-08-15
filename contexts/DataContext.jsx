@@ -34,7 +34,7 @@ import {
   validateClient,
   validateMaintenanceRecord,
 } from '../lib/validators.js';
-import { updateById, removeById } from '../utils';
+import { updateById, removeById, getTodayISO } from '../utils';
 import DataContext from './DataContext.js';
 
 // =============================================================================
@@ -74,6 +74,20 @@ export function DataProvider({ children }) {
   const [checkoutEvents, setCheckoutEvents] = useState([]);
   const [checkoutEventsLoaded, setCheckoutEventsLoaded] = useState(false);
 
+  // Ref mirrors of the two report latches: loadData (a []-dep callback) must
+  // know whether the lazy layers were hydrated so a mid-session refresh can
+  // re-hydrate them instead of silently serving pending-only data forever
+  const maintenanceLoadedRef = useRef(false);
+  const checkoutEventsLoadedRef = useRef(false);
+  const markMaintenanceLoaded = useCallback((v) => {
+    maintenanceLoadedRef.current = v;
+    setMaintenanceLoaded(v);
+  }, []);
+  const markCheckoutEventsLoaded = useCallback((v) => {
+    checkoutEventsLoadedRef.current = v;
+    setCheckoutEventsLoaded(v);
+  }, []);
+
   // =============================================================================
   // DATA LOADING FUNCTION (Tiered)
   //
@@ -84,6 +98,34 @@ export function DataProvider({ children }) {
   // Lazy (on-demand): clients, packLists, auditLog
   //   → Loaded when the consuming view mounts
   // =============================================================================
+
+  // Shared by ensureMaintenance and loadData's re-hydration: merge the full
+  // maintenance history into inventory. Merge-by-id keeps records the server
+  // snapshot doesn't know yet (a create landing while the fetch was in
+  // flight — the notes-clobber lesson).
+  const mergeMaintenanceIntoInventory = useCallback((records) => {
+    const byItemId = {};
+    records.forEach((r) => {
+      if (!byItemId[r.itemId]) byItemId[r.itemId] = [];
+      byItemId[r.itemId].push(r);
+    });
+    setInventory((prev) =>
+      prev.map((item) => {
+        const serverRecords = byItemId[item.id] || [];
+        const serverIds = new Set(serverRecords.map((r) => r.id));
+        const localOnly = (item.maintenanceHistory || []).filter((r) => !serverIds.has(r.id));
+        return { ...item, maintenanceHistory: [...serverRecords, ...localOnly] };
+      }),
+    );
+  }, []);
+
+  // Trailing year of checkout_history events — one window covers every range
+  // selector (30/90/365 days); views filter locally.
+  const fetchCheckoutWindow = useCallback(() => {
+    const since = new Date();
+    since.setDate(since.getDate() - 365);
+    return checkoutHistoryService.getRecent(since.toISOString());
+  }, []);
 
   const loadData = useCallback(async () => {
     log('[DataContext] Starting tiered data load...');
@@ -189,7 +231,39 @@ export function DataProvider({ children }) {
       // Don't set error state — Tier 1 data is already available
       setTier2Loaded(true); // Mark loaded even on error to prevent permanent loading state
     }
-  }, []);
+
+    // --- Lazy-layer re-hydration ---
+    // The report latches survive a mid-session reload, but Tier 1 just
+    // replaced every item with slim list rows and Tier 2 re-merged only
+    // PENDING maintenance. Without this step a refreshData() (e.g. after
+    // creating a user) would leave ensureMaintenance()/ensureCheckoutActivity()
+    // early-returning forever over data that no longer contains what the
+    // latch promises — the Maintenance report would silently collapse to
+    // pending-only records.
+    if (maintenanceLoadedRef.current) {
+      try {
+        mergeMaintenanceIntoInventory(await maintenanceService.getAll());
+      } catch (err) {
+        // Honest latch: drop it so report views fall back to their loading
+        // state and the next ensureMaintenance() retries.
+        markMaintenanceLoaded(false);
+        logError('[DataContext] Maintenance re-hydration failed:', err);
+      }
+    }
+    if (checkoutEventsLoadedRef.current) {
+      try {
+        setCheckoutEvents(await fetchCheckoutWindow());
+      } catch (err) {
+        markCheckoutEventsLoaded(false);
+        logError('[DataContext] Checkout activity re-hydration failed:', err);
+      }
+    }
+  }, [
+    mergeMaintenanceIntoInventory,
+    fetchCheckoutWindow,
+    markMaintenanceLoaded,
+    markCheckoutEventsLoaded,
+  ]);
 
   // =============================================================================
   // LAZY-LOAD FUNCTIONS — fetch on first access, then cache
@@ -258,46 +332,37 @@ export function DataProvider({ children }) {
   // Full maintenance history for the Reports views. Tier 2 merges only
   // PENDING records (dashboard needs), so cost/vendor stats computed from
   // items would be blind to completed work — and would mutate as ItemDetail
-  // visits merged per-item history in. Merge-by-id keeps records the server
-  // snapshot doesn't know yet (a create landing while this fetch is in
-  // flight — the notes-clobber lesson).
+  // visits merged per-item history in.
   const ensureMaintenance = useCallback(async () => {
     if (maintenanceLoaded) return;
     return lazyLoad(
       'maintenance',
       () => maintenanceService.getAll(),
-      (records) => {
-        const byItemId = {};
-        records.forEach((r) => {
-          if (!byItemId[r.itemId]) byItemId[r.itemId] = [];
-          byItemId[r.itemId].push(r);
-        });
-        setInventory((prev) =>
-          prev.map((item) => {
-            const serverRecords = byItemId[item.id] || [];
-            const serverIds = new Set(serverRecords.map((r) => r.id));
-            const localOnly = (item.maintenanceHistory || []).filter((r) => !serverIds.has(r.id));
-            return { ...item, maintenanceHistory: [...serverRecords, ...localOnly] };
-          }),
-        );
-      },
-      setMaintenanceLoaded,
+      mergeMaintenanceIntoInventory,
+      markMaintenanceLoaded,
     );
-  }, [maintenanceLoaded, lazyLoad]);
+  }, [maintenanceLoaded, lazyLoad, mergeMaintenanceIntoInventory, markMaintenanceLoaded]);
 
-  // Trailing year of checkout_history events for activity charts. One fetch
-  // covers every range selector (30/90/365 days) — views filter locally.
+  // Trailing year of checkout_history events for activity charts. Merge-by-id
+  // instead of replacing: checkOutItem/checkInItem append events created this
+  // session, and a snapshot fetched before one of those commits must not
+  // clobber it out of the cache.
   const ensureCheckoutActivity = useCallback(async () => {
     if (checkoutEventsLoaded) return;
-    const since = new Date();
-    since.setDate(since.getDate() - 365);
     return lazyLoad(
       'checkoutActivity',
-      () => checkoutHistoryService.getRecent(since.toISOString()),
-      setCheckoutEvents,
-      setCheckoutEventsLoaded,
+      fetchCheckoutWindow,
+      (events) => {
+        setCheckoutEvents((prev) => {
+          if (!prev.length) return events;
+          const serverIds = new Set(events.map((e) => e.id));
+          const localOnly = prev.filter((e) => !serverIds.has(e.id));
+          return [...events, ...localOnly];
+        });
+      },
+      markCheckoutEventsLoaded,
     );
-  }, [checkoutEventsLoaded, lazyLoad]);
+  }, [checkoutEventsLoaded, lazyLoad, fetchCheckoutWindow, markCheckoutEventsLoaded]);
 
   // =============================================================================
   // INITIAL DATA LOAD
@@ -456,7 +521,10 @@ export function DataProvider({ children }) {
     try {
       await auditLogService.create(newEntry);
     } catch (err) {
+      // No local append on failure — the view used to show phantom entries
+      // that existed nowhere but this session
       logError('Failed to create audit log:', err);
+      return;
     }
 
     setAuditLog((prev) => [newEntry, ...prev]);
@@ -571,11 +639,16 @@ export function DataProvider({ children }) {
     }
   }, []);
 
+  // Returns true/false so the handler can roll back the optimistic
+  // soft-delete — swallowing the failure resurrected "deleted" notes on
+  // reload while the audit log claimed they were removed
   const deleteItemNote = useCallback(async (noteId) => {
     try {
       await itemNotesService.softDelete(noteId);
+      return true;
     } catch (err) {
       logError('Failed to delete note:', err);
+      return false;
     }
   }, []);
 
@@ -612,16 +685,20 @@ export function DataProvider({ children }) {
       if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
 
       await itemRemindersService.update(reminderId, dbUpdates);
+      return true;
     } catch (err) {
       logError('Failed to update reminder:', err);
+      return false;
     }
   }, []);
 
   const deleteItemReminder = useCallback(async (reminderId) => {
     try {
       await itemRemindersService.delete(reminderId);
+      return true;
     } catch (err) {
       logError('Failed to delete reminder:', err);
+      return false;
     }
   }, []);
 
@@ -730,6 +807,10 @@ export function DataProvider({ children }) {
     if (updates.contactEmail !== undefined) dbUpdates.contact_email = updates.contactEmail;
     if (updates.location !== undefined) dbUpdates.location = updates.location;
     if (updates.clientId !== undefined) dbUpdates.client_id = updates.clientId || null;
+    // Notes are JSONB on the reservation row. This mapping was missing, so
+    // the note handlers' claim that reservation notes "persist through the
+    // reservation update path" was false — every note vanished on reload.
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
     return dbUpdates;
   };
 
@@ -778,7 +859,10 @@ export function DataProvider({ children }) {
 
   const checkOutItem = useCallback(async (itemId, checkoutData) => {
     try {
-      const result = await inventoryService.checkOut(itemId, checkoutData);
+      const { item: serverItem, historyEvent } = await inventoryService.checkOut(
+        itemId,
+        checkoutData,
+      );
 
       // Update local state
       setInventory((prev) =>
@@ -789,16 +873,26 @@ export function DataProvider({ children }) {
                 status: 'checked-out',
                 checkedOutTo: checkoutData.userName,
                 checkedOutToUserId: checkoutData.userId,
-                checkedOutDate: new Date().toISOString().split('T')[0],
+                checkedOutDate: getTodayISO(),
                 dueBack: checkoutData.dueBack,
                 checkoutProject: checkoutData.project,
                 checkoutClientId: checkoutData.clientId,
+                // Mirror the server-side increment_checkout_count RPC — the
+                // list copy used to lag the detail copy until the next poll
+                checkoutCount: (item.checkoutCount || 0) + 1,
               }
             : item,
         ),
       );
 
-      return result;
+      // Mirror the real history row into the cached activity window so the
+      // Activity report reflects this session's events without a reload.
+      // Safe pre-load too: ensureCheckoutActivity merges by id.
+      if (historyEvent) {
+        setCheckoutEvents((prev) => [...prev, historyEvent]);
+      }
+
+      return serverItem;
     } catch (err) {
       logError('Failed to check out item:', err);
       throw err;
@@ -821,7 +915,7 @@ export function DataProvider({ children }) {
       // Use the dedicated checkIn service method. returnStatus lets the
       // caller return the item to 'reserved' when a confirmed reservation
       // covers today (damage still wins).
-      const result = await inventoryService.checkIn(itemId, {
+      const { item: serverItem, historyEvent } = await inventoryService.checkIn(itemId, {
         userId: userId,
         userName: returnedBy,
         notes: returnNotes || conditionNotes,
@@ -852,20 +946,47 @@ export function DataProvider({ children }) {
         ),
       );
 
-      // If damage reported, add a note
+      // Mirror the real history row into the cached activity window (see
+      // checkOutItem — same contract).
+      if (historyEvent) {
+        setCheckoutEvents((prev) => [...prev, historyEvent]);
+      }
+
+      // If damage reported, add a note — and mirror it into state so the
+      // "⚠️ Damage reported" entry (and the notes badge) shows without a
+      // re-navigation. Only when the item's notes are already hydrated:
+      // an undefined list means the next detail visit fetches the complete
+      // set, damage note included.
       if (damageReported && damageDescription) {
         try {
-          await itemNotesService.create({
+          const row = await itemNotesService.create({
             item_id: itemId,
             user_name: returnedBy || 'System',
             text: `⚠️ Damage reported: ${damageDescription}`,
           });
+          const uiNote = {
+            id: row?.id,
+            user: returnedBy || 'System',
+            date: getTodayISO(),
+            text: `⚠️ Damage reported: ${damageDescription}`,
+            replies: [],
+            deleted: false,
+          };
+          if (uiNote.id) {
+            setInventory((prev) =>
+              prev.map((item) =>
+                item.id === itemId && item.notes !== undefined
+                  ? { ...item, notes: [...item.notes, uiNote] }
+                  : item,
+              ),
+            );
+          }
         } catch (noteErr) {
           logError('Failed to add damage note:', noteErr);
         }
       }
 
-      return result;
+      return serverItem;
     } catch (err) {
       logError('Failed to check in item:', err);
       throw err;
@@ -967,8 +1088,10 @@ export function DataProvider({ children }) {
   const deletePackageNote = useCallback(async (noteId) => {
     try {
       await packageNotesService.softDelete(noteId);
+      return true;
     } catch (err) {
       logError('Failed to delete package note:', err);
+      return false;
     }
   }, []);
 
@@ -1132,8 +1255,10 @@ export function DataProvider({ children }) {
   const deleteClientNote = useCallback(async (noteId) => {
     try {
       await clientNotesService.softDelete(noteId);
+      return true;
     } catch (err) {
       logError('Failed to delete client note:', err);
+      return false;
     }
   }, []);
 

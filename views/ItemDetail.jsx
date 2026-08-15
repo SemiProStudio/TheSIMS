@@ -26,7 +26,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, formatMoney, getStatusColor, getConditionColor } from '../utils';
+import { formatDate, formatMoney, getStatusColor, getConditionColor, getStatusLabel } from '../utils';
 import { ITEM_DETAIL_SECTIONS } from '../constants.js';
 import { Badge, Card, Button, CollapsibleSection, BackButton } from '../components/ui.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
@@ -125,8 +125,9 @@ const AddToKitSection = memo(function AddToKitSection({
         </div>
       )}
 
-      {/* Add to package dropdown */}
-      {availablePackages.length === 0 ? (
+      {/* Add to package dropdown — hidden entirely for roles without
+          gear_list edit (package membership is an inventory-side write) */}
+      {!onAddToPackage ? null : availablePackages.length === 0 ? (
         containingPackages.length === 0 && (
           <div
             style={{
@@ -247,7 +248,7 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
                     {acc.id} • {acc.category}
                   </div>
                 </div>
-                <Badge text={acc.status} color={getStatusColor(acc.status)} size="sm" />
+                <Badge text={getStatusLabel(acc.status)} color={getStatusColor(acc.status)} size="sm" />
                 {onRemoveAccessory && (
                   <button
                     onClick={() => onRemoveAccessory(item.id, acc.id)}
@@ -374,7 +375,6 @@ function ItemDetail({
   onCheckout,
   onCheckin,
   onEdit,
-  onDelete: _onDelete,
   onShowQR,
   onAddReservation,
   onDeleteReservation,
@@ -393,18 +393,22 @@ function ItemDetail({
   onUpdateValue,
   onAddAccessory,
   onRemoveAccessory,
-  onSetAsKit: _onSetAsKit,
-  onAddToKit: _onAddToKit,
   onAddToPackage,
-  onRemoveFromKit: _onRemoveFromKit,
-  onClearKit: _onClearKit,
   onViewItem,
   onCustomizeLayout,
   onToggleCollapse,
   user,
 }) {
   const { canEdit } = usePermissions();
+  // Gate each control by the SAME key RLS enforces on its write:
+  //   inventory row writes (checkout/check-in/edit/value/accessories) → gear_list
+  //   item notes/reminders/maintenance → item_details
+  //   reservations → schedule
+  // Everything used to hang off item_details, offering buttons the database
+  // would refuse for split roles — and half the sections weren't gated at all.
   const canEditItems = canEdit('item_details');
+  const canEditGear = canEdit('gear_list');
+  const canEditSchedule = canEdit('schedule');
   const [specsExpanded, setSpecsExpanded] = useState(false);
   const [showAddReminderForm, setShowAddReminderForm] = useState(false);
 
@@ -564,7 +568,7 @@ function ItemDetail({
             collapsed={isCollapsed('reservations')}
             onToggleCollapse={() => toggleCollapse('reservations')}
             action={
-              canEditItems && (
+              canEditSchedule && (
                 <button
                   onClick={onAddReservation}
                   title="Add reservation"
@@ -637,7 +641,7 @@ function ItemDetail({
                           {formatDate(r.start)} → {formatDate(r.end)}
                         </div>
                       </div>
-                      {canEditItems && (
+                      {canEditSchedule && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -683,6 +687,7 @@ function ItemDetail({
               onDelete={onDeleteNote}
               user={user}
               panelColor={notesColor}
+              readOnly={!canEditItems}
             />
           </CollapsibleSection>
         );
@@ -701,31 +706,33 @@ function ItemDetail({
             onToggleCollapse={() => toggleCollapse('reminders')}
             padding={false}
             action={
-              <button
-                onClick={() => {
-                  if (isCollapsed('reminders')) toggleCollapse('reminders');
-                  setShowAddReminderForm((prev) => !prev);
-                }}
-                title={showAddReminderForm ? 'Cancel adding reminder' : 'Add reminder'}
-                aria-label={showAddReminderForm ? 'Cancel adding reminder' : 'Add reminder'}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: colors.textPrimary,
-                  cursor: 'pointer',
-                  padding: '2px 4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: borderRadius.sm,
-                  opacity: 0.8,
-                  transition: 'opacity 0.15s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.8')}
-              >
-                <Plus size={16} />
-              </button>
+              canEditItems && (
+                <button
+                  onClick={() => {
+                    if (isCollapsed('reminders')) toggleCollapse('reminders');
+                    setShowAddReminderForm((prev) => !prev);
+                  }}
+                  title={showAddReminderForm ? 'Cancel adding reminder' : 'Add reminder'}
+                  aria-label={showAddReminderForm ? 'Cancel adding reminder' : 'Add reminder'}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: colors.textPrimary,
+                    cursor: 'pointer',
+                    padding: '2px 4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: borderRadius.sm,
+                    opacity: 0.8,
+                    transition: 'opacity 0.15s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.8')}
+                >
+                  <Plus size={16} />
+                </button>
+              )
             }
           >
             <RemindersSection
@@ -737,6 +744,7 @@ function ItemDetail({
               panelColor={remindersColor}
               showAddForm={showAddReminderForm}
               onToggleAddForm={setShowAddReminderForm}
+              readOnly={!canEditItems}
             />
           </CollapsibleSection>
         );
@@ -758,8 +766,8 @@ function ItemDetail({
             <RequiredAccessoriesSection
               item={item}
               inventory={inventory}
-              onAddAccessory={onAddAccessory}
-              onRemoveAccessory={onRemoveAccessory}
+              onAddAccessory={canEditGear ? onAddAccessory : undefined}
+              onRemoveAccessory={canEditGear ? onRemoveAccessory : undefined}
               onViewItem={onViewItem}
               panelColor={accessoriesColor}
             />
@@ -786,7 +794,7 @@ function ItemDetail({
             <AddToKitSection
               item={item}
               packages={packages}
-              onAddToPackage={onAddToPackage}
+              onAddToPackage={canEditGear ? onAddToPackage : undefined}
               panelColor={packagesColor}
             />
           </CollapsibleSection>
@@ -808,9 +816,9 @@ function ItemDetail({
           >
             <MaintenanceSection
               maintenanceHistory={item.maintenanceHistory || []}
-              onAddMaintenance={onAddMaintenance}
-              onUpdateMaintenance={onUpdateMaintenance}
-              onCompleteMaintenance={onCompleteMaintenance}
+              onAddMaintenance={canEditItems ? onAddMaintenance : undefined}
+              onUpdateMaintenance={canEditItems ? onUpdateMaintenance : undefined}
+              onCompleteMaintenance={canEditItems ? onCompleteMaintenance : undefined}
               panelColor={maintenanceColor}
             />
           </CollapsibleSection>
@@ -965,7 +973,10 @@ function ItemDetail({
             onToggleCollapse={() => toggleCollapse('depreciation')}
             padding={false}
           >
-            <DepreciationCalculator item={item} onUpdateValue={onUpdateValue} />
+            <DepreciationCalculator
+              item={item}
+              onUpdateValue={canEditGear ? onUpdateValue : undefined}
+            />
           </CollapsibleSection>
         );
 
@@ -1059,7 +1070,7 @@ function ItemDetail({
               }}
             >
               <Badge text={item.id} color={colors.primary} />
-              <Badge text={item.status} color={getStatusColor(item.status)} />
+              <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
               <Badge text={item.condition} color={getConditionColor(item.condition)} />
               <Badge text={item.category} color={colors.accent2} />
             </div>
@@ -1084,7 +1095,9 @@ function ItemDetail({
             </p>
 
             <div style={{ display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
-              {canEditItems &&
+              {/* Checkout/check-in/edit write the INVENTORY row — RLS enforces
+                  gear_list edit there, so the buttons follow the same key */}
+              {canEditGear &&
                 (isCheckedOut ? (
                   <Button onClick={() => onCheckin(item.id)} icon={RefreshCw}>
                     Check In
@@ -1094,7 +1107,7 @@ function ItemDetail({
                     Check Out
                   </Button>
                 ))}
-              {canEditItems && (
+              {canEditGear && (
                 <Button variant="secondary" onClick={() => onEdit(item)} icon={Edit}>
                   Edit
                 </Button>
@@ -1104,7 +1117,7 @@ function ItemDetail({
               </Button>
             </div>
 
-            {!canEditItems && (
+            {!canEditGear && !canEditItems && (
               <div
                 style={{
                   marginTop: spacing[4],

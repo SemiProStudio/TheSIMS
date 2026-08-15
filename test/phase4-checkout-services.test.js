@@ -109,8 +109,10 @@ describe('inventoryService.checkOut', () => {
       checkout_project: 'Commercial Shoot',
     });
     expect(payload.checked_out_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    // Returned item is the transformed row
-    expect(result.status).toBe('checked-out');
+    // Returned as { item, historyEvent } — the transformed row plus the real
+    // history row for the caller's activity cache
+    expect(result.item.status).toBe('checked-out');
+    expect(result.historyEvent).toMatchObject({ itemId: 'CAM001', action: 'checkout' });
   });
 
   it('writes a checkout history row with the user and client names', async () => {
@@ -153,7 +155,9 @@ describe('inventoryService.checkOut', () => {
     const result = await inventoryService.checkOut('CAM001', checkoutArgs);
     await flush();
 
-    expect(result.status).toBe('checked-out');
+    expect(result.item.status).toBe('checked-out');
+    // No phantom event when the insert failed — the cache must stay honest
+    expect(result.historyEvent).toBeNull();
     warnSpy.mockRestore();
   });
 });
@@ -192,7 +196,8 @@ describe('inventoryService.checkIn', () => {
       due_back: null,
       checkout_project: null,
     });
-    expect(result.status).toBe('available');
+    expect(result.item.status).toBe('available');
+    expect(result.historyEvent).toMatchObject({ itemId: 'CAM001', action: 'checkin' });
   });
 
   it('sets needs-attention when damage is reported', async () => {

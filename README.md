@@ -98,7 +98,7 @@ SIMS manages the full lifecycle of production equipment: acquisition, storage, c
 | State          | React hooks with memoization (useState, useCallback, useMemo, memo) |
 | QR Codes       | qrcode (generation) + jsQR (camera scanning)                        |
 | PDF Parsing    | pdf.js (CDN, loaded on demand for Smart Paste)                      |
-| Error Tracking | Sentry                                                              |
+| Error Tracking | Sentry (optional — inert without `VITE_SENTRY_DSN`)                                                              |
 | Testing        | Vitest (unit/integration) + Playwright (E2E)                        |
 
 ---
@@ -110,124 +110,37 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. In demo mode (no Supabase configured), login with:
+Open http://localhost:5173. A Supabase project is REQUIRED — the app shows a
+configuration-error screen without `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`
+(the old demo mode was removed). Sign in with an account created in your
+Supabase project.
 
-- **Admin**: admin@studio.com / admin
-- **User**: sarah@studio.com / user
-
-For production deployment with Supabase, see [SETUP_GUIDE.md](SETUP_GUIDE.md) and [DEPLOYMENT.md](DEPLOYMENT.md).
+For production deployment with Supabase, see [SETUP_GUIDE.md](SETUP_GUIDE.md).
 
 ---
 
 ## Project Structure
 
 ```
-sims/
-├── main.jsx                        # App entry point
-├── App.jsx                         # Root component, global state, routing
-├── constants.js                    # Enums, defaults, DEFAULT_SPECS (600+ fields)
-├── theme.js                        # Design tokens, style objects
-├── themes-data.js                  # Theme definitions (15+ themes)
-├── data.js                         # Demo/sample data
-├── utils.js                        # Formatting, validation, helpers
-├── index.css                       # Global styles, CSS variables, responsive
-│
-├── components/
-│   ├── ui.jsx                      # Core UI library (Badge, Button, Card, etc.)
-│   ├── ui/                         # Individual UI component files
-│   │   ├── Button.jsx, Card.jsx, Modal.jsx, Input.jsx, ...
-│   │   ├── SearchInput.jsx         # Debounced search with clear button
-│   │   ├── Pagination.jsx          # Page navigation
-│   │   ├── DragReorder.jsx         # Drag-to-reorder lists
-│   │   └── index.js
-│   ├── Select.jsx                  # Custom themed dropdown
-│   ├── MultiSelectDropdown.jsx     # Multi-select filter with checkboxes
-│   ├── DatePicker.jsx              # Calendar picker with smart positioning
-│   ├── OptimizedImage.jsx          # Lazy-loaded images with thumbnails
-│   ├── ErrorBoundary.jsx           # Error boundary with Sentry
-│   ├── Loading.jsx                 # Loading states and skeletons
-│   └── VirtualList.jsx             # Virtualized list for large datasets
-│
-├── modals/
-│   ├── ModalBase.jsx               # Shared Modal, ModalHeader, ModalFooter
-│   ├── ItemModal.jsx               # Add/Edit item
-│   ├── SmartPasteModal.jsx         # Smart Paste: tabbed paste/file import UI
-│   ├── CheckOutModal.jsx           # Equipment checkout flow
-│   ├── CheckInModal.jsx            # Equipment return with condition notes
-│   ├── ReservationModal.jsx        # Reservation create/edit
-│   ├── MaintenanceModal.jsx        # Maintenance record entry
-│   ├── QRModal.jsx                 # QR code display
-│   ├── QRScannerModal.jsx          # Camera QR scanner (jsQR)
-│   ├── CSVImportModal.jsx          # CSV import with column mapping
-│   ├── BulkModals.jsx              # Bulk operations
-│   └── index.js
-│
-├── hooks/
-│   ├── useNavigation.js            # View routing and history
-│   ├── useFilters.js               # Search, category, status filtering
-│   ├── useModals.js                # Modal open/close state
-│   ├── useSidebar.js               # Sidebar collapse/expand
-│   ├── useInventoryActions.js      # Inventory CRUD operations
-│   ├── useForm.js                  # Form validation
-│   ├── usePagination.js            # Page state
-│   ├── useDebounce.js              # Debounced values
-│   ├── useAnnounce.js              # Screen reader announcements
-│   └── usePWA.js                   # PWA install prompt
-│
-├── lib/
-│   ├── supabase.js                 # Supabase client init
-│   ├── services.js                 # Service layer (all DB operations)
-│   ├── DataContext.jsx             # Data + operations React context
-│   ├── AuthContext.jsx             # Authentication context
-│   ├── smartPasteParser.js         # Smart Paste extraction engine
-│   ├── storage.js                  # Image upload/thumbnails
-│   ├── validators.js               # Form validation rules
-│   ├── errorTracking.js            # Sentry integration
-│   └── PWAContext.jsx              # Service worker registration
-│
-├── views/
-│   ├── AdminView.jsx               # Admin panel
-│   ├── UsersView.jsx               # User management
-│   ├── AuditLogView.jsx            # Activity log
-│   ├── ReportsView.jsx             # Report dashboard
-│   ├── InsuranceReportView.jsx     # Insurance valuation
-│   ├── MaintenanceReportView.jsx   # Maintenance summary
-│   └── ClientReportView.jsx        # Client activity
-│
-├── [Page-level components]
-│   ├── Dashboard.jsx               # Drag-to-reorder dashboard
-│   ├── GearList.jsx                # Inventory grid/list with filters
-│   ├── ItemDetail.jsx              # Item detail with sections
-│   ├── SearchView.jsx              # Global search
-│   ├── ClientsView.jsx             # Client management
-│   ├── PackagesView.jsx            # Package templates
-│   ├── PackListsView.jsx           # Job pack lists
-│   ├── ScheduleView.jsx            # Calendar day/week/month
-│   ├── AdminPages.jsx              # Add/Edit Item, Specs, Categories
-│   ├── Sidebar.jsx                 # Navigation
-│   ├── LabelsView.jsx              # QR label printing
-│   └── Login.jsx                   # Authentication
-│
-├── supabase/
-│   ├── schema.sql                  # Database schema (20+ tables, RLS)
-│   ├── functions.sql               # RPC functions, triggers, views
-│   ├── seed.sql                    # Sample data
-│   ├── storage.sql                 # Storage bucket policies
-│   └── functions/                  # Edge Functions (email, reminders)
-│
-├── test/                           # Vitest unit/integration tests
-├── e2e/                            # Playwright E2E tests
-├── public/                         # PWA manifest, theme assets
-│
-├── vercel.json                     # Vercel deployment config
-├── package.json                    # Dependencies and scripts
-├── SETUP_GUIDE.md                  # Supabase + Vercel setup
-├── DEPLOYMENT.md                   # Deployment procedures
-├── NOTIFICATION_SETUP.md           # Email notification config
-└── SMART_PASTE_IMPROVEMENTS.md     # Smart Paste enhancement roadmap
+App.jsx / AppViews.jsx / AppModals.jsx   Orchestration, view switch, modal switch
+components/     Shared UI (ui.jsx, Sidebar, charts, sections, labels, loading)
+contexts/       Providers: Data, Auth, Theme, Permissions, Toast, Navigation,
+                Filter, Modal, Sidebar, PWA
+hooks/          useInventoryActions + handlers/ (checkout, notes, reminders,
+                reservations, admin, packages, accessories/image)
+lib/            services.js (Supabase data layer), fieldMap, validators, csv,
+                importItems, backupExport, reportData, chartMath, smartPaste/,
+                errorTracking (Sentry, optional), logger, supabase client
+modals/         All modal dialogs (item, checkout/in, reservation, CSV import,
+                database export, smart paste, QR scanner, …)
+views/          One file per page (Dashboard, GearList, ItemDetail, Schedule,
+                Packages, PackLists, Clients, Search, Reports + 6 report pages,
+                admin pages, RolesManager, …)
+utils/          Pure helpers (dates, money, status, CSV download, a11y)
+supabase/       schema.sql, migrations/, edge functions
+e2e/            Playwright specs + fixtures; test/ holds the Vitest suite
 ```
 
----
 
 ## Smart Paste
 

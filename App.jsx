@@ -13,7 +13,7 @@ import {
   DEFAULT_ROLES,
 } from './constants.js';
 import { colors } from './theme.js';
-import { findById, sanitizeCSVCell } from './utils';
+import { findById, downloadCSV, getTodayISO } from './utils';
 import { openPrintWindow } from './lib/printUtil.js';
 import { escapeHtml } from './lib/escapeHtml.js';
 import { resolveScannedCode, truncateScannedCode } from './lib/qrData.js';
@@ -226,7 +226,13 @@ export default function App() {
   );
 
   const handleLogout = useCallback(async () => {
-    await auth.signOut();
+    try {
+      await auth.signOut();
+    } catch (err) {
+      // Clear the local session regardless — a failed server sign-out must
+      // not leave the user stuck "logged in" with a dead button
+      logError('Sign-out failed (clearing local session anyway):', err);
+    }
     setIsLoggedIn(false);
     setCurrentUser(null);
   }, [auth]);
@@ -264,12 +270,16 @@ export default function App() {
         return next;
       });
       if (localOnly) return Promise.resolve();
+      // The queue never rejects (a rejection would wedge every later write)
+      // but resolves a success boolean so callers can skip audit entries and
+      // "saved" claims for writes that didn't happen
       profileWriteQueueRef.current = profileWriteQueueRef.current.then(() =>
         usersService.update(userId, { profile: merged }).then(
-          () => {},
+          () => true,
           (err) => {
             logError('Failed to save profile settings:', err);
             if (failureToast) addToast(failureToast, 'warning');
+            return false;
           },
         ),
       );
@@ -511,10 +521,6 @@ export default function App() {
       const item = findById(inventory, id);
       if (item) {
         setSelectedItem(item);
-        patchInventoryItem(id, (existingItem) => ({
-          ...existingItem,
-          viewCount: (existingItem.viewCount || 0) + 1,
-        }));
         setCurrentView(VIEWS.GEAR_DETAIL);
         setActiveModal(null);
         setItemBackContext(context);
@@ -523,10 +529,25 @@ export default function App() {
         dataContext
           .getItemWithDetails(id)
           .then((itemWithDetails) => {
-            if (itemWithDetails) {
-              setSelectedItem(itemWithDetails);
-              patchInventoryItem(id, itemWithDetails);
+            if (!itemWithDetails) return;
+            // Hydrate ONLY the child collections the list rows don't carry.
+            // The snapshot's SCALARS date from navigation time — applying
+            // them wholesale reverted any edit/checkout/status change that
+            // landed while the fetch was in flight (the optimistic-UI vs
+            // lazy-fetch race class), and replacing selectedItem outright
+            // also clobbered quick navigations away to another item.
+            const collections = {};
+            for (const key of [
+              'notes',
+              'reminders',
+              'reservations',
+              'maintenanceHistory',
+              'checkoutHistory',
+            ]) {
+              if (itemWithDetails[key] !== undefined) collections[key] = itemWithDetails[key];
             }
+            patchInventoryItem(id, collections);
+            setSelectedItem((prev) => (prev?.id === id ? { ...prev, ...collections } : prev));
           })
           .catch((err) => logError('Failed to load item details:', err));
       }
@@ -697,7 +718,6 @@ export default function App() {
     setChangeLog,
     showConfirm,
     inventory,
-    selectedItem,
     currentUser,
     currentView,
     specs,
@@ -754,22 +774,12 @@ export default function App() {
     addChangeLog,
   });
 
-  const {
-    setItemAsKit,
-    addItemsToKit,
-    removeItemFromKit,
-    clearKitItems,
-    addRequiredAccessories,
-    removeRequiredAccessory,
-    selectImage,
-  } = useKitHandlers({
+  const { addRequiredAccessories, removeRequiredAccessory, selectImage } = useKitHandlers({
     inventory,
     selectedItem,
     setSelectedItem,
     dataContext,
-    currentUser,
     closeModal,
-    addAuditLog,
     addChangeLog,
   });
 
@@ -848,15 +858,18 @@ export default function App() {
       // The profile modal builds ONLY its branding fields — merge them into
       // the stored profile. Persisting it verbatim used to wipe
       // layoutPrefs/savedFilterViews/uiPrefs from the DB on every save.
-      await persistProfilePatch(updatedUser.profile || {}, {
+      const ok = await persistProfilePatch(updatedUser.profile || {}, {
         failureToast: 'Profile changes may not have saved',
       });
       patchUser(updatedUser.id, { profile: profileRef.current });
-      // Audit log
-      addAuditLog({
-        type: 'profile_updated',
-        description: `${updatedUser.name || 'User'} updated their profile`,
-      });
+      // Audit only what actually persisted — the entry used to be written
+      // even when the DB write failed
+      if (ok !== false) {
+        addAuditLog({
+          type: 'profile_updated',
+          description: `${updatedUser.name || 'User'} updated their profile`,
+        });
+      }
     },
     [persistProfilePatch, addAuditLog, patchUser],
   );
@@ -885,7 +898,8 @@ export default function App() {
         } catch (err) {
           logError('Failed to fetch notes for export:', err);
           addToast('Export failed: could not load item notes', 'error');
-          return;
+          // false = nothing was exported — the modal stays open
+          return false;
         }
       }
 
@@ -902,6 +916,8 @@ export default function App() {
         purchasePrice: 'Purchase Price',
         value: 'Current Value',
         serialNumber: 'Serial #',
+        quantity: 'Quantity',
+        reorderPoint: 'Reorder Point',
         notes: 'Notes',
       };
       // Resolve a column value from an item
@@ -910,23 +926,16 @@ export default function App() {
         if (col === 'notes') return (notesByItemId?.[item.id] || []).join('; ');
         return item[col];
       };
-      const timestamp = new Date().toISOString().split('T')[0];
+      const timestamp = getTodayISO();
 
       if (options.format === 'csv') {
-        const headers = options.columns
-          .map((col) => sanitizeCSVCell(columnLabels[col] || col))
-          .join(',');
-        const rows = items.map((i) =>
-          options.columns.map((col) => sanitizeCSVCell(getCellValue(i, col))).join(','),
+        // The one shared CSV writer — this used to hand-roll the same
+        // sanitize/blob/anchor dance downloadCSV already does
+        downloadCSV(
+          options.columns.map((col) => columnLabels[col] || col),
+          items.map((i) => options.columns.map((col) => getCellValue(i, col))),
+          `inventory-${timestamp}.csv`,
         );
-        const csvContent = headers + '\n' + rows.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `inventory-${timestamp}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
       } else if (options.format === 'pdf') {
         // Build branding header if enabled
         let brandingHtml = '';
@@ -1000,8 +1009,12 @@ export default function App() {
       try {
         await dataContext.saveNotificationPreferences(currentUser.id, prefs);
       } catch (err) {
+        // Rethrow so the settings view keeps its unsaved-changes state — the
+        // old swallow patched the user anyway, so the UI asserted "saved"
+        // over preferences that reverted on reload
         logError('Failed to save notification preferences:', err);
-        addToast('Notification preferences may not have saved', 'warning');
+        addToast('Notification preferences did not save. Please try again.', 'error');
+        throw err;
       }
       patchUser(currentUser.id, { notificationPreferences: prefs });
       setCurrentUser((prev) => ({ ...prev, notificationPreferences: prefs }));
@@ -1062,10 +1075,6 @@ export default function App() {
       deleteReservation,
       saveReservation,
       reservePackage,
-      setItemAsKit,
-      addItemsToKit,
-      removeItemFromKit,
-      clearKitItems,
       addRequiredAccessories,
       removeRequiredAccessory,
       selectImage,
@@ -1111,10 +1120,6 @@ export default function App() {
       deleteReservation,
       saveReservation,
       reservePackage,
-      setItemAsKit,
-      addItemsToKit,
-      removeItemFromKit,
-      clearKitItems,
       addRequiredAccessories,
       removeRequiredAccessory,
       selectImage,
@@ -1137,6 +1142,7 @@ export default function App() {
       deleteItem,
       saveReservation,
       selectImage,
+      navigateToItem,
       exportData,
       updateUserProfile,
       addAuditLog,
@@ -1165,6 +1171,7 @@ export default function App() {
       deleteItem,
       saveReservation,
       selectImage,
+      navigateToItem,
       exportData,
       updateUserProfile,
       addAuditLog,

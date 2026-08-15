@@ -16,7 +16,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
-import { formatMoney, getStatusColor } from '../utils';
+import { formatMoney, getStatusColor, getStatusLabel } from '../utils';
 import {
   Badge,
   Card,
@@ -33,6 +33,8 @@ import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import NotesSection from '../components/NotesSection.jsx';
 import { useData } from '../contexts/DataContext.js';
 import { useToast } from '../contexts/ToastContext.js';
+import { usePermissions } from '../contexts/PermissionsContext.js';
+import { ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
 
 import { error as logError } from '../lib/logger.js';
 
@@ -56,6 +58,13 @@ function PackagesView({
   const ctxData = useData();
   const dataContext = propDataContext || ctxData;
   const { addToast } = useToast();
+  // Packages are gear grouping: mutations follow gear_list edit (matching the
+  // view guard and RLS), reserving follows schedule edit. This view had NO
+  // permission code — every role that could render it got full CRUD chrome
+  // that only died at the database.
+  const { canEdit } = usePermissions();
+  const canEditPackages = canEdit('gear_list');
+  const canReserve = canEdit('schedule');
   const [selectedPackage, setSelectedPackageInternal] = useState(initialSelectedPackage);
   const [showCreate, setShowCreate] = useState(false);
   const [showDetailsPrompt, setShowDetailsPrompt] = useState(false);
@@ -445,9 +454,14 @@ function PackagesView({
           });
         } catch (err) {
           logError('Failed to update package:', err);
-          addToast('Failed to update package — changes may not persist', 'error');
-          // Fallback to local state
-          dataContext.patchPackage(editingPackage.id, updates);
+          // Keep the editor OPEN and state untouched — the old path applied
+          // the rename locally anyway and closed, so the screen showed a
+          // change the reload would revert
+          addToast(
+            'Failed to update package: ' + (err.message || 'Please try again.'),
+            'error',
+          );
+          return;
         }
       } else {
         dataContext.patchPackage(editingPackage.id, updates);
@@ -912,7 +926,7 @@ function PackagesView({
                         )}
                       </div>
                     )}
-                    <Badge text={item.status} color={getStatusColor(item.status)} size="sm" />
+                    <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} size="sm" />
                   </div>
                 );
               })
@@ -942,7 +956,7 @@ function PackagesView({
           backLabel="Back to Packages"
           action={
             <div style={{ display: 'flex', gap: spacing[2], alignItems: 'center' }}>
-              {onReserve && packageItems.length > 0 && (
+              {onReserve && canReserve && packageItems.length > 0 && (
                 <Button
                   onClick={() => onReserve(selectedPackage, packageItems)}
                   icon={CalendarPlus}
@@ -950,31 +964,35 @@ function PackagesView({
                   Reserve
                 </Button>
               )}
-              <Button
-                variant="secondary"
-                onClick={() => handleStartEdit(selectedPackage)}
-                icon={Edit2}
-              >
-                Edit
-              </Button>
-              <button
-                onClick={() => handleDeleteClick(selectedPackage)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 32,
-                  height: 32,
-                  borderRadius: borderRadius.md,
-                  border: `1px solid ${colors.borderLight}`,
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  color: colors.danger,
-                }}
-                title="Delete package"
-              >
-                <Trash2 size={16} />
-              </button>
+              {canEditPackages && (
+                <Button
+                  variant="secondary"
+                  onClick={() => handleStartEdit(selectedPackage)}
+                  icon={Edit2}
+                >
+                  Edit
+                </Button>
+              )}
+              {canEditPackages && (
+                <button
+                  onClick={() => handleDeleteClick(selectedPackage)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 32,
+                    height: 32,
+                    borderRadius: borderRadius.md,
+                    border: `1px solid ${colors.borderLight}`,
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    color: colors.danger,
+                  }}
+                  title="Delete package"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
             </div>
           }
         />
@@ -1130,7 +1148,7 @@ function PackagesView({
                         {item.name}
                       </div>
                     </div>
-                    <Badge text={item.status} color={getStatusColor(item.status)} />
+                    <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
                     <ChevronRight size={16} color={colors.textMuted} />
                   </div>
                 );
@@ -1230,6 +1248,7 @@ function PackagesView({
               onReply={onReplyNote}
               onDelete={onDeleteNote}
               user={currentUser}
+              readOnly={!canEditPackages}
             />
           )}
         </Card>
@@ -1253,11 +1272,15 @@ function PackagesView({
       <PageHeader
         title="Packages"
         action={
-          <Button onClick={handleStartCreate} icon={Plus}>
-            Create Package
-          </Button>
+          canEditPackages ? (
+            <Button onClick={handleStartCreate} icon={Plus}>
+              Create Package
+            </Button>
+          ) : undefined
         }
       />
+
+      {!canEditPackages && <ViewOnlyBanner functionId="gear_list" />}
 
       <div style={{ marginBottom: spacing[4], maxWidth: 300 }}>
         <SearchInput
@@ -1280,7 +1303,8 @@ function PackagesView({
               : 'No packages match your search.'
           }
           action={
-            packages.length === 0 && (
+            packages.length === 0 &&
+            canEditPackages && (
               <Button onClick={handleStartCreate} icon={Plus}>
                 Create Your First Package
               </Button>

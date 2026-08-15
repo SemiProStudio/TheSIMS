@@ -80,6 +80,13 @@ export function useAdminHandlers({ users, roles, currentUser, dataContext, addAu
   const deleteRole = useCallback(
     async (roleId) => {
       const deletedRole = roles.find((r) => r.id === roleId);
+      // Deleting your own role silently demotes YOU to Standard User — the
+      // lockout guard only protects the literal admin role, so a custom
+      // admin-capable role could strand its last holder
+      if (roleId === (currentUser?.roleId || currentUser?.role_id)) {
+        addToast('You cannot delete the role you are currently assigned.', 'error');
+        return false;
+      }
       const affected = (users || []).filter((u) => u.roleId === roleId || u.role_id === roleId);
       try {
         // users.role_id is a plain FK with no cascade: users MUST be

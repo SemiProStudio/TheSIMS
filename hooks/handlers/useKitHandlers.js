@@ -1,190 +1,32 @@
 // ============================================================================
-// Kit, Accessories & Image Handlers
-// Extracted from App.jsx — manages kit/container items, accessories, and images
+// Accessories & Image Handlers
+// Extracted from App.jsx — manages required accessories and item images.
+// (The kit/container handlers that used to live here were deleted: they only
+// ever patched React state — no DB column has ever existed for childItemIds/
+// parentKitId — and the KitSection UI that called them was unmounted, so the
+// whole chain was a dead feature masquerading as saved.)
 // ============================================================================
 import { useCallback } from 'react';
 import { error as logError } from '../../lib/logger.js';
+import { useToast } from '../../contexts/ToastContext.js';
 
 export function useKitHandlers({
   inventory,
   selectedItem,
   setSelectedItem,
   dataContext,
-  currentUser,
   closeModal,
-  addAuditLog,
   addChangeLog,
 }) {
-  // ---- Kit / Container ----
-
-  const setItemAsKit = useCallback(
-    (kitType) => {
-      if (!selectedItem) return;
-
-      dataContext.patchInventoryItem(selectedItem.id, {
-        isKit: true,
-        kitType: kitType,
-        childItemIds: [],
-      });
-
-      setSelectedItem((prev) => ({
-        ...prev,
-        isKit: true,
-        kitType: kitType,
-        childItemIds: [],
-      }));
-
-      addAuditLog({
-        type: 'item_converted_to_kit',
-        description: `${selectedItem.name} converted to ${kitType}`,
-        user: currentUser?.name || 'Unknown',
-        itemId: selectedItem.id,
-      });
-
-      addChangeLog({
-        type: 'updated',
-        itemId: selectedItem.id,
-        itemType: 'item',
-        itemName: selectedItem.name,
-        description: `Converted "${selectedItem.name}" to ${kitType}`,
-        changes: [{ field: 'kitType', oldValue: null, newValue: kitType }],
-      });
-    },
-    [selectedItem, setSelectedItem, currentUser, addAuditLog, addChangeLog, dataContext],
-  );
-
-  const addItemsToKit = useCallback(
-    (childIds) => {
-      if (!selectedItem || !selectedItem.isKit) return;
-
-      const newChildIds = [...(selectedItem.childItemIds || []), ...childIds];
-      const addedItems = inventory.filter((i) => childIds.includes(i.id));
-
-      dataContext.mapInventory((item) => {
-        if (item.id === selectedItem.id) return { ...item, childItemIds: newChildIds };
-        if (childIds.includes(item.id)) return { ...item, parentKitId: selectedItem.id };
-        return item;
-      });
-
-      setSelectedItem((prev) => ({
-        ...prev,
-        childItemIds: newChildIds,
-      }));
-
-      addAuditLog({
-        type: 'items_added_to_kit',
-        description: `${childIds.length} item(s) added to kit ${selectedItem.name}`,
-        user: currentUser?.name || 'Unknown',
-        itemId: selectedItem.id,
-      });
-
-      addChangeLog({
-        type: 'updated',
-        itemId: selectedItem.id,
-        itemType: 'item',
-        itemName: selectedItem.name,
-        description: `Added ${childIds.length} item(s) to kit "${selectedItem.name}"`,
-        changes: addedItems.map((item) => ({
-          field: 'kitContents',
-          oldValue: null,
-          newValue: `+ ${item.name} (${item.id})`,
-        })),
-      });
-    },
-    [selectedItem, setSelectedItem, currentUser, inventory, addAuditLog, addChangeLog, dataContext],
-  );
-
-  const removeItemFromKit = useCallback(
-    (childId) => {
-      if (!selectedItem || !selectedItem.isKit) return;
-
-      const removedItem = inventory.find((i) => i.id === childId);
-      const newChildIds = (selectedItem.childItemIds || []).filter((id) => id !== childId);
-
-      dataContext.mapInventory((item) => {
-        if (item.id === selectedItem.id) return { ...item, childItemIds: newChildIds };
-        if (item.id === childId) return { ...item, parentKitId: null };
-        return item;
-      });
-
-      setSelectedItem((prev) => ({
-        ...prev,
-        childItemIds: newChildIds,
-      }));
-
-      if (removedItem) {
-        addChangeLog({
-          type: 'updated',
-          itemId: selectedItem.id,
-          itemType: 'item',
-          itemName: selectedItem.name,
-          description: `Removed "${removedItem.name}" from kit "${selectedItem.name}"`,
-          changes: [
-            {
-              field: 'kitContents',
-              oldValue: `${removedItem.name} (${removedItem.id})`,
-              newValue: null,
-            },
-          ],
-        });
-      }
-    },
-    [selectedItem, setSelectedItem, inventory, addChangeLog, dataContext],
-  );
-
-  const clearKitItems = useCallback(() => {
-    if (!selectedItem || !selectedItem.isKit) return;
-
-    const childIds = selectedItem.childItemIds || [];
-    const clearedItems = inventory.filter((i) => childIds.includes(i.id));
-    const childIdSet = new Set(childIds);
-
-    dataContext.mapInventory((item) => {
-      if (item.id === selectedItem.id) return { ...item, childItemIds: [] };
-      if (childIdSet.has(item.id)) return { ...item, parentKitId: null };
-      return item;
-    });
-
-    setSelectedItem((prev) => ({
-      ...prev,
-      childItemIds: [],
-    }));
-
-    addAuditLog({
-      type: 'kit_cleared',
-      description: `All items removed from kit ${selectedItem.name}`,
-      user: currentUser?.name || 'Unknown',
-      itemId: selectedItem.id,
-    });
-
-    if (clearedItems.length > 0) {
-      addChangeLog({
-        type: 'updated',
-        itemId: selectedItem.id,
-        itemType: 'item',
-        itemName: selectedItem.name,
-        description: `Cleared all ${clearedItems.length} item(s) from kit "${selectedItem.name}"`,
-        changes: clearedItems.map((item) => ({
-          field: 'kitContents',
-          oldValue: `${item.name} (${item.id})`,
-          newValue: null,
-        })),
-      });
-    }
-  }, [
-    selectedItem,
-    setSelectedItem,
-    currentUser,
-    inventory,
-    addAuditLog,
-    addChangeLog,
-    dataContext,
-  ]);
+  const { addToast } = useToast();
 
   // ---- Required Accessories ----
+  // Persist-first through the real update path. The old handlers only patched
+  // local state (there was no DB column), so every accessory list vanished on
+  // reload while the change log claimed success.
 
   const addRequiredAccessories = useCallback(
-    (itemId, accessoryIds) => {
+    async (itemId, accessoryIds) => {
       if (!itemId || !accessoryIds || accessoryIds.length === 0) return;
 
       const targetItem = inventory.find((i) => i.id === itemId);
@@ -193,7 +35,14 @@ export function useKitHandlers({
       const existingAccessories = targetItem.requiredAccessories || [];
       const newAccessories = [...new Set([...existingAccessories, ...accessoryIds])];
 
-      dataContext.patchInventoryItem(itemId, { requiredAccessories: newAccessories });
+      try {
+        // updateItem persists, then patches inventory state itself
+        await dataContext.updateItem(itemId, { requiredAccessories: newAccessories });
+      } catch (err) {
+        logError('Failed to save required accessories:', err);
+        addToast('Could not save required accessories. Please try again.', 'error');
+        return;
+      }
 
       if (selectedItem?.id === itemId) {
         setSelectedItem((prev) => ({ ...prev, requiredAccessories: newAccessories }));
@@ -215,11 +64,11 @@ export function useKitHandlers({
         })),
       });
     },
-    [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext],
+    [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext, addToast],
   );
 
   const removeRequiredAccessory = useCallback(
-    (itemId, accessoryId) => {
+    async (itemId, accessoryId) => {
       if (!itemId || !accessoryId) return;
 
       const targetItem = inventory.find((i) => i.id === itemId);
@@ -229,7 +78,13 @@ export function useKitHandlers({
       const existingAccessories = targetItem.requiredAccessories || [];
       const newAccessories = existingAccessories.filter((id) => id !== accessoryId);
 
-      dataContext.patchInventoryItem(itemId, { requiredAccessories: newAccessories });
+      try {
+        await dataContext.updateItem(itemId, { requiredAccessories: newAccessories });
+      } catch (err) {
+        logError('Failed to remove required accessory:', err);
+        addToast('Could not remove the accessory. Please try again.', 'error');
+        return;
+      }
 
       if (selectedItem?.id === itemId) {
         setSelectedItem((prev) => ({ ...prev, requiredAccessories: newAccessories }));
@@ -252,7 +107,7 @@ export function useKitHandlers({
         });
       }
     },
-    [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext],
+    [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext, addToast],
   );
 
   // ---- Image ----
@@ -260,12 +115,28 @@ export function useKitHandlers({
   const selectImage = useCallback(
     async (image) => {
       if (selectedItem) {
-        // Clean up old image from storage if replacing or removing
         const oldImage = selectedItem.image;
+
+        // Persist FIRST. Deleting the old storage object before the DB row
+        // stopped referencing it meant a failed write left every other client
+        // (and the next reload) pointing at a destroyed image.
+        try {
+          await dataContext.updateItem(selectedItem.id, { image });
+        } catch (err) {
+          logError('Failed to save image:', err);
+          addToast('Could not save the image change. Please try again.', 'error');
+          return; // keep the modal open — nothing was changed
+        }
+
+        setSelectedItem((prev) => ({ ...prev, image }));
+
+        // The row no longer references the old object — safe to clean up.
+        // Failure here only orphans a storage object, never breaks a reference.
         if (oldImage && oldImage !== image) {
           try {
-            const { storageService, isStorageUrl, getStoragePathFromUrl } =
-              await import('../../lib/index.js');
+            const { storageService, isStorageUrl, getStoragePathFromUrl } = await import(
+              '../../lib/index.js'
+            );
             if (isStorageUrl(oldImage)) {
               const oldPath = getStoragePathFromUrl(oldImage);
               if (oldPath) await storageService.deleteImage(oldPath).catch(() => {});
@@ -274,26 +145,13 @@ export function useKitHandlers({
             /* non-fatal */
           }
         }
-
-        dataContext.patchInventoryItem(selectedItem.id, { image });
-        setSelectedItem((prev) => ({ ...prev, image }));
-
-        try {
-          await dataContext.updateItem(selectedItem.id, { image });
-        } catch (err) {
-          logError('Failed to save image:', err);
-        }
       }
       closeModal();
     },
-    [selectedItem, setSelectedItem, closeModal, dataContext],
+    [selectedItem, setSelectedItem, closeModal, dataContext, addToast],
   );
 
   return {
-    setItemAsKit,
-    addItemsToKit,
-    removeItemFromKit,
-    clearKitItems,
     addRequiredAccessories,
     removeRequiredAccessory,
     selectImage,

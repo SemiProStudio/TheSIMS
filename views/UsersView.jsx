@@ -18,6 +18,7 @@ export const UsersPanel = memo(function UsersPanel({
   onChangeRole,
   onDeleteUser,
   onBack,
+  readOnly = false,
 }) {
   const roleOptions =
     roles.length > 0
@@ -35,9 +36,14 @@ export const UsersPanel = memo(function UsersPanel({
         onBack={onBack}
         backLabel="Back to Admin"
         action={
-          <Button onClick={onAddUser} icon={Plus}>
-            Add User
-          </Button>
+          // View-level admin_users gets a directory, not a mutation surface —
+          // Add User creates REAL sign-in credentials (GoTrue signup isn't
+          // blocked by RLS), so it must not be offered to view-only roles
+          readOnly ? undefined : (
+            <Button onClick={onAddUser} icon={Plus}>
+              Add User
+            </Button>
+          )
         }
       />
       <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
@@ -96,19 +102,21 @@ export const UsersPanel = memo(function UsersPanel({
                 value={u.roleId || u.role_id || 'role_user'}
                 onChange={(e) => onChangeRole?.(u.id, e.target.value)}
                 options={roleOptions}
-                disabled={isSelf}
+                disabled={isSelf || readOnly}
                 aria-label={`Role for ${u.name}`}
                 style={{ minWidth: 170 }}
               />
-              <Button
-                variant="secondary"
-                danger
-                onClick={() => onDeleteUser(u.id)}
-                disabled={isSelf}
-                icon={Trash2}
-                aria-label={`Delete ${u.name}`}
-                style={{ opacity: isSelf ? 0.3 : 1 }}
-              />
+              {!readOnly && (
+                <Button
+                  variant="secondary"
+                  danger
+                  onClick={() => onDeleteUser(u.id)}
+                  disabled={isSelf}
+                  icon={Trash2}
+                  aria-label={`Delete ${u.name}`}
+                  style={{ opacity: isSelf ? 0.3 : 1 }}
+                />
+              )}
             </Card>
           );
         })}
@@ -145,4 +153,6 @@ UsersPanel.propTypes = {
   onDeleteUser: PropTypes.func.isRequired,
   /** Callback to go back */
   onBack: PropTypes.func.isRequired,
+  /** True for roles with view-level admin_users — hides every mutation control */
+  readOnly: PropTypes.bool,
 };

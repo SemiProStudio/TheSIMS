@@ -9,8 +9,16 @@ import { Users, Shield, MapPin, Sliders, FolderTree, Clock, FileText } from 'luc
 import { VIEWS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Card } from '../components/ui.jsx';
+import { usePermissions } from '../contexts/PermissionsContext.js';
 
 export const AdminPanel = memo(function AdminPanel({ setCurrentView }) {
+  const { canView, canEdit } = usePermissions();
+
+  // Each card carries the same permission its target view requires — the hub
+  // used to show all seven to anyone who got in, with clicks landing on
+  // "Access restricted" for the ones the role couldn't open. The pure-editor
+  // pages (roles/locations/specs/categories) require EDIT, matching
+  // EDIT_REQUIRED_VIEWS in the view guard.
   const cards = [
     {
       icon: Users,
@@ -18,6 +26,7 @@ export const AdminPanel = memo(function AdminPanel({ setCurrentView }) {
       description: 'Add, edit, or remove users',
       action: () => setCurrentView(VIEWS.USERS),
       color: colors.accent1,
+      permissionId: 'admin_users',
     },
     {
       icon: Shield,
@@ -25,6 +34,8 @@ export const AdminPanel = memo(function AdminPanel({ setCurrentView }) {
       description: 'Manage user roles and access',
       action: () => setCurrentView(VIEWS.ROLES_MANAGE),
       color: colors.warning,
+      permissionId: 'admin_roles',
+      requireEdit: true,
     },
     {
       icon: MapPin,
@@ -32,6 +43,8 @@ export const AdminPanel = memo(function AdminPanel({ setCurrentView }) {
       description: 'Buildings, rooms, and storage',
       action: () => setCurrentView(VIEWS.LOCATIONS_MANAGE),
       color: colors.danger,
+      permissionId: 'admin_locations',
+      requireEdit: true,
     },
     {
       icon: Sliders,
@@ -39,6 +52,8 @@ export const AdminPanel = memo(function AdminPanel({ setCurrentView }) {
       description: 'Category specifications',
       action: () => setCurrentView(VIEWS.EDIT_SPECS),
       color: colors.primary,
+      permissionId: 'admin_specs',
+      requireEdit: true,
     },
     {
       icon: FolderTree,
@@ -46,6 +61,8 @@ export const AdminPanel = memo(function AdminPanel({ setCurrentView }) {
       description: 'Equipment categories',
       action: () => setCurrentView(VIEWS.EDIT_CATEGORIES),
       color: colors.accent1,
+      permissionId: 'admin_categories',
+      requireEdit: true,
     },
     {
       icon: Clock,
@@ -53,6 +70,7 @@ export const AdminPanel = memo(function AdminPanel({ setCurrentView }) {
       description: 'Item & package edit history',
       action: () => setCurrentView(VIEWS.CHANGE_LOG),
       color: colors.accent2,
+      permissionId: 'admin_audit',
     },
     {
       icon: FileText,
@@ -60,8 +78,11 @@ export const AdminPanel = memo(function AdminPanel({ setCurrentView }) {
       description: 'System activity history',
       action: () => setCurrentView(VIEWS.AUDIT_LOG),
       color: colors.accent3,
+      permissionId: 'admin_audit',
     },
-  ];
+  ].filter((card) =>
+    card.requireEdit ? canEdit(card.permissionId) : canView(card.permissionId),
+  );
 
   return (
     <>
@@ -73,11 +94,11 @@ export const AdminPanel = memo(function AdminPanel({ setCurrentView }) {
           gap: spacing[4],
         }}
       >
-        {cards.map((card, i) => {
+        {cards.map((card) => {
           const Icon = card.icon;
           return (
             <Card
-              key={i}
+              key={card.label}
               className="admin-card"
               onClick={card.action}
               style={{

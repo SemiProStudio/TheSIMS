@@ -182,7 +182,7 @@ Before deploying, add your Supabase credentials:
 1. Wait for build to complete (~1-2 minutes)
 2. Click the preview URL (e.g., `sims-xxxxx.vercel.app`)
 3. You should see the SIMS login page
-4. Login with any email and password `demo` (demo mode)
+4. Login with an account from your Supabase project (demo mode was removed — missing credentials show a configuration-error screen)
 
 ### Step 3.4: (Optional) Custom Domain
 
@@ -224,7 +224,7 @@ This file:
 
 - Reads `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from environment
 - Creates Supabase client
-- Enables demo mode if credentials are missing
+- Shows a configuration-error screen if credentials are missing (demo mode was removed)
 
 ### public/manifest.json
 
@@ -239,7 +239,7 @@ Defines app name, icons, and colors for "Add to Home Screen" functionality.
 ### Verify Core Functionality
 
 - [ ] Login page loads
-- [ ] Demo mode login works (any email, password: `demo`)
+- [ ] Login works with a real Supabase account
 - [ ] Dashboard displays
 - [ ] Gear List shows items (if seed data loaded)
 - [ ] Can create/edit/delete items

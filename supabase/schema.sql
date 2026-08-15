@@ -242,6 +242,9 @@ CREATE TABLE IF NOT EXISTS inventory (
   is_kit BOOLEAN DEFAULT false,
   kit_type VARCHAR(50),
   kit_contents JSONB DEFAULT '[]',
+  -- Inventory ids that should accompany this item at checkout
+  -- (added 2026-08-14: the Required Accessories UI was state-only before)
+  required_accessories JSONB DEFAULT '[]',
   
   -- Statistics
   view_count INTEGER DEFAULT 0,
@@ -674,7 +677,10 @@ ALTER TABLE email_templates ENABLE ROW LEVEL SECURITY;
 -- =============================================================================
 
 CREATE POLICY "read_roles" ON roles FOR SELECT TO authenticated USING (true);
-CREATE POLICY "read_users" ON users FOR SELECT TO authenticated USING (true);
+-- Own row always (login/settings); the full directory needs admin_users view
+-- (tightened 2026-08-14 — USING (true) let any account dump user emails)
+CREATE POLICY "read_users" ON users FOR SELECT TO authenticated
+  USING (id = (select auth.uid()) OR has_permission('admin_users', 'view'));
 CREATE POLICY "read_locations" ON locations FOR SELECT TO authenticated USING (true);
 CREATE POLICY "read_categories" ON categories FOR SELECT TO authenticated USING (true);
 CREATE POLICY "read_specs" ON specs FOR SELECT TO authenticated USING (true);
@@ -692,7 +698,11 @@ CREATE POLICY "read_package_notes" ON package_notes FOR SELECT TO authenticated 
 CREATE POLICY "read_pack_lists" ON pack_lists FOR SELECT TO authenticated USING (true);
 CREATE POLICY "read_pack_list_items" ON pack_list_items FOR SELECT TO authenticated USING (true);
 CREATE POLICY "read_pack_list_packages" ON pack_list_packages FOR SELECT TO authenticated USING (true);
-CREATE POLICY "read_audit_log" ON audit_log FOR SELECT TO authenticated USING (true);
+-- Reads match the Audit Log page gate; writes stay open (write_audit_log) and
+-- the client never chains .select() onto audit inserts (RETURNING would need
+-- SELECT visibility). Tightened 2026-08-14.
+CREATE POLICY "read_audit_log" ON audit_log FOR SELECT TO authenticated
+  USING (has_permission('admin_audit', 'view'));
 
 -- =============================================================================
 -- RLS POLICIES - Write access (permission-checked)

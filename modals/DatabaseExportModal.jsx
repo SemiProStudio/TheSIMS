@@ -13,7 +13,7 @@ import { Download } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
-import { downloadCSV } from '../utils';
+import { downloadCSV, getTodayISO } from '../utils';
 import { backupService } from '../lib/services.js';
 import {
   BACKUP_SECTIONS,
@@ -40,6 +40,7 @@ const INVENTORY_CSV_COLUMNS = [
   ['currentValue', (r) => r.current_value],
   ['serialNumber', (r) => r.serial_number],
   ['quantity', (r) => r.quantity],
+  ['reorderPoint', (r) => r.reorder_point],
 ];
 
 export const DatabaseExportModal = memo(function DatabaseExportModal({ onClose }) {
@@ -72,7 +73,7 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({ onClose }
   };
 
   const handleExport = async () => {
-    const timestamp = new Date().toISOString().split('T')[0];
+    const timestamp = getTodayISO();
     setError(null);
     setExporting(true);
 
@@ -233,7 +234,7 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({ onClose }
         >
           {exportFormat === 'json'
             ? 'Fetches complete tables from the database — including item notes, full maintenance and checkout history, and cancelled reservations. Passwords are never included.'
-            : 'CSV export contains all inventory items, suitable for spreadsheets. It re-imports cleanly through Import CSV.'}
+            : 'CSV export contains all inventory items, suitable for spreadsheets. Its columns re-import through Import CSV — as NEW items with fresh ids, not a restore.'}
         </p>
 
         {/* Progress */}

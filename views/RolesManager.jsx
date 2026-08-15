@@ -340,7 +340,11 @@ const RoleEditor = memo(function RoleEditor({ role, onSave, onCancel }) {
   const [permissions, setPermissions] = useState(
     role?.permissions ||
       Object.keys(APP_FUNCTIONS).reduce((acc, key) => {
-        acc[APP_FUNCTIONS[key].id] = PERMISSION_LEVELS.VIEW;
+        const id = APP_FUNCTIONS[key].id;
+        // New roles start with NO admin access — the old VIEW-everything
+        // default handed every fresh role the user directory and the
+        // database export until someone remembered to dial it back
+        acc[id] = id.startsWith('admin_') ? PERMISSION_LEVELS.HIDE : PERMISSION_LEVELS.VIEW;
         return acc;
       }, {}),
   );
@@ -621,9 +625,11 @@ const UserAssignmentModal = memo(function UserAssignmentModal({
     });
   };
 
-  const handleSave = () => {
-    onSave(role.id, [...selectedUsers]);
-    onClose();
+  const handleSave = async () => {
+    // assignUsersToRole returns a success boolean — close only on success so
+    // a failed assignment doesn't silently discard the selection
+    const ok = await onSave(role.id, [...selectedUsers]);
+    if (ok !== false) onClose();
   };
 
   return (
@@ -705,8 +711,11 @@ function RolesManager({
     setShowEditor(true);
   };
 
-  const handleSave = (roleData) => {
-    onSaveRole?.(roleData);
+  const handleSave = async (roleData) => {
+    // saveRole returns a success boolean (persist-first) — the editor used
+    // to close regardless, discarding the permission matrix on failure
+    const ok = await onSaveRole?.(roleData);
+    if (ok === false) return;
     setShowEditor(false);
     setEditingRole(null);
   };
@@ -715,7 +724,9 @@ function RolesManager({
     if (showConfirm) {
       showConfirm({
         title: 'Delete Role',
-        message: `Are you sure you want to delete the "${role.name}" role? Users with this role will need to be reassigned.`,
+        // Honest copy: deletion AUTOMATICALLY demotes holders — the old text
+        // implied a manual reassignment step that doesn't exist
+        message: `Delete the "${role.name}" role? Everyone holding it will be reassigned to Standard User immediately.`,
         confirmText: 'Delete',
         variant: 'danger',
         onConfirm: () => onDeleteRole?.(role.id),

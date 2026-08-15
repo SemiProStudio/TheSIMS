@@ -37,7 +37,6 @@ export default defineConfig({
         '**/*.d.ts',
         '**/*.config.*',
         'main.jsx', // App bootstrap — exercised only in a browser
-        'data.js', // Demo data
         'themes-data.js', // Theme definitions
         'public/', // Static assets
       ],

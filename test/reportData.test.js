@@ -292,9 +292,19 @@ describe('acquisitionSeries', () => {
     );
     expect(series).toHaveLength(24);
     expect(series[0].value).toBe(1000); // pre-window seed
-    expect(series[series.length - 1]).toEqual({ label: 'Aug', value: 1500 });
+    // >12-month spans carry the year — bare month names repeated ("Sep",
+    // "Sep") and made the axis ambiguous
+    expect(series[series.length - 1]).toEqual({ label: "Aug '26", value: 1500 });
     expect(datedItems).toBe(2);
     expect(undatedItems).toBe(1);
+  });
+
+  it('12-month spans keep bare month labels', () => {
+    const { series } = acquisitionSeries([{ id: 'A', purchaseDate: '2026-08-01', currentValue: 10 }], {
+      months: 12,
+      now: NOW,
+    });
+    expect(series[series.length - 1].label).toBe('Aug');
   });
 });
 
@@ -374,15 +384,25 @@ describe('bucketEvents', () => {
     expect(buckets[buckets.length - 1]).toEqual({ label: '8/10', value: 1 });
   });
 
-  it('365-day windows bucket monthly', () => {
+  it('365-day windows bucket monthly, including the partial oldest month', () => {
+    // NOW = 2026-08-14 → window starts 2025-08-15, spanning 13 calendar
+    // months. The old fixed 12-month key list dropped events in the partial
+    // oldest month: they passed the date filter but had no bucket, so the
+    // trend silently disagreed with the day-of-week chart beside it.
     const buckets = bucketEvents(
-      [{ timestamp: '2026-08-01T09:00:00' }, { timestamp: '2025-09-20T09:00:00' }],
+      [
+        { timestamp: '2026-08-01T09:00:00' },
+        { timestamp: '2025-09-20T09:00:00' },
+        { timestamp: '2025-08-20T09:00:00' }, // inside the partial oldest month
+      ],
       { days: 365, now: NOW },
     );
-    expect(buckets).toHaveLength(12);
+    expect(buckets).toHaveLength(13);
     expect(buckets[buckets.length - 1]).toEqual({ label: 'Aug', value: 1 });
-    expect(buckets[0].label).toBe('Sep');
-    expect(buckets[0].value).toBe(1);
+    expect(buckets[0].label).toBe('Aug');
+    expect(buckets[0].value).toBe(1); // no longer dropped
+    expect(buckets[1].label).toBe('Sep');
+    expect(buckets[1].value).toBe(1);
   });
 });
 
@@ -425,7 +445,10 @@ describe('CSV builders', () => {
     expect(rows[0][7]).toBe('No');
   });
 
-  it('csvDate stamps ISO dates', () => {
-    expect(csvDate(new Date(Date.UTC(2026, 7, 14)))).toBe('2026-08-14');
+  it('csvDate stamps the LOCAL calendar date', () => {
+    // Local-midnight fixture: toISOString() would shift this to the previous
+    // day east of UTC (and a UTC fixture shifts west) — csvDate must not
+    expect(csvDate(new Date(2026, 7, 14))).toBe('2026-08-14');
+    expect(csvDate(new Date(2026, 7, 14, 23, 59))).toBe('2026-08-14');
   });
 });

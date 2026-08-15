@@ -242,9 +242,11 @@ export const ReportsPanel = memo(function ReportsPanel({
                   <Sparkline
                     data={checkoutSpark}
                     color={colors.accent1}
-                    ariaLabel="Weekly checkouts over the last 12 weeks"
+                    ariaLabel="Checkouts per week over the last 90 days"
                   />
-                  <div style={smallLabelStyle}>Last 12 weeks</div>
+                  {/* 90 days spans 13 Monday-start weeks with partial edge
+                      weeks — "12 weeks" overpromised full weeks */}
+                  <div style={smallLabelStyle}>Weekly, last 90 days</div>
                 </>
               ) : (
                 <div style={smallLabelStyle}>Loading trend…</div>
@@ -362,6 +364,9 @@ export const ReportsPanel = memo(function ReportsPanel({
               style={{ flex: 1 }}
               onClick={exportCSV(() => csvForMaintenance(maintenanceRecords))}
               icon={Download}
+              // Until the FULL history loads this would silently export
+              // pending-only records
+              disabled={!maintenanceLoaded}
             >
               Export
             </Button>

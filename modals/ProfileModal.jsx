@@ -111,16 +111,11 @@ function ProfileModal({ user, onSave, onClose }) {
     if (user?.id) {
       setLogoUploading(true);
       try {
-        const { storageService, isStorageUrl, getStoragePathFromUrl } =
-          await import('../lib/index.js');
+        const { storageService } = await import('../lib/index.js');
 
-        // Delete old logo from storage before uploading new one
-        const oldLogo = profile.logo;
-        if (oldLogo && isStorageUrl(oldLogo)) {
-          const oldPath = getStoragePathFromUrl(oldLogo);
-          if (oldPath) await storageService.deleteImage(oldPath).catch(() => {});
-        }
-
+        // Upload only — never destroy the old logo before the profile save
+        // commits (Cancel or a failed save would leave the account pointing
+        // at a deleted object). The old object is orphaned at worst.
         const result = await storageService.uploadFromDataUrl(
           croppedDataUrl,
           `profiles/${user.id}`,
@@ -261,20 +256,9 @@ function ProfileModal({ user, onSave, onClose }) {
                       Resize / Crop
                     </button>
                     <button
-                      onClick={async () => {
-                        // Delete old logo from storage
-                        if (profile.logo && user?.id) {
-                          try {
-                            const { storageService, isStorageUrl, getStoragePathFromUrl } =
-                              await import('../lib/index.js');
-                            if (isStorageUrl(profile.logo)) {
-                              const path = getStoragePathFromUrl(profile.logo);
-                              if (path) await storageService.deleteImage(path).catch(() => {});
-                            }
-                          } catch (_e) {
-                            /* non-fatal */
-                          }
-                        }
+                      onClick={() => {
+                        // Clear the form only — deleting the storage object
+                        // here survived Cancel and broke the saved logo
                         handleChange('logo', null);
                       }}
                       style={{

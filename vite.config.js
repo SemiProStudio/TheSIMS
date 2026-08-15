@@ -66,7 +66,6 @@ export default defineConfig({
   // Resolve aliases for cleaner imports
   resolve: {
     alias: {
-      '@': '/src',
       '@components': '/components',
       '@lib': '/lib',
     },

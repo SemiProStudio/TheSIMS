@@ -13,9 +13,9 @@ import { Modal, ModalHeader } from './ModalBase.jsx';
 export const ExportModal = memo(function ExportModal({
   onExport,
   onClose,
-  user: _user,
   selectionCount = 0,
   totalCount = 0,
+  allowNotes = true,
 }) {
   const [format, setFormat] = useState('csv');
   const [columns, setColumns] = useState(['id', 'name', 'category', 'status', 'value']);
@@ -36,7 +36,12 @@ export const ExportModal = memo(function ExportModal({
     { id: 'purchasePrice', label: 'Purchase $' },
     { id: 'value', label: 'Current Value' },
     { id: 'serialNumber', label: 'Serial #' },
-    { id: 'notes', label: 'Notes' },
+    // Without these two, an export-then-reimport reset every quantity-tracked
+    // item to 1 and dropped reorder points entirely
+    { id: 'quantity', label: 'Quantity' },
+    { id: 'reorderPoint', label: 'Reorder Point' },
+    // Note text is item_details data — hidden from roles that can't view it
+    ...(allowNotes ? [{ id: 'notes', label: 'Notes' }] : []),
   ];
 
   const toggleColumn = (col) =>
@@ -155,9 +160,12 @@ export const ExportModal = memo(function ExportModal({
 
         <Button
           fullWidth
-          onClick={() => {
-            onExport({ format, columns, includeBranding, scope });
-            onClose();
+          onClick={async () => {
+            // Close only after the export finished — the modal used to close
+            // before the async work, so a failed notes fetch toasted into a
+            // screen with no modal left to retry from
+            const result = await onExport({ format, columns, includeBranding, scope });
+            if (result !== false) onClose();
           }}
           icon={Download}
         >
@@ -176,13 +184,10 @@ ExportModal.propTypes = {
   onExport: PropTypes.func.isRequired,
   /** Callback to close modal */
   onClose: PropTypes.func.isRequired,
-  /** Current user (for branding options) */
-  user: PropTypes.shape({
-    name: PropTypes.string,
-    organization: PropTypes.string,
-  }),
   /** Items currently selected in the gear list (export scope) */
   selectionCount: PropTypes.number,
   /** Total inventory count (export scope when nothing is selected) */
   totalCount: PropTypes.number,
+  /** Whether the role may export note text (item_details view) */
+  allowNotes: PropTypes.bool,
 };

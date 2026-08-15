@@ -1,8 +1,13 @@
 // ============================================================================
 // Note Handlers (Items, Packages, Reservations, Clients)
-// Extracted from App.jsx — manages note CRUD for all entity types
+// Extracted from App.jsx — manages note CRUD for all entity types.
+// Optimistic-with-rollback: patch state, await the persist, and on failure
+// restore the snapshot and toast. (The old handlers swallowed failures — a
+// note that never reached the DB stayed on screen until reload, and deletes
+// wrote their audit entry before the un-awaited persist.)
 // ============================================================================
 import { useState, useCallback, useMemo } from 'react';
+import { useToast } from '../../contexts/ToastContext.js';
 import {
   generateId,
   getTodayISO,
@@ -31,6 +36,7 @@ export function useNoteHandlers({
   currentUser,
 }) {
   const [selectedClientId, setSelectedClientId] = useState(null);
+  const { addToast } = useToast();
 
   const createNoteHandler = useCallback(
     (entityType) => {
@@ -73,8 +79,11 @@ export function useNoteHandlers({
         }));
       };
 
-      // DB persistence per entity type (reservation notes are JSONB on the
-      // reservation row and persist through the reservation update path)
+      // DB persistence per entity type. Item/package notes live in their own
+      // tables (persist returns the row or null). Reservation notes are JSONB
+      // on the reservation row, so the WHOLE updated array persists through
+      // updateReservation — the old code claimed that happened but no
+      // mapping existed, and every reservation note vanished on reload.
       const persistNote =
         entityType === 'item'
           ? dataContext?.addItemNote
@@ -88,11 +97,58 @@ export function useNoteHandlers({
             ? dataContext?.deletePackageNote
             : null;
 
+      // Persist the full notes array for JSONB-backed reservations; true on
+      // success. Used by add/reply/delete alike.
+      const persistReservationNotes = async (reservationId, notes) => {
+        try {
+          await dataContext.updateReservation(reservationId, { notes });
+          return true;
+        } catch {
+          return false;
+        }
+      };
+
+      const rollback = (entityId, previousNotes) => {
+        updateCollection(entityId, () => previousNotes);
+        setEntity((prev) => (prev ? { ...prev, notes: previousNotes } : prev));
+      };
+
+      const addOrReply = async (buildNotes, note, tempId) => {
+        const entity = getEntity();
+        if (!entity) return;
+        const previousNotes = entity.notes || [];
+        const updatedNotes = buildNotes(previousNotes, note);
+
+        updateCollection(entity.id, () => updatedNotes);
+        setEntity((prev) => ({ ...prev, notes: updatedNotes }));
+
+        if (entityType === 'reservation') {
+          const ok = await persistReservationNotes(entity.id, updatedNotes);
+          if (!ok) {
+            rollback(entity.id, previousNotes);
+            addToast('Could not save the note. Please try again.', 'error');
+          }
+          return;
+        }
+
+        if (persistNote) {
+          const dbResult = await persistNote(entity.id, note);
+          if (!dbResult) {
+            rollback(entity.id, previousNotes);
+            addToast('Could not save the note. Please try again.', 'error');
+            return;
+          }
+          if (dbResult.id && dbResult.id !== tempId) {
+            const swapId = (notes) => replaceNoteId(notes, tempId, dbResult.id);
+            updateCollection(entity.id, swapId);
+            setEntity((prev) => ({ ...prev, notes: swapId(prev.notes || []) }));
+          }
+        }
+      };
+
       return {
         add: async (text) => {
-          const entity = getEntity();
-          if (!text?.trim() || !entity) return;
-
+          if (!text?.trim()) return;
           const tempId = generateId();
           const note = {
             id: tempId,
@@ -102,25 +158,11 @@ export function useNoteHandlers({
             replies: [],
             deleted: false,
           };
-          const updatedNotes = [...(entity.notes || []), note];
-
-          updateCollection(entity.id, () => updatedNotes);
-          setEntity((prev) => ({ ...prev, notes: updatedNotes }));
-
-          if (persistNote) {
-            const dbResult = await persistNote(entity.id, note);
-            if (dbResult?.id && dbResult.id !== tempId) {
-              const swapId = (notes) => replaceNoteId(notes, tempId, dbResult.id);
-              updateCollection(entity.id, swapId);
-              setEntity((prev) => ({ ...prev, notes: swapId(prev.notes || []) }));
-            }
-          }
+          await addOrReply((prev) => [...prev, note], note, tempId);
         },
 
         reply: async (parentId, text) => {
-          const entity = getEntity();
-          if (!text?.trim() || !entity) return;
-
+          if (!text?.trim()) return;
           const tempId = generateId();
           const reply = {
             id: tempId,
@@ -131,26 +173,34 @@ export function useNoteHandlers({
             deleted: false,
             parentId,
           };
-          const updatedNotes = addReplyToNote(entity.notes || [], parentId, reply);
-
-          updateCollection(entity.id, () => updatedNotes);
-          setEntity((prev) => ({ ...prev, notes: updatedNotes }));
-
-          if (persistNote) {
-            const dbResult = await persistNote(entity.id, reply);
-            if (dbResult?.id && dbResult.id !== tempId) {
-              const swapId = (notes) => replaceNoteId(notes, tempId, dbResult.id);
-              updateCollection(entity.id, swapId);
-              setEntity((prev) => ({ ...prev, notes: swapId(prev.notes || []) }));
-            }
-          }
+          await addOrReply((prev) => addReplyToNote(prev, parentId, reply), reply, tempId);
         },
 
-        delete: (noteId) => {
+        delete: async (noteId) => {
           const entity = getEntity();
           if (!entity) return;
 
-          const note = findNoteById(entity.notes || [], noteId);
+          const previousNotes = entity.notes || [];
+          const note = findNoteById(previousNotes, noteId);
+          const updatedNotes = markNoteDeleted(previousNotes, noteId);
+          updateCollection(entity.id, () => updatedNotes);
+          setEntity((prev) => ({ ...prev, notes: updatedNotes }));
+
+          const ok =
+            entityType === 'reservation'
+              ? await persistReservationNotes(entity.id, updatedNotes)
+              : persistNoteDelete
+                ? await persistNoteDelete(noteId)
+                : true;
+
+          if (!ok) {
+            rollback(entity.id, previousNotes);
+            addToast('Could not delete the note. Please try again.', 'error');
+            return;
+          }
+
+          // Audit AFTER the persist — the entry used to be written first,
+          // recording deletions that never happened
           if (note) {
             dataContext.addAuditLog({
               type: 'note_deleted',
@@ -159,14 +209,6 @@ export function useNoteHandlers({
               user: currentUser.name,
               itemId: entity.id,
             });
-          }
-
-          const updatedNotes = markNoteDeleted(entity.notes || [], noteId);
-          updateCollection(entity.id, () => updatedNotes);
-          setEntity((prev) => ({ ...prev, notes: updatedNotes }));
-
-          if (persistNoteDelete) {
-            persistNoteDelete(noteId);
           }
         },
       };
@@ -181,6 +223,7 @@ export function useNoteHandlers({
       selectedReservationItem,
       currentUser,
       dataContext,
+      addToast,
     ],
   );
 
@@ -194,8 +237,24 @@ export function useNoteHandlers({
   // Client notes persist to the client_notes table (optimistic local patch,
   // then swap the temp id for the DB UUID). These were local-only before —
   // every note typed on a client silently vanished on reload.
-  const clientNoteHandlers = useMemo(
-    () => ({
+  const clientNoteHandlers = useMemo(() => {
+    // Same rollback contract as the entity handlers: a failed persist
+    // restores the previous notes and tells the user
+    const persistOrRollback = async (clientId, note, tempId, previousUpdater) => {
+      const dbResult = await dataContext.addClientNote(clientId, note);
+      if (!dbResult) {
+        dataContext.patchClient(clientId, previousUpdater);
+        addToast('Could not save the note. Please try again.', 'error');
+        return;
+      }
+      if (dbResult.id && dbResult.id !== tempId) {
+        dataContext.patchClient(clientId, (client) => ({
+          clientNotes: replaceNoteIdDeep(client.clientNotes || [], tempId, dbResult.id),
+        }));
+      }
+    };
+
+    return {
       add: async (clientId, text) => {
         if (!text?.trim() || !clientId) return;
         const tempId = generateId();
@@ -211,12 +270,9 @@ export function useNoteHandlers({
           clientNotes: [...(client.clientNotes || []), note],
         }));
         if (dataContext?.addClientNote) {
-          const dbResult = await dataContext.addClientNote(clientId, note);
-          if (dbResult?.id && dbResult.id !== tempId) {
-            dataContext.patchClient(clientId, (client) => ({
-              clientNotes: replaceNoteIdDeep(client.clientNotes || [], tempId, dbResult.id),
-            }));
-          }
+          await persistOrRollback(clientId, note, tempId, (client) => ({
+            clientNotes: (client.clientNotes || []).filter((n) => n.id !== tempId),
+          }));
         }
       },
       reply: async (clientId, parentId, text) => {
@@ -235,24 +291,31 @@ export function useNoteHandlers({
           clientNotes: addReplyToNote(client.clientNotes || [], parentId, reply),
         }));
         if (dataContext?.addClientNote) {
-          const dbResult = await dataContext.addClientNote(clientId, reply);
-          if (dbResult?.id && dbResult.id !== tempId) {
-            dataContext.patchClient(clientId, (client) => ({
-              clientNotes: replaceNoteIdDeep(client.clientNotes || [], tempId, dbResult.id),
+          const stripReply = (notes) =>
+            notes.map((n) => ({
+              ...n,
+              replies: (n.replies || []).filter((r) => r.id !== tempId),
             }));
-          }
+          await persistOrRollback(clientId, reply, tempId, (client) => ({
+            clientNotes: stripReply(client.clientNotes || []),
+          }));
         }
       },
-      delete: (clientId, noteId) => {
+      delete: async (clientId, noteId) => {
         if (!clientId) return;
-        dataContext.patchClient(clientId, (client) => ({
-          clientNotes: markNoteDeleted(client.clientNotes || [], noteId),
-        }));
-        dataContext?.deleteClientNote?.(noteId);
+        let previousNotes = null;
+        dataContext.patchClient(clientId, (client) => {
+          previousNotes = client.clientNotes || [];
+          return { clientNotes: markNoteDeleted(previousNotes, noteId) };
+        });
+        const ok = await dataContext?.deleteClientNote?.(noteId);
+        if (ok === false && previousNotes) {
+          dataContext.patchClient(clientId, () => ({ clientNotes: previousNotes }));
+          addToast('Could not delete the note. Please try again.', 'error');
+        }
       },
-    }),
-    [currentUser, dataContext],
-  );
+    };
+  }, [currentUser, dataContext, addToast]);
 
   return {
     itemNoteHandlers,
