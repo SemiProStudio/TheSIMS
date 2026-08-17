@@ -20,6 +20,7 @@ import {
   updateById,
   removeById,
   findById,
+  mergeHydratedCollections,
   filterBySearch,
   rankBySearchRelevance,
   isItemOverdue,
@@ -1227,5 +1228,56 @@ describe('calculateDepreciation — edge cases', () => {
     expect(typeof result.ageInMonths).toBe('number');
     expect(result.ageInYears).toBeGreaterThan(0);
     expect(result.ageInMonths).toBeGreaterThan(0);
+  });
+});
+
+// =============================================================================
+// mergeHydratedCollections — item-detail hydration must not clobber local state
+// (regression for the CI-caught race: a note added while the detail fetch was
+// in flight vanished when the stale snapshot landed)
+// =============================================================================
+
+describe('mergeHydratedCollections', () => {
+  it('keeps local-only rows added while the fetch was in flight', () => {
+    const item = { id: 'X', notes: [{ id: 'n-new', text: 'added during fetch' }] };
+    const merged = mergeHydratedCollections(item, { notes: [] });
+    expect(merged.notes).toEqual([{ id: 'n-new', text: 'added during fetch' }]);
+  });
+
+  it('prefers the local version of a row over the stale server snapshot', () => {
+    const item = { id: 'X', notes: [{ id: 'n1', text: 'edited', deleted: true }] };
+    const merged = mergeHydratedCollections(item, {
+      notes: [{ id: 'n1', text: 'original', deleted: false }],
+    });
+    expect(merged.notes).toEqual([{ id: 'n1', text: 'edited', deleted: true }]);
+  });
+
+  it('appends local-only rows after the server rows', () => {
+    const item = { id: 'X', notes: [{ id: 'n2', text: 'local add' }] };
+    const merged = mergeHydratedCollections(item, { notes: [{ id: 'n1', text: 'server' }] });
+    expect(merged.notes.map((n) => n.id)).toEqual(['n1', 'n2']);
+  });
+
+  it('takes the server rows wholesale when the item has no local collection yet', () => {
+    const item = { id: 'X' };
+    const merged = mergeHydratedCollections(item, { notes: [{ id: 'n1' }] });
+    expect(merged.notes).toEqual([{ id: 'n1' }]);
+  });
+
+  it('handles multiple collections independently and passes through non-arrays', () => {
+    const item = { id: 'X', notes: [{ id: 'n2' }], reminders: [{ id: 'r1', done: true }] };
+    const merged = mergeHydratedCollections(item, {
+      notes: [{ id: 'n1' }],
+      reminders: [{ id: 'r1', done: false }],
+      checkoutHistory: undefined,
+    });
+    expect(merged.notes.map((n) => n.id)).toEqual(['n1', 'n2']);
+    expect(merged.reminders).toEqual([{ id: 'r1', done: true }]);
+    expect(merged.checkoutHistory).toBeUndefined();
+  });
+
+  it('tolerates a null item', () => {
+    const merged = mergeHydratedCollections(null, { notes: [{ id: 'n1' }] });
+    expect(merged.notes).toEqual([{ id: 'n1' }]);
   });
 });
