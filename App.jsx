@@ -235,6 +235,15 @@ export default function App() {
     }
     setIsLoggedIn(false);
     setCurrentUser(null);
+    // Clear privileged device-local caches so the next user of a shared
+    // machine can't read the previous user's activity. Supabase manages its
+    // own session keys; these are ours.
+    try {
+      localStorage.removeItem('sims_change_log');
+      localStorage.removeItem('sims-deeplink-item');
+    } catch {
+      /* ignore storage errors */
+    }
   }, [auth]);
 
   // ============================================================================
@@ -951,7 +960,7 @@ export default function App() {
             );
           const logoHtml =
             sf.logo && p.logo
-              ? `<img src="${p.logo}" style="height:36px;object-fit:contain;margin-right:12px;" />`
+              ? `<img src="${escHtml(p.logo)}" style="height:36px;object-fit:contain;margin-right:12px;" />`
               : '';
           if (logoHtml || parts.length) {
             brandingHtml = `<div style="display:flex;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #ddd;">${logoHtml}<div>${parts.join('<br/>')}</div></div>`;

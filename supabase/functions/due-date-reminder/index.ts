@@ -218,6 +218,6 @@ Deno.serve(async (req: Request) => {
 
   } catch (error) {
     console.error('Edge function error:', error);
-    return errorResponse(error.message, 500);
+    return errorResponse('Internal error', 500);
   }
 });

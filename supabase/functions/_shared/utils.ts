@@ -83,6 +83,37 @@ export function renderTemplate(
   return result;
 }
 
+// True only when the request carries a real signed-in end-user or the service
+// role — NOT the bare anon key. verify_jwt = true accepts ANY project-signed
+// JWT, including the anon key that ships in the public bundle; the anon token
+// has role 'anon' and no `sub`, so callers must additionally clear this gate.
+// Use for any function that must not be reachable by unauthenticated internet
+// callers. Only meaningful behind verify_jwt = true.
+export function isTrustedCaller(
+  claims: { role?: string; sub?: string } | null,
+): boolean {
+  if (!claims) return false;
+  if (claims.role === 'service_role') return true;
+  return claims.role === 'authenticated' && !!claims.sub;
+}
+
+// Best-effort burst rate limit using notification_log as a shared counter:
+// true when at least `limit` rows were created in the last `windowMs`. Bounds
+// runaway loops / a compromised account; not a per-caller quota.
+export async function isRateLimited(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  limit: number,
+  windowMs = 60_000,
+): Promise<boolean> {
+  const since = new Date(Date.now() - windowMs).toISOString();
+  const { count } = await supabase
+    .from('notification_log')
+    .select('id', { count: 'exact', head: true })
+    .gte('created_at', since);
+  return (count ?? 0) >= limit;
+}
+
 // Decode the (gateway-verified) JWT from the Authorization header.
 // Returns { role, sub, email } or null if absent/malformed. Signature is NOT
 // re-verified here — only use behind verify_jwt = true, where the Supabase

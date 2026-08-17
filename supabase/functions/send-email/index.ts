@@ -10,6 +10,8 @@ import {
   errorResponse,
   renderTemplate,
   decodeAuthClaims,
+  isTrustedCaller,
+  isRateLimited,
 } from '../_shared/utils.ts';
 
 Deno.serve(async (req: Request) => {
@@ -19,6 +21,20 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // -------------------------------------------------------------------------
+    // Authorization FIRST (fail closed before any config check or work).
+    // verify_jwt only guarantees *a* valid JWT — and the anon key (public, in
+    // the bundle) is one. isTrustedCaller rejects the bare anon token (role
+    // 'anon', no `sub`), so only a real signed-in user or the service role gets
+    // past this gate. Without it, any unauthenticated internet caller could
+    // drive the org's sending domain (phishing known contacts) and enumerate
+    // which emails exist.
+    // -------------------------------------------------------------------------
+    const claims = decodeAuthClaims(req);
+    if (!isTrustedCaller(claims)) {
+      return errorResponse('Unauthorized', 401);
+    }
+
     const { to, templateKey, templateData, userId } = await req.json();
 
     // Validate required fields
@@ -39,29 +55,26 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // -------------------------------------------------------------------------
-    // Authorization: verify_jwt only guarantees *a* valid JWT. Without this
-    // check any authenticated user (including read-only Viewers) could use the
-    // org's sending domain as an open relay to arbitrary addresses.
+    // Recipient scoping + abuse control for real end-users:
     //  - service_role callers (due-date-reminder, other internal functions)
     //    may send to anyone.
     //  - authenticated users may only send to addresses already on record:
-    //    a registered SIMS user (colleague) or a client in the clients table.
-    //    The app's notification flows never need to email anyone else.
-    // -------------------------------------------------------------------------
-    const claims = decodeAuthClaims(req);
-    if (!claims) {
-      return errorResponse('Unauthorized', 401);
-    }
-    if (claims.role !== 'service_role') {
+    //    a registered SIMS user (colleague) or a client in the clients table,
+    //    and are burst-rate-limited as a compromised-account backstop.
+    if (claims!.role !== 'service_role') {
       const [{ data: userMatch }, { data: clientMatch }] = await Promise.all([
         supabase.from('users').select('id').ilike('email', String(to)).maybeSingle(),
         supabase.from('clients').select('id').ilike('email', String(to)).maybeSingle(),
       ]);
 
       if (!userMatch && !clientMatch) {
-        console.warn(`Rejected email to unknown address (caller ${claims.sub}):`, to);
+        console.warn(`Rejected email to unknown address (caller ${claims!.sub}):`, to);
         return errorResponse('Recipient must be a registered user or client', 403);
+      }
+
+      if (await isRateLimited(supabase, 100)) {
+        console.warn(`Rate limit hit (caller ${claims!.sub})`);
+        return errorResponse('Rate limit exceeded, please try again shortly', 429);
       }
     }
 
@@ -193,6 +206,6 @@ Deno.serve(async (req: Request) => {
 
   } catch (error) {
     console.error('Edge function error:', error);
-    return errorResponse(error.message, 500);
+    return errorResponse('Internal error', 500);
   }
 });
