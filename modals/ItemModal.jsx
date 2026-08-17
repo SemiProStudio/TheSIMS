@@ -12,6 +12,7 @@ import { Badge, Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 import { useItemForm } from '../components/ItemForm.jsx';
+import { SpecFieldInput } from '../components/SpecFieldInput.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 import ImageCropEditor from '../components/ImageCropEditor.jsx';
 import { SmartPasteModal } from './smartPaste/SmartPasteModal.jsx';
@@ -633,13 +634,11 @@ export const ItemModal = memo(function ItemModal({
                             >
                               {spec.name} <span style={{ color: colors.danger }}>*</span>
                             </label>
-                            <input
+                            <SpecFieldInput
+                              spec={spec}
                               value={itemForm.specs[spec.name] || ''}
-                              onChange={(e) => handleSpecChange(spec.name, e.target.value)}
-                              style={{
-                                ...styles.input,
-                                borderColor: isEmpty ? colors.danger : colors.border,
-                              }}
+                              onChange={(val) => handleSpecChange(spec.name, val)}
+                              invalid={isEmpty}
                             />
                           </div>
                         );
@@ -666,10 +665,10 @@ export const ItemModal = memo(function ItemModal({
                       .map((spec) => (
                         <div key={spec.name}>
                           <label style={styles.label}>{spec.name}</label>
-                          <input
+                          <SpecFieldInput
+                            spec={spec}
                             value={itemForm.specs[spec.name] || ''}
-                            onChange={(e) => handleSpecChange(spec.name, e.target.value)}
-                            style={styles.input}
+                            onChange={(val) => handleSpecChange(spec.name, val)}
                           />
                         </div>
                       ))}
@@ -755,6 +754,9 @@ const specConfigShape = PropTypes.objectOf(
     PropTypes.shape({
       name: PropTypes.string.isRequired,
       required: PropTypes.bool,
+      type: PropTypes.string,
+      unit: PropTypes.string,
+      options: PropTypes.array,
     }),
   ),
 );

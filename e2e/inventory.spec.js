@@ -153,10 +153,13 @@ test.describe('Inventory Management', () => {
         await page.locator('input[placeholder="e.g., Sony"]').fill('E2E Test');
 
         // The default category (Cameras) declares three REQUIRED specs and
-        // a required serial number — save stays disabled until all are set
-        for (const spec of ['Sensor Type', 'Video Resolution', 'Mount Type']) {
+        // a required serial number — save stays disabled until all are set.
+        // Lens Mount is a typed enum field — pick from its option list.
+        for (const spec of ['Sensor Type', 'Video Resolution']) {
           await page.getByText(spec).locator('..').locator('input').fill('E2E');
         }
+        await page.getByRole('button', { name: 'Lens Mount' }).click();
+        await page.getByRole('option', { name: 'Sony E', exact: true }).click();
         await page.locator('input[placeholder="Required"]').fill(`SN-E2E-${Date.now()}`);
 
         // Save enables once name, brand, and required specs are present,

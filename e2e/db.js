@@ -94,7 +94,7 @@ export async function createTestItem({ name, status = 'available', columns = {} 
     // them so the EDIT form validates (its save button stays disabled on
     // items with missing required fields)
     serial_number: `SN-${id}`,
-    specs: { 'Sensor Type': 'E2E', 'Video Resolution': 'E2E', 'Mount Type': 'E2E' },
+    specs: { 'Sensor Type': 'E2E', 'Video Resolution': 'E2E', 'Lens Mount': 'E2E' },
     ...columns,
   });
   if (error) throw new Error(`createTestItem failed: ${error.message}`);

@@ -10,6 +10,7 @@ import { Card, Badge, Button, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 import { useItemForm } from '../components/ItemForm.jsx';
+import { SpecFieldInput } from '../components/SpecFieldInput.jsx';
 import { SmartPasteModal } from '../modals/smartPaste/SmartPasteModal.jsx';
 import { applySmartPastePayload } from '../lib/smartPaste/applyPayload.js';
 
@@ -433,13 +434,11 @@ export const ItemFormPage = memo(function ItemFormPage({
                             >
                               {spec.name} <span style={{ color: colors.danger }}>*</span>
                             </label>
-                            <input
+                            <SpecFieldInput
+                              spec={spec}
                               value={itemForm.specs[spec.name] || ''}
-                              onChange={(e) => handleSpecChange(spec.name, e.target.value)}
-                              style={{
-                                ...styles.input,
-                                borderColor: isEmpty ? colors.danger : colors.border,
-                              }}
+                              onChange={(val) => handleSpecChange(spec.name, val)}
+                              invalid={isEmpty}
                             />
                           </div>
                         );
@@ -464,10 +463,10 @@ export const ItemFormPage = memo(function ItemFormPage({
                       .map((spec) => (
                         <div key={spec.name} style={{ marginBottom: spacing[3] }}>
                           <label style={styles.label}>{spec.name}</label>
-                          <input
+                          <SpecFieldInput
+                            spec={spec}
                             value={itemForm.specs[spec.name] || ''}
-                            onChange={(e) => handleSpecChange(spec.name, e.target.value)}
-                            style={styles.input}
+                            onChange={(val) => handleSpecChange(spec.name, val)}
                           />
                         </div>
                       ))}
@@ -587,7 +586,10 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
     const newIndex = (editSpecs[selectedCategory] || []).length;
     setEditSpecs((prev) => ({
       ...prev,
-      [selectedCategory]: [...(prev[selectedCategory] || []), { name, required: false }],
+      [selectedCategory]: [
+        ...(prev[selectedCategory] || []),
+        { name, required: false, type: 'text', unit: null, options: null },
+      ],
     }));
     setNewFieldName('');
     setShowAddForm(false);
@@ -688,10 +690,28 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
 
   const handleSave = async () => {
     if (hasDuplicates) return;
+    // Enum options are edited as a raw comma-separated draft (optionsText) —
+    // parsing on every keystroke ate the comma as it was typed. Convert to
+    // arrays only now, at save time.
+    const normalized = Object.fromEntries(
+      Object.entries(editSpecs).map(([cat, fields]) => [
+        cat,
+        fields.map(({ optionsText, ...field }) => ({
+          ...field,
+          options:
+            optionsText !== undefined
+              ? optionsText
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+              : field.options,
+        })),
+      ]),
+    );
     // Await and stay on failure — leaving immediately discarded the edits
     // while the save's error toast landed on the wrong page
     try {
-      await onSave(editSpecs, fieldRenames);
+      await onSave(normalized, fieldRenames);
     } catch {
       return; // onSave already rolled back and toasted
     }
@@ -910,6 +930,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
                       style={{
                         display: 'flex',
                         alignItems: 'center',
+                        flexWrap: 'wrap',
                         gap: spacing[3],
                         padding: spacing[3],
                         background: isNew
@@ -965,6 +986,33 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
                           </div>
                         );
                       })()}
+                      <Select
+                        value={field.type || 'text'}
+                        onChange={(e) =>
+                          handleFieldChange(field.originalIndex, 'type', e.target.value)
+                        }
+                        options={[
+                          { value: 'text', label: 'Text' },
+                          { value: 'number', label: 'Number' },
+                          { value: 'boolean', label: 'Yes/No' },
+                          { value: 'enum', label: 'List' },
+                        ]}
+                        compact
+                        style={{ width: 110, flexShrink: 0 }}
+                        aria-label={`${field.name || 'Field'} type`}
+                      />
+                      {(field.type || 'text') === 'number' && (
+                        <input
+                          type="text"
+                          value={field.unit || ''}
+                          onChange={(e) =>
+                            handleFieldChange(field.originalIndex, 'unit', e.target.value)
+                          }
+                          placeholder="unit"
+                          style={{ ...styles.input, width: 64, flexShrink: 0 }}
+                          aria-label={`${field.name || 'Field'} unit`}
+                        />
+                      )}
                       <label
                         style={{
                           display: 'flex',
@@ -1001,6 +1049,28 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
                       >
                         <Trash2 size={16} />
                       </button>
+                      {field.type === 'enum' && (
+                        <div style={{ flexBasis: '100%', paddingLeft: canDrag ? 28 : 0 }}>
+                          <input
+                            type="text"
+                            value={
+                              field.optionsText !== undefined
+                                ? field.optionsText
+                                : (field.options || []).join(', ')
+                            }
+                            onChange={(e) =>
+                              handleFieldChange(field.originalIndex, 'optionsText', e.target.value)
+                            }
+                            placeholder="List options, comma separated (e.g. Sony E, Canon RF, PL)"
+                            style={{
+                              ...styles.input,
+                              width: '100%',
+                              fontSize: typography.fontSize.xs,
+                            }}
+                            aria-label={`${field.name || 'Field'} options`}
+                          />
+                        </div>
+                      )}
                     </div>
                   );
                 })

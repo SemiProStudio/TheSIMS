@@ -767,11 +767,19 @@ function ItemDetail({
       );
     }
 
-    // Add category-specific specs
-    const specEntries = catSpecs.map((spec) => ({
-      name: spec.name,
-      value: displayValue(item.specs?.[spec.name]),
-    }));
+    // Add category-specific specs. Number fields display with their unit
+    // (typed values are stored bare, e.g. Weight "24" + unit "oz")
+    const specEntries = catSpecs.map((spec) => {
+      const raw = item.specs?.[spec.name];
+      const withUnit =
+        spec.type === 'number' && spec.unit && raw && /^-?\d+(\.\d+)?$/.test(String(raw).trim())
+          ? `${raw} ${spec.unit}`
+          : raw;
+      return {
+        name: spec.name,
+        value: displayValue(withUnit),
+      };
+    });
 
     return [...baseSpecs, ...specEntries];
   }, [item, specs, categorySettings]);
