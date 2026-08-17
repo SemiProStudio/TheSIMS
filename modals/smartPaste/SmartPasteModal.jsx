@@ -5,7 +5,7 @@
 
 import { memo, useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { FileText } from 'lucide-react';
+import { FileText, Sparkles } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../../theme.js';
 import { env } from '../../lib/env.js';
 import { Button } from '../../components/ui.jsx';
@@ -27,6 +27,7 @@ import {
   ocrImage,
   terminateOCR,
 } from '../../lib/smartPaste/index.js';
+import { extractSpecs, aiResultToParseResult } from '../../lib/smartPaste/aiExtractor.js';
 import { getSupabase } from '../../lib/supabase.js';
 import { error as logError } from '../../lib/logger.js';
 
@@ -74,6 +75,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({
   const [batchSelected, setBatchSelected] = useState(new Set());
   const [urlInput, setUrlInput] = useState('');
   const [urlLoading, setUrlLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const [diffResults, setDiffResults] = useState(null);
   const [communityAliases, setCommunityAliases] = useState(null);
   const [ocrProgress, setOcrProgress] = useState(null);
@@ -281,6 +283,46 @@ export const SmartPasteModal = memo(function SmartPasteModal({
     savePasteHistory(inputText, { matchedCount: matchCount, name: result.name });
     setPasteHistory(getPasteHistory());
   }, [inputText, specs, communityAliases, savePasteHistory, getPasteHistory, resetParseState]);
+
+  // Single schema-constrained Claude call via the extract-specs edge
+  // function — needs a resolved category (its fields ARE the schema) and
+  // the signed-in user's token (the function rejects the anon key).
+  // Failures fall back to the local Parse Text path with a clear message.
+  const handleAiExtract = useCallback(async () => {
+    if (!inputText.trim() || !detectedCategory || aiLoading) return;
+    setAiLoading(true);
+    setImportStatus('');
+    try {
+      const supabase = await getSupabase();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error('Sign in required for AI extraction.');
+      const functionUrl = env.SUPABASE_URL
+        ? `${env.SUPABASE_URL}/functions/v1/extract-specs`
+        : null;
+      const result = await extractSpecs(inputText, detectedCategory, functionUrl, token);
+      const parsed = aiResultToParseResult(result, detectedCategory, inputText, specs);
+      setBatchResults(null);
+      setParseResult(parsed);
+      resetParseState();
+      setImportStatus(`success:AI extracted ${parsed.fields.size} fields for ${detectedCategory}`);
+      savePasteHistory(inputText, { matchedCount: parsed.fields.size, name: parsed.name });
+      setPasteHistory(getPasteHistory());
+    } catch (err) {
+      logError('AI extraction error:', err);
+      setImportStatus(`error:${err.message || 'AI extraction failed'}`);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [
+    inputText,
+    detectedCategory,
+    aiLoading,
+    specs,
+    resetParseState,
+    savePasteHistory,
+    getPasteHistory,
+  ]);
 
   const handleFileImport = useCallback(
     async (e) => {
@@ -513,7 +555,12 @@ export const SmartPasteModal = memo(function SmartPasteModal({
     try {
       const supabaseUrl = env.SUPABASE_URL;
       const proxyUrl = supabaseUrl ? `${supabaseUrl}/functions/v1/fetch-product-page` : null;
-      const { text } = await fetchProductPage(urlInput, proxyUrl, env.SUPABASE_ANON_KEY);
+      // The proxy rejects the bare anon key (security round) — it needs the
+      // signed-in user's token. Sending the anon key here 401'd every fetch.
+      const supabase = await getSupabase();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token || env.SUPABASE_ANON_KEY;
+      const { text } = await fetchProductPage(urlInput, proxyUrl, accessToken);
 
       if (!text || !text.trim()) {
         setImportStatus('error:No text content found at that URL');
@@ -675,6 +722,19 @@ export const SmartPasteModal = memo(function SmartPasteModal({
             icon={FileText}
           >
             Parse Text
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={handleAiExtract}
+            disabled={!inputText.trim() || !detectedCategory || aiLoading}
+            icon={Sparkles}
+            title={
+              !detectedCategory
+                ? 'Set the item category (or Parse Text first) to enable AI extraction'
+                : 'Extract with AI — one Claude call, roughly 10¢'
+            }
+          >
+            {aiLoading ? 'Extracting…' : 'AI Extract'}
           </Button>
           {batchResults && (
             <span

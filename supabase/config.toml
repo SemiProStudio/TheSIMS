@@ -57,3 +57,8 @@ verify_jwt = true
 # These are automatically available:
 # SUPABASE_URL            - Your project URL
 # SUPABASE_SERVICE_ROLE_KEY - Service role key for admin operations
+
+# AI spec extraction (Phase 2): verify_jwt is the outer gate; the function
+# additionally rejects the bare anon key via isTrustedCaller.
+[functions.extract-specs]
+verify_jwt = true
