@@ -439,6 +439,32 @@ export const updateById = (array, id, updates) => {
  * @param {string} id - The ID of the item to remove
  * @returns {Array} New array without the item
  */
+// Merge server-hydrated child collections (notes, reminders, ...) into an
+// item without clobbering local changes that landed while the fetch was in
+// flight: the LOCAL version wins for rows the user already touched (mutations
+// are persist-first, so local state is newer than the snapshot), and
+// local-only rows — e.g. a note added right after navigating to the item —
+// survive. Wholesale replacement made such a note vanish when the hydration
+// response arrived late (the optimistic-UI vs lazy-fetch race class; caught
+// by the item-notes E2E on CI).
+export const mergeHydratedCollections = (item, collections) => {
+  const merged = {};
+  for (const [key, serverRows] of Object.entries(collections)) {
+    const localRows = item?.[key];
+    if (!Array.isArray(serverRows) || !Array.isArray(localRows)) {
+      merged[key] = serverRows;
+      continue;
+    }
+    const localById = new Map(localRows.map((r) => [r.id, r]));
+    const serverIds = new Set(serverRows.map((r) => r.id));
+    merged[key] = [
+      ...serverRows.map((r) => localById.get(r.id) || r),
+      ...localRows.filter((r) => !serverIds.has(r.id)),
+    ];
+  }
+  return merged;
+};
+
 export const removeById = (array, id) => {
   return array.filter((item) => item.id !== id);
 };

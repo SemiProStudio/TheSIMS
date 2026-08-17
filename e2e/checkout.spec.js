@@ -210,8 +210,10 @@ test.describe('Dashboard Panels', () => {
       await checkOutTestItem(id, { dueInDays: -2 });
       await page.goto('/');
       await pages.dashboard.expectDashboard();
-      // Overdue checkouts surface in the "Currently Checked Out" panel
-      await expect(page.getByText('Currently Checked Out')).toBeVisible();
+      // Overdue checkouts surface in the "Currently Checked Out" panel.
+      // Target the panel-header button: plain getByText substring-matches the
+      // "No items currently checked out" empty state too (strict violation).
+      await expect(page.getByRole('button', { name: /Currently Checked Out/ })).toBeVisible();
       await expect(page.getByText(name).first()).toBeVisible();
     } finally {
       await deleteTestItem(id);
@@ -224,7 +226,9 @@ test.describe('Dashboard Panels', () => {
     try {
       await page.goto('/');
       await pages.dashboard.expectDashboard();
-      await expect(page.getByText('Alerts')).toBeVisible();
+      // Panel-header button, not getByText: 'Alerts' substring-matches the
+      // "No alerts" empty state when it's briefly visible (strict violation)
+      await expect(page.getByRole('button', { name: /Alerts/ })).toBeVisible();
       await expect(page.getByText(name).first()).toBeVisible();
     } finally {
       await deleteTestItem(id);

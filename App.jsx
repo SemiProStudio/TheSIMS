@@ -13,7 +13,7 @@ import {
   DEFAULT_ROLES,
 } from './constants.js';
 import { colors } from './theme.js';
-import { findById, downloadCSV, getTodayISO } from './utils';
+import { findById, downloadCSV, getTodayISO, mergeHydratedCollections } from './utils';
 import { openPrintWindow } from './lib/printUtil.js';
 import { escapeHtml } from './lib/escapeHtml.js';
 import { resolveScannedCode, truncateScannedCode } from './lib/qrData.js';
@@ -545,6 +545,10 @@ export default function App() {
             // landed while the fetch was in flight (the optimistic-UI vs
             // lazy-fetch race class), and replacing selectedItem outright
             // also clobbered quick navigations away to another item.
+            // The collections get MERGED, not replaced, for the same reason:
+            // a note added while this fetch was in flight must survive the
+            // stale snapshot landing (mergeHydratedCollections keeps local
+            // rows the snapshot doesn't know about).
             const collections = {};
             for (const key of [
               'notes',
@@ -555,8 +559,10 @@ export default function App() {
             ]) {
               if (itemWithDetails[key] !== undefined) collections[key] = itemWithDetails[key];
             }
-            patchInventoryItem(id, collections);
-            setSelectedItem((prev) => (prev?.id === id ? { ...prev, ...collections } : prev));
+            patchInventoryItem(id, (current) => mergeHydratedCollections(current, collections));
+            setSelectedItem((prev) =>
+              prev?.id === id ? { ...prev, ...mergeHydratedCollections(prev, collections) } : prev,
+            );
           })
           .catch((err) => logError('Failed to load item details:', err));
       }
