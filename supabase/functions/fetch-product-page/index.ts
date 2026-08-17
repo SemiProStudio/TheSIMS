@@ -4,7 +4,13 @@
 // text content suitable for the spec parser.
 // =============================================================================
 
-import { corsHeaders, jsonResponse, errorResponse } from '../_shared/utils.ts';
+import {
+  corsHeaders,
+  jsonResponse,
+  errorResponse,
+  decodeAuthClaims,
+  isTrustedCaller,
+} from '../_shared/utils.ts';
 
 // Allowed domains (optional safety measure — remove to allow any URL)
 const ALLOWED_DOMAINS = [
@@ -219,6 +225,12 @@ Deno.serve(async (req: Request) => {
       return errorResponse('Method not allowed', 405);
     }
 
+    // verify_jwt accepts the public anon key; require a real signed-in user so
+    // this server-side fetch proxy can't be driven by anonymous callers.
+    if (!isTrustedCaller(decodeAuthClaims(req))) {
+      return errorResponse('Unauthorized', 401);
+    }
+
     const { url } = await req.json();
     if (!url || typeof url !== 'string') {
       return errorResponse('Missing or invalid "url" parameter');
@@ -364,6 +376,6 @@ Deno.serve(async (req: Request) => {
     });
   } catch (err) {
     console.error('fetch-product-page error:', err);
-    return errorResponse(`Internal error: ${err.message}`, 500);
+    return errorResponse('Internal error', 500);
   }
 });

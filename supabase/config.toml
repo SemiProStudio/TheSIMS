@@ -29,6 +29,14 @@ verify_jwt = false
 [functions.fetch-product-page]
 verify_jwt = true
 
+# Admin Create User Function
+# Mints real sign-in credentials via the service role. MUST run behind
+# verify_jwt = true: the function trusts the gateway-verified JWT's `sub` to
+# look up the caller's admin_users permission and does NOT re-verify the
+# signature itself. Declared explicitly so this can never drift to false.
+[functions.admin-create-user]
+verify_jwt = true
+
 # =============================================================================
 # Scheduled Functions (Cron Jobs)
 # =============================================================================
