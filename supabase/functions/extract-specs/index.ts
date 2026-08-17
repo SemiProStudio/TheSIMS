@@ -75,7 +75,8 @@ function describeFields(defs: SpecDef[]): string {
 const SYSTEM_PROMPT = `You extract product specifications from retailer or manufacturer page text for a film/video gear inventory system.
 
 Rules:
-- Extract ONLY the fields listed for this category. Skip any field the text does not clearly state — never guess or infer.
+- Work through the field list in order and extract EVERY listed field whose value the page text states. A typical spec sheet yields most of the listed fields — returning only one or two from a detailed sheet means you missed some.
+- Extract ONLY fields from the list. Skip a field only when the text does not clearly state its value — never guess or infer.
 - For every extracted field, include a short verbatim quote (under 120 characters) from the source text showing where the value came from.
 - number fields: return a bare number in the field's stated unit, converting when the source uses a different unit (e.g. 695 g -> 24.5 when the unit is oz). One decimal place at most.
 - boolean fields: return exactly "Yes" or "No".
@@ -157,7 +158,9 @@ Deno.serve(async (req: Request) => {
       model: MODEL,
       max_tokens: MAX_OUTPUT_TOKENS, // Guardrail 3
       output_config: {
-        effort: 'low',
+        // 'low' proved too terse on Opus 5 — it returned 1 field from a full
+        // spec sheet. 'medium' extracts exhaustively; max_tokens still caps cost.
+        effort: 'medium',
         format: { type: 'json_schema', schema: buildSchema(defs.map((d) => d.name)) },
       },
       system: SYSTEM_PROMPT,
