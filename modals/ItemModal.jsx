@@ -720,6 +720,7 @@ export const ItemModal = memo(function ItemModal({
       {showSmartPaste && (
         <SmartPasteModal
           specs={specs}
+          currentCategory={itemForm.category || ''}
           onApply={handleSmartPasteApply}
           onClose={() => setShowSmartPaste(false)}
         />
