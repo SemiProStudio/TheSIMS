@@ -171,6 +171,14 @@ test.describe('Visual Regression - Pages', () => {
 
   test.describe('Schedule View', () => {
     test.beforeEach(async ({ page }) => {
+      // Pin the clock so the calendar's current-week grid (and the seeded
+      // reservations' column positions) are deterministic — otherwise the
+      // baseline drifts every day as real "today" advances. setFixedTime only
+      // fixes Date.now(); timers still run (so the app loads normally) and the
+      // stored session stays valid (fixed time precedes its expiry). Aug 16
+      // 2026 is a Sunday, so the week grid starts cleanly on the seeded
+      // reservations' week.
+      await page.clock.setFixedTime(new Date('2026-08-16T12:00:00'));
       await page.goto('/');
 
       const dashboard = new DashboardPage(page);
