@@ -52,14 +52,17 @@ export default defineConfig({
     // Base URL for the app (vite dev server — vite.config.js sets port 3000)
     baseURL: 'http://localhost:3000',
 
-    // Collect trace when retrying the failed test
-    trace: 'on-first-retry',
+    // Collect trace when retrying the failed test — but NEVER on CI. The repo
+    // is public, so the CI Playwright-report artifact is world-downloadable,
+    // and auth.setup logs in by TYPING credentials, which a trace records as
+    // fill() action values. No traces/videos on CI = no captured password.
+    trace: process.env.CI ? 'off' : 'on-first-retry',
 
-    // Screenshot on failure
+    // Screenshot on failure (password fields render masked, so this is safe)
     screenshot: 'only-on-failure',
 
-    // Video on failure
-    video: 'on-first-retry',
+    // Video on failure — off on CI for the same reason as trace
+    video: process.env.CI ? 'off' : 'on-first-retry',
 
     // Viewport size
     viewport: { width: 1280, height: 720 },
