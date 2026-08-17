@@ -210,14 +210,19 @@ describe('specsService.upsert — transactional replace', () => {
   it('replaces specs through the replace_specs RPC', async () => {
     state.rpcResults.replace_specs = { error: null };
 
-    await specsService.upsert('Cameras', [{ name: 'Sensor', required: true }, { name: 'Mount' }]);
+    await specsService.upsert('Cameras', [
+      { name: 'Sensor', required: true, type: 'text' },
+      { name: 'Mount', options: ['Sony E', 'PL'] },
+      { name: 'Weight', type: 'number', unit: 'oz' },
+    ]);
 
     const call = state.rpcCalls.find(([n]) => n === 'replace_specs');
     expect(call[1]).toEqual({
       p_category: 'Cameras',
       p_specs: [
-        { name: 'Sensor', required: true },
-        { name: 'Mount', required: false },
+        { name: 'Sensor', required: true, type: 'text', unit: null, options: null },
+        { name: 'Mount', required: false, type: 'text', unit: null, options: ['Sony E', 'PL'] },
+        { name: 'Weight', required: false, type: 'number', unit: 'oz', options: null },
       ],
     });
   });

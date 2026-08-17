@@ -98,12 +98,17 @@ describe('one-to-one pair assignment (P0-2)', () => {
     expect([ff, apsc].filter(Boolean)).toHaveLength(1);
   });
 
-  it('Extended ISO never lands in Native ISO Range', () => {
+  it('Extended ISO folds into ISO Range (canonical) and never lands in Native ISO Range', () => {
+    // Phase 1 made "extended iso" an alias of the single canonical ISO Range
+    // field, so the line lands there as a reviewable alternative — never in
+    // Native ISO Range (the original wrong-concept grab)
     const result = parseProductText(CAMERA_TEXT, SPECS, {});
     expect(result.category).toBe('Cameras');
-    expect(result.fields.get('Extended ISO Range')?.value).toBe('40 to 409600');
+    const iso = result.fields.get('ISO Range');
+    expect(iso?.value).toBe('80 to 102400');
+    expect(iso?.alternatives?.some((a) => a.value === '40 to 409600')).toBe(true);
     expect(result.fields.get('Native ISO Range')).toBeUndefined();
-    expect(result.fields.get('ISO Range')?.value).toBe('80 to 102400');
+    expect(result.fields.get('Extended ISO Range')).toBeUndefined();
   });
 
   it('Illuminance @ 1m never fills the @ 3m field', () => {
