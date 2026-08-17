@@ -482,6 +482,7 @@ export const ItemFormPage = memo(function ItemFormPage({
       {showSmartPaste && (
         <SmartPasteModal
           specs={specs}
+          currentCategory={itemForm.category || ''}
           onApply={handleSmartPasteApply}
           onClose={() => setShowSmartPaste(false)}
         />

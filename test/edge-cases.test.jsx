@@ -27,7 +27,6 @@ import {
   addReplyToNote,
   markNoteDeleted,
   findNoteById,
-  parseSmartPaste,
   validateCSVData,
   exportToCSV,
   calculateDepreciation,

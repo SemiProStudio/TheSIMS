@@ -3,7 +3,7 @@
 // Import product specs from pasted text, PDF, TXT, URL, or images (OCR)
 // ============================================================================
 
-import { memo, useState, useRef, useEffect, useCallback } from 'react';
+import { memo, useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { FileText } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../../theme.js';
@@ -53,6 +53,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({
   onApply,
   onClose,
   existingItem,
+  currentCategory = '',
 }) {
   // ---- State ----
   const [inputText, setInputText] = useState('');
@@ -179,21 +180,26 @@ export const SmartPasteModal = memo(function SmartPasteModal({
     ? new Map([...parseResult.fields.entries()].filter(([, data]) => data.confidence >= threshold))
     : new Map();
 
-  const matchedCount = filteredFields.size + Object.keys(manualMappings).length;
   const totalExtracted = parseResult ? parseResult.rawExtracted.length : 0;
   const unmatchedCount = parseResult ? parseResult.unmatchedPairs.length : 0;
-  const altsCount = parseResult
-    ? [...filteredFields.values()].filter((f) => f.alternatives && f.alternatives.length > 1).length
-    : 0;
 
-  const detectedCategory = categoryOverride !== null ? categoryOverride : parseResult?.category;
-  const categorySpecFields = detectedCategory ? getCategoryFields(detectedCategory) : [];
+  // Category precedence: explicit modal override > the host form's current
+  // category > parser detection. Detection is a suggestion — it must never
+  // silently displace a category the user already chose on the item.
+  const defaultCategory = currentCategory || parseResult?.category || '';
+  const detectedCategory = categoryOverride !== null ? categoryOverride : defaultCategory;
+  const categorySpecFields = useMemo(
+    () => (detectedCategory ? getCategoryFields(detectedCategory) : []),
+    [detectedCategory, getCategoryFields],
+  );
 
-  // Build ordered field list
+  // Build ordered field list. With a resolved category, the list (and Apply —
+  // see handleApply) is scoped to that category's defined fields; only with
+  // no category at all do we list matches from across all categories.
   const orderedFields = [];
   const addedNames = new Set();
 
-  if (categorySpecFields.length > 0) {
+  if (detectedCategory) {
     for (const spec of categorySpecFields) {
       const field = filteredFields.get(spec.name);
       orderedFields.push({
@@ -203,9 +209,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({
       });
       addedNames.add(spec.name);
     }
-  }
-
-  if (parseResult) {
+  } else if (parseResult) {
     for (const [specName, data] of filteredFields) {
       if (!addedNames.has(specName) && data.value) {
         orderedFields.push({ specName, data, isRequired: false });
@@ -225,11 +229,23 @@ export const SmartPasteModal = memo(function SmartPasteModal({
     return !val || !val.trim();
   });
 
+  // Counts reflect what is displayed AND what Apply will write (same scope)
+  const matchedCount = matchedFields.length + Object.keys(manualMappings).length;
+  const altsCount = matchedFields.filter(
+    (f) => f.data?.alternatives && f.data.alternatives.length > 1,
+  ).length;
+
   const mappedSpecNames = new Set([
     ...matchedFields.map((f) => f.specName),
     ...Object.values(manualMappings),
   ]);
-  const unmappedSpecOptions = allSpecFields.filter((name) => !mappedSpecNames.has(name)).sort();
+  // Manual mapping targets are scoped to the resolved category too — mapping
+  // an unmatched pair onto another category's field would recreate the
+  // orphan-spec-key problem Apply now guards against.
+  const mappableSpecNames = detectedCategory
+    ? categorySpecFields.map((s) => s.name)
+    : allSpecFields;
+  const unmappedSpecOptions = mappableSpecNames.filter((name) => !mappedSpecNames.has(name)).sort();
 
   // ---- Handlers ----
   const resetParseState = useCallback(() => {
@@ -362,13 +378,14 @@ export const SmartPasteModal = memo(function SmartPasteModal({
 
       if (specName && parseResult?.unmatchedPairs?.[unmatchedIdx]) {
         const sourceKey = parseResult.unmatchedPairs[unmatchedIdx].key;
-        const category = categoryOverride || parseResult?.category || null;
+        // Same category precedence as everywhere else: override > form > detected
+        const category = categoryOverride || currentCategory || parseResult?.category || null;
         getSupabase()
           .then((supabase) => recordAlias(supabase, sourceKey, specName, category))
           .catch(() => {});
       }
     },
-    [parseResult, categoryOverride],
+    [parseResult, categoryOverride, currentCategory],
   );
 
   const handleRestoreHistory = useCallback(
@@ -414,17 +431,25 @@ export const SmartPasteModal = memo(function SmartPasteModal({
 
   const handleApply = useCallback(() => {
     if (!parseResult) return;
-    const payload = buildApplyPayload(parseResult, selectedValues, { normalizeMetric });
+    // Apply exactly what the review list shows: same threshold, same
+    // category scope. Sub-threshold or cross-category fields never apply.
+    const payload = buildApplyPayload(parseResult, selectedValues, {
+      normalizeMetric,
+      threshold,
+      allowedFields: detectedCategory ? categorySpecFields.map((s) => s.name) : null,
+    });
     if (brandOverride !== null) payload.brand = brandOverride;
-    if (categoryOverride !== null) payload.category = categoryOverride;
+    payload.category = detectedCategory;
     onApply(payload);
     onClose();
   }, [
     parseResult,
     selectedValues,
     normalizeMetric,
+    threshold,
+    detectedCategory,
+    categorySpecFields,
     brandOverride,
-    categoryOverride,
     onApply,
     onClose,
   ]);
@@ -433,7 +458,18 @@ export const SmartPasteModal = memo(function SmartPasteModal({
     if (!batchResults) return;
     const selected = batchResults
       .filter((_, i) => batchSelected.has(i))
-      .map(({ result }) => buildApplyPayload(result, {}, { normalizeMetric }));
+      .map(({ result }) => {
+        // Same guards as single apply: threshold + category scoping (the
+        // host form's category wins over per-product detection here too)
+        const cat = currentCategory || result.category || '';
+        const payload = buildApplyPayload(result, {}, {
+          normalizeMetric,
+          threshold,
+          allowedFields: cat ? getCategoryFields(cat).map((s) => s.name) : null,
+        });
+        payload.category = cat;
+        return payload;
+      });
     // The host form holds a single item, so only a single-product apply is
     // possible — an array payload would be silently dropped by consumers.
     if (selected.length === 1) {
@@ -444,7 +480,16 @@ export const SmartPasteModal = memo(function SmartPasteModal({
         'error:This form imports one product at a time — select a single product (use Edit to review it first)',
       );
     }
-  }, [batchResults, batchSelected, normalizeMetric, onApply, onClose]);
+  }, [
+    batchResults,
+    batchSelected,
+    normalizeMetric,
+    threshold,
+    currentCategory,
+    getCategoryFields,
+    onApply,
+    onClose,
+  ]);
 
   const handleBatchSelectSingle = useCallback(
     (index) => {
@@ -715,6 +760,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({
                 setBrandOverride={setBrandOverride}
                 categoryOverride={categoryOverride}
                 setCategoryOverride={setCategoryOverride}
+                defaultCategory={defaultCategory}
                 availableCategories={availableCategories}
                 showSourceView={showSourceView}
               />
@@ -798,4 +844,5 @@ SmartPasteModal.propTypes = {
   onApply: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
   existingItem: PropTypes.object,
+  currentCategory: PropTypes.string,
 };

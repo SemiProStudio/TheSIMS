@@ -25,11 +25,15 @@ export function ResultsPanel({
   setBrandOverride,
   categoryOverride,
   setCategoryOverride,
+  defaultCategory,
   availableCategories,
   showSourceView,
 }) {
   const [showEmptyFields, setShowEmptyFields] = useState(true);
-  const detectedCategory = categoryOverride !== null ? categoryOverride : parseResult?.category;
+  // defaultCategory already encodes the precedence (host form category wins
+  // over parser detection); fall back to raw detection for older callers.
+  const fallbackCategory = defaultCategory ?? (parseResult?.category || '');
+  const detectedCategory = categoryOverride !== null ? categoryOverride : fallbackCategory;
 
   return (
     <div
@@ -124,7 +128,7 @@ export function ResultsPanel({
           <span style={{ fontWeight: 600, color: colors.textPrimary }}>Category</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
             <Select
-              value={categoryOverride !== null ? categoryOverride : parseResult.category || ''}
+              value={detectedCategory || ''}
               onChange={(e) => setCategoryOverride(e.target.value || null)}
               options={[
                 { value: '', label: 'Not detected' },
@@ -134,10 +138,10 @@ export function ResultsPanel({
               style={{ flex: 1, minWidth: 0 }}
               aria-label="Category"
             />
-            {categoryOverride !== null && categoryOverride !== parseResult.category && (
+            {categoryOverride !== null && categoryOverride !== fallbackCategory && (
               <button
                 onClick={() => setCategoryOverride(null)}
-                title="Reset to detected"
+                title="Reset"
                 style={{
                   background: 'none',
                   border: 'none',
@@ -152,6 +156,34 @@ export function ResultsPanel({
             )}
           </div>
         </div>
+
+        {/* Detection differs from the effective category — offer, don't impose */}
+        {parseResult.category && parseResult.category !== detectedCategory && (
+          <div
+            style={{
+              gridColumn: '1 / -1',
+              paddingLeft: 80 + spacing[2],
+              fontSize: typography.fontSize.xs,
+              color: colors.textMuted,
+            }}
+          >
+            Detected: {parseResult.category}{' '}
+            <button
+              onClick={() => setCategoryOverride(parseResult.category)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: colors.primary,
+                fontSize: typography.fontSize.xs,
+                padding: 0,
+                textDecoration: 'underline',
+              }}
+            >
+              use detected
+            </button>
+          </div>
+        )}
 
         {/* Price, Model, Serial — read only */}
         <BasicInfoRow
