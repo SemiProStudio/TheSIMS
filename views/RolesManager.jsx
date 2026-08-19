@@ -731,9 +731,9 @@ function RolesManager({
         variant: 'danger',
         onConfirm: () => onDeleteRole?.(role.id),
       });
-    } else {
-      onDeleteRole?.(role.id);
     }
+    // No showConfirm handler = broken wiring (AppViews always passes it).
+    // Never fall through to an unconfirmed delete.
   };
 
   const getUserCount = (roleId) => {

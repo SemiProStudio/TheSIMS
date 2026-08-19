@@ -489,8 +489,9 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                 deleteReservation(itemId, resId);
               } else {
                 logError('Cannot delete: missing item or reservation ID', { itemId, resId });
-                alert(
+                addToast(
                   'Unable to cancel reservation — missing reference. Please go back and try again.',
+                  'error',
                 );
               }
             }}

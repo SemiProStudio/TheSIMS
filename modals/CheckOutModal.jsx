@@ -131,7 +131,8 @@ export const CheckOutModal = memo(function CheckOutModal({
       notes: formData.notes.trim(),
       conditionAtCheckout: formData.condition,
       checkedOutDate: getTodayISO(),
-      checkedOutTime: new Date().toLocaleTimeString(),
+      // ISO, not toLocaleTimeString(): persisted values must be locale-independent
+      checkedOutTime: new Date().toISOString(),
     });
   };
 

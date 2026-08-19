@@ -3,7 +3,7 @@
 // Full-size image view with options to replace or remove
 // ============================================================================
 
-import { memo } from 'react';
+import { memo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Pencil, Trash2, X } from 'lucide-react';
 import { spacing, borderRadius } from '../theme.js';
@@ -16,6 +16,15 @@ const ImagePreviewModal = memo(function ImagePreviewModal({
   onRemove,
   onClose,
 }) {
+  // Escape closes, matching every other overlay in the app
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
   return (
     <div
       onClick={onClose}

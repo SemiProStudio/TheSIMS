@@ -279,6 +279,18 @@ body {
   overscroll-behavior-x: none;
 }
 
+/* Global spinner animation — used by the Spinner component and any raw
+   Loader icon. Must live here (not scoped inside a component's <style>) so
+   views that render a spinning icon without mounting Spinner still animate. */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Ensure the app fills the viewport completely */
 #root {
   min-height: 100%;

@@ -6,7 +6,7 @@
 import { memo, forwardRef, useState, useCallback, useRef, useEffect, useId } from 'react';
 import PropTypes from 'prop-types';
 import { ArrowLeft } from 'lucide-react';
-import { colors, styles, borderRadius, spacing, typography, withOpacity } from '../theme.js';
+import { colors, styles, borderRadius, spacing, typography, withOpacity, zIndex } from '../theme.js';
 
 // ============================================================================
 // BackButton - Consistent back navigation
@@ -599,7 +599,7 @@ export const ConfirmDialog = memo(function ConfirmDialog({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000,
+        zIndex: zIndex.confirm,
       }}
       onClick={onCancel}
       role="presentation"

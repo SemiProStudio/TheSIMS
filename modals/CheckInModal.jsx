@@ -66,7 +66,8 @@ export const CheckInModal = memo(function CheckInModal({ item, currentUser, onCh
       damageReported: formData.damageReported,
       damageDescription: formData.damageDescription.trim(),
       returnDate: getTodayISO(),
-      returnTime: new Date().toLocaleTimeString(),
+      // ISO, not toLocaleTimeString(): persisted values must be locale-independent
+      returnTime: new Date().toISOString(),
     });
   };
 

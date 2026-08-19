@@ -167,10 +167,14 @@ export const zIndex = {
   dropdown: 100,
   sticky: 200,
   fixed: 300,
-  modalBackdrop: 400,
-  modal: 500,
-  popover: 600,
-  tooltip: 700,
+  modalBackdrop: 1090,
+  // Mobile chrome (.mobile-header 998, sidebar drawer 1000 in index.css) must
+  // stay UNDER open modals, so the modal layer sits above 1000; dropdown
+  // portals (Select/DatePicker) and toasts render higher still.
+  modal: 1100,
+  popover: 1150,
+  confirm: 1200,
+  tooltip: 1250,
 };
 
 // Transitions
