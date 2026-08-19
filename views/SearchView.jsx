@@ -635,7 +635,7 @@ function SearchView({
                       <div style={{ fontWeight: typography.fontWeight.medium }}>
                         {client.name}
                         {client.favorite && (
-                          <span style={{ color: '#f59e0b', marginLeft: spacing[1] }}>★</span>
+                          <span style={{ color: colors.warning, marginLeft: spacing[1] }}>★</span>
                         )}
                       </div>
                       <div style={mutedLine}>

@@ -14,7 +14,13 @@ import {
 } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { BackButton, Button, Card } from './ui.jsx';
-import { COLOR_CATEGORIES, DEFAULT_CUSTOM_THEME } from '../themes-data.js';
+import {
+  COLOR_CATEGORIES,
+  DEFAULT_CUSTOM_THEME,
+  pickOnColor,
+  PRIMARY_FILL_MIXES,
+  DANGER_FILL_MIXES,
+} from '../themes-data.js';
 import {
   validateThemeContrast,
   getContrastSummary,
@@ -274,7 +280,9 @@ const LivePreview = memo(function LivePreview({ themeColors }) {
                 background: themeColors['--danger'],
                 borderRadius: borderRadius.sm,
                 fontSize: typography.fontSize.xs,
-                color: '#fff',
+                // Same derivation applyTheme uses — a hardcoded #fff made the
+                // preview lie about exactly what the contrast system guarantees
+                color: pickOnColor(themeColors['--danger'], DANGER_FILL_MIXES),
                 outline: `2px solid ${themeColors['--focus-ring-color-danger'] || themeColors['--danger']}`,
                 outlineOffset: '2px',
               }}
@@ -299,7 +307,7 @@ const LivePreview = memo(function LivePreview({ themeColors }) {
               style={{
                 padding: `2px 6px`,
                 background: themeColors[key],
-                color: '#fff',
+                color: pickOnColor(themeColors[key]),
                 borderRadius: borderRadius.sm,
                 fontSize: typography.fontSize.xs,
               }}
@@ -315,7 +323,7 @@ const LivePreview = memo(function LivePreview({ themeColors }) {
             style={{
               padding: `${spacing[1]}px ${spacing[2]}px`,
               background: themeColors['--primary'],
-              color: '#fff',
+              color: pickOnColor(themeColors['--primary'], PRIMARY_FILL_MIXES),
               borderRadius: borderRadius.sm,
               fontSize: typography.fontSize.xs,
             }}
@@ -326,7 +334,7 @@ const LivePreview = memo(function LivePreview({ themeColors }) {
             style={{
               padding: `${spacing[1]}px ${spacing[2]}px`,
               background: themeColors['--danger'],
-              color: '#fff',
+              color: pickOnColor(themeColors['--danger'], DANGER_FILL_MIXES),
               borderRadius: borderRadius.sm,
               fontSize: typography.fontSize.xs,
             }}
@@ -337,7 +345,7 @@ const LivePreview = memo(function LivePreview({ themeColors }) {
             style={{
               padding: `${spacing[1]}px ${spacing[2]}px`,
               background: themeColors['--success'],
-              color: '#fff',
+              color: pickOnColor(themeColors['--success']),
               borderRadius: borderRadius.sm,
               fontSize: typography.fontSize.xs,
             }}
@@ -528,7 +536,6 @@ function CustomThemeEditor({ onBack, onSave, existingTheme }) {
       colors: {
         ...themeColors,
         '--bg-card-solid': themeColors['--bg-card'],
-        '--danger-bg': themeColors['--danger'] + '20',
         // Ensure focus ring colors are included
         '--focus-ring-color': themeColors['--focus-ring-color'] || themeColors['--primary-light'],
         '--focus-ring-color-danger':

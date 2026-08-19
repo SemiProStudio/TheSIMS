@@ -669,7 +669,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({
                   }}
                 >
                   {requiredFields.has(name) && (
-                    <span style={{ color: colors.danger || '#f87171', marginRight: 2 }}>*</span>
+                    <span style={{ color: colors.danger, marginRight: 2 }}>*</span>
                   )}
                   {name}
                 </div>
@@ -751,7 +751,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({
               <strong style={{ color: colors.primary }}>{matchedCount}</strong> matched
               {altsCount > 0 && (
                 <>
-                  , <strong style={{ color: colors.accent1 || '#facc15' }}>{altsCount}</strong> with
+                  , <strong style={{ color: colors.accent1 }}>{altsCount}</strong> with
                   alternatives
                 </>
               )}

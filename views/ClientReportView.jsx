@@ -246,7 +246,7 @@ export const ClientReportPanel = memo(function ClientReportPanel({
                           >
                             {client.name}
                           </span>
-                          {client.favorite && <span style={{ color: '#f59e0b' }}>★</span>}
+                          {client.favorite && <span style={{ color: colors.warning }}>★</span>}
                         </div>
                         {client.company && client.type === 'Individual' && (
                           <div

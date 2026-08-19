@@ -98,7 +98,7 @@ const ClientCard = memo(function ClientCard({ client, stats, onSelect }) {
             >
               {client.name}
             </span>
-            {client.favorite && <Star size={14} color="#f59e0b" fill="#f59e0b" />}
+            {client.favorite && <Star size={14} color={colors.warning} fill={colors.warning} />}
           </div>
 
           {client.company && client.type === 'Individual' && (
@@ -452,7 +452,7 @@ const ClientDetailView = memo(function ClientDetailView({
               }}
             >
               <h2 style={{ margin: 0, color: colors.textPrimary }}>{client.name}</h2>
-              {client.favorite && <Star size={18} color="#f59e0b" fill="#f59e0b" />}
+              {client.favorite && <Star size={18} color={colors.warning} fill={colors.warning} />}
               <Badge>{client.type}</Badge>
             </div>
 

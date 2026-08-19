@@ -2069,7 +2069,7 @@ function ScanToPackOverlay({
                       border: 'none',
                       borderRadius: borderRadius.md,
                       padding: spacing[2],
-                      color: '#fff',
+                      color: torchOn ? colors.onPrimary : '#fff',
                       cursor: 'pointer',
                       display: 'flex',
                     }}

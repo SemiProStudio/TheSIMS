@@ -52,7 +52,6 @@ export const colors = {
 
   // Semantic colors
   danger: 'var(--danger)',
-  dangerBg: 'var(--danger-bg)',
   success: 'var(--success)',
   warning: 'var(--warning)',
 
@@ -229,7 +228,7 @@ export const styles = {
   input: {
     width: '100%',
     padding: `${spacing[3]}px ${spacing[4]}px`,
-    background: 'var(--input-bg, rgba(93, 138, 168, 0.1))',
+    background: 'var(--input-bg, color-mix(in srgb, var(--primary) 10%, transparent))',
     border: `1px solid ${colors.border}`,
     borderRadius: borderRadius.lg,
     color: colors.textPrimary,
@@ -244,7 +243,7 @@ export const styles = {
     width: '100%',
     padding: `${spacing[3]}px ${spacing[4]}px`,
     paddingRight: `${spacing[8]}px`, // Extra space for dropdown arrow
-    background: 'var(--input-bg, rgba(93, 138, 168, 0.1))',
+    background: 'var(--input-bg, color-mix(in srgb, var(--primary) 10%, transparent))',
     border: `1px solid ${colors.border}`,
     borderRadius: borderRadius.lg,
     color: colors.textPrimary,

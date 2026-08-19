@@ -341,7 +341,7 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
                 aria-hidden="true"
                 style={{ ...styles.checkbox, ...(isSelected ? styles.checkboxChecked : {}) }}
               >
-                {isSelected && <Check size={12} color="#fff" />}
+                {isSelected && <Check size={12} color={colors.onPrimary} />}
               </div>
               {renderOption ? renderOption(option) : <span>{option.label}</span>}
             </div>

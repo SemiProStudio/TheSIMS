@@ -924,7 +924,7 @@ export const Pagination = memo(function Pagination({
     padding: 0,
     justifyContent: 'center',
     background: isActive ? colors.primary : 'transparent',
-    color: isActive ? '#fff' : colors.textPrimary,
+    color: isActive ? colors.onPrimary : colors.textPrimary,
     border: isActive ? 'none' : `1px solid ${colors.border}`,
     fontWeight: isActive ? typography.fontWeight.medium : typography.fontWeight.normal,
   });
@@ -1028,7 +1028,7 @@ export const SkipLink = memo(function SkipLink({
         zIndex: 9999,
         padding: `${spacing[2]}px ${spacing[4]}px`,
         background: colors.primary,
-        color: '#fff',
+        color: colors.onPrimary,
         textDecoration: 'none',
         borderRadius: borderRadius.md,
       }}
