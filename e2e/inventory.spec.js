@@ -381,6 +381,10 @@ test.describe('Inventory Management', () => {
           .toBe(1);
 
         await page.getByRole('button', { name: 'Delete' }).click();
+        // Note deletion now confirms first (destructive-action rule);
+        // ConfirmDialog renders as an alertdialog
+        await expect(page.getByRole('alertdialog')).toBeVisible();
+        await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
         await expect(page.getByText('[Note deleted]')).toBeVisible();
       } finally {
         await deleteTestItem(itemId); // item_notes cascade on inventory delete
