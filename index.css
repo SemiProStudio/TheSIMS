@@ -606,6 +606,39 @@ body {
   }
 }
 
+/* ============================================================================
+   Mobile modal sheets — every ModalBase modal becomes a full-screen sheet
+   at phone widths: full width/height, no radius, flex column so the body
+   scrolls under the keyboard and the close button stays reachable
+   ============================================================================ */
+@media (max-width: 768px) {
+  .modal-backdrop {
+    align-items: stretch !important;
+    padding: 0 !important;
+  }
+
+  .modal-box {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100dvh;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    display: flex;
+    flex-direction: column;
+    /* Keep content clear of notches/home indicators */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .modal-box .modal-body {
+    max-height: none !important;
+    flex: 1;
+    min-height: 0;
+  }
+}
+
 /* Sidebar overlay - hidden by default, only shows on mobile when sidebar is open */
 /* Sidebar overlay - hidden by default on desktop */
 .sidebar-overlay {
@@ -642,8 +675,8 @@ body {
   }
 }
 
-/* Small tablet - collapsible sidebar */
-@media (max-width: 768px) {
+/* Phones - off-canvas drawer nav (641-1024px keeps the sidebar as a rail) */
+@media (max-width: 640px) {
   .app-sidebar {
     position: fixed;
     left: 0;
@@ -746,7 +779,7 @@ body {
   display: none !important;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .mobile-header {
     display: flex !important;
     position: fixed;
@@ -889,9 +922,11 @@ body {
 
 /* Small Button Modifier */
 .btn-sm {
-  padding: 4px 8px;
-  font-size: 10px;
+  /* Small, but still a usable touch target */
+  padding: 6px 10px;
+  font-size: 12px;
   gap: 4px;
+  min-height: 32px;
 }
 
 /* Full Width Button */

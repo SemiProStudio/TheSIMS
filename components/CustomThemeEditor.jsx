@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { BackButton, Button, Card } from './ui.jsx';
+import { useMediaQuery } from '../hooks/useMediaQuery.js';
 import {
   COLOR_CATEGORIES,
   DEFAULT_CUSTOM_THEME,
@@ -511,6 +512,10 @@ function CustomThemeEditor({ onBack, onSave, existingTheme }) {
   const [expandedCategories, setExpandedCategories] = useState({ primary: true });
   const [hasChanges, setHasChanges] = useState(false);
 
+  // The fixed 320px preview column overflows phones — stack it below on
+  // narrow screens (desktop layout unchanged)
+  const isNarrowScreen = useMediaQuery('(max-width: 768px)');
+
   const handleColorChange = useCallback((key, value) => {
     setThemeColors((prev) => ({ ...prev, [key]: value }));
     setHasChanges(true);
@@ -603,7 +608,13 @@ function CustomThemeEditor({ onBack, onSave, existingTheme }) {
       </Card>
 
       {/* Main layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: spacing[4] }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: isNarrowScreen ? '1fr' : '1fr 320px',
+          gap: spacing[4],
+        }}
+      >
         {/* Color categories */}
         <Card style={{ padding: 0, overflow: 'hidden' }}>
           {Object.entries(COLOR_CATEGORIES).map(([key, category]) => (

@@ -256,14 +256,25 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
             style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 380px)' }}
           >
             <CardHeader title="Most Checked Out Items" icon={TrendingUp} />
-            <div style={{ flex: 1, overflowY: 'auto', minHeight: 200 }}>
+            {/* One container scrolls both axes — a nested overflowX wrapper would
+                detach the sticky thead from the vertical scroll; table minWidth
+                keeps columns readable on narrow screens */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                overflowX: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                minHeight: 200,
+              }}
+            >
               {activityData.topItems.length === 0 ? (
                 <div style={{ padding: spacing[6], textAlign: 'center', color: colors.textMuted }}>
                   <BarChart3 size={32} style={{ marginBottom: spacing[2], opacity: 0.3 }} />
                   <p style={{ margin: 0 }}>No checkout activity yet</p>
                 </div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ background: colors.bgDark, position: 'sticky', top: 0 }}>
                       <th

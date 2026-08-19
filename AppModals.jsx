@@ -3,7 +3,7 @@
 // Renders the active modal based on activeModal from ModalContext.
 // ============================================================================
 
-import { lazy, Suspense, memo, useEffect } from 'react';
+import { lazy, Suspense, memo, useEffect, useRef } from 'react';
 import { VIEWS, MODALS } from './constants.js';
 import { generateItemCode } from './utils';
 import { runImport } from './lib/importItems.js';
@@ -128,6 +128,11 @@ export default memo(function AppModals({ handlers, currentUser }) {
     }
   }, [activeModal, ensureClients, canSeeClients]);
 
+  // Persistent scan loop — flag lives here, but the effect that reads
+  // openModal must sit below the handlers destructuring (TDZ otherwise)
+  const returnToScannerRef = useRef(false);
+  const prevModalRef = useRef(activeModal);
+
   // Destructure handlers
   const {
     createItem,
@@ -161,6 +166,27 @@ export default memo(function AppModals({ handlers, currentUser }) {
     applyBulkCategory,
     applyBulkDelete,
   } = handlers;
+
+  // Persistent scan loop: a checkout/check-in launched FROM the scanner
+  // returns to the scanner when it closes (confirm or cancel alike), so a
+  // 20-item load-out is scan→confirm→scan→confirm instead of re-opening the
+  // scanner from the nav every time. Closing the scanner itself ends the loop.
+  useEffect(() => {
+    const prev = prevModalRef.current;
+    prevModalRef.current = activeModal;
+    if (!returnToScannerRef.current) return;
+    const closedQuickAction =
+      (prev === MODALS.CHECK_OUT || prev === MODALS.CHECK_IN) && !activeModal;
+    if (closedQuickAction) {
+      returnToScannerRef.current = false;
+      openModal(MODALS.QR_SCANNER);
+    } else if (prev === MODALS.QR_SCANNER && activeModal !== MODALS.QR_SCANNER && activeModal) {
+      // Scanner replaced by something other than a quick action — drop the flag
+      if (activeModal !== MODALS.CHECK_OUT && activeModal !== MODALS.CHECK_IN) {
+        returnToScannerRef.current = false;
+      }
+    }
+  }, [activeModal, openModal]);
 
   return (
     <>
@@ -295,6 +321,7 @@ export default memo(function AppModals({ handlers, currentUser }) {
               // item_details gate offered buttons the DB would refuse)
               canEdit('gear_list')
                 ? (item) => {
+                    returnToScannerRef.current = true; // resume scanning after
                     closeModal();
                     // Use openCheckoutModal which properly sets internal state
                     // (fixes bug: setCheckoutItem was not exposed by useCheckoutHandlers)
@@ -305,6 +332,7 @@ export default memo(function AppModals({ handlers, currentUser }) {
             onQuickCheckin={
               canEdit('gear_list')
                 ? (item) => {
+                    returnToScannerRef.current = true; // resume scanning after
                     closeModal();
                     // Use openCheckinModal which properly sets internal state
                     openCheckinModal(item.id);

@@ -1281,14 +1281,6 @@ export default function App() {
             setSidebarOpen(false);
             openModal(MODALS.QR_SCANNER);
           }}
-          onOpenImport={() => {
-            setSidebarOpen(false);
-            openModal(MODALS.CSV_IMPORT);
-          }}
-          onOpenExport={() => {
-            setSidebarOpen(false);
-            openModal(MODALS.DATABASE_EXPORT);
-          }}
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           collapsed={sidebarCollapsed}

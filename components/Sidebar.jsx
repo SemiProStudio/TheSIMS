@@ -16,8 +16,6 @@ import {
   User,
   ChevronDown,
   ScanLine,
-  Upload,
-  Download,
   Bell,
   Palette,
   ChevronLeft,
@@ -102,11 +100,25 @@ const mainNavItems = [
     permissionId: 'dashboard',
   },
   {
+    icon: Calendar,
+    label: 'Schedule',
+    viewId: VIEWS.SCHEDULE,
+    colorVar: '--sidebar-item5',
+    permissionId: 'schedule',
+  },
+  {
     icon: Package,
     label: 'Gear List',
     viewId: VIEWS.GEAR_LIST,
     colorVar: '--sidebar-item2',
     permissionId: 'gear_list',
+  },
+  {
+    icon: ClipboardList,
+    label: 'Pack Lists',
+    viewId: VIEWS.PACK_LISTS,
+    colorVar: '--sidebar-item4',
+    permissionId: 'pack_lists',
   },
   {
     icon: Layers,
@@ -121,18 +133,18 @@ const mainNavItems = [
     permissionId: 'gear_list',
   },
   {
-    icon: ClipboardList,
-    label: 'Pack Lists',
-    viewId: VIEWS.PACK_LISTS,
-    colorVar: '--sidebar-item4',
-    permissionId: 'pack_lists',
+    icon: User,
+    label: 'Clients',
+    viewId: VIEWS.CLIENTS,
+    colorVar: '--sidebar-item1',
+    permissionId: 'clients',
   },
   {
-    icon: Calendar,
-    label: 'Schedule',
-    viewId: VIEWS.SCHEDULE,
-    colorVar: '--sidebar-item5',
-    permissionId: 'schedule',
+    icon: BarChart3,
+    label: 'Reports',
+    viewId: VIEWS.REPORTS,
+    colorVar: '--sidebar-item2',
+    permissionId: 'reports',
   },
   {
     icon: QrCode,
@@ -140,13 +152,6 @@ const mainNavItems = [
     viewId: VIEWS.LABELS,
     colorVar: '--sidebar-item6',
     permissionId: 'labels',
-  },
-  {
-    icon: User,
-    label: 'Clients',
-    viewId: VIEWS.CLIENTS,
-    colorVar: '--sidebar-item1',
-    permissionId: 'clients',
   },
   {
     icon: Search,
@@ -165,13 +170,6 @@ const adminNavItems = [
     viewId: VIEWS.ADMIN,
     colorVar: '--sidebar-item1',
     permissionId: 'admin_users',
-  },
-  {
-    icon: BarChart3,
-    label: 'Reports',
-    viewId: VIEWS.REPORTS,
-    colorVar: '--sidebar-item2',
-    permissionId: 'reports',
   },
 ];
 
@@ -211,8 +209,6 @@ function Sidebar({
   onLogout,
   onOpenProfile,
   onOpenScanner,
-  onOpenImport,
-  onOpenExport,
   isOpen,
   onClose,
   collapsed,
@@ -220,7 +216,7 @@ function Sidebar({
 }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { themeId, availableThemes } = useTheme();
-  const { canView, canEdit } = usePermissions();
+  const { canView } = usePermissions();
   const userMenuRef = useRef(null);
 
   // Filter nav items based on permissions. "Any admin access" has exactly ONE
@@ -423,7 +419,7 @@ function Sidebar({
         }}
       >
         <div style={{ marginBottom: spacing[4] }}>
-          {visibleMainNavItems.map((item) => (
+          {visibleMainNavItems.slice(0, 1).map((item) => (
             <NavButton
               key={item.viewId}
               icon={item.icon}
@@ -436,8 +432,9 @@ function Sidebar({
             />
           ))}
 
-          {/* Scan QR Code - in main nav. The scanner's found card is item
-              detail information, so it follows the item_details permission */}
+          {/* Scan QR Code — second slot: it's the most frequent daily action.
+              The scanner's found card is item detail information, so it
+              follows the item_details permission */}
           {canView('item_details') && (
             <button
               onClick={onOpenScanner}
@@ -475,6 +472,19 @@ function Sidebar({
               </span>
             </button>
           )}
+
+          {visibleMainNavItems.slice(1).map((item) => (
+            <NavButton
+              key={item.viewId}
+              icon={item.icon}
+              label={item.label}
+              viewId={item.viewId}
+              currentView={currentView}
+              onClick={handleNavClick}
+              colorVar={item.colorVar}
+              collapsed={collapsed}
+            />
+          ))}
         </div>
 
         {/* Admin Section */}
@@ -515,86 +525,6 @@ function Sidebar({
               />
             ))}
 
-            {/* Import CSV — anyone who may edit the gear list may import into it */}
-            {canEdit('gear_list') && (
-              <button
-                onClick={onOpenImport}
-                className="sidebar-nav-btn"
-                title={collapsed ? 'Import CSV' : undefined}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: collapsed ? 0 : spacing[3],
-                  width: '100%',
-                  padding: `${spacing[3]}px ${collapsed ? spacing[3] : spacing[4]}px`,
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: borderRadius.lg,
-                  color: colors.textSecondary,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontSize: typography.fontSize.sm,
-                  transition: 'all 150ms ease',
-                  justifyContent: collapsed ? 'center' : 'flex-start',
-                }}
-              >
-                <Upload size={18} style={{ flexShrink: 0 }} />
-                <span
-                  className="sidebar-nav-label"
-                  style={{
-                    opacity: collapsed ? 0 : 1,
-                    width: collapsed ? 0 : 'auto',
-                    overflow: 'hidden',
-                    whiteSpace: 'nowrap',
-                    transition: 'opacity 0.2s ease, width 0.2s ease',
-                  }}
-                >
-                  Import CSV
-                </span>
-              </button>
-            )}
-
-            {/* Export Data — the FULL database backup (clients, users, audit
-                log), so it follows admin_users VIEW specifically: roles that
-                can see the user directory may export it. "Any admin perm" was
-                too broad — a categories-only role could dump the whole DB. */}
-            {canView('admin_users') && (
-              <button
-                onClick={onOpenExport}
-                className="sidebar-nav-btn"
-                title={collapsed ? 'Export Data' : undefined}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: collapsed ? 0 : spacing[3],
-                  width: '100%',
-                  padding: `${spacing[3]}px ${collapsed ? spacing[3] : spacing[4]}px`,
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: borderRadius.lg,
-                  color: colors.textSecondary,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontSize: typography.fontSize.sm,
-                  transition: 'all 150ms ease',
-                  justifyContent: collapsed ? 'center' : 'flex-start',
-                }}
-              >
-                <Download size={18} style={{ flexShrink: 0 }} />
-                <span
-                  className="sidebar-nav-label"
-                  style={{
-                    opacity: collapsed ? 0 : 1,
-                    width: collapsed ? 0 : 'auto',
-                    overflow: 'hidden',
-                    whiteSpace: 'nowrap',
-                    transition: 'opacity 0.2s ease, width 0.2s ease',
-                  }}
-                >
-                  Export Data
-                </span>
-              </button>
-            )}
           </div>
         )}
       </nav>

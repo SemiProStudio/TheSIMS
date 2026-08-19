@@ -510,7 +510,11 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           editor). AdminPanel filters its cards per permission. */}
       {currentView === VIEWS.ADMIN && canAccessView(VIEWS.ADMIN, { canView, canEdit }) && (
         <Suspense fallback={<ViewLoading message="Loading Admin Panel..." />}>
-          <AdminPanel setCurrentView={setCurrentView} />
+          <AdminPanel
+            setCurrentView={setCurrentView}
+            onOpenImport={() => openModal(MODALS.CSV_IMPORT)}
+            onOpenExport={() => openModal(MODALS.DATABASE_EXPORT)}
+          />
         </Suspense>
       )}
 

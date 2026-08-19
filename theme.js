@@ -160,6 +160,15 @@ export const shadows = {
   card: 'var(--shadow-card)',
 };
 
+// Responsive breakpoints (px). Keep in sync with the index.css media queries:
+// ≤phone = off-canvas drawer nav + full-screen modal sheets stay ≤tablet;
+// phone<w≤desktop = sidebar icon rail by default.
+export const breakpoints = {
+  phone: 640,
+  tablet: 768,
+  desktop: 1024,
+};
+
 // Z-index layers
 export const zIndex = {
   base: 0,

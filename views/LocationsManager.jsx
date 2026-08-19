@@ -24,6 +24,7 @@ import { colors, styles, spacing, borderRadius, typography, withOpacity } from '
 import { flattenLocations, computeLocationPathRenames } from '../utils';
 import { Badge, Card, CardHeader, Button, SearchInput, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
+import { useMediaQuery } from '../hooks/useMediaQuery.js';
 
 // The legacy path separator: older item location strings use "A - B" while
 // the location picker writes "A > B". Both are matched when propagating
@@ -221,6 +222,10 @@ const LocationEditForm = memo(function LocationEditForm({
   const [type, setType] = useState(location?.type || 'room');
   const [error, setError] = useState('');
 
+  // The 2fr/1fr name/type row keeps its ratio on desktop but must stack on
+  // phones — same breakpoint as the .responsive-form-grid collapse
+  const isPhone = useMediaQuery('(max-width: 480px)');
+
   const handleSave = () => {
     if (!name.trim()) {
       setError('Name is required');
@@ -255,7 +260,7 @@ const LocationEditForm = memo(function LocationEditForm({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '2fr 1fr',
+          gridTemplateColumns: isPhone ? '1fr' : '2fr 1fr',
           gap: spacing[3],
           marginBottom: spacing[3],
         }}

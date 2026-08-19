@@ -2,7 +2,7 @@
 // Schedule View Component
 // ============================================================================
 
-import { memo, useMemo, useCallback, useState } from 'react';
+import { memo, useMemo, useCallback, useContext, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -25,6 +25,8 @@ import {
 } from '../utils';
 import { Badge, Card, Button, PageHeader } from '../components/ui.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
+import { useMediaQuery } from '../hooks/useMediaQuery.js';
+import AuthContext from '../contexts/AuthContext.js';
 import { useData } from '../contexts/DataContext.js';
 import { usePermissions } from '../contexts/PermissionsContext.js';
 import { ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
@@ -80,6 +82,34 @@ function ScheduleView({
   const { canEdit } = usePermissions();
   const canEditSchedule = canEdit('schedule');
 
+  // Narrow viewports default to DAY — the Week strip crams 7 columns into a
+  // phone width. This is only a fallback default: a saved profile pref
+  // (uiPrefs.scheduleView, written by App when the user picks a period) or an
+  // explicit period pick this session always wins. AuthContext is read via
+  // useContext (not the throwing useAuth hook) so unit tests can render the
+  // view without a provider; outside a provider it is null → "no saved pref".
+  const auth = useContext(AuthContext);
+  const isNarrowViewport = useMediaQuery('(max-width: 768px)');
+  const hasSavedScheduleView = Object.values(SCHEDULE_PERIODS).includes(
+    auth?.userProfile?.uiPrefs?.scheduleView,
+  );
+  const [periodPicked, setPeriodPicked] = useState(false);
+  // Effective period — every read below uses this, never the raw prop
+  const view =
+    isNarrowViewport &&
+    !hasSavedScheduleView &&
+    !periodPicked &&
+    scheduleView === SCHEDULE_PERIODS.WEEK
+      ? SCHEDULE_PERIODS.DAY
+      : scheduleView;
+  const pickView = useCallback(
+    (v) => {
+      setPeriodPicked(true);
+      setScheduleView(v);
+    },
+    [setScheduleView],
+  );
+
   // Track which reservation is hovered (by evIdx) so all its segments highlight together
   const [hoveredEvIdx, setHoveredEvIdx] = useState(null);
 
@@ -90,8 +120,8 @@ function ScheduleView({
   // Get dates for current view
   const scheduleDates = useMemo(() => {
     const base = parseLocalDate(scheduleDate);
-    if (scheduleView === SCHEDULE_PERIODS.DAY) return [base];
-    if (scheduleView === SCHEDULE_PERIODS.WEEK) {
+    if (view === SCHEDULE_PERIODS.DAY) return [base];
+    if (view === SCHEDULE_PERIODS.WEEK) {
       const weekStart = new Date(base);
       weekStart.setDate(base.getDate() - base.getDay());
       return [...Array(7)].map((_, i) => {
@@ -111,7 +141,7 @@ function ScheduleView({
       days.push(d);
     }
     return days;
-  }, [scheduleDate, scheduleView]);
+  }, [scheduleDate, view]);
 
   // Helper to format date consistently
   const formatDateStr = useCallback((date) => {
@@ -128,18 +158,18 @@ function ScheduleView({
   const navigate = useCallback(
     (dir) => {
       const d = parseLocalDate(scheduleDate);
-      if (scheduleView === SCHEDULE_PERIODS.DAY) d.setDate(d.getDate() + dir);
-      else if (scheduleView === SCHEDULE_PERIODS.WEEK) d.setDate(d.getDate() + dir * 7);
+      if (view === SCHEDULE_PERIODS.DAY) d.setDate(d.getDate() + dir);
+      else if (view === SCHEDULE_PERIODS.WEEK) d.setDate(d.getDate() + dir * 7);
       else d.setMonth(d.getMonth() + dir);
       setScheduleDate(formatDateStr(d));
     },
-    [scheduleDate, scheduleView, setScheduleDate, formatDateStr],
+    [scheduleDate, view, setScheduleDate, formatDateStr],
   );
 
   const todayStr = formatDateStr(new Date());
-  const isMonth = scheduleView === SCHEDULE_PERIODS.MONTH;
-  const isWeek = scheduleView === SCHEDULE_PERIODS.WEEK;
-  const isDay = scheduleView === SCHEDULE_PERIODS.DAY;
+  const isMonth = view === SCHEDULE_PERIODS.MONTH;
+  const isWeek = view === SCHEDULE_PERIODS.WEEK;
+  const isDay = view === SCHEDULE_PERIODS.DAY;
 
   // ============================================================================
   // Month view: compute spanning bar segments for each reservation
@@ -363,118 +393,120 @@ function ScheduleView({
 
   return (
     <>
-      {/* Header */}
-      <PageHeader
-        title="Schedule"
-        action={
-          <div style={{ display: 'flex', gap: spacing[3], alignItems: 'center', flexWrap: 'wrap' }}>
-            {canEditSchedule && onAddReservation && (
-              <Button onClick={onAddReservation} icon={Plus} style={{ marginRight: spacing[2] }}>
-                New
-              </Button>
-            )}
-            <div
+      {/* Header — title row first, controls in their own wrapping row below.
+          The controls cluster used to live in PageHeader's action slot and
+          wrapped OVER the "Schedule" title at narrow widths. All control
+          labels/titles are unchanged (E2E clicks 'New', 'day'/'week'/'month',
+          'List View'/'Calendar View'). */}
+      <PageHeader title="Schedule" />
+      <div
+        style={{
+          display: 'flex',
+          gap: spacing[3],
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          marginBottom: spacing[5],
+        }}
+      >
+        {canEditSchedule && onAddReservation && (
+          <Button onClick={onAddReservation} icon={Plus} style={{ marginRight: spacing[2] }}>
+            New
+          </Button>
+        )}
+        <div
+          style={{
+            display: 'flex',
+            background: `${withOpacity(colors.primary, 15)}`,
+            borderRadius: borderRadius.lg,
+          }}
+        >
+          <button
+            onClick={() => setScheduleMode(SCHEDULE_MODES.LIST)}
+            title="List View"
+            aria-pressed={scheduleMode === SCHEDULE_MODES.LIST}
+            style={{
+              ...styles.btnSec,
+              border: 'none',
+              background:
+                scheduleMode === SCHEDULE_MODES.LIST
+                  ? `${withOpacity(colors.primary, 30)}`
+                  : 'transparent',
+              color: scheduleMode === SCHEDULE_MODES.LIST ? colors.primary : colors.textSecondary,
+              padding: '12px 14px',
+            }}
+          >
+            <List size={16} />
+          </button>
+          <button
+            onClick={() => setScheduleMode(SCHEDULE_MODES.CALENDAR)}
+            title="Calendar View"
+            aria-pressed={scheduleMode === SCHEDULE_MODES.CALENDAR}
+            style={{
+              ...styles.btnSec,
+              border: 'none',
+              background:
+                scheduleMode === SCHEDULE_MODES.CALENDAR
+                  ? `${withOpacity(colors.primary, 30)}`
+                  : 'transparent',
+              color:
+                scheduleMode === SCHEDULE_MODES.CALENDAR ? colors.primary : colors.textSecondary,
+              padding: '12px 14px',
+            }}
+          >
+            <Calendar size={16} />
+          </button>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            background: `${withOpacity(colors.primary, 15)}`,
+            borderRadius: borderRadius.lg,
+          }}
+        >
+          {Object.values(SCHEDULE_PERIODS).map((v) => (
+            <button
+              key={v}
+              onClick={() => pickView(v)}
+              aria-pressed={view === v}
               style={{
-                display: 'flex',
-                background: `${withOpacity(colors.primary, 15)}`,
-                borderRadius: borderRadius.lg,
+                ...styles.btnSec,
+                border: 'none',
+                background: view === v ? `${withOpacity(colors.primary, 30)}` : 'transparent',
+                color: view === v ? colors.primary : colors.textSecondary,
+                fontWeight:
+                  view === v ? typography.fontWeight.medium : typography.fontWeight.normal,
+                textTransform: 'capitalize',
+                fontSize: typography.fontSize.sm,
+                padding: '12px 14px',
               }}
             >
-              <button
-                onClick={() => setScheduleMode(SCHEDULE_MODES.LIST)}
-                title="List View"
-                aria-pressed={scheduleMode === SCHEDULE_MODES.LIST}
-                style={{
-                  ...styles.btnSec,
-                  border: 'none',
-                  background:
-                    scheduleMode === SCHEDULE_MODES.LIST
-                      ? `${withOpacity(colors.primary, 30)}`
-                      : 'transparent',
-                  color:
-                    scheduleMode === SCHEDULE_MODES.LIST ? colors.primary : colors.textSecondary,
-                  padding: '12px 14px',
-                }}
-              >
-                <List size={16} />
-              </button>
-              <button
-                onClick={() => setScheduleMode(SCHEDULE_MODES.CALENDAR)}
-                title="Calendar View"
-                aria-pressed={scheduleMode === SCHEDULE_MODES.CALENDAR}
-                style={{
-                  ...styles.btnSec,
-                  border: 'none',
-                  background:
-                    scheduleMode === SCHEDULE_MODES.CALENDAR
-                      ? `${withOpacity(colors.primary, 30)}`
-                      : 'transparent',
-                  color:
-                    scheduleMode === SCHEDULE_MODES.CALENDAR
-                      ? colors.primary
-                      : colors.textSecondary,
-                  padding: '12px 14px',
-                }}
-              >
-                <Calendar size={16} />
-              </button>
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                background: `${withOpacity(colors.primary, 15)}`,
-                borderRadius: borderRadius.lg,
-              }}
-            >
-              {Object.values(SCHEDULE_PERIODS).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setScheduleView(v)}
-                  aria-pressed={scheduleView === v}
-                  style={{
-                    ...styles.btnSec,
-                    border: 'none',
-                    background:
-                      scheduleView === v ? `${withOpacity(colors.primary, 30)}` : 'transparent',
-                    color: scheduleView === v ? colors.primary : colors.textSecondary,
-                    fontWeight:
-                      scheduleView === v
-                        ? typography.fontWeight.medium
-                        : typography.fontWeight.normal,
-                    textTransform: 'capitalize',
-                    fontSize: typography.fontSize.sm,
-                    padding: '12px 14px',
-                  }}
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: spacing[1], alignItems: 'center' }}>
-              <Button
-                variant="secondary"
-                onClick={() => navigate(-1)}
-                icon={ArrowLeft}
-                style={{ padding: '12px 14px' }}
-              />
-              <DatePicker
-                value={scheduleDate}
-                onChange={(e) => setScheduleDate(e.target.value)}
-                style={{ width: '160px' }}
-                showTodayButton={false}
-                clearable={false}
-                aria-label="Schedule date"
-              />
-              <Button
-                variant="secondary"
-                onClick={() => navigate(1)}
-                icon={ArrowRight}
-                style={{ padding: '12px 14px' }}
-              />
-            </div>
-          </div>
-        }
-      />
+              {v}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: spacing[1], alignItems: 'center' }}>
+          <Button
+            variant="secondary"
+            onClick={() => navigate(-1)}
+            icon={ArrowLeft}
+            style={{ padding: '12px 14px' }}
+          />
+          <DatePicker
+            value={scheduleDate}
+            onChange={(e) => setScheduleDate(e.target.value)}
+            style={{ width: '160px' }}
+            showTodayButton={false}
+            clearable={false}
+            aria-label="Schedule date"
+          />
+          <Button
+            variant="secondary"
+            onClick={() => navigate(1)}
+            icon={ArrowRight}
+            style={{ padding: '12px 14px' }}
+          />
+        </div>
+      </div>
 
       {!canEditSchedule && <ViewOnlyBanner functionId="schedule" />}
 
@@ -652,8 +684,10 @@ function ScheduleView({
         (() => {
           const currentMonth = parseLocalDate(scheduleDate).getMonth();
           const DATE_HEADER_H = 24;
-          const BAR_H = 18;
-          const BAR_GAP = 2;
+          // 24px bars (was 18) — touch-friendly tap targets; row heights are
+          // derived from BAR_H so the cell layout scales with it
+          const BAR_H = 24;
+          const BAR_GAP = 3;
           const maxLanesPerRow = {};
           // Compute max lanes per row
           monthSpanSegments.forEach((seg) => {
@@ -706,7 +740,10 @@ function ScheduleView({
                       gap: 0,
                       marginBottom: 1,
                       position: 'relative',
-                      height: rowH,
+                      // Fill the viewport instead of collapsing to a ~40px
+                      // strip: each of the 6 week rows gets an equal share of
+                      // the remaining canvas, growing when events need more
+                      height: `max(${rowH}px, calc((100vh - 300px) / 6))`,
                     }}
                   >
                     {/* Day cells (background + date numbers) */}
@@ -719,7 +756,7 @@ function ScheduleView({
                           key={col}
                           onClick={() => {
                             setScheduleDate(ds);
-                            setScheduleView(SCHEDULE_PERIODS.DAY);
+                            pickView(SCHEDULE_PERIODS.DAY);
                           }}
                           style={{
                             height: '100%',
@@ -863,7 +900,11 @@ function ScheduleView({
           const BAR_H = 32;
           const BAR_GAP = 4;
           const totalLanes = lanes.length || 0;
-          const chartHeight = totalLanes > 0 ? totalLanes * (BAR_H + BAR_GAP) + BAR_GAP + 30 : 60;
+          const laneHeight = totalLanes > 0 ? totalLanes * (BAR_H + BAR_GAP) + BAR_GAP + 30 : 60;
+          // Fill the canvas instead of rendering a ~120px strip: the day
+          // columns (dividers/today highlight span the full height) get at
+          // least 60vh, growing when the lanes need more room
+          const chartHeight = `max(60vh, ${laneHeight}px)`;
 
           return (
             <Card padding={false} style={{ overflow: 'hidden' }}>

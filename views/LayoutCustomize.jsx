@@ -4,7 +4,16 @@
 // ============================================================================
 
 import { memo, useState, useCallback, useRef } from 'react';
-import { Save, Layout, RotateCcw, Eye, EyeOff, GripVertical } from 'lucide-react';
+import {
+  Save,
+  Layout,
+  RotateCcw,
+  Eye,
+  EyeOff,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+} from 'lucide-react';
 import { DASHBOARD_SECTIONS, ITEM_DETAIL_SECTIONS, DEFAULT_LAYOUT_PREFS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button, BackButton, Card } from '../components/ui.jsx';
@@ -178,6 +187,50 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
     [draggedId, config],
   );
 
+  // Move a section one position up/down — touch-accessible alternative to
+  // drag-and-drop (HTML5 drag events never fire on touch devices)
+  const moveSection = useCallback(
+    (sectionId, delta) => {
+      setEditPrefs((prev) => {
+        const newPrefs = structuredClone(prev);
+        if (!newPrefs[config.prefsKey]) newPrefs[config.prefsKey] = { sections: {} };
+        if (!newPrefs[config.prefsKey].sections) newPrefs[config.prefsKey].sections = {};
+
+        // Get current sorted list (same shape as the drop handler)
+        const sections = Object.values(config.sections)
+          .map((s) => ({
+            id: s.id,
+            order: newPrefs[config.prefsKey].sections[s.id]?.order ?? s.order,
+          }))
+          .sort((a, b) => a.order - b.order);
+
+        const fromIndex = sections.findIndex((s) => s.id === sectionId);
+        const toIndex = fromIndex + delta;
+        if (fromIndex === -1 || toIndex < 0 || toIndex >= sections.length) return prev;
+
+        const [moved] = sections.splice(fromIndex, 1);
+        sections.splice(toIndex, 0, moved);
+
+        // Reassign orders based on new positions
+        sections.forEach((section, index) => {
+          if (!newPrefs[config.prefsKey].sections[section.id]) {
+            newPrefs[config.prefsKey].sections[section.id] = {
+              visible: true,
+              collapsed: false,
+              order: index,
+            };
+          } else {
+            newPrefs[config.prefsKey].sections[section.id].order = index;
+          }
+        });
+
+        return newPrefs;
+      });
+      setHasChanges(true);
+    },
+    [config],
+  );
+
   // Reset to defaults
   const resetToDefaults = useCallback(() => {
     setEditPrefs((prev) => ({
@@ -318,6 +371,60 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
                   </div>
                 )}
               </div>
+
+              {/* Move up/down — touch-accessible reorder */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  moveSection(section.id, -1);
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                draggable={false}
+                disabled={index === 0}
+                aria-label="Move up"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 11, // 18px icon + padding = 40px touch target
+                  margin: '-4px 0', // don't let the 40px target inflate row height
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: borderRadius.md,
+                  color: colors.textMuted,
+                  opacity: index === 0 ? 0.35 : 1,
+                  cursor: index === 0 ? 'default' : 'pointer',
+                  flexShrink: 0,
+                }}
+              >
+                <ChevronUp size={18} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  moveSection(section.id, 1);
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                draggable={false}
+                disabled={index === sortedSections.length - 1}
+                aria-label="Move down"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 11,
+                  margin: '-4px 0',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: borderRadius.md,
+                  color: colors.textMuted,
+                  opacity: index === sortedSections.length - 1 ? 0.35 : 1,
+                  cursor: index === sortedSections.length - 1 ? 'default' : 'pointer',
+                  flexShrink: 0,
+                }}
+              >
+                <ChevronDown size={18} />
+              </button>
 
               {/* Visibility toggle */}
               <button

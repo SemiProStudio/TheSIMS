@@ -304,28 +304,46 @@ const DatePicker = memo(function DatePicker({
 
   const selectedDate = value ? parseDate(value) : null;
 
-  // Calculate popup position when opening
-  useEffect(() => {
-    if (isOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-      const openAbove = spaceBelow < 350 && spaceAbove > spaceBelow;
-      const popupWidth = 300;
+  // Calculate popup position relative to viewport
+  const updatePopupPosition = useCallback(() => {
+    if (!containerRef.current) return;
 
-      let left = rect.left;
-      // Keep popup on screen horizontally
-      if (left + popupWidth > window.innerWidth - 16) {
-        left = Math.max(16, rect.right - popupWidth);
-      }
+    const rect = containerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openAbove = spaceBelow < 350 && spaceAbove > spaceBelow;
+    const popupWidth = 300;
 
-      setPopupPos({
-        top: openAbove ? rect.top : rect.bottom + 4,
-        left,
-        openAbove,
-      });
+    let left = rect.left;
+    // Keep popup on screen horizontally
+    if (left + popupWidth > window.innerWidth - 16) {
+      left = Math.max(16, rect.right - popupWidth);
     }
-  }, [isOpen]);
+
+    setPopupPos({
+      top: openAbove ? rect.top : rect.bottom + 4,
+      left,
+      openAbove,
+    });
+  }, []);
+
+  // Update position when opening and on scroll/resize — Select.jsx's pattern;
+  // positioning only on open left the popup detached from its input after a
+  // scroll or orientation change
+  useEffect(() => {
+    if (isOpen) {
+      updatePopupPosition();
+
+      const handleScrollOrResize = () => updatePopupPosition();
+      window.addEventListener('scroll', handleScrollOrResize, true);
+      window.addEventListener('resize', handleScrollOrResize);
+
+      return () => {
+        window.removeEventListener('scroll', handleScrollOrResize, true);
+        window.removeEventListener('resize', handleScrollOrResize);
+      };
+    }
+  }, [isOpen, updatePopupPosition]);
 
   // Close on outside click
   useEffect(() => {

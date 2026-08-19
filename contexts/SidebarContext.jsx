@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import SidebarContext from './SidebarContext.js';
+import { breakpoints } from '../theme.js';
 
 // Safe localStorage wrapper
 const safeLocalStorage = {
@@ -29,13 +30,25 @@ export function SidebarProvider({
   children,
   storageKey = 'sims-sidebar-collapsed',
   defaultCollapsed = false,
-  mobileBreakpoint = 768,
+  // Phones get the off-canvas drawer; 641-1024px keeps the real sidebar as
+  // a collapsed icon rail (see below) so tablets don't get the phone nav
+  mobileBreakpoint = breakpoints.phone,
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = safeLocalStorage.getItem(storageKey);
-    return saved === 'true' ? true : defaultCollapsed;
+    if (saved !== null) return saved === 'true';
+    // No stored choice: default to the icon rail on tablet-width screens.
+    // An explicit user toggle (or profile pref applied later) always wins.
+    if (
+      typeof window !== 'undefined' &&
+      window.innerWidth > breakpoints.phone &&
+      window.innerWidth <= breakpoints.desktop
+    ) {
+      return true;
+    }
+    return defaultCollapsed;
   });
 
   const [isMobile, setIsMobile] = useState(() => {

@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { memo, useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Plus, Save, Trash2, GripVertical, Search } from 'lucide-react';
+import { Plus, Save, Trash2, GripVertical, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { CONDITION, DEFAULT_NEW_CATEGORY_SETTINGS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Card, Badge, Button, PageHeader } from '../components/ui.jsx';
@@ -13,6 +13,58 @@ import { useItemForm } from '../components/ItemForm.jsx';
 import { SpecFieldInput } from '../components/SpecFieldInput.jsx';
 import { SmartPasteModal } from '../modals/smartPaste/SmartPasteModal.jsx';
 import { applySmartPastePayload } from '../lib/smartPaste/applyPayload.js';
+
+// ============================================================================
+// Touch-accessible reorder buttons — HTML5 drag-and-drop never fires on touch
+// devices, so draggable rows also get explicit move up/down controls.
+// ============================================================================
+
+function RowMoveButtons({ onMoveUp, onMoveDown, isFirst, isLast }) {
+  const buttonStyle = (disabled) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12, // 16px icon + padding = 40px touch target
+    margin: '-8px 0', // don't let the 40px target inflate row height
+    background: 'transparent',
+    border: 'none',
+    borderRadius: borderRadius.md,
+    color: colors.textMuted,
+    opacity: disabled ? 0.35 : 1,
+    cursor: disabled ? 'default' : 'pointer',
+    flexShrink: 0,
+  });
+  return (
+    <div style={{ display: 'flex', flexShrink: 0 }}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onMoveUp();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        draggable={false}
+        disabled={isFirst}
+        aria-label="Move up"
+        style={buttonStyle(isFirst)}
+      >
+        <ChevronUp size={16} />
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onMoveDown();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        draggable={false}
+        disabled={isLast}
+        aria-label="Move down"
+        style={buttonStyle(isLast)}
+      >
+        <ChevronDown size={16} />
+      </button>
+    </div>
+  );
+}
 
 // ============================================================================
 // Add/Edit Item Page
@@ -658,6 +710,19 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
     setDirty(true);
   };
 
+  // Touch-accessible move — same reorder as handleDrop, one step at a time
+  const moveField = (index, delta) => {
+    const targetIndex = index + delta;
+    if (targetIndex < 0 || targetIndex >= (editSpecs[selectedCategory] || []).length) return;
+    setEditSpecs((prev) => {
+      const arr = [...prev[selectedCategory]];
+      const [moved] = arr.splice(index, 1);
+      arr.splice(targetIndex, 0, moved);
+      return { ...prev, [selectedCategory]: arr };
+    });
+    setDirty(true);
+  };
+
   const toggleAllRequired = (value) => {
     setEditSpecs((prev) => ({
       ...prev,
@@ -950,11 +1015,19 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
                       }}
                     >
                       {canDrag && (
-                        <GripVertical
-                          size={16}
-                          color={colors.textMuted}
-                          style={{ flexShrink: 0, cursor: 'grab' }}
-                        />
+                        <>
+                          <GripVertical
+                            size={16}
+                            color={colors.textMuted}
+                            style={{ flexShrink: 0, cursor: 'grab' }}
+                          />
+                          <RowMoveButtons
+                            onMoveUp={() => moveField(field.originalIndex, -1)}
+                            onMoveDown={() => moveField(field.originalIndex, 1)}
+                            isFirst={field.originalIndex === 0}
+                            isLast={field.originalIndex === currentSpecs.length - 1}
+                          />
+                        </>
                       )}
                       {(() => {
                         const isDup = isDuplicateFieldName(field.name, field.originalIndex);
@@ -1284,6 +1357,19 @@ export const CategoriesPage = memo(function CategoriesPage({
     setDirty(true);
   };
 
+  // Touch-accessible move — same reorder as handleDrop, one step at a time
+  const moveRow = (index, delta) => {
+    const targetIndex = index + delta;
+    if (targetIndex < 0 || targetIndex >= rows.length) return;
+    setRows((prev) => {
+      const arr = [...prev];
+      const [moved] = arr.splice(index, 1);
+      arr.splice(targetIndex, 0, moved);
+      return arr;
+    });
+    setDirty(true);
+  };
+
   const handleSave = () => {
     if (hasDuplicateCategories || hasEmptyNames) return;
     // Remap the stable-keyed edit state to final names, and report renames
@@ -1471,6 +1557,12 @@ export const CategoriesPage = memo(function CategoriesPage({
                       size={16}
                       color={colors.textMuted}
                       style={{ flexShrink: 0, cursor: 'grab' }}
+                    />
+                    <RowMoveButtons
+                      onMoveUp={() => moveRow(index, -1)}
+                      onMoveDown={() => moveRow(index, 1)}
+                      isFirst={index === 0}
+                      isLast={index === rows.length - 1}
                     />
                     <div style={{ flex: 1 }}>
                       <input

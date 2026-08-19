@@ -52,6 +52,7 @@ import { openPrintWindow } from '../lib/printUtil.js';
 import { buildPackListExportHTML } from './packListExport.js';
 import { parseScannedCode, truncateScannedCode } from '../lib/qrData.js';
 import { useQRScanner } from '../hooks/useQRScanner.js';
+import { useMediaQuery } from '../hooks/useMediaQuery.js';
 
 function PackListsView({
   packLists,
@@ -76,6 +77,10 @@ function PackListsView({
   // fetching" from "user has no pack lists" and shows a misleading empty state
   const packListsLoaded = dataContext?.packListsLoaded !== false;
   const packListsLoadFailed = Boolean(ctxData?.lazyErrors?.packLists);
+
+  // Create/edit view: the two selection panes sit side by side on desktop but
+  // must stack on phones — each keeps half the height and its own scroll
+  const isNarrowScreen = useMediaQuery('(max-width: 768px)');
 
   // Lazy-load pack lists on mount
   useEffect(() => {
@@ -889,7 +894,8 @@ function PackListsView({
             flex: 1,
             minHeight: 0,
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: isNarrowScreen ? '1fr' : '1fr 1fr',
+            gridTemplateRows: isNarrowScreen ? '1fr 1fr' : undefined,
             gap: spacing[4],
           }}
         >

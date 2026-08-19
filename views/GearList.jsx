@@ -51,6 +51,7 @@ import {
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import { Select } from '../components/Select.jsx';
 import { useDebounce, usePagination } from '../hooks/index.js';
+import { useMediaQuery } from '../hooks/useMediaQuery.js';
 import { KITS_FILTER, SORT_OPTIONS, sortItems } from '../lib/gearListOptions.js';
 import { usePermissions } from '../contexts/PermissionsContext.js';
 import { ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
@@ -501,26 +502,32 @@ const GridItem = memo(function GridItem({
   );
 });
 
-// Memoized list item component for performance
+// Memoized list item component for performance.
+// `compact` (viewports ≤640px) tightens the row for touch: 40px thumbnail,
+// name first with ID/status badges inline below, 44px minimum tap target.
+// Desktop rendering is untouched — visual baselines pin it.
 const ListItem = memo(function ListItem({
   item,
   onViewItem,
   selectionMode,
   isSelected,
   onToggleSelect,
+  compact = false,
 }) {
   const isOverdue =
     item.status === 'checked-out' && item.dueBack && item.dueBack < getTodayISO();
+  const thumbSize = compact ? 40 : 56;
   return (
     <Card
       aria-label={`${item.name} - ${item.status}${isSelected ? ', selected' : ''}`}
       onClick={(e) => (selectionMode ? onToggleSelect(item.id, e) : onViewItem(item.id))}
       style={{
         cursor: 'pointer',
-        padding: spacing[3],
+        padding: compact ? `${spacing[2]}px ${spacing[3]}px` : spacing[3],
         display: 'flex',
         alignItems: 'center',
-        gap: spacing[3],
+        gap: compact ? spacing[2] : spacing[3],
+        ...(compact && { minHeight: 44 }),
         outline: isSelected ? `2px solid ${colors.primary}` : 'none',
         outlineOffset: '-2px',
         ...(selectionMode && { userSelect: 'none' }),
@@ -541,16 +548,16 @@ const ListItem = memo(function ListItem({
           src={item.image}
           alt={item.name}
           size="thumbnail"
-          width={56}
-          height={56}
+          width={thumbSize}
+          height={thumbSize}
           style={{ borderRadius: borderRadius.md }}
           objectFit="cover"
         />
       ) : (
         <div
           style={{
-            width: 56,
-            height: 56,
+            width: thumbSize,
+            height: thumbSize,
             borderRadius: borderRadius.md,
             background: `${withOpacity(colors.primary, 10)}`,
             display: 'flex',
@@ -564,53 +571,96 @@ const ListItem = memo(function ListItem({
           No img
         </div>
       )}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            display: 'flex',
-            gap: spacing[1],
-            marginBottom: spacing[1],
-            flexWrap: 'wrap',
-          }}
-        >
-          <Badge text={item.id} color={colors.primary} />
-          <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
-          <Badge text={item.category} color={colors.accent2} />
-          {item.isKit && <Badge text="Kit" color={colors.accent1} />}
-          {isOverdue && <Badge text="Overdue" color={colors.danger} />}
-        </div>
-        <div
-          style={{
-            fontWeight: typography.fontWeight.medium,
-            color: colors.textPrimary,
-          }}
-        >
-          {item.name}
-        </div>
-        <div
-          style={{
-            fontSize: typography.fontSize.sm,
-            color: colors.textMuted,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {[item.brand, item.location, item.condition].filter(Boolean).join(' • ')}
-        </div>
-        {item.status === 'checked-out' && (
+      {compact ? (
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontSize: typography.fontSize.xs,
-              color: isOverdue ? colors.danger : colors.checkedOut,
-              marginTop: 2,
+              fontWeight: typography.fontWeight.medium,
+              fontSize: typography.fontSize.sm,
+              color: colors.textPrimary,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
-            {item.checkedOutTo || 'Unknown'}
-            {item.dueBack ? ` • Due ${formatDate(item.dueBack)}` : ''}
+            {item.name}
           </div>
-        )}
-      </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[1],
+              marginTop: 2,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Badge text={item.id} color={colors.primary} size="xs" />
+            <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} size="xs" />
+            {item.isKit && <Badge text="Kit" color={colors.accent1} size="xs" />}
+            {isOverdue && <Badge text="Overdue" color={colors.danger} size="xs" />}
+          </div>
+          {item.status === 'checked-out' && (
+            <div
+              style={{
+                fontSize: typography.fontSize.xs,
+                color: isOverdue ? colors.danger : colors.checkedOut,
+                marginTop: 2,
+              }}
+            >
+              {item.checkedOutTo || 'Unknown'}
+              {item.dueBack ? ` • Due ${formatDate(item.dueBack)}` : ''}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: spacing[1],
+              marginBottom: spacing[1],
+              flexWrap: 'wrap',
+            }}
+          >
+            <Badge text={item.id} color={colors.primary} />
+            <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
+            <Badge text={item.category} color={colors.accent2} />
+            {item.isKit && <Badge text="Kit" color={colors.accent1} />}
+            {isOverdue && <Badge text="Overdue" color={colors.danger} />}
+          </div>
+          <div
+            style={{
+              fontWeight: typography.fontWeight.medium,
+              color: colors.textPrimary,
+            }}
+          >
+            {item.name}
+          </div>
+          <div
+            style={{
+              fontSize: typography.fontSize.sm,
+              color: colors.textMuted,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {[item.brand, item.location, item.condition].filter(Boolean).join(' • ')}
+          </div>
+          {item.status === 'checked-out' && (
+            <div
+              style={{
+                fontSize: typography.fontSize.xs,
+                color: isOverdue ? colors.danger : colors.checkedOut,
+                marginTop: 2,
+              }}
+            >
+              {item.checkedOutTo || 'Unknown'}
+              {item.dueBack ? ` • Due ${formatDate(item.dueBack)}` : ''}
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   );
 });
@@ -715,6 +765,24 @@ function GearList({
   // Permissions
   const { canEdit } = usePermissions();
   const canEditGearList = canEdit('gear_list');
+
+  // Small screens default to LIST mode — the square grid cards render one
+  // enormous ~350px tile per row on phones. This is only a fallback default:
+  // a saved profile pref (uiPrefs.gearListGridView, written by App when the
+  // user toggles) or an explicit toggle click this session always wins.
+  // Desktop (>640px) behavior is byte-identical — visual baselines pin it.
+  const isSmallScreen = useMediaQuery('(max-width: 640px)');
+  const hasSavedViewMode = typeof uiPrefs?.gearListGridView === 'boolean';
+  const [viewModePicked, setViewModePicked] = useState(false);
+  const effectiveGridView =
+    isSmallScreen && !hasSavedViewMode && !viewModePicked ? false : isGridView;
+  const chooseViewMode = useCallback(
+    (grid) => {
+      setViewModePicked(true);
+      setIsGridView(grid);
+    },
+    [setIsGridView],
+  );
 
   // Sort and page size are per-user profile prefs. Legacy device values are
   // migrated into the profile at login, so there is no localStorage read
@@ -1078,29 +1146,29 @@ function GearList({
             }}
           >
             <button
-              onClick={() => setIsGridView(true)}
+              onClick={() => chooseViewMode(true)}
               aria-label="Grid view"
-              aria-pressed={isGridView}
+              aria-pressed={effectiveGridView}
               style={{
                 ...styles.btnSec,
                 border: 'none',
                 padding: '12px 14px',
-                background: isGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
-                color: isGridView ? colors.primary : colors.textSecondary,
+                background: effectiveGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
+                color: effectiveGridView ? colors.primary : colors.textSecondary,
               }}
             >
               <Grid size={18} />
             </button>
             <button
-              onClick={() => setIsGridView(false)}
+              onClick={() => chooseViewMode(false)}
               aria-label="List view"
-              aria-pressed={!isGridView}
+              aria-pressed={!effectiveGridView}
               style={{
                 ...styles.btnSec,
                 border: 'none',
                 padding: '12px 14px',
-                background: !isGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
-                color: !isGridView ? colors.primary : colors.textSecondary,
+                background: !effectiveGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
+                color: !effectiveGridView ? colors.primary : colors.textSecondary,
               }}
             >
               <List size={18} />
@@ -1110,12 +1178,16 @@ function GearList({
       </div>
 
       {/* Grid View - Square Items */}
-      {isGridView ? (
+      {effectiveGridView ? (
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-            gap: spacing[4],
+            // ≤640px: narrower minimum so an explicitly chosen grid shows two
+            // columns on phones instead of one enormous full-width square
+            gridTemplateColumns: isSmallScreen
+              ? 'repeat(auto-fill, minmax(140px, 1fr))'
+              : 'repeat(auto-fill, minmax(180px, 1fr))',
+            gap: isSmallScreen ? spacing[3] : spacing[4],
           }}
         >
           {paginatedItems.map((item) => (
@@ -1140,6 +1212,7 @@ function GearList({
               selectionMode={selectionMode}
               isSelected={selectedIds.has(item.id)}
               onToggleSelect={toggleSelect}
+              compact={isSmallScreen}
             />
           ))}
         </div>

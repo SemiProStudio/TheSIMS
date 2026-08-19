@@ -654,14 +654,7 @@ export const ReservationModal = memo(function ReservationModal({
           </div>
         )}
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: spacing[3],
-            marginBottom: spacing[3],
-          }}
-        >
+        <div className="responsive-form-grid" style={{ marginBottom: spacing[3] }}>
           <div>
             <label style={{ ...styles.label, color: showProjectError ? colors.danger : undefined }}>
               Project Name <span style={{ color: colors.danger }}>*</span>
@@ -696,14 +689,7 @@ export const ReservationModal = memo(function ReservationModal({
           </div>
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: spacing[3],
-            marginBottom: spacing[3],
-          }}
-        >
+        <div className="responsive-form-grid" style={{ marginBottom: spacing[3] }}>
           <div>
             <label style={{ ...styles.label, color: showStartError ? colors.danger : undefined }}>
               Start Date <span style={{ color: colors.danger }}>*</span>
@@ -777,14 +763,7 @@ export const ReservationModal = memo(function ReservationModal({
           )}
         </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: spacing[3],
-            marginBottom: spacing[3],
-          }}
-        >
+        <div className="responsive-form-grid" style={{ marginBottom: spacing[3] }}>
           <div>
             <label style={styles.label}>Contact Phone</label>
             <input

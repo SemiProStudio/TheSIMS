@@ -257,14 +257,7 @@ const ClientFormModal = memo(function ClientFormModal({ client, onSave, onClose 
         )}
 
         {/* Email & Phone */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: spacing[3],
-            marginBottom: spacing[3],
-          }}
-        >
+        <div className="responsive-form-grid" style={{ marginBottom: spacing[3] }}>
           <div>
             <label style={{ ...styles.label, color: fieldErrors.email ? colors.danger : undefined }}>
               Email

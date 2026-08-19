@@ -196,8 +196,19 @@ export const InsuranceReportPanel = memo(function InsuranceReportPanel({
               </div>
             }
           />
-          <div style={{ flex: 1, overflowY: 'auto', minHeight: 200 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          {/* One container scrolls both axes — a nested overflowX wrapper would
+              detach the sticky thead from the vertical scroll; table minWidth
+              keeps columns readable on narrow screens */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              minHeight: 200,
+            }}
+          >
+            <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: colors.bgDark, position: 'sticky', top: 0 }}>
                   <th
