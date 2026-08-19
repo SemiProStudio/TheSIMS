@@ -15,7 +15,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { Card, Button } from '../components/ui.jsx';
+import { Card, Button, PageHeader } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { usePermissions } from '../contexts/PermissionsContext.js';
 
@@ -296,33 +296,17 @@ function NotificationSettings({
 
   return (
     <div>
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: spacing[6],
-        }}
-      >
-        <div>
-          <h2 style={{ margin: 0, color: colors.textPrimary }}>Notification Settings</h2>
-          <p
-            style={{
-              margin: `${spacing[1]}px 0 0`,
-              color: colors.textMuted,
-              fontSize: typography.fontSize.sm,
-            }}
-          >
-            Manage how and when you receive notifications
-          </p>
-        </div>
-        {onClose && (
-          <Button variant="secondary" onClick={onClose}>
-            Close
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Notification Settings"
+        subtitle="Manage how and when you receive notifications"
+        action={
+          onClose && (
+            <Button variant="secondary" onClick={onClose}>
+              Close
+            </Button>
+          )
+        }
+      />
 
       {/* Master email toggle */}
       <Card style={{ marginBottom: spacing[5] }}>

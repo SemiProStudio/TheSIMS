@@ -29,7 +29,15 @@ import {
   groupReservationsForSchedule,
   formatDate,
 } from '../utils';
-import { Badge, Card, Button, SearchInput, Pagination, PageHeader } from '../components/ui.jsx';
+import {
+  Badge,
+  Card,
+  Button,
+  SearchInput,
+  Pagination,
+  PageHeader,
+  EmptyState,
+} from '../components/ui.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import { MultiSelectDropdown } from '../components/MultiSelectDropdown.jsx';
 import { useDebounce, usePagination } from '../hooks/index.js';
@@ -745,25 +753,18 @@ function SearchView({
 
           {/* Empty state */}
           {totalResults === 0 && loadingSections.length === 0 && (
-            <Card style={{ textAlign: 'center', padding: spacing[10] }}>
-              <Search
-                size={48}
-                color={colors.textMuted}
-                style={{ marginBottom: spacing[3], opacity: 0.5 }}
-              />
-              <div style={{ color: colors.textMuted }}>
-                No results found matching your search
-              </div>
-              {hasFilters && (
-                <Button
-                  variant="secondary"
-                  onClick={clearAllFilters}
-                  style={{ marginTop: spacing[3] }}
-                >
-                  Clear Filters
-                </Button>
-              )}
-            </Card>
+            <EmptyState
+              icon={Search}
+              title="No results match your search"
+              description="Try adjusting your search or filters"
+              action={
+                hasFilters && (
+                  <Button variant="secondary" onClick={clearAllFilters}>
+                    Clear Filters
+                  </Button>
+                )
+              }
+            />
           )}
         </>
       )}

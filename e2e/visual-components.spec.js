@@ -134,7 +134,7 @@ test.describe('Visual Regression - Components', () => {
     test('add item page should match baseline', async ({ page }) => {
       await gotoGearList(page);
       await page.locator('button:has-text("Add Item")').first().click();
-      await expect(page.locator('h2:has-text("Add New Item")')).toBeVisible();
+      await expect(page.locator('h2:has-text("Add Item")')).toBeVisible();
       await page.waitForTimeout(500);
 
       await expect(page).toHaveScreenshot('add-item-page.png', {

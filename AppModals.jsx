@@ -63,6 +63,9 @@ const BulkCategoryModal = lazy(() =>
 const BulkDeleteModal = lazy(() =>
   import('./modals/BulkModals.jsx').then((m) => ({ default: m.BulkDeleteModal })),
 );
+const BulkCheckInModal = lazy(() =>
+  import('./modals/BulkModals.jsx').then((m) => ({ default: m.BulkCheckInModal })),
+);
 const AddUserModal = lazy(() =>
   import('./modals/AddUserModal.jsx').then((m) => ({ default: m.AddUserModal })),
 );
@@ -153,10 +156,13 @@ export default memo(function AppModals({ handlers, currentUser }) {
     openCheckinModal,
     processCheckout,
     processCheckin,
+    processBatchCheckin,
     // Maintenance
     maintenanceItem,
     editingMaintenanceRecord,
     setEditingMaintenanceRecord,
+    maintenancePrefill,
+    setMaintenancePrefill,
     saveMaintenance,
     // Bulk actions
     bulkActionIds,
@@ -180,11 +186,15 @@ export default memo(function AppModals({ handlers, currentUser }) {
     if (closedQuickAction) {
       returnToScannerRef.current = false;
       openModal(MODALS.QR_SCANNER);
-    } else if (prev === MODALS.QR_SCANNER && activeModal !== MODALS.QR_SCANNER && activeModal) {
-      // Scanner replaced by something other than a quick action — drop the flag
-      if (activeModal !== MODALS.CHECK_OUT && activeModal !== MODALS.CHECK_IN) {
-        returnToScannerRef.current = false;
-      }
+    } else if (
+      activeModal &&
+      activeModal !== MODALS.QR_SCANNER &&
+      activeModal !== MODALS.CHECK_OUT &&
+      activeModal !== MODALS.CHECK_IN
+    ) {
+      // Some other modal took over (e.g. the damage→maintenance handoff) —
+      // the scan run is over, don't resurrect the scanner later
+      returnToScannerRef.current = false;
     }
   }, [activeModal, openModal]);
 
@@ -407,10 +417,12 @@ export default memo(function AppModals({ handlers, currentUser }) {
           <MaintenanceModal
             item={maintenanceItem}
             editingRecord={editingMaintenanceRecord}
+            initialValues={maintenancePrefill}
             onSave={saveMaintenance}
             onClose={() => {
               closeModal();
               setEditingMaintenanceRecord(null);
+              setMaintenancePrefill(null);
             }}
           />
         )}
@@ -495,6 +507,21 @@ export default memo(function AppModals({ handlers, currentUser }) {
             selectedIds={bulkActionIds}
             inventory={inventory}
             onApply={applyBulkStatus}
+            onClose={() => {
+              closeModal();
+              setBulkActionIds([]);
+            }}
+          />
+        )}
+
+        {activeModal === MODALS.BULK_CHECK_IN && (
+          <BulkCheckInModal
+            selectedIds={bulkActionIds}
+            inventory={inventory}
+            onConfirm={async (payload) => {
+              await processBatchCheckin(payload);
+              setBulkActionIds([]);
+            }}
             onClose={() => {
               closeModal();
               setBulkActionIds([]);

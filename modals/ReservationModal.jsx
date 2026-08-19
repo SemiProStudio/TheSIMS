@@ -27,11 +27,23 @@ const ItemSearch = memo(function ItemSearch({
   selectedItemIds,
   onAddItem,
   placeholder = 'Search items by name, ID, or brand...',
+  dateRange = null,
+  excludeReservationId = null,
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
+
+  // Per-result availability for the chosen dates — the answer to "is this
+  // free for my shoot?" belongs where gear is being picked, not after
+  const availabilityFor = (invItem) => {
+    if (!dateRange?.start || !dateRange?.end) return null;
+    return getAllReservationConflicts(invItem, dateRange.start, dateRange.end, excludeReservationId)
+      .hasConflicts
+      ? 'conflict'
+      : 'free';
+  };
 
   // Filter inventory based on search
   const searchResults = useMemo(() => {
@@ -205,7 +217,13 @@ const ItemSearch = memo(function ItemSearch({
                   >
                     <Badge text={item.id} color={colors.primary} />
                     <span>{item.brand}</span>
-                    {item.status === 'reserved' && (
+                    {availabilityFor(item) === 'free' && (
+                      <Badge text="Free for dates" color={colors.available} />
+                    )}
+                    {availabilityFor(item) === 'conflict' && (
+                      <Badge text="Conflict" color={colors.danger} />
+                    )}
+                    {!dateRange && item.status === 'reserved' && (
                       <Badge text="Has Reservations" color={colors.warning} />
                     )}
                     {item.status !== 'available' && item.status !== 'reserved' && (
@@ -522,12 +540,19 @@ export const ReservationModal = memo(function ReservationModal({
             {selectedItems.length === 0 && <span style={{ color: colors.danger }}>*</span>}
           </label>
 
-          {/* Search Input - only show when not in single-item mode and not editing */}
-          {!isEdit && !item && (
+          {/* Search Input - hidden only in single-item mode. Edit mode can
+              add items now: new rows join the reservation's group on save. */}
+          {!item && (
             <ItemSearch
               inventory={inventory}
               selectedItemIds={selectedItems.map((i) => i.id)}
               onAddItem={handleAddItem}
+              dateRange={
+                reservationForm.start && reservationForm.end
+                  ? { start: reservationForm.start, end: reservationForm.end }
+                  : null
+              }
+              excludeReservationId={isEdit ? editingReservationId : null}
             />
           )}
 
@@ -557,7 +582,9 @@ export const ReservationModal = memo(function ReservationModal({
                 <SelectedItemCard
                   key={selectedItem.id}
                   item={selectedItem}
-                  onRemove={isEdit || item ? null : handleRemoveItem}
+                  // Single-item mode pins its item; group edits may remove
+                  // (validation still requires at least one item to save)
+                  onRemove={item ? null : handleRemoveItem}
                   conflicts={itemConflicts[selectedItem.id]}
                 />
               ))}

@@ -12,7 +12,7 @@ import PropTypes from 'prop-types';
 import { Upload, Download } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
-import { Modal, ModalHeader } from './ModalBase.jsx';
+import { Modal, ModalHeader, ModalFooter } from './ModalBase.jsx';
 import { downloadCSV, formatMoney } from '../utils';
 import { parseCSV } from '../lib/csv.js';
 import { buildImportItems } from '../lib/importItems.js';
@@ -365,22 +365,21 @@ export const CSVImportModal = memo(function CSVImportModal({
           </p>
         )}
 
-        {/* Action buttons */}
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
-          <Button variant="secondary" onClick={onClose}>
-            {result ? 'Close' : 'Cancel'}
-          </Button>
-          <Button
-            onClick={handleImport}
-            disabled={!canImport}
-            icon={importing ? null : Upload}
-          >
-            {importing
-              ? 'Importing...'
-              : `Import ${prepared?.items.length || 0} Items`}
-          </Button>
-        </div>
       </div>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          {result ? 'Close' : 'Cancel'}
+        </Button>
+        <Button
+          onClick={handleImport}
+          disabled={!canImport}
+          icon={importing ? null : Upload}
+        >
+          {importing
+            ? 'Importing...'
+            : `Import ${prepared?.items.length || 0} Items`}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 });

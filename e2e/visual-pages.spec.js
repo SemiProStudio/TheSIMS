@@ -334,7 +334,7 @@ test.describe('Visual Regression - Pages', () => {
       // The lazy load must settle — the seeded test DB has no pack lists, so
       // the stable state is the empty state, never the loading indicator
       await expect(page.locator('text=Loading pack lists...')).toHaveCount(0);
-      await expect(page.locator('text=No Pack Lists Yet')).toBeVisible();
+      await expect(page.locator('text=No pack lists yet')).toBeVisible();
       await page.waitForTimeout(500);
 
       await expect(page).toHaveScreenshot('pack-lists-overview.png', {

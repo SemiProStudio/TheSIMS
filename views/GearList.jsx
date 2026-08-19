@@ -7,7 +7,7 @@
 // ============================================================================
 
 import { memo, useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { STATUS_LABELS } from '../constants.js';
+import { STATUS, STATUS_LABELS } from '../constants.js';
 import {
   Plus,
   Grid,
@@ -38,7 +38,9 @@ import { getStatusColor,
   matchesStatusSelection,
   formatDate,
   getTodayISO,
+  getAllReservationConflicts,
   generateId, getStatusLabel } from '../utils';
+import { DatePicker } from '../components/DatePicker.jsx';
 import {
   Badge,
   Card,
@@ -60,7 +62,8 @@ import { ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 250, 500];
 const DEFAULT_PAGE_SIZE = 25;
 
-const SEARCH_FIELDS = ['name', 'brand', 'id', 'serialNumber'];
+// checkedOutTo: "what does Jake still have out?" must be answerable by search
+const SEARCH_FIELDS = ['name', 'brand', 'id', 'serialNumber', 'checkedOutTo'];
 
 // Checkbox component for consistent styling (real checkbox semantics)
 const Checkbox = memo(function Checkbox({ checked, indeterminate, onChange, size = 20, label }) {
@@ -714,6 +717,9 @@ const SelectionToolbar = memo(function SelectionToolbar({
             flexWrap: 'wrap',
           }}
         >
+          <Button size="sm" variant="secondary" onClick={() => onBulkAction('checkin')}>
+            Check In
+          </Button>
           <Button size="sm" variant="secondary" onClick={() => onBulkAction('status')}>
             Change Status
           </Button>
@@ -792,6 +798,10 @@ function GearList({
     const saved = uiPrefs?.gearListSort;
     return SORT_OPTIONS.some((o) => o.value === saved) ? saved : 'default';
   });
+  // Date-range availability filter (session-only): "what's free for my
+  // shoot?" — the defining question of rental prep
+  const [availStart, setAvailStart] = useState('');
+  const [availEnd, setAvailEnd] = useState('');
 
   // Persist changes only — the mount value came from the profile
   const prefsMountedRef = useRef(false);
@@ -824,7 +834,11 @@ function GearList({
 
   // Check if any filters are active
   const hasActiveFilters =
-    searchQuery || categoryFilter !== 'all' || statusFilter !== 'all' || sortBy !== 'default';
+    searchQuery ||
+    categoryFilter !== 'all' ||
+    statusFilter !== 'all' ||
+    sortBy !== 'default' ||
+    (availStart && availEnd);
 
   // Save (or update, when the name already exists) the current filters
   const saveCurrentView = useCallback(
@@ -897,8 +911,25 @@ function GearList({
       );
     }
 
+    // Availability for a date range: no overlapping reservation, no checkout
+    // that runs into the window, and not sidelined (needs-attention/missing)
+    if (availStart && availEnd) {
+      result = result.filter((item) => {
+        if (item.status === STATUS.NEEDS_ATTENTION || item.status === STATUS.MISSING) return false;
+        return !getAllReservationConflicts(item, availStart, availEnd).hasConflicts;
+      });
+    }
+
     return result;
-  }, [inventory, debouncedSearch, categoryFilter, statusFilter, categorySettings]);
+  }, [
+    inventory,
+    debouncedSearch,
+    categoryFilter,
+    statusFilter,
+    categorySettings,
+    availStart,
+    availEnd,
+  ]);
 
   // Sort after filtering; pagination consumes the sorted list
   const sortedItems = useMemo(() => sortItems(filteredItems, sortBy), [filteredItems, sortBy]);
@@ -998,6 +1029,8 @@ function GearList({
     setCategoryFilter('all');
     setStatusFilter('all');
     setSortBy('default');
+    setAvailStart('');
+    setAvailEnd('');
   }, [setSearchQuery, setCategoryFilter, setStatusFilter]);
 
   return (
@@ -1102,6 +1135,27 @@ function GearList({
               Clear
             </button>
           )}
+
+          {/* Availability date range — "free for my shoot?" */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
+            <div style={{ width: 140 }}>
+              <DatePicker
+                value={availStart}
+                onChange={(e) => setAvailStart(e.target.value)}
+                placeholder="Available from"
+                aria-label="Available from date"
+              />
+            </div>
+            <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>–</span>
+            <div style={{ width: 140 }}>
+              <DatePicker
+                value={availEnd}
+                onChange={(e) => setAvailEnd(e.target.value)}
+                placeholder="to"
+                aria-label="Available until date"
+              />
+            </div>
+          </div>
 
           {/* Category Filter */}
           <Select

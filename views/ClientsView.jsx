@@ -33,6 +33,7 @@ import {
   ConfirmDialog,
   CollapsibleSection,
   PageHeader,
+  EmptyState,
 } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from '../modals/ModalBase.jsx';
@@ -493,13 +494,13 @@ const ClientDetailView = memo(function ClientDetailView({
               <Button variant="secondary" onClick={() => onEdit(client)} icon={Edit2}>
                 Edit
               </Button>
-              <button
-                className="btn-icon danger"
-                aria-label={`Delete ${client.name}`}
+              <Button
+                variant="secondary"
+                danger
                 onClick={() => onDelete(client)}
-              >
-                <Trash2 size={16} />
-              </button>
+                icon={Trash2}
+                aria-label={`Delete ${client.name}`}
+              />
             </div>
           )}
         </div>
@@ -964,26 +965,23 @@ function ClientsView({
           Loading clients...
         </Card>
       ) : filteredClients.length === 0 ? (
-        <Card style={{ textAlign: 'center', padding: spacing[8] }}>
-          <Users size={48} color={colors.textMuted} style={{ marginBottom: spacing[3] }} />
-          <h3 style={{ margin: 0, color: colors.textPrimary }}>
-            {clients.length === 0 ? 'No clients yet' : 'No clients match your search'}
-          </h3>
-          <p style={{ margin: `${spacing[2]}px 0 0`, color: colors.textMuted }}>
-            {clients.length === 0
+        <EmptyState
+          icon={Users}
+          title={clients.length === 0 ? 'No clients yet' : 'No clients match your search'}
+          description={
+            clients.length === 0
               ? 'Add your first client to start tracking projects'
-              : 'Try adjusting your search or filters'}
-          </p>
-          {clients.length === 0 && canEditClients && (
-            <Button
-              onClick={() => setShowAddModal(true)}
-              icon={Plus}
-              style={{ marginTop: spacing[4] }}
-            >
-              Add Client
-            </Button>
-          )}
-        </Card>
+              : 'Try adjusting your search or filters'
+          }
+          action={
+            clients.length === 0 &&
+            canEditClients && (
+              <Button onClick={() => setShowAddModal(true)} icon={Plus}>
+                Add Client
+              </Button>
+            )
+          }
+        />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[3] }}>
           {filteredClients.map((client) => (

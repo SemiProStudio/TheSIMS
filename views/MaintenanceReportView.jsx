@@ -11,7 +11,15 @@ import PropTypes from 'prop-types';
 import { Wrench, Clock, AlertTriangle, DollarSign, Building2, Download } from 'lucide-react';
 import { colors, spacing, typography } from '../theme.js';
 import { formatDate, formatMoney, downloadCSV, getMaintenanceStatusColor } from '../utils';
-import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
+import {
+  Badge,
+  Card,
+  CardHeader,
+  StatCard,
+  Button,
+  PageHeader,
+  EmptyState,
+} from '../components/ui.jsx';
 import { ReportBranding } from '../components/ReportBranding.jsx';
 import LoadErrorBanner from '../components/LoadErrorBanner.jsx';
 import { ColumnChart, HBarChart } from '../components/charts.jsx';
@@ -176,12 +184,13 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
           <CardHeader title="All Maintenance Records" icon={Wrench} />
           <div style={{ flex: 1, overflowY: 'auto', minHeight: 200 }}>
             {sortedRecords.length === 0 ? (
-              <div style={{ padding: spacing[6], textAlign: 'center', color: colors.textMuted }}>
-                <Wrench size={32} style={{ marginBottom: spacing[2], opacity: 0.3 }} />
-                <p style={{ margin: 0 }}>
-                  {maintenanceLoaded ? 'No maintenance records found' : 'Loading records…'}
-                </p>
-              </div>
+              maintenanceLoaded ? (
+                <EmptyState icon={Wrench} title="No maintenance records yet" />
+              ) : (
+                <div style={{ padding: spacing[6], textAlign: 'center', color: colors.textMuted }}>
+                  Loading records…
+                </div>
+              )
             ) : (
               sortedRecords.map((record, idx) => (
                 <button

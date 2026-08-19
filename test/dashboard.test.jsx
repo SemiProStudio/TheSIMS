@@ -165,7 +165,7 @@ describe('Dashboard reservations', () => {
 });
 
 describe('Dashboard quick search', () => {
-  const searchInput = () => screen.getByPlaceholderText('Search by name, ID, brand, or serial...');
+  const searchInput = () => screen.getByPlaceholderText('Search by name, ID, brand, serial, or borrower...');
 
   it('does not crash on items with a null brand', () => {
     renderDashboard();

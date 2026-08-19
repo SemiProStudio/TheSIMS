@@ -1195,15 +1195,15 @@ function PackListsView({
               </Button>
             )}
             {canEditPackLists && (
-              <button
-                className="btn-icon danger"
-                aria-label={`Delete ${selectedList.name}`}
+              <Button
+                variant="secondary"
+                danger
                 onClick={() =>
                   setConfirmDelete({ isOpen: true, id: selectedList.id, name: selectedList.name })
                 }
-              >
-                <Trash2 size={16} />
-              </button>
+                icon={Trash2}
+                aria-label={`Delete ${selectedList.name}`}
+              />
             )}
           </div>
         </div>
@@ -1663,11 +1663,11 @@ function PackListsView({
       ) : filteredPackLists.length === 0 ? (
         <EmptyState
           icon={Box}
-          title={packLists.length === 0 ? 'No Pack Lists Yet' : 'No Pack Lists Found'}
+          title={packLists.length === 0 ? 'No pack lists yet' : 'No pack lists match your search'}
           description={
             packLists.length === 0
               ? 'Create a pack list to build a checklist of packages and items for a specific job or project.'
-              : 'No pack lists match your search.'
+              : 'Try adjusting your search.'
           }
         />
       ) : (
@@ -1698,16 +1698,16 @@ function PackListsView({
                     {list.name}
                   </h3>
                   {canEditPackLists && (
-                    <button
-                      className="btn-icon danger"
-                      aria-label={`Delete ${list.name}`}
+                    <Button
+                      variant="secondary"
+                      danger
                       onClick={(e) => {
                         e.stopPropagation();
                         setConfirmDelete({ isOpen: true, id: list.id, name: list.name });
                       }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                      icon={Trash2}
+                      aria-label={`Delete ${list.name}`}
+                    />
                   )}
                 </div>
                 <div

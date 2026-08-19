@@ -412,6 +412,9 @@ export function useInventoryActions({
         case 'status':
           openModal(MODALS.BULK_STATUS);
           break;
+        case 'checkin':
+          openModal(MODALS.BULK_CHECK_IN);
+          break;
         case 'location':
           openModal(MODALS.BULK_LOCATION);
           break;

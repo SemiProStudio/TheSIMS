@@ -4,10 +4,10 @@
 // ============================================================================
 
 import { memo, useState } from 'react';
-import { Palette, Check, Shuffle, Settings, Sliders } from 'lucide-react';
+import { Check, Shuffle, Settings, Sliders } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { useTheme } from '../contexts/ThemeContext.js';
-import { BackButton, Card } from '../components/ui.jsx';
+import { Card, PageHeader } from '../components/ui.jsx';
 import CustomThemeEditor from '../components/CustomThemeEditor.jsx';
 
 // Novelty themes get their own labeled group below the professional set
@@ -297,44 +297,12 @@ function ThemeSelector({ onBack, onPersistCustomTheme }) {
 
   return (
     <>
-      <BackButton onClick={onBack}>Back to Dashboard</BackButton>
-
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: spacing[3],
-          marginBottom: spacing[6],
-        }}
-      >
-        <div
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: borderRadius.lg,
-            background: `${withOpacity(colors.primary, 15)}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
-          <Palette size={24} color={colors.primary} />
-        </div>
-        <div>
-          <h2 style={{ margin: 0, color: colors.textPrimary }}>Theme Selector</h2>
-          <p
-            style={{
-              margin: `${spacing[1]}px 0 0`,
-              color: colors.textMuted,
-              fontSize: typography.fontSize.sm,
-            }}
-          >
-            Choose a visual theme for the application. Your selection is saved automatically.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Theme Selector"
+        subtitle="Choose a visual theme for the application. Your selection is saved automatically."
+        onBack={onBack}
+        backLabel="Back to Dashboard"
+      />
 
       {/* Theme Grid — professional themes first, novelty themes in their own
           labeled group so the serious options read as the default set */}

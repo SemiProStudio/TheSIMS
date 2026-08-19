@@ -386,7 +386,13 @@ function Dashboard({
   // and the Search view, so the three can't silently drift apart again
   const allSearchResults = useMemo(() => {
     if (!quickSearch.trim()) return [];
-    return filterBySearch(inventory, quickSearch, ['name', 'brand', 'id', 'serialNumber']);
+    return filterBySearch(inventory, quickSearch, [
+      'name',
+      'brand',
+      'id',
+      'serialNumber',
+      'checkedOutTo',
+    ]);
   }, [inventory, quickSearch]);
   const searchResults = allSearchResults.slice(0, 5);
 
@@ -595,7 +601,7 @@ function Dashboard({
                 value={quickSearch}
                 onChange={setQuickSearch}
                 onClear={() => setQuickSearch('')}
-                placeholder="Search by name, ID, brand, or serial..."
+                placeholder="Search by name, ID, brand, serial, or borrower..."
               />
             </div>
 

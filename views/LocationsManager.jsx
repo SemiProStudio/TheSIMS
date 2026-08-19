@@ -22,7 +22,15 @@ import {
 import { LOCATION_TYPES } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { flattenLocations, computeLocationPathRenames } from '../utils';
-import { Badge, Card, CardHeader, Button, SearchInput, PageHeader } from '../components/ui.jsx';
+import {
+  Badge,
+  Card,
+  CardHeader,
+  Button,
+  SearchInput,
+  PageHeader,
+  EmptyState,
+} from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { useMediaQuery } from '../hooks/useMediaQuery.js';
 
@@ -592,22 +600,17 @@ function LocationsManager({ locations, inventory, onSave, onClose, showConfirm }
 
           <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
             {filteredLocations.length === 0 ? (
-              <div style={{ padding: spacing[6], textAlign: 'center', color: colors.textMuted }}>
-                <FolderTree size={32} style={{ marginBottom: spacing[2], opacity: 0.3 }} />
-                <p style={{ margin: 0 }}>
-                  {searchQuery ? 'No locations match your search' : 'No locations defined yet'}
-                </p>
-                {!searchQuery && (
-                  <Button
-                    variant="secondary"
-                    onClick={handleAddRoot}
-                    icon={Plus}
-                    style={{ marginTop: spacing[3] }}
-                  >
-                    Add First Location
-                  </Button>
-                )}
-              </div>
+              <EmptyState
+                icon={FolderTree}
+                title={searchQuery ? 'No locations match your search' : 'No locations yet'}
+                action={
+                  !searchQuery && (
+                    <Button variant="secondary" onClick={handleAddRoot} icon={Plus}>
+                      Add First Location
+                    </Button>
+                  )
+                }
+              />
             ) : (
               filteredLocations.map((location) => (
                 <LocationTreeItem

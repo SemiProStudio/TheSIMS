@@ -384,6 +384,7 @@ export const Input = memo(
     {
       label,
       error,
+      required = false,
       icon: Icon,
       style: customStyle,
       containerStyle,
@@ -392,13 +393,24 @@ export const Input = memo(
     },
     ref,
   ) {
+    const errorId = useId();
     const inputClassNames = ['input', error && 'input-error', customClassName]
       .filter(Boolean)
       .join(' ');
 
     return (
       <div style={containerStyle}>
-        {label && <label className={error ? 'label label-error' : 'label'}>{label}</label>}
+        {label && (
+          <label className={error ? 'label label-error' : 'label'}>
+            {label}
+            {required && (
+              <span aria-hidden="true" style={{ color: colors.danger }}>
+                {' '}
+                *
+              </span>
+            )}
+          </label>
+        )}
         <div style={{ position: 'relative' }}>
           {Icon && (
             <div
@@ -416,6 +428,9 @@ export const Input = memo(
           <input
             ref={ref}
             className={inputClassNames}
+            aria-required={required || undefined}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
             style={{
               ...(Icon && { paddingLeft: spacing[10] }),
               ...customStyle,
@@ -425,10 +440,13 @@ export const Input = memo(
         </div>
         {error && (
           <span
+            id={errorId}
+            role="alert"
             style={{
               color: colors.danger,
               fontSize: typography.fontSize.xs,
               marginTop: spacing[1],
+              display: 'block',
             }}
           >
             {error}

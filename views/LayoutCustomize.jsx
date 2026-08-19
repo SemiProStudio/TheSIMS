@@ -6,7 +6,6 @@
 import { memo, useState, useCallback, useRef } from 'react';
 import {
   Save,
-  Layout,
   RotateCcw,
   Eye,
   EyeOff,
@@ -16,7 +15,7 @@ import {
 } from 'lucide-react';
 import { DASHBOARD_SECTIONS, ITEM_DETAIL_SECTIONS, DEFAULT_LAYOUT_PREFS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { Button, BackButton, Card } from '../components/ui.jsx';
+import { Button, Card, PageHeader } from '../components/ui.jsx';
 
 // Context configuration
 const CONTEXTS = {
@@ -254,46 +253,12 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
         padding: spacing[4],
       }}
     >
-      <BackButton onClick={onBack}>{config.backLabel}</BackButton>
-
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: spacing[6],
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: spacing[3] }}>
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: borderRadius.lg,
-              background: `${withOpacity(colors.primary, 15)}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <Layout size={24} color={colors.primary} />
-          </div>
-          <div>
-            <h2 style={{ margin: 0, color: colors.textPrimary }}>{config.title}</h2>
-            <p
-              style={{
-                margin: `${spacing[1]}px 0 0`,
-                color: colors.textMuted,
-                fontSize: typography.fontSize.sm,
-              }}
-            >
-              {config.subtitle}
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title={config.title}
+        subtitle={config.subtitle}
+        onBack={onBack}
+        backLabel={config.backLabel}
+      />
 
       {/* Section List */}
       <Card>
