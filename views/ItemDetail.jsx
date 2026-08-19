@@ -61,10 +61,11 @@ const SECTION_COLORS = {
   kitContents: 'var(--sidebar-item4)',
 };
 
-// Helper to create item style with panel-colored background
+// Helper to create item style with panel-colored background — quiet tint on
+// the neutral section surface (see CollapsibleSection)
 const getItemStyle = (panelColor) => ({
-  background: withOpacity(panelColor, 20),
-  border: `1px solid ${withOpacity(panelColor, 50)}`,
+  background: withOpacity(panelColor, 10),
+  border: `1px solid ${withOpacity(panelColor, 22)}`,
   borderRadius: borderRadius.md,
   padding: `${spacing[3]}px ${spacing[4]}px`,
   marginBottom: spacing[2],
@@ -709,9 +710,23 @@ function ItemDetail({
   const isCheckedOut = item?.status === 'checked-out';
 
   const [collapsedSections, setCollapsedSections] = useState(() => {
+    // Archive sections (read-only history) start collapsed while empty — an
+    // expanded empty panel is scroll noise. An explicit saved preference wins,
+    // and toggling in-session works normally after mount.
+    const timelineEmpty =
+      !(item?.checkoutHistory || []).length &&
+      !(item?.maintenanceHistory || []).length &&
+      !(item?.notes || []).length &&
+      !(item?.reminders || []).length &&
+      !(item?.reservations || []).length;
+    const emptyArchiveDefaults = {
+      checkoutHistory: !(item?.checkoutHistory || []).length,
+      timeline: timelineEmpty,
+    };
     const initial = {};
     Object.values(ITEM_DETAIL_SECTIONS).forEach((s) => {
-      initial[s.id] = layoutPrefs?.sections?.[s.id]?.collapsed || false;
+      initial[s.id] =
+        layoutPrefs?.sections?.[s.id]?.collapsed ?? (emptyArchiveDefaults[s.id] || false);
     });
     return initial;
   });

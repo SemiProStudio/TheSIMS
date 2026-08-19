@@ -1208,6 +1208,29 @@ input[type='date']::-moz-calendar-picker-indicator {
   border-color: var(--card-accent-color, var(--primary));
 }
 
+/* ============================================================================
+   Dashboard panel columns — single column by default; two masonry-style
+   columns on wide desktops so panels stop stretching across the full width
+   ============================================================================ */
+.dashboard-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 1200px) {
+  .dashboard-columns {
+    display: block;
+    columns: 2;
+    column-gap: 16px;
+  }
+
+  .dashboard-columns-item {
+    break-inside: avoid;
+    margin-bottom: 16px;
+  }
+}
+
 /* Collapsible section header hover */
 .collapsible-header {
   transition: background 150ms ease;
@@ -1215,10 +1238,11 @@ input[type='date']::-moz-calendar-picker-indicator {
 }
 
 .collapsible-header:hover {
-  /* Uses CSS variable set inline for the accent color */
+  /* Uses CSS variable set inline for the accent color. Sections sit on a
+     neutral surface now, so the hover is a whisper of the accent, not a wash */
   background: color-mix(
     in srgb,
-    var(--section-accent-color, var(--primary)) 45%,
+    var(--section-accent-color, var(--primary)) 10%,
     transparent
   ) !important;
 }

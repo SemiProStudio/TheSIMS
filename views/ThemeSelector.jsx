@@ -10,6 +10,9 @@ import { useTheme } from '../contexts/ThemeContext.js';
 import { BackButton, Card } from '../components/ui.jsx';
 import CustomThemeEditor from '../components/CustomThemeEditor.jsx';
 
+// Novelty themes get their own labeled group below the professional set
+const FUN_THEME_IDS = new Set(['xp', 'cheese', 'cats', 'dogs', 'random']);
+
 // Preview component showing theme colors
 const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, onCustomize }) {
   const themeColors = theme.colors || {};
@@ -333,24 +336,47 @@ function ThemeSelector({ onBack, onPersistCustomTheme }) {
         </div>
       </div>
 
-      {/* Theme Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-          gap: spacing[4],
-        }}
-      >
-        {availableThemes.map((theme) => (
-          <ThemePreview
-            key={theme.id}
-            theme={theme}
-            isSelected={themeId === theme.id}
-            onClick={() => setTheme(theme.id)}
-            onCustomize={theme.isCustom ? () => setShowCustomEditor(true) : undefined}
-          />
-        ))}
-      </div>
+      {/* Theme Grid — professional themes first, novelty themes in their own
+          labeled group so the serious options read as the default set */}
+      {[
+        { label: null, themes: availableThemes.filter((t) => !FUN_THEME_IDS.has(t.id)) },
+        { label: 'Fun', themes: availableThemes.filter((t) => FUN_THEME_IDS.has(t.id)) },
+      ].map(({ label, themes: groupThemes }) =>
+        groupThemes.length === 0 ? null : (
+          <div key={label || 'standard'}>
+            {label && (
+              <h3
+                style={{
+                  margin: `${spacing[6]}px 0 ${spacing[3]}px`,
+                  color: colors.textMuted,
+                  fontSize: typography.fontSize.sm,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                {label}
+              </h3>
+            )}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: spacing[4],
+              }}
+            >
+              {groupThemes.map((theme) => (
+                <ThemePreview
+                  key={theme.id}
+                  theme={theme}
+                  isSelected={themeId === theme.id}
+                  onClick={() => setTheme(theme.id)}
+                  onCustomize={theme.isCustom ? () => setShowCustomEditor(true) : undefined}
+                />
+              ))}
+            </div>
+          </div>
+        ),
+      )}
 
       {/* Current Theme Info */}
       <Card style={{ marginTop: spacing[6], maxWidth: 500 }}>

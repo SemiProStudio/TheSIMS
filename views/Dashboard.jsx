@@ -86,8 +86,10 @@ const listItemStyle = (panelColor) => ({
   borderRadius: borderRadius.md,
   cursor: 'pointer',
   marginBottom: spacing[2],
-  background: withOpacity(panelColor, 15),
-  border: `1px solid ${withOpacity(panelColor, 40)}`,
+  // Quiet accent tint — the row is the information, the section chrome is
+  // neutral, so 10/22 reads as color-coding without the old slab effect
+  background: withOpacity(panelColor, 10),
+  border: `1px solid ${withOpacity(panelColor, 22)}`,
   width: '100%',
   boxSizing: 'border-box',
   textAlign: 'left',
@@ -1099,9 +1101,23 @@ function Dashboard({
         }
       />
 
-      {/* Render sections in order */}
+      {/* Render sections in order. Stats + quick search stay full-width
+          leads; the remaining panels flow into two columns on wide screens
+          (see .dashboard-columns in index.css) instead of stretching each
+          panel across the whole desktop viewport. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-        {sectionOrder.map((sectionId) => renderSection(sectionId))}
+        {sectionOrder
+          .filter((id) => id === 'stats' || id === 'quickSearch')
+          .map((sectionId) => renderSection(sectionId))}
+        <div className="dashboard-columns">
+          {sectionOrder
+            .filter((id) => id !== 'stats' && id !== 'quickSearch')
+            .map((sectionId) => (
+              <div key={sectionId} className="dashboard-columns-item">
+                {renderSection(sectionId)}
+              </div>
+            ))}
+        </div>
       </div>
     </>
   );

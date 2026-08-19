@@ -285,11 +285,15 @@ export const CollapsibleSection = memo(function CollapsibleSection({
   const contentId = useId();
 
   return (
+    // Neutral surface, accent EDGE. Section identity comes from the left
+    // accent border + colored icon — not from washing the whole panel in the
+    // accent, which stacked every screen into a wall of colored slabs.
     <div
       style={{
-        background: withAlpha(accentColor, 0.18),
+        background: colors.bgCard,
         borderRadius: borderRadius.lg,
-        border: `1px solid ${withAlpha(accentColor, 0.35)}`,
+        border: `1px solid ${colors.border}`,
+        borderLeft: `3px solid ${accentColor}`,
         overflow: 'hidden',
         ...style,
       }}
@@ -307,9 +311,8 @@ export const CollapsibleSection = memo(function CollapsibleSection({
           gap: spacing[2],
           cursor: 'pointer',
           userSelect: 'none',
-          background: collapsed ? withAlpha(accentColor, 0.3) : withAlpha(accentColor, 0.38),
-          borderBottom: collapsed ? 'none' : `1px solid ${withAlpha(accentColor, 0.4)}`,
-          borderLeft: `4px solid ${accentColor}`,
+          background: 'transparent',
+          borderBottom: collapsed ? 'none' : `1px solid ${colors.borderLight}`,
         }}
       >
         <button
@@ -342,7 +345,7 @@ export const CollapsibleSection = memo(function CollapsibleSection({
           {badge !== undefined && badge !== null && (
             <span
               style={{
-                background: withAlpha(accentColor, 0.5),
+                background: withAlpha(accentColor, 0.15),
                 color: colors.textPrimary,
                 padding: '2px 8px',
                 borderRadius: borderRadius.full,
@@ -363,7 +366,6 @@ export const CollapsibleSection = memo(function CollapsibleSection({
           id={contentId}
           style={{
             padding: padding ? spacing[4] : 0,
-            background: withAlpha(accentColor, 0.3),
           }}
         >
           {children}
