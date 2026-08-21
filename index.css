@@ -291,6 +291,12 @@ body {
   }
 }
 
+/* Busy buttons keep their icon slot (a spinner) so the label change doesn't
+   reflow the neighbouring buttons */
+.btn-busy svg {
+  animation: spin 1s linear infinite;
+}
+
 /* Ensure the app fills the viewport completely */
 #root {
   min-height: 100%;
@@ -310,15 +316,20 @@ body {
   isolation: isolate;
 }
 
-/* Theme background tile. A fixed pseudo-element rather than
-   background-attachment: fixed (which mobile browsers ignore) so the tile
-   stays put while content scrolls, and so themes can fade it with
-   --theme-bg-opacity (novelty tiles sit back behind page titles; subtle
-   textures run at full strength). z-index -1 inside the wrapper's isolated
-   stacking context puts it above the page colour and under everything else. */
-.app-wrapper::before {
+/* Theme background tile — only rendered while a tile theme is active
+   (ThemeContext toggles `theme-tile` on <html>). It is position: absolute,
+   NOT fixed: Safari fails to repaint content under backdrop-filter (cards,
+   the modal backdrop) when a fixed layer sits beneath it, which showed up
+   as ghosted buttons and a canvas.toBlob that never called back (the photo
+   upload hung on "Uploading…"). An absolute layer covering the wrapper's
+   full height tiles the whole page without a compositor layer of its own.
+   --theme-bg-opacity lets novelty tiles sit back behind page titles while
+   subtle textures run at full strength; z-index -1 inside the wrapper's
+   isolated stacking context puts it above the page colour and under
+   everything else. */
+html.theme-tile .app-wrapper::before {
   content: '';
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: -1;
   background-image: var(--theme-bg-image);

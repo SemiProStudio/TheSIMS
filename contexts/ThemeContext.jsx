@@ -133,12 +133,15 @@ export function ThemeProvider({ children }) {
       root.style.setProperty(property, value);
     });
 
-    // Background tile (.app-wrapper::before paints it; see index.css)
+    // Background tile: html.theme-tile .app-wrapper::before paints it (see
+    // index.css). The class gate matters — the pseudo-element must not exist
+    // for tile-less themes (Safari repaint bug, see the CSS comment).
     root.style.setProperty(
       '--theme-bg-image',
       theme.backgroundImage ? `url("${theme.backgroundImage}")` : 'none',
     );
     root.style.setProperty('--theme-bg-opacity', String(theme.backgroundOpacity ?? 1));
+    root.classList.toggle('theme-tile', Boolean(theme.backgroundImage));
 
     // Themed cursor: the variable carries the image, the root class switches
     // the !important override on so it beats inline `cursor: pointer`
