@@ -1,234 +1,113 @@
-# SIMS Email Notification System - Setup Guide
+# SIMS Email Notifications — How It Works and How to Verify It
 
-## Overview
+Last reviewed 2026-08-21 (see `sims-notifications-evaluation-2026-08-21.md` for the audit that produced this version).
 
-SIMS now has a complete email notification system that:
+## What gets sent
 
-- Sends checkout/checkin confirmation emails
-- Sends reservation confirmation emails
-- Sends automatic due date reminders (daily cron job)
-- Respects user notification preferences
-- Prevents duplicate emails
-- Logs all sent notifications
+Every control in **Settings → Notifications** has a producer. Nothing appears in that screen that the backend does not honour.
+
+| Setting | Email (template_key) | When | Recipient |
+|---|---|---|---|
+| Checkout confirmations | `checkout_confirmation` | item checked out | the borrower's email from the check-out form |
+| Return confirmations | `checkin_confirmation` | item checked in | the borrower (linked client, else matching user) |
+| Reservation confirmations | `reservation_confirmation` | reservation created | the reservation's contact email |
+| Reservation reminders (+ days) | `reservation_reminder` | daily job, N days before start | the reservation's contact email |
+| Remind me before due dates (+ days) | `due_date_reminder` | daily job, on the chosen days | the borrower — linked client, else the user |
+| Overdue notifications | `overdue_notice` | daily job, each day overdue | same as above |
+| Maintenance reminders | `maintenance_reminder` | daily job, reminders/scheduled work due today | staff who can edit gear |
+| Admin · Damage reports | `damage_report` | damage reported at check-in | every admin |
+| Admin · Overdue summary (daily/weekly) | `overdue_summary` | daily job (weekly = Mondays) | admins who opted in |
+| Admin · Low stock alerts | `low_stock_alert` | daily job | admins who opted in |
+| "Send me a test email" button | `test_email` | on click | yourself |
+
+Preferences are applied **server-side** in `send-email` for every template: the master switch first, then the per-type toggle. A user who has never saved the screen gets the defaults (everything on except the two admin digests). Admin templates never go to non-admin addresses.
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        App.jsx                               │
-│  processCheckout() ─────┐                                   │
-│  processCheckin() ──────┼──► dataContext.sendXxxEmail()     │
-│  saveReservation() ─────┘                                   │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      DataContext                             │
-│  sendCheckoutEmail()                                        │
-│  sendCheckinEmail()     ──► emailService.sendXxx()          │
-│  sendReservationEmail()                                     │
-│  saveNotificationPreferences()                              │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   services.js                                │
-│  emailService.send()    ──► Supabase Edge Function          │
-│  notificationPreferencesService                             │
-│  notificationLogService                                     │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Supabase Edge Functions                         │
-│  send-email/           ──► Resend API ──► Email Delivered   │
-│  due-date-reminder/    ──► (Cron Job, calls send-email)     │
-└─────────────────────────────────────────────────────────────┘
+App (checkout / check-in / reservation / settings)
+  └─ lib/services.js emailService ──► Edge Function send-email ──► Resend
+                                          │  • allow-list (users/clients) for user callers
+                                          │  • preference gating (notificationRules.ts)
+                                          │  • template render (email_templates table)
+                                          │  • 24h dedup, notification_log row (sent/failed)
+pg_cron (09:00 UTC daily) ──► Edge Function due-date-reminder  (the DAILY JOB)
+                                  • due/overdue reminders   (get_items_due_soon)
+                                  • reservation reminders   (get_reservations_starting_soon)
+                                  • maintenance reminders   (get_maintenance_due_today)
+                                  • low-stock digest        (get_low_stock_items)
+                                  • overdue summary         (get_overdue_items)
+                                  → each through send-email, so gating/logging stay in one place
 ```
 
-## Setup Steps
+Shared logic lives in `supabase/functions/_shared/notificationRules.ts` (defaults, which toggle gates which template, schedule rules) and `_shared/templateData.ts` (template data builders). Both are pure and are unit-tested by vitest directly. `test/emailTemplateContract.test.js` parses the templates migration and fails if any template references a variable no builder supplies.
 
-### Step 1: Run Database Migrations
+## Templates
 
-Run the notification schema in your Supabase SQL Editor:
+The repo is the source of truth: `supabase/migrations/20260821100000_notifications_fix.sql` upserts all templates (idempotent). Edit there, re-run the migration in each project. Editing rows in the Table Editor works but will be overwritten by the next migration run.
+
+Template syntax: `{{variable}}`; `{{#if variable}}…{{/if}}` renders when the variable is non-empty. Values are HTML-escaped; multi-line list values are rendered inside `<pre>`.
+
+## Configuration (per project: TEST and PROD)
+
+### Edge Function secrets
+
+| Secret | Purpose |
+|---|---|
+| `RESEND_API_KEY` | Resend API key. Without it, `send-email` logs a `failed` row ("RESEND_API_KEY not configured") and returns 500. |
+| `FROM_EMAIL` | e.g. `SIMS <notifications@yourdomain.com>` — the domain must be **verified** in Resend or every send fails with a Resend 403. |
+| `CRON_SECRET` | Shared secret the scheduler sends as `x-cron-secret` to the daily job. |
+| `COMPANY_NAME` | Optional. Signature name used by the daily job's emails (app-sent emails use the signed-in user's Business Name from their profile, else "SIMS"). |
+
+Set with `supabase secrets set NAME=value --project-ref <ref>` or in the dashboard under Edge Functions → Secrets. `supabase secrets list --project-ref <ref>` shows names (never values).
+
+### Deploy
+
+```bash
+supabase functions deploy send-email --project-ref <ref>
+supabase functions deploy due-date-reminder --no-verify-jwt --project-ref <ref>
+```
+
+`due-date-reminder` runs with `verify_jwt = false` so the scheduler can reach it; it authenticates every call itself (`x-cron-secret` or the service-role key) and rejects everything else with 401.
+
+### Daily schedule (pg_cron + pg_net — already live in PROD as job `due-date-reminder-daily`)
 
 ```sql
--- Run this AFTER schema.sql
--- File: notifications-schema.sql
+-- once: store the secret (same value as the CRON_SECRET function secret)
+select vault.create_secret('<long random string>', 'cron_secret');
+
+select cron.schedule(
+  'due-date-reminder-daily',
+  '0 9 * * *',
+  $$
+  select net.http_post(
+    url := 'https://<ref>.supabase.co/functions/v1/due-date-reminder',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'x-cron-secret', (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret' limit 1)
+    ),
+    body := '{}'::jsonb,
+    timeout_milliseconds := 30000
+  );
+  $$
+);
 ```
 
-This creates:
+Check it: `select * from cron.job;` · `select * from cron.job_run_details order by start_time desc limit 5;` · `select status_code, content from net._http_response order by created desc limit 5;`
 
-- `notification_preferences` table
-- `notification_log` table
-- `email_templates` table (with 6 pre-built templates)
-- Database functions for querying due items
-- Row Level Security policies
+## How to verify, in order
 
-### Step 2: Get a Resend API Key
+1. **Settings → Notifications → "Send me a test email."** The button reports the real outcome ("Test email sent — check your inbox" / "Not sent: <reason>").
+2. **Admin Panel → Email Log.** Every attempt, newest first, with status, recipient, type and the error message for failures. This is the first place to look for "did it go out?".
+3. **Resend dashboard → Emails** for delivery/bounce status of sent rows (the log stores Resend's message id).
+4. Daily job: `cron.job_run_details` + `net._http_response` (above). The response body lists every decision the run made (`details[]` with sent / skipped reason / failed reason).
 
-1. Go to [resend.com](https://resend.com) and sign up (free tier: 100 emails/day)
-2. Create an API key in your dashboard
-3. (Optional) Verify a custom domain for professional "from" addresses
+## Recipient rules worth knowing
 
-### Step 3: Deploy Edge Functions
+- Check-out stores the borrower as a SIMS user only when the typed name or email matches a user (`checked_out_to_user_id`); a selected client is stored in `checkout_client_id`. Reminders go to the client's email first, else the user's. The operator who clicked "Check Out" is **never** the reminder recipient.
+- Signed-in users can only send to addresses already on record (a registered user or a client); anything else is refused with a clear message in the app. The daily job (service role) can send to any address the database holds.
+- Dedup: identical template + recipient + data within 24h is sent once (the test email is exempt).
 
-```bash
-# Navigate to your project
-cd your-sims-project
+## Cost
 
-# Login to Supabase CLI
-supabase login
-
-# Link to your project
-supabase link --project-ref your-project-id
-
-# Deploy the send-email function
-supabase functions deploy send-email
-
-# Deploy the due-date-reminder function with cron schedule
-supabase functions deploy due-date-reminder --schedule "0 9 * * *"
-```
-
-The cron schedule `0 9 * * *` means "every day at 9:00 AM UTC".
-
-### Step 4: Set Edge Function Secrets
-
-In your Supabase Dashboard:
-
-1. Go to **Project Settings** → **Edge Functions**
-2. Click **Manage Secrets**
-3. Add these secrets:
-
-| Secret Name      | Value                                                           |
-| ---------------- | --------------------------------------------------------------- |
-| `RESEND_API_KEY` | Your Resend API key (e.g., `re_123abc...`)                      |
-| `FROM_EMAIL`     | Your from address (e.g., `SIMS <notifications@yourdomain.com>`) |
-
-### Step 5: Test the Integration
-
-1. **Test send-email function:**
-
-```bash
-curl -X POST 'https://your-project.supabase.co/functions/v1/send-email' \
-  -H 'Authorization: Bearer YOUR_ANON_KEY' \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "to": "test@example.com",
-    "templateKey": "checkout_confirmation",
-    "templateData": {
-      "borrower_name": "Test User",
-      "item_name": "Test Camera",
-      "item_id": "CAM001",
-      "checkout_date": "2024-01-15",
-      "due_date": "2024-01-22",
-      "company_name": "SIMS"
-    }
-  }'
-```
-
-2. **Test due-date-reminder function:**
-
-```bash
-curl -X POST 'https://your-project.supabase.co/functions/v1/due-date-reminder' \
-  -H 'Authorization: Bearer YOUR_SERVICE_ROLE_KEY'
-```
-
-3. **Test in the app:**
-   - Check out an item with a valid email address
-   - Check the email inbox for confirmation
-
-## Email Templates
-
-Six templates are included:
-
-| Template Key               | Trigger          | Description                     |
-| -------------------------- | ---------------- | ------------------------------- |
-| `due_date_reminder`        | Cron job         | Sent 1-3 days before due date   |
-| `overdue_notice`           | Cron job         | Sent when item is overdue       |
-| `reservation_confirmation` | New reservation  | Confirms booking                |
-| `checkout_confirmation`    | Item checkout    | Confirms checkout with due date |
-| `checkin_confirmation`     | Item return      | Confirms successful return      |
-| `maintenance_reminder`     | Manual/scheduled | Maintenance task reminders      |
-
-### Customizing Templates
-
-Edit templates in Supabase Dashboard → Table Editor → `email_templates`
-
-Template variables use `{{variable_name}}` syntax:
-
-- `{{borrower_name}}` - Name of the person
-- `{{item_name}}` - Equipment name
-- `{{due_date}}` - Due date formatted
-- `{{company_name}}` - Your company name
-
-Conditionals: `{{#if variable}}content{{/if}}`
-
-## User Notification Preferences
-
-Users can control their notifications in Settings → Notifications:
-
-| Setting                     | Description                         |
-| --------------------------- | ----------------------------------- |
-| `email_enabled`             | Master toggle for all emails        |
-| `due_date_reminders`        | Reminder emails before due date     |
-| `due_date_reminder_days`    | Which days to remind (e.g., [1, 3]) |
-| `overdue_notifications`     | Emails when items are overdue       |
-| `reservation_confirmations` | Booking confirmation emails         |
-| `checkout_confirmations`    | Checkout confirmation emails        |
-| `checkin_confirmations`     | Return confirmation emails          |
-
-Admin-only settings:
-
-- `admin_low_stock_alerts`
-- `admin_damage_reports`
-- `admin_overdue_summary`
-
-## Monitoring & Logs
-
-### Notification Log
-
-All sent emails are logged in `notification_log` table:
-
-```sql
-SELECT * FROM notification_log
-ORDER BY created_at DESC
-LIMIT 50;
-```
-
-### Edge Function Logs
-
-View in Supabase Dashboard → Edge Functions → Logs
-
-### Debugging
-
-1. Check Edge Function logs for errors
-2. Verify secrets are set correctly
-3. Check `notification_log` for status
-4. Ensure user has `email_enabled = true`
-5. Check for duplicate prevention (24h window)
-
-## Cost Considerations
-
-| Service                 | Free Tier              | Notes            |
-| ----------------------- | ---------------------- | ---------------- |
-| Resend                  | 100 emails/day         | Upgrade for more |
-| Supabase Edge Functions | 500K invocations/month | Usually plenty   |
-| Supabase Database       | 500MB                  | Logs are small   |
-
-## Files Modified/Created
-
-### New Files
-
-- `supabase/functions/send-email/index.ts` - Email sending function
-- `supabase/functions/due-date-reminder/index.ts` - Cron job function
-- `supabase/functions/_shared/utils.ts` - Shared utilities
-- `supabase/config.toml` - Supabase configuration
-
-### Modified Files
-
-- `lib/services.js` - Added notification services
-- `lib/DataContext.jsx` - Added email sending methods
-- `App.jsx` - Wired up email triggers
-- `notifications-schema.sql` - Added checkin_confirmation template
-- `.env.example` - Added Edge Function secrets info
+Resend free tier: 100 emails/day, 3,000/month. At 1k items with active reminders, watch the daily count in the Email Log; upgrade Resend before it becomes the ceiling.

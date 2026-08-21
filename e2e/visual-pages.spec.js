@@ -311,6 +311,9 @@ test.describe('Visual Regression - Pages', () => {
       await dashboard.expectDashboard();
       await dashboard.navigateTo('Packages');
       await expect(page.locator('h2:has-text("Packages")')).toBeVisible();
+      // Packages load lazily — a CI capture once caught the empty state with
+      // the progress bar still showing. Wait for the seeded cards.
+      await expect(page.getByText('Corporate Video Kit')).toBeVisible({ timeout: 10000 });
       await page.waitForTimeout(500);
     });
 

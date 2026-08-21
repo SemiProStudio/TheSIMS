@@ -25,6 +25,7 @@ import Dashboard from './views/Dashboard.jsx';
 import GearList from './views/GearList.jsx';
 import ItemDetail from './views/ItemDetail.jsx';
 import SearchView from './views/SearchView.jsx';
+import { companyNameFor } from './lib/emailTemplates.js';
 
 // Lazy views
 const LabelsView = lazy(() => import('./views/LabelsView.jsx'));
@@ -39,6 +40,7 @@ const ThemeSelector = lazy(() => import('./views/ThemeSelector.jsx'));
 const ClientsView = lazy(() => import('./views/ClientsView.jsx'));
 const RolesManager = lazy(() => import('./views/RolesManager.jsx'));
 const ChangeLog = lazy(() => import('./views/ChangeLog.jsx'));
+const EmailLogView = lazy(() => import('./views/EmailLogView.jsx'));
 
 const AdminPanel = lazy(() =>
   import('./views/AdminView.jsx').then((m) => ({ default: m.AdminPanel })),
@@ -803,6 +805,14 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         )}
       </PermissionGate>
 
+      <PermissionGate permission="admin_notifications">
+        {currentView === VIEWS.EMAIL_LOG && (
+          <Suspense fallback={<ViewLoading message="Loading Email Log..." />}>
+            <EmailLogView onBack={() => setCurrentView(VIEWS.ADMIN)} />
+          </Suspense>
+        )}
+      </PermissionGate>
+
       <PermissionGate permission="admin_audit">
         {currentView === VIEWS.AUDIT_LOG && (
           <Suspense fallback={<ViewLoading message="Loading Audit Log..." />}>
@@ -994,6 +1004,9 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             preferences={currentUser?.notificationPreferences}
             isAdmin={currentUser?.roleId === 'role_admin'}
             onSave={handlers.saveNotificationPreferences}
+            onSendTest={() =>
+              dataContext.sendTestEmail({ user: currentUser, companyName: companyNameFor(currentUser) })
+            }
             onClose={() => setCurrentView(VIEWS.DASHBOARD)}
           />
         </Suspense>

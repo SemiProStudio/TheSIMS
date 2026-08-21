@@ -25,6 +25,7 @@ import {
   auditLogService,
   notificationPreferencesService,
   emailService,
+  notificationLogService,
 } from '../lib/services.js';
 
 import { DEFAULT_ROLES } from '../constants.js';
@@ -1341,7 +1342,7 @@ export function DataProvider({ children }) {
   }, []);
 
   const sendCheckoutEmail = useCallback(
-    async ({ borrowerEmail, borrowerName, item, checkoutDate, dueDate, project }) => {
+    async ({ borrowerEmail, borrowerName, item, checkoutDate, dueDate, project, companyName }) => {
       try {
         return await emailService.sendCheckoutConfirmation({
           borrowerEmail,
@@ -1350,6 +1351,7 @@ export function DataProvider({ children }) {
           checkoutDate,
           dueDate,
           project,
+          companyName,
         });
       } catch (err) {
         logError('Failed to send checkout email:', err);
@@ -1360,13 +1362,14 @@ export function DataProvider({ children }) {
   );
 
   const sendCheckinEmail = useCallback(
-    async ({ borrowerEmail, borrowerName, item, returnDate }) => {
+    async ({ borrowerEmail, borrowerName, item, returnDate, companyName }) => {
       try {
         return await emailService.sendCheckinConfirmation({
           borrowerEmail,
           borrowerName,
           item,
           returnDate,
+          companyName,
         });
       } catch (err) {
         logError('Failed to send checkin email:', err);
@@ -1376,19 +1379,45 @@ export function DataProvider({ children }) {
     [],
   );
 
-  const sendReservationEmail = useCallback(async ({ userEmail, userName, item, reservation }) => {
+  const sendReservationEmail = useCallback(
+    async ({ userEmail, userName, item, reservation, companyName }) => {
+      try {
+        return await emailService.sendReservationConfirmation({
+          userEmail,
+          userName,
+          item,
+          reservation,
+          companyName,
+        });
+      } catch (err) {
+        logError('Failed to send reservation email:', err);
+        return { success: false, error: err.message };
+      }
+    },
+    [],
+  );
+
+  // Damage reported at check-in → admins (each admin's own toggle is applied
+  // server-side)
+  const sendDamageReportEmail = useCallback(async (args) => {
     try {
-      return await emailService.sendReservationConfirmation({
-        userEmail,
-        userName,
-        item,
-        reservation,
-      });
+      return await emailService.sendDamageReport(args);
     } catch (err) {
-      logError('Failed to send reservation email:', err);
+      logError('Failed to send damage report:', err);
       return { success: false, error: err.message };
     }
   }, []);
+
+  const sendTestEmail = useCallback(async (args) => {
+    try {
+      return await emailService.sendTestEmail(args);
+    } catch (err) {
+      logError('Failed to send test email:', err);
+      return { success: false, error: err.message };
+    }
+  }, []);
+
+  const getNotificationLog = useCallback(async (opts) => notificationLogService.list(opts), []);
 
   // =============================================================================
   // LOCAL STATE PATCH OPERATIONS
@@ -1600,6 +1629,9 @@ export function DataProvider({ children }) {
       sendCheckoutEmail,
       sendCheckinEmail,
       sendReservationEmail,
+      sendDamageReportEmail,
+      sendTestEmail,
+      getNotificationLog,
 
       // Other Operations
       updateCategories,
@@ -1677,6 +1709,9 @@ export function DataProvider({ children }) {
       sendCheckoutEmail,
       sendCheckinEmail,
       sendReservationEmail,
+      sendDamageReportEmail,
+      sendTestEmail,
+      getNotificationLog,
       updateCategories,
       updateSpecs,
       addAuditLog,

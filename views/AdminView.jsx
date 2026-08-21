@@ -16,6 +16,7 @@ import {
   Upload,
   Download,
   ImagePlus,
+  Mail,
 } from 'lucide-react';
 import { VIEWS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
@@ -95,6 +96,14 @@ export const AdminPanel = memo(function AdminPanel({
       action: () => setCurrentView(VIEWS.AUDIT_LOG),
       color: colors.accent3,
       permissionId: 'admin_audit',
+    },
+    {
+      icon: Mail,
+      label: 'Email Log',
+      description: 'Every notification sent, with delivery status',
+      action: () => setCurrentView(VIEWS.EMAIL_LOG),
+      color: colors.primary,
+      permissionId: 'admin_notifications',
     },
     // Data tools — moved here from the sidebar nav (they're occasional admin
     // actions, not daily destinations). Same permission gates as before:

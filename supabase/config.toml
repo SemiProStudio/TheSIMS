@@ -15,12 +15,12 @@ name = "sims"
 [functions.send-email]
 verify_jwt = true
 
-# Due Date Reminder Function
-# Runs daily at 9:00 AM UTC to check for items due soon
-# verify_jwt is false so the cron scheduler can call it, but the function
-# itself requires either an `x-cron-secret: <CRON_SECRET>` header or
-# `Authorization: Bearer <service role key>` — configure the cron job to send
-# one of these. Unauthenticated calls are rejected with 401.
+# Daily Notifications Job (slug kept as due-date-reminder — the prod pg_cron job
+# posts to this URL at 09:00 UTC). Covers due/overdue reminders, reservation
+# reminders, maintenance reminders, and the admin low-stock / overdue digests.
+# verify_jwt is false so the scheduler can call it, but the function itself
+# requires either an `x-cron-secret: <CRON_SECRET>` header or
+# `Authorization: Bearer <service role key>`. Unauthenticated calls get 401.
 [functions.due-date-reminder]
 verify_jwt = false
 
@@ -40,8 +40,9 @@ verify_jwt = true
 # =============================================================================
 # Scheduled Functions (Cron Jobs)
 # =============================================================================
-# Due date reminders run daily at 9:00 AM UTC
-# To enable, run: supabase functions deploy due-date-reminder --schedule "0 9 * * *"
+# The daily job is scheduled with pg_cron + pg_net INSIDE the database (not a
+# CLI flag). See NOTIFICATION_SETUP.md for the cron.schedule() statement and
+# the vault secret it reads.
 
 # =============================================================================
 # Environment Variables Required
@@ -53,6 +54,8 @@ verify_jwt = true
 # CRON_SECRET        - Shared secret for invoking due-date-reminder (any long
 #                      random string; send it as the x-cron-secret header from
 #                      your cron scheduler)
+# COMPANY_NAME       - Optional signature name for emails sent by the daily job
+#                      (defaults to "SIMS")
 #
 # These are automatically available:
 # SUPABASE_URL            - Your project URL

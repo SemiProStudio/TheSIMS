@@ -6,6 +6,7 @@
 import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import {
   Mail,
+  Send,
   Calendar,
   Clock,
   AlertTriangle,
@@ -251,11 +252,35 @@ function NotificationSettings({
   preferences,
   onSave,
   onClose,
+  onSendTest,
   isAdmin: isAdminProp = false, // Keep prop for backwards compatibility but prefer permissions
 }) {
   // Use permissions system to determine admin access
   const { canView } = usePermissions();
   const isAdmin = canView('admin_notifications') || isAdminProp;
+
+  // "Send me a test email" — the quickest proof the whole pipeline works
+  const [testState, setTestState] = useState({ busy: false, message: null, ok: null });
+  const handleSendTest = async () => {
+    if (!onSendTest) return;
+    setTestState({ busy: true, message: null, ok: null });
+    try {
+      const result = await onSendTest();
+      if (result?.success && !result.skipped) {
+        setTestState({ busy: false, ok: true, message: 'Test email sent — check your inbox.' });
+      } else if (result?.skipped) {
+        setTestState({
+          busy: false,
+          ok: false,
+          message: `Not sent: ${result.reason === 'notifications_disabled' ? 'your email notifications are switched off (save the toggle above first)' : result.reason}`,
+        });
+      } else {
+        setTestState({ busy: false, ok: false, message: `Not sent: ${result?.error || 'unknown error'}` });
+      }
+    } catch (err) {
+      setTestState({ busy: false, ok: false, message: `Not sent: ${err?.message || 'unknown error'}` });
+    }
+  };
 
   // Initialize state from preferences or defaults
   const [settings, setSettings] = useState(() => buildSettings(preferences));
@@ -360,6 +385,34 @@ function NotificationSettings({
             label="Email Notifications"
           />
         </div>
+        {onSendTest && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: spacing[3],
+              marginTop: spacing[4],
+              paddingTop: spacing[4],
+              borderTop: `1px solid ${colors.borderLight}`,
+            }}
+          >
+            <Button variant="secondary" size="sm" icon={Send} onClick={handleSendTest} disabled={testState.busy}>
+              {testState.busy ? 'Sending…' : 'Send me a test email'}
+            </Button>
+            {testState.message && (
+              <span
+                role="status"
+                style={{
+                  fontSize: typography.fontSize.sm,
+                  color: testState.ok ? colors.success : colors.danger,
+                }}
+              >
+                {testState.message}
+              </span>
+            )}
+          </div>
+        )}
       </Card>
 
       {/* Notification categories */}
