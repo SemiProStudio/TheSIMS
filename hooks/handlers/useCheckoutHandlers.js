@@ -6,6 +6,7 @@ import { useState, useCallback } from 'react';
 import { STATUS, MODALS } from '../../constants.js';
 import { getTodayISO, hasActiveReservation } from '../../utils';
 import { error as logError } from '../../lib/logger.js';
+import { resolveBorrowerUserId, companyNameFor } from '../../lib/emailTemplates.js';
 import { useToast } from '../../contexts/ToastContext.js';
 
 export function useCheckoutHandlers({
@@ -20,6 +21,17 @@ export function useCheckoutHandlers({
   addChangeLog,
 }) {
   const { addToast } = useToast();
+
+  // Email sends are non-blocking, but a failure is no longer silent: the
+  // operator sees why (recipient not on record, service unavailable, …).
+  // Skips (recipient opted out, duplicate) stay quiet — nothing went wrong.
+  const reportEmailResult = useCallback(
+    (label, result) => {
+      if (!result || result.success) return;
+      addToast(`${label} email could not be sent: ${result.error || 'unknown error'}`, 'warning');
+    },
+    [addToast],
+  );
   // Local state
   const [checkoutItem, setCheckoutItem] = useState(null);
   const [checkinItemData, setCheckinItemData] = useState(null);
@@ -56,10 +68,17 @@ export function useCheckoutHandlers({
     }) => {
       let done = 0;
       const failed = [];
+      // The borrower as a SIMS user — never the operator (that sent reminders
+      // to whoever clicked Check Out)
+      const borrowerUserId = resolveBorrowerUserId({
+        borrowerName,
+        clientId,
+        users: dataContext?.users,
+      });
       for (const target of items) {
         try {
           await dataContext.checkOutItem(target.id, {
-            userId: currentUser?.id,
+            userId: borrowerUserId,
             userName: borrowerName,
             clientId,
             clientName,
@@ -148,9 +167,17 @@ export function useCheckoutHandlers({
         checkedOutDate,
       } = checkoutData;
 
+      // The borrower as a SIMS user (typed name/email matches a user) — never
+      // the operator, which sent due-date reminders to whoever clicked Check Out
+      const borrowerUserId = resolveBorrowerUserId({
+        borrowerName,
+        borrowerEmail,
+        clientId: clientId || null,
+        users: dataContext?.users,
+      });
       try {
         await dataContext.checkOutItem(itemId, {
-          userId: currentUser?.id,
+          userId: borrowerUserId,
           userName: borrowerName,
           clientId: clientId || null,
           clientName: clientName || null,
@@ -209,7 +236,9 @@ export function useCheckoutHandlers({
             checkoutDate: checkedOutDate,
             dueDate,
             project,
+            companyName: companyNameFor(currentUser),
           })
+          .then((result) => reportEmailResult('Checkout confirmation', result))
           .catch((err) => logError('Email send failed:', err));
       }
 
@@ -223,6 +252,7 @@ export function useCheckoutHandlers({
       selectedItem,
       setSelectedItem,
       checkoutItem,
+      reportEmailResult,
       closeModal,
       addAuditLog,
       addChangeLog,
@@ -339,8 +369,30 @@ export function useCheckoutHandlers({
             borrowerName: borrowerName || returnedBy,
             item: checkinItemData || currentItem || { id: itemId, name: itemId },
             returnDate,
+            companyName: companyNameFor(currentUser),
           })
+          .then((result) => reportEmailResult('Return confirmation', result))
           .catch((err) => logError('Email send failed:', err));
+      }
+
+      // Damage reports go to every admin (each admin's own "Damage reports"
+      // toggle is applied server-side)
+      if (damageReported && dataContext?.sendDamageReportEmail) {
+        const admins = (dataContext.users || []).filter((u) => u.roleId === 'role_admin' && u.email);
+        if (admins.length) {
+          dataContext
+            .sendDamageReportEmail({
+              admins,
+              item: checkinItemData || currentItem || { id: itemId, name: itemId },
+              reportedBy: returnedBy,
+              borrowerName: borrowerName || 'Unknown',
+              description: damageDescription || returnNotes || '',
+              reportDate: new Date(),
+              companyName: companyNameFor(currentUser),
+            })
+            .then((result) => reportEmailResult('Damage report', result))
+            .catch((err) => logError('Damage report email failed:', err));
+        }
       }
 
       addToast(`${checkinItemData?.name || 'Item'} checked in successfully`, 'success');
@@ -368,6 +420,7 @@ export function useCheckoutHandlers({
       selectedItem,
       setSelectedItem,
       checkinItemData,
+      reportEmailResult,
       closeModal,
       openModal,
       addAuditLog,

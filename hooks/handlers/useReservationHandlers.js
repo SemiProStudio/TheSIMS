@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import { VIEWS, MODALS } from '../../constants.js';
 import { generateId, formatPhoneNumber, getTodayISO, hasActiveReservation } from '../../utils';
 import { error as logError } from '../../lib/logger.js';
+import { companyNameFor } from '../../lib/emailTemplates.js';
 import { useToast } from '../../contexts/ToastContext.js';
 
 export function useReservationHandlers({
@@ -339,8 +340,18 @@ export function useReservationHandlers({
             item: firstItem,
             reservation: {
               ...reservationForm,
+              id: firstCreatedReservation.id,
               itemCount: itemIds.length,
             },
+            companyName: companyNameFor(currentUser),
+          })
+          .then((result) => {
+            if (result && !result.success) {
+              addToast(
+                `Reservation saved, but the confirmation email could not be sent: ${result.error || 'unknown error'}`,
+                'warning',
+              );
+            }
           })
           .catch((err) => logError('Email send failed:', err));
       }

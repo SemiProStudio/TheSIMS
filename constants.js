@@ -188,6 +188,7 @@ export const VIEWS = {
   AUDIT_LOG: 'auditlog',
   CHANGE_LOG: 'changelog',
   NOTIFICATIONS: 'notifications',
+  EMAIL_LOG: 'email-log',
   INVENTORY_REPORT: 'inventory-report',
   ACTIVITY_REPORT: 'activity-report',
   ALERTS_REPORT: 'alerts-report',
