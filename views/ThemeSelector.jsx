@@ -9,13 +9,16 @@ import { colors, spacing, borderRadius, typography, withOpacity } from '../theme
 import { useTheme } from '../contexts/ThemeContext.js';
 import { Card, PageHeader } from '../components/ui.jsx';
 import CustomThemeEditor from '../components/CustomThemeEditor.jsx';
+import { THEME_GROUPS, TOKEN_DEFAULTS } from '../themes-data.js';
 
-// Novelty themes get their own labeled group below the professional set
-const FUN_THEME_IDS = new Set(['xp', 'cheese', 'cats', 'dogs', 'random']);
-
-// Preview component showing theme colors
+// Preview component showing theme colors. The swatch is drawn with the
+// theme's OWN shape and type tokens (corner radius, heading face, tile) so
+// a theme that differs in more than colour previews that difference.
 const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, onCustomize }) {
   const themeColors = theme.colors || {};
+  const tokens = { ...TOKEN_DEFAULTS, ...(theme.tokens || {}) };
+  const previewRadius = tokens['--radius-md'];
+  const previewFont = tokens['--font-heading'] === 'var(--font-sans)' ? tokens['--font-sans'] : tokens['--font-heading'];
 
   // Get preview colors (use defaults if random/empty)
   const bgDark = themeColors['--bg-dark'] || '#1a1d21';
@@ -60,6 +63,8 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
               : isCustom && !hasCustomColors
                 ? 'linear-gradient(135deg, #667eea, #764ba2, #f093fb)'
                 : bgDark,
+            backgroundImage: theme.backgroundImage ? `url("${theme.backgroundImage}")` : undefined,
+            backgroundSize: theme.backgroundImage ? '120px' : undefined,
           }}
         >
           {theme.isRandom ? (
@@ -108,7 +113,7 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
                   right: '50%',
                   bottom: 40,
                   background: bgMedium,
-                  borderRadius: borderRadius.sm,
+                  borderRadius: previewRadius,
                 }}
               />
               <div
@@ -119,7 +124,7 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
                   right: 8,
                   bottom: 40,
                   background: bgLight,
-                  borderRadius: borderRadius.sm,
+                  borderRadius: previewRadius,
                 }}
               />
 
@@ -132,7 +137,7 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
                   right: 8,
                   height: 12,
                   background: primary,
-                  borderRadius: borderRadius.sm,
+                  borderRadius: previewRadius,
                 }}
               />
 
@@ -222,6 +227,7 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
               fontWeight: typography.fontWeight.medium,
               color: colors.textPrimary,
               marginBottom: 2,
+              fontFamily: previewFont,
             }}
           >
             {theme.name}
@@ -304,27 +310,31 @@ function ThemeSelector({ onBack, onPersistCustomTheme }) {
         backLabel="Back to Dashboard"
       />
 
-      {/* Theme Grid — professional themes first, novelty themes in their own
-          labeled group so the serious options read as the default set */}
-      {[
-        { label: null, themes: availableThemes.filter((t) => !FUN_THEME_IDS.has(t.id)) },
-        { label: 'Fun', themes: availableThemes.filter((t) => FUN_THEME_IDS.has(t.id)) },
-      ].map(({ label, themes: groupThemes }) =>
-        groupThemes.length === 0 ? null : (
-          <div key={label || 'standard'}>
-            {label && (
-              <h3
-                style={{
-                  margin: `${spacing[6]}px 0 ${spacing[3]}px`,
-                  color: colors.textMuted,
-                  fontSize: typography.fontSize.sm,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                {label}
-              </h3>
-            )}
+      {/* Theme Grid — one labelled section per group (Modern, Legacy,
+          Custom & Random), in THEME_GROUPS order */}
+      {Object.entries(THEME_GROUPS).map(([groupId, group]) => {
+        const groupThemes = availableThemes.filter((t) => (t.group || 'legacy') === groupId);
+        return groupThemes.length === 0 ? null : (
+          <section key={groupId} aria-labelledby={`theme-group-${groupId}`}>
+            <h3
+              id={`theme-group-${groupId}`}
+              style={{
+                margin: `${spacing[6]}px 0 ${spacing[1]}px`,
+                color: colors.textPrimary,
+                fontSize: typography.fontSize.md,
+              }}
+            >
+              {group.label}
+            </h3>
+            <p
+              style={{
+                margin: `0 0 ${spacing[3]}px`,
+                color: colors.textMuted,
+                fontSize: typography.fontSize.sm,
+              }}
+            >
+              {group.description}
+            </p>
             <div
               style={{
                 display: 'grid',
@@ -342,9 +352,9 @@ function ThemeSelector({ onBack, onPersistCustomTheme }) {
                 />
               ))}
             </div>
-          </div>
-        ),
-      )}
+          </section>
+        );
+      })}
 
       {/* Current Theme Info */}
       <Card style={{ marginTop: spacing[6], maxWidth: 500 }}>

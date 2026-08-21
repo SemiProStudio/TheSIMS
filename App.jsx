@@ -12,7 +12,7 @@ import {
   DEFAULT_LAYOUT_PREFS,
   DEFAULT_ROLES,
 } from './constants.js';
-import { colors } from './theme.js';
+import { colors, typography } from './theme.js';
 import { findById, downloadCSV, getTodayISO, mergeHydratedCollections } from './utils';
 import { openPrintWindow } from './lib/printUtil.js';
 import { escapeHtml } from './lib/escapeHtml.js';
@@ -74,7 +74,7 @@ export default function App() {
   // ============================================================================
   // Theme
   // ============================================================================
-  const { currentTheme, themeId, setTheme, updateCustomTheme } = useTheme();
+  const { themeId, setTheme, updateCustomTheme } = useTheme();
 
   // ============================================================================
   // Auth & Data Contexts
@@ -1221,17 +1221,10 @@ export default function App() {
   // Loading / Login
   // ============================================================================
   if (!isLoggedIn) {
+    // .app-wrapper paints the theme's background tile and cursor from the
+    // CSS variables ThemeContext sets (see index.css)
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          backgroundColor: colors.bgDark,
-          backgroundImage: currentTheme.backgroundImage || 'none',
-          backgroundRepeat: 'repeat',
-          backgroundAttachment: 'fixed',
-          cursor: currentTheme.cursor || 'default',
-        }}
-      >
+      <div className="app-wrapper" style={{ minHeight: '100vh' }}>
         <Login
           loginForm={loginForm}
           setLoginForm={setLoginForm}
@@ -1253,13 +1246,8 @@ export default function App() {
         style={{
           display: 'flex',
           minHeight: '100vh',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
+          fontFamily: typography.fontFamily,
           color: colors.textPrimary,
-          backgroundColor: colors.bgDark,
-          backgroundImage: currentTheme.backgroundImage || 'none',
-          backgroundRepeat: 'repeat',
-          backgroundAttachment: 'fixed',
-          cursor: currentTheme.cursor || 'default',
         }}
       >
         <SkipLink targetId="main-content" />

@@ -14,6 +14,7 @@ import {
   transitions,
   withOpacity,
 } from '../theme.js';
+import { TOKEN_DEFAULTS } from '../themes-data.js';
 
 // =============================================================================
 // Colors Tests
@@ -106,10 +107,19 @@ describe('borderRadius', () => {
     expect(borderRadius.full).toBe('9999px');
   });
 
-  it('should have increasing radius values', () => {
+  it('should reference the radius CSS variables (themes set the values)', () => {
+    expect(borderRadius.sm).toBe('var(--radius-sm)');
+    expect(borderRadius.md).toBe('var(--radius-md)');
+    expect(borderRadius.lg).toBe('var(--radius-lg)');
+    expect(borderRadius.xl).toBe('var(--radius-xl)');
+    expect(borderRadius['2xl']).toBe('var(--radius-2xl)');
+  });
+
+  it('should have increasing default radius values', () => {
     const toNum = (v) => parseInt(v);
-    expect(toNum(borderRadius.sm)).toBeLessThan(toNum(borderRadius.md));
-    expect(toNum(borderRadius.md)).toBeLessThan(toNum(borderRadius.lg));
+    expect(toNum(TOKEN_DEFAULTS['--radius-sm'])).toBeLessThan(toNum(TOKEN_DEFAULTS['--radius-md']));
+    expect(toNum(TOKEN_DEFAULTS['--radius-md'])).toBeLessThan(toNum(TOKEN_DEFAULTS['--radius-lg']));
+    expect(toNum(TOKEN_DEFAULTS['--radius-lg'])).toBeLessThan(toNum(TOKEN_DEFAULTS['--radius-xl']));
   });
 });
 

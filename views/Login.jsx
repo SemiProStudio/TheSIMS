@@ -13,7 +13,8 @@ function Login({ loginForm, setLoginForm, onLogin, isLoading, error }) {
     <div
       style={{
         minHeight: '100vh',
-        background: colors.bgDark,
+        // Transparent: the .app-wrapper behind paints the page colour and
+        // the theme's background tile (Cheese/Cats/Dogs show up here too)
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

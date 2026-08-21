@@ -7,6 +7,7 @@ import {
   themes,
   generateRandomTheme,
   DEFAULT_CUSTOM_THEME,
+  TOKEN_DEFAULTS,
   pickOnColor,
   isLightColor,
   PRIMARY_FILL_MIXES,
@@ -76,7 +77,6 @@ export function ThemeProvider({ children }) {
 
   const applyTheme = useCallback((theme, generatedColors = null, shouldAnnounce = false) => {
     const root = document.documentElement;
-    const body = document.body;
 
     // Copy before deriving: the fallback derivations below must never
     // mutate the module-level theme definitions in themes-data.js
@@ -126,28 +126,32 @@ export function ThemeProvider({ children }) {
       themeColorMeta.setAttribute('content', colors['--bg-dark']);
     }
 
-    // Apply background image
-    if (theme.backgroundImage) {
-      root.style.setProperty('--theme-bg-image', `url("${theme.backgroundImage}")`);
-    } else {
-      root.style.setProperty('--theme-bg-image', 'none');
-    }
+    // Shape + type tokens (radius scale, font faces, heading weight…).
+    // Always write the full set so a theme that doesn't customise a token
+    // resets it instead of inheriting the previous theme's value.
+    Object.entries({ ...TOKEN_DEFAULTS, ...(theme.tokens || {}) }).forEach(([property, value]) => {
+      root.style.setProperty(property, value);
+    });
 
-    // Apply custom cursor
+    // Background tile (.app-wrapper::before paints it; see index.css)
+    root.style.setProperty(
+      '--theme-bg-image',
+      theme.backgroundImage ? `url("${theme.backgroundImage}")` : 'none',
+    );
+    root.style.setProperty('--theme-bg-opacity', String(theme.backgroundOpacity ?? 1));
+
+    // Themed cursor: the variable carries the image, the root class switches
+    // the !important override on so it beats inline `cursor: pointer`
     if (theme.cursor) {
-      root.style.setProperty('--theme-cursor', `url("${theme.cursor}") 2 2, auto`);
+      const hotspot = theme.cursorHotspot || [2, 2];
+      root.style.setProperty('--theme-cursor', `url("${theme.cursor}") ${hotspot.join(' ')}, auto`);
+      root.classList.add('theme-cursor');
     } else {
       root.style.setProperty('--theme-cursor', 'default');
+      root.classList.remove('theme-cursor');
     }
 
-    // Apply custom font
-    if (theme.fontFamily) {
-      root.style.setProperty('--theme-font', theme.fontFamily);
-      body.style.fontFamily = theme.fontFamily;
-    } else {
-      root.style.setProperty('--theme-font', '');
-      body.style.fontFamily = '';
-    }
+    root.dataset.theme = theme.id;
 
     localStorage.setItem('sims-theme', theme.id);
 

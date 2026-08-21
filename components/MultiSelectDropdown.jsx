@@ -206,7 +206,7 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
       borderRadius: borderRadius.lg,
       color: selectedValues.length > 0 ? colors.textPrimary : colors.textMuted,
       fontSize: typography.fontSize.base,
-      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      fontFamily: typography.fontFamily,
       cursor: 'pointer',
       textAlign: 'left',
       position: 'relative',
@@ -267,7 +267,7 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
       overflowY: 'auto',
       zIndex: 99999,
       outline: 'none',
-      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      fontFamily: typography.fontFamily,
     },
     option: {
       display: 'flex',
