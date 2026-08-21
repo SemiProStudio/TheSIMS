@@ -287,3 +287,35 @@ describe('Dashboard accessibility and copy', () => {
     expect(screen.queryByText('All items are available')).not.toBeInTheDocument();
   });
 });
+
+describe('Dashboard low stock panel (per-item opt-in)', () => {
+  const consumable = (overrides) =>
+    baseItem({ category: 'Consumables', quantity: 1, reorderPoint: 3, ...overrides });
+  const categorySettings = { Consumables: { trackQuantity: true }, Cameras: { trackQuantity: false } };
+
+  it('lists only items whose reminder is on and that sit at or below their own threshold', () => {
+    renderDashboard({
+      categorySettings,
+      inventory: [
+        consumable({ id: 'CO1', name: 'Gaff Tape', lowStockAlert: true }),
+        consumable({ id: 'CO2', name: 'Gels', lowStockAlert: false }), // same numbers, opted out
+        consumable({ id: 'CO3', name: 'Batteries', lowStockAlert: true, quantity: 10 }), // plenty
+        consumable({ id: 'CO4', name: 'No threshold', lowStockAlert: true, reorderPoint: 0 }),
+        baseItem({ id: 'CA9', name: 'Untracked Cam', quantity: 0, reorderPoint: 5, lowStockAlert: true }),
+      ],
+    });
+    expect(screen.getByText('Gaff Tape')).toBeInTheDocument();
+    expect(screen.getByText('1 remaining (min: 3)')).toBeInTheDocument();
+    for (const name of ['Gels', 'Batteries', 'No threshold', 'Untracked Cam']) {
+      expect(screen.queryByText(name)).not.toBeInTheDocument();
+    }
+  });
+
+  it('shows the empty state when nothing is opted in', () => {
+    renderDashboard({
+      categorySettings,
+      inventory: [consumable({ id: 'CO1', name: 'Gaff Tape' })],
+    });
+    expect(screen.getByText('No low stock items')).toBeInTheDocument();
+  });
+});

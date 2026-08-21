@@ -383,16 +383,14 @@ export const CATEGORY_PREFIXES = {
 };
 
 // Default category settings - controls per-category behavior
-// trackQuantity: whether items in this category have a quantity field (for consumables/non-serialized items)
+// trackQuantity: whether items in this category have a quantity field (for
+//   consumables/non-serialized items). Low-stock reminders are a PER-ITEM
+//   opt-in (lowStockAlert + reorderPoint) that is only offered in these
+//   categories — there is no category-level threshold.
 // trackSerialNumbers: whether items require serial numbers
-// trackReorderPoint: whether to show reorder point field (only for consumables)
-// defaultLocation: default storage location for new items in this category
-// Default settings for new categories
 export const DEFAULT_NEW_CATEGORY_SETTINGS = {
   trackQuantity: false,
   trackSerialNumbers: true,
-  trackReorderPoint: false,
-  lowStockThreshold: 0,
 };
 
 // Project types for reservations
@@ -810,9 +808,12 @@ export const EMPTY_ITEM_FORM = {
   // Picked-but-not-yet-uploaded photo (components/ImageField); never persisted
   pendingImage: null,
   specs: {},
-  // Quantity tracking fields (used when category has trackQuantity: true)
+  // Quantity tracking fields (used when category has trackQuantity: true).
+  // Low-stock reminders are opt-in per item: off until the user enables the
+  // flag, and then the item is "low" at or below reorderPoint.
   quantity: 1,
   reorderPoint: 0,
+  lowStockAlert: false,
 };
 
 export const EMPTY_RESERVATION_FORM = {

@@ -270,6 +270,39 @@ export function useKitHandlers({
     [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext, addToast],
   );
 
+  // ---- Low-stock reminder (per-item opt-in, toggled from Item Details) ----
+
+  const setLowStockAlert = useCallback(
+    async (itemId, enabled) => {
+      const targetItem = inventory.find((i) => i.id === itemId);
+      if (!targetItem || Boolean(targetItem.lowStockAlert) === Boolean(enabled)) return;
+
+      try {
+        await dataContext.updateItem(itemId, { lowStockAlert: Boolean(enabled) });
+      } catch (err) {
+        logError('Failed to update low-stock reminder:', err);
+        addToast('Could not update the low-stock reminder. Please try again.', 'error');
+        return;
+      }
+
+      if (selectedItem?.id === itemId) {
+        setSelectedItem((prev) => ({ ...prev, lowStockAlert: Boolean(enabled) }));
+      }
+
+      addChangeLog({
+        type: 'updated',
+        itemId,
+        itemType: 'item',
+        itemName: targetItem.name,
+        description: `Low stock reminder turned ${enabled ? 'on' : 'off'}`,
+        changes: [
+          { field: 'lowStockAlert', oldValue: Boolean(targetItem.lowStockAlert), newValue: Boolean(enabled) },
+        ],
+      });
+    },
+    [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext, addToast],
+  );
+
   // ---- Image ----
 
   const selectImage = useCallback(
@@ -318,6 +351,7 @@ export function useKitHandlers({
     addRequiredAccessories,
     removeRequiredAccessory,
     updateItemValue,
+    setLowStockAlert,
     selectImage,
   };
 }

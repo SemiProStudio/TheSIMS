@@ -12,6 +12,7 @@ import { DatePicker } from '../components/DatePicker.jsx';
 import { useItemForm } from '../components/ItemForm.jsx';
 import { SpecFieldInput } from '../components/SpecFieldInput.jsx';
 import ImageField from '../components/ImageField.jsx';
+import LowStockFields from '../components/LowStockFields.jsx';
 import { SmartPasteModal } from '../modals/smartPaste/SmartPasteModal.jsx';
 import { applySmartPastePayload } from '../lib/smartPaste/applyPayload.js';
 
@@ -260,28 +261,15 @@ export const ItemFormPage = memo(function ItemFormPage({
                       handleChange('quantity', Math.max(0, parseInt(e.target.value) || 0))
                     }
                   />
-                  <Input
-                    label={
-                      <>
-                        Reorder Point
-                        <span
-                          style={{
-                            fontSize: typography.fontSize.xs,
-                            color: colors.textMuted,
-                            fontWeight: typography.fontWeight.normal,
-                            marginLeft: spacing[1],
-                          }}
-                        >
-                          (alert when below)
-                        </span>
-                      </>
+                </div>
+                <div style={{ marginTop: spacing[3] }}>
+                  <LowStockFields
+                    enabled={itemForm.lowStockAlert}
+                    threshold={itemForm.reorderPoint}
+                    onChange={(patch) =>
+                      Object.entries(patch).forEach(([key, value]) => handleChange(key, value))
                     }
-                    type="number"
-                    min="0"
-                    value={itemForm.reorderPoint || 0}
-                    onChange={(e) =>
-                      handleChange('reorderPoint', Math.max(0, parseInt(e.target.value) || 0))
-                    }
+                    inputId="item-form-low-stock-threshold"
                   />
                 </div>
               </div>
@@ -1601,31 +1589,12 @@ export const CategoriesPage = memo(function CategoriesPage({
                       Require Serial #
                     </label>
                     {settings.trackQuantity && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-                        <span
-                          style={{ fontSize: typography.fontSize.sm, color: colors.textSecondary }}
-                        >
-                          Low stock alert:
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          value={settings.lowStockThreshold || 0}
-                          onChange={(e) =>
-                            handleSettingChange(
-                              row.key,
-                              'lowStockThreshold',
-                              parseInt(e.target.value) || 0,
-                            )
-                          }
-                          style={{
-                            ...styles.input,
-                            width: 60,
-                            padding: spacing[1],
-                            textAlign: 'center',
-                          }}
-                        />
-                      </div>
+                      <span
+                        style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}
+                        title="Low-stock reminders are enabled per item (Item Details) — there is no category threshold"
+                      >
+                        Low-stock reminders: per item
+                      </span>
                     )}
                   </div>
                 </div>

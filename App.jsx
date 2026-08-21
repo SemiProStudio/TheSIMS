@@ -797,6 +797,7 @@ export default function App() {
     addRequiredAccessories,
     removeRequiredAccessory,
     updateItemValue,
+    setLowStockAlert,
     selectImage,
   } = useKitHandlers({
     inventory,
@@ -1092,6 +1093,7 @@ export default function App() {
       addRequiredAccessories,
       removeRequiredAccessory,
       updateItemValue,
+      setLowStockAlert,
       selectImage,
       addItemToPackage,
       updateMaintenanceStatus,
@@ -1141,6 +1143,7 @@ export default function App() {
       addRequiredAccessories,
       removeRequiredAccessory,
       updateItemValue,
+      setLowStockAlert,
       selectImage,
       addItemToPackage,
       updateMaintenanceStatus,

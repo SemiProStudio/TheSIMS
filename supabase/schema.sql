@@ -128,29 +128,27 @@ CREATE TABLE IF NOT EXISTS categories (
   prefix VARCHAR(10) NOT NULL UNIQUE,
   track_quantity BOOLEAN DEFAULT false,
   track_serial_numbers BOOLEAN DEFAULT true,
-  low_stock_threshold INTEGER DEFAULT 0,
   sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Insert default categories with settings
-INSERT INTO categories (name, prefix, track_quantity, track_serial_numbers, low_stock_threshold, sort_order) VALUES
-  ('Cameras', 'CA', false, true, 0, 0),
-  ('Lenses', 'LE', false, true, 0, 1),
-  ('Lighting', 'LI', true, false, 2, 2),
-  ('Audio', 'AU', true, false, 2, 3),
-  ('Support', 'SU', true, false, 1, 4),
-  ('Accessories', 'AC', true, false, 3, 5),
-  ('Storage', 'ST', true, false, 5, 6),
-  ('Grip', 'GR', true, false, 2, 7),
-  ('Monitors', 'MO', false, true, 0, 8),
-  ('Power', 'PW', true, false, 3, 9)
+INSERT INTO categories (name, prefix, track_quantity, track_serial_numbers, sort_order) VALUES
+  ('Cameras', 'CA', false, true, 0),
+  ('Lenses', 'LE', false, true, 1),
+  ('Lighting', 'LI', true, false, 2),
+  ('Audio', 'AU', true, false, 3),
+  ('Support', 'SU', true, false, 4),
+  ('Accessories', 'AC', true, false, 5),
+  ('Storage', 'ST', true, false, 6),
+  ('Grip', 'GR', true, false, 7),
+  ('Monitors', 'MO', false, true, 8),
+  ('Power', 'PW', true, false, 9)
 ON CONFLICT (name) DO UPDATE SET
   prefix = EXCLUDED.prefix,
   track_quantity = EXCLUDED.track_quantity,
   track_serial_numbers = EXCLUDED.track_serial_numbers,
-  low_stock_threshold = EXCLUDED.low_stock_threshold,
   sort_order = EXCLUDED.sort_order;
 
 -- =============================================================================
@@ -226,9 +224,11 @@ CREATE TABLE IF NOT EXISTS inventory (
   image TEXT,
   specs JSONB DEFAULT '{}',
   
-  -- Quantity tracking (for consumables)
+  -- Quantity tracking (quantity-tracked categories). Low-stock reminders are
+  -- a per-item opt-in: low_stock_alert on AND quantity <= reorder_point
   quantity INTEGER DEFAULT 1,
   reorder_point INTEGER DEFAULT 0,
+  low_stock_alert BOOLEAN NOT NULL DEFAULT false,
   
   -- Checkout state
   checked_out_to_user_id UUID REFERENCES users(id) ON DELETE SET NULL,

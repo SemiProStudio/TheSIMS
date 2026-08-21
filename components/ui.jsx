@@ -83,6 +83,57 @@ export const PageHeader = memo(function PageHeader({
 // Badge - Status/category indicator
 // ============================================================================
 
+/**
+ * Switch — an accessible on/off toggle (role="switch"). Label it: the
+ * aria-label is what screen readers and tests address it by.
+ */
+export const Switch = memo(function Switch({ checked, onChange, disabled = false, label }) {
+  return (
+    <button
+      type="button"
+      onClick={() => !disabled && onChange(!checked)}
+      disabled={disabled}
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      style={{
+        width: 44,
+        height: 24,
+        borderRadius: 12,
+        border: 'none',
+        background: checked ? colors.primary : colors.bgLight,
+        position: 'relative',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: 'background 0.2s ease',
+        opacity: disabled ? 0.5 : 1,
+        flexShrink: 0,
+        padding: 0,
+      }}
+    >
+      <div
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: '50%',
+          background: colors.textPrimary,
+          position: 'absolute',
+          top: 2,
+          left: checked ? 22 : 2,
+          transition: 'left 0.2s ease',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+        }}
+      />
+    </button>
+  );
+});
+
+Switch.propTypes = {
+  checked: PropTypes.bool.isRequired,
+  onChange: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+  label: PropTypes.string.isRequired,
+};
+
 export const Badge = memo(function Badge({ text, children, color = colors.primary, size = 'sm' }) {
   const sizes = {
     xs: { padding: '2px 5px', fontSize: '9px' },

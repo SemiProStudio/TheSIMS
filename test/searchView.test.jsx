@@ -80,6 +80,7 @@ const inventory = [
     status: 'available',
     quantity: 2,
     reorderPoint: 5,
+    lowStockAlert: true, // the per-item opt-in — off means never low
   },
   {
     id: 'KIT1',
@@ -266,7 +267,7 @@ describe('computed status filters', () => {
     expect(screen.queryByText('Sony A7S III')).not.toBeInTheDocument();
   });
 
-  it('low-stock matches via quantity vs reorder point', () => {
+  it('low-stock matches opted-in items via quantity vs their reorder point', () => {
     resetState({ filters: { selectedStatuses: ['low-stock'] } });
     renderSearch();
     expect(screen.getByText('Gaffer Tape')).toBeInTheDocument();
