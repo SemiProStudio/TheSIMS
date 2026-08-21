@@ -1,35 +1,66 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150">
-  <!-- Cheese wedge 1 -->
-  <g transform="translate(10,10)" opacity="0.45">
-    <polygon points="0,55 45,0 90,55" fill="#ffc107" stroke="#ff8f00" stroke-width="1"/>
-    <rect x="0" y="55" width="90" height="12" fill="#ffb300"/>
-    <polygon points="90,55 90,67 45,12" fill="#ff8f00" opacity="0.4"/>
-    <circle cx="20" cy="40" r="7" fill="#fff8e1"/>
-    <circle cx="55" cy="35" r="9" fill="#fff8e1"/>
-    <circle cx="35" cy="58" r="5" fill="#fff8e1"/>
-    <circle cx="72" cy="48" r="6" fill="#fff8e1"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="0 0 260 260">
+  <!-- Cheese theme tile: cartoon wedges, a slice and cubes with bold outlines
+       so they read against the yellow page (the old tile was the same hue as
+       the background and disappeared). Repeats on .app-wrapper. -->
+  <defs>
+    <style>
+      .o { stroke: #7a4a0e; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+      .face { fill: #ffc629; }
+      .side { fill: #e6a21a; }
+      .top { fill: #ffd95c; }
+      .hole { fill: #d98f14; stroke: #7a4a0e; stroke-width: 2; }
+      .shine { fill: #fff0b3; opacity: 0.85; }
+    </style>
+  </defs>
+
+  <!-- Big wedge, top-left -->
+  <g transform="translate(18 22) rotate(-8 50 40)" opacity="0.95">
+    <polygon class="top o" points="0,48 52,0 104,48"/>
+    <polygon class="face o" points="0,48 104,48 104,70 0,70"/>
+    <circle class="hole" cx="28" cy="44" r="7"/>
+    <circle class="hole" cx="58" cy="30" r="9"/>
+    <circle class="hole" cx="42" cy="60" r="5"/>
+    <circle class="hole" cx="80" cy="60" r="6"/>
+    <ellipse class="shine" cx="20" cy="54" rx="5" ry="2"/>
   </g>
-  <!-- Cheese slice -->
-  <g transform="translate(75,75)" opacity="0.4">
-    <rect x="0" y="0" width="55" height="50" rx="3" fill="#ffca28" stroke="#ff8f00" stroke-width="1"/>
-    <rect x="0" y="50" width="55" height="10" fill="#ffb300"/>
-    <circle cx="15" cy="18" r="6" fill="#fff8e1"/>
-    <circle cx="40" cy="30" r="8" fill="#fff8e1"/>
-    <circle cx="25" cy="42" r="5" fill="#fff8e1"/>
+
+  <!-- Slice, bottom-right -->
+  <g transform="translate(150 150) rotate(12 30 30)" opacity="0.95">
+    <rect class="face o" x="0" y="0" width="70" height="56" rx="5"/>
+    <rect class="side o" x="0" y="44" width="70" height="14" rx="4"/>
+    <circle class="hole" cx="18" cy="18" r="7"/>
+    <circle class="hole" cx="48" cy="26" r="9"/>
+    <circle class="hole" cx="28" cy="40" r="5"/>
+    <circle class="hole" cx="58" cy="10" r="4"/>
   </g>
-  <!-- Small cheese cubes -->
-  <g opacity="0.35">
-    <rect x="105" y="15" width="22" height="22" rx="2" fill="#ffd54f" transform="rotate(15 116 26)"/>
-    <circle cx="112" cy="22" r="3" fill="#fff8e1"/>
-    <circle cx="120" cy="30" r="4" fill="#fff8e1"/>
-    <rect x="15" y="100" width="20" height="20" rx="2" fill="#ffca28" transform="rotate(-10 25 110)"/>
-    <circle cx="22" cy="106" r="3" fill="#fff8e1"/>
-    <circle cx="30" cy="114" r="3" fill="#fff8e1"/>
+
+  <!-- Small wedge, top-right -->
+  <g transform="translate(168 28) rotate(22 30 20)" opacity="0.95">
+    <polygon class="top o" points="0,30 32,0 64,30"/>
+    <polygon class="face o" points="0,30 64,30 64,44 0,44"/>
+    <circle class="hole" cx="22" cy="26" r="5"/>
+    <circle class="hole" cx="44" cy="20" r="6"/>
   </g>
-  <!-- Extra holes -->
-  <g fill="#ffe082" opacity="0.3">
-    <circle cx="130" cy="130" r="10"/>
-    <circle cx="60" cy="130" r="6"/>
-    <circle cx="140" cy="65" r="5"/>
+
+  <!-- Cubes, bottom-left -->
+  <g transform="translate(34 176) rotate(-14 20 20)" opacity="0.95">
+    <polygon class="top o" points="0,12 14,0 42,0 28,12"/>
+    <polygon class="face o" points="0,12 28,12 28,40 0,40"/>
+    <polygon class="side o" points="28,12 42,0 42,28 28,40"/>
+    <circle class="hole" cx="10" cy="24" r="4"/>
+    <circle class="hole" cx="20" cy="33" r="3"/>
+  </g>
+  <g transform="translate(96 206) rotate(10 12 12)" opacity="0.95">
+    <polygon class="top o" points="0,8 10,0 30,0 20,8"/>
+    <polygon class="face o" points="0,8 20,8 20,28 0,28"/>
+    <polygon class="side o" points="20,8 30,0 30,20 20,28"/>
+    <circle class="hole" cx="8" cy="18" r="3"/>
+  </g>
+
+  <!-- A mouse-sized crumb trail -->
+  <g fill="#e6a21a" stroke="#7a4a0e" stroke-width="1.5" opacity="0.9">
+    <circle cx="134" cy="120" r="3"/>
+    <circle cx="146" cy="128" r="2.5"/>
+    <circle cx="126" cy="134" r="2"/>
   </g>
 </svg>

@@ -192,8 +192,7 @@ export function Select({
           overflowY: 'auto',
           listStyle: 'none',
           margin: 0,
-          fontFamily:
-            'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: typography.fontFamily,
         }}
       >
         {options.map((opt, index) => {

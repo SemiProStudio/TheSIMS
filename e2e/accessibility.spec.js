@@ -36,9 +36,112 @@ test.describe('Theme System', () => {
     await openThemeSelector(page, pages);
 
     // A sample of the built-in themes from themes-data.js must be present
-    for (const name of ['Dark', 'Light', 'Darker', 'Terminal', 'Pastel', 'Vibrant']) {
+    for (const name of ['Dark', 'Light', 'Darker', 'Terminal', 'Pastel', 'Vibrant', 'Graphite']) {
       await expect(themeCard(page, name)).toBeVisible();
     }
+  });
+
+  test('groups themes into Modern, Legacy and Custom & Random sections', async ({
+    page,
+    pages,
+  }) => {
+    await openThemeSelector(page, pages);
+
+    const section = (label) => page.locator('section', { has: page.locator(`h3:text-is("${label}")`) });
+    await expect(section('Modern')).toBeVisible();
+    await expect(section('Legacy')).toBeVisible();
+    await expect(section('Custom & Random')).toBeVisible();
+
+    // The original catalogue lives under Legacy, the new set under Modern
+    for (const name of ['Dark', 'Light', 'Cheese', 'Cats', 'Dogs', 'XP']) {
+      await expect(section('Legacy').getByText(name, { exact: true })).toBeVisible();
+    }
+    for (const name of ['Graphite', 'Paper', 'Studio']) {
+      await expect(section('Modern').getByText(name, { exact: true })).toBeVisible();
+    }
+    await expect(section('Custom & Random').getByText('Random', { exact: true })).toBeVisible();
+
+    // Modern is listed first
+    const headings = await page.locator('section > h3').allTextContents();
+    expect(headings).toEqual(['Modern', 'Legacy', 'Custom & Random']);
+  });
+
+  test('novelty theme applies its background tile and themed cursor', async ({ page, pages }) => {
+    await openThemeSelector(page, pages);
+    await themeCard(page, 'Cheese').click();
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem('sims-theme')))
+      .toBe('cheese');
+
+    // The tile is painted by .app-wrapper::before from --theme-bg-image
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          getComputedStyle(document.querySelector('.app-wrapper'), '::before').backgroundImage,
+        ),
+      )
+      .toContain('cheese-bg.svg');
+
+    // The cursor must win over the inline `cursor: pointer` buttons carry —
+    // that is the bug this guards against (it used to revert to the hand)
+    const cursorOn = (selector) =>
+      page.evaluate((sel) => getComputedStyle(document.querySelector(sel)).cursor, selector);
+    expect(await page.evaluate(() => document.documentElement.classList.contains('theme-cursor'))).toBe(
+      true,
+    );
+    expect(await cursorOn('.app-wrapper')).toContain('cheese-cursor.svg');
+    expect(await cursorOn('nav button')).toContain('cheese-cursor.svg');
+
+    // Switching to a theme without a cursor restores the defaults
+    await themeCard(page, 'Dark').click();
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.classList.contains('theme-cursor')))
+      .toBe(false);
+    expect(await cursorOn('nav button')).toBe('pointer');
+    expect(
+      await page.evaluate(
+        () => getComputedStyle(document.querySelector('.app-wrapper'), '::before').backgroundImage,
+      ),
+    ).toBe('none');
+  });
+
+  test('modern theme applies shape and type tokens, and they reset on switch', async ({
+    page,
+    pages,
+  }) => {
+    await openThemeSelector(page, pages);
+    const rootVar = (name) =>
+      page.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name);
+
+    await themeCard(page, 'Studio').click();
+    await expect.poll(() => rootVar('--radius-lg')).toBe('0px');
+    expect(await page.evaluate(() => getComputedStyle(document.body).fontFamily)).toContain(
+      'Helvetica',
+    );
+    // Real rendered radius, not just the variable (theme cards use
+    // borderRadius.lg and animate `all 150ms`, hence the polls)
+    const cardRadius = () =>
+      page.evaluate(
+        () =>
+          getComputedStyle(document.querySelector('[aria-labelledby="theme-group-modern"] button'))
+            .borderRadius,
+      );
+    await expect.poll(cardRadius).toBe('0px');
+
+    await themeCard(page, 'Paper').click();
+    await expect.poll(() => rootVar('--font-heading')).toContain('Georgia');
+    expect(await page.evaluate(() => getComputedStyle(document.querySelector('h2')).fontFamily)).toContain(
+      'Georgia',
+    );
+
+    // Back to a theme with no overrides: every token returns to its default
+    await themeCard(page, 'Dark').click();
+    await expect.poll(() => rootVar('--radius-lg')).toBe('10px');
+    await expect.poll(cardRadius).toBe('10px');
+    expect(await rootVar('--font-heading')).toContain('system-ui'); // back to the body face
+    expect(await page.evaluate(() => getComputedStyle(document.querySelector('h2')).fontFamily)).not.toContain(
+      'Georgia',
+    );
   });
 
   test('switches to the light theme', async ({ page, pages }) => {

@@ -101,9 +101,12 @@ export const withOpacity = (color, percent) => {
 // Static values - These don't change with themes
 // ============================================================================
 
-// Typography
+// Typography — the families are CSS variables so a theme can swap the face
+// (themes-data.js `tokens`); defaults live in index.css :root
 export const typography = {
-  fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  fontFamily: 'var(--font-sans)',
+  fontFamilyHeading: 'var(--font-heading)',
+  fontFamilyMono: 'var(--font-mono)',
   fontSize: {
     xs: '12px',
     sm: '13px',
@@ -142,13 +145,14 @@ export const spacing = {
   16: 64,
 };
 
-// Border radius
+// Border radius — CSS variables so a theme can set the corner style (sharp
+// vs. soft); defaults in index.css :root, per-theme values in themes-data.js
 export const borderRadius = {
-  sm: '4px',
-  md: '8px',
-  lg: '10px',
-  xl: '12px',
-  '2xl': '16px',
+  sm: 'var(--radius-sm)',
+  md: 'var(--radius-md)',
+  lg: 'var(--radius-lg)',
+  xl: 'var(--radius-xl)',
+  '2xl': 'var(--radius-2xl)',
   full: '9999px',
 };
 
@@ -242,7 +246,7 @@ export const styles = {
     borderRadius: borderRadius.lg,
     color: colors.textPrimary,
     fontSize: typography.fontSize.base,
-    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: typography.fontFamily,
     outline: 'none',
     boxSizing: 'border-box',
   },

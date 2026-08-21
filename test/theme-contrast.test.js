@@ -15,6 +15,7 @@ import {
   themes,
   DEFAULT_CUSTOM_THEME,
   COLOR_KEYS,
+  MODERN_THEME_IDS,
   pickOnColor,
   PRIMARY_FILL_MIXES,
   DANGER_FILL_MIXES,
@@ -109,6 +110,20 @@ describe('text contrast (WCAG AA)', () => {
       '--condition-excellent',
       '--condition-poor',
     ]) {
+      check(theme, key, '--bg-light', 3);
+    }
+  });
+});
+
+// --- Dashboard panel tints ---------------------------------------------------
+// --panel-* colours tint each dashboard card's icon and sub-text as well as
+// the alpha wash behind them. Modern themes must keep them legible on the
+// card surface (legacy Terminal deliberately runs deep panels — exempt).
+
+describe('panel tints (modern themes)', () => {
+  const modern = MODERN_THEME_IDS.map((id) => [id, themes[id]]);
+  it.each(modern)('%s: panel colours read on cards', (_, theme) => {
+    for (const key of COLOR_KEYS.filter((k) => k.startsWith('--panel-'))) {
       check(theme, key, '--bg-light', 3);
     }
   });

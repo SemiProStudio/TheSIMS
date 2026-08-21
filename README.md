@@ -77,7 +77,7 @@ SIMS manages the full lifecycle of production equipment: acquisition, storage, c
 
 ### User Interface
 
-- 15+ built-in themes with CSS custom properties for instant switching
+- 23 built-in themes (Modern / Legacy sections) that vary shape and type as well as colour, switched via CSS custom properties
 - Custom theme editor with WCAG contrast validation
 - Responsive design with collapsible sidebar overlay on mobile
 - Per-user layout customization (dashboard sections, item detail layout)
@@ -205,14 +205,17 @@ npm run test:e2e      # Playwright E2E
 
 ## Theme System
 
-15+ built-in themes with CSS custom properties for instant switching. Custom themes via built-in editor with WCAG contrast validation.
+23 built-in themes driven by CSS custom properties, grouped in the picker as **Modern**, **Legacy** and **Custom & Random**. Every static theme is gated by `test/theme-contrast.test.js` (WCAG AA body text, 3:1 status text, readable button labels on both gradient stops).
 
-| Category | Themes                                     |
-| -------- | ------------------------------------------ |
-| Dark     | Default Dark, Midnight, Slate, Charcoal    |
-| Light    | Light, Cream                               |
-| Colorful | Ocean, Forest, Sunset, Berry, Copper       |
-| Special  | High Contrast, Cats 🐱, Dogs 🐕, Cheese 🧀 |
+Themes set more than colour. Each can override shape and type tokens — `--radius-*`, `--font-sans`, `--font-heading`, `--font-mono`, `--heading-weight`, `--heading-tracking`, `--focus-ring-width` (`TOKEN_DEFAULTS` in `themes-data.js`, mirrored in `index.css :root`) — plus an optional background tile (`backgroundImage` / `backgroundOpacity`) and cursor (`cursor` / `cursorHotspot`).
+
+| Section         | Themes                                                                                                      |
+| --------------- | ----------------------------------------------------------------------------------------------------------- |
+| Modern          | Graphite, Midnight, Arctic, Ember, High Contrast, Paper (serif headings), Dune (mono headings), Sage (rounded), Studio (square, hard shadows), Slate (dot grid) |
+| Legacy          | Light, Dark (default), Darker, Primaries, Pastel, Terminal, Black & White, Vibrant, Muted, XP, Cheese 🧀, Cats 🐱, Dogs 🐕 |
+| Custom & Random | Custom theme editor with live contrast checking; Random rolls a new palette on every switch               |
+
+Cheese, Cats and Dogs tile cartoon artwork behind the page (`public/*-bg.svg`) and replace the cursor everywhere, including over buttons and inside modals (`html.theme-cursor` in `index.css`).
 
 ---
 
