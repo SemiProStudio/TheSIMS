@@ -74,6 +74,7 @@ export function useCheckoutHandlers({
         borrowerName,
         clientId,
         users: dataContext?.users,
+        currentUser,
       });
       for (const target of items) {
         try {
@@ -174,6 +175,7 @@ export function useCheckoutHandlers({
         borrowerEmail,
         clientId: clientId || null,
         users: dataContext?.users,
+        currentUser,
       });
       try {
         await dataContext.checkOutItem(itemId, {

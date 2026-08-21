@@ -157,6 +157,13 @@ describe('resolveBorrowerUserId (app side)', () => {
     expect(resolveBorrowerUserId({ borrowerName: 'Pat Hagenow', borrowerEmail: 'pat@studio.com', clientId: 'CL001', users })).toBeNull();
   });
 
+  it('the signed-in user is a candidate even before the users list has loaded', () => {
+    const me = { id: 'me', name: 'Pat Hagenow', email: 'pat@studio.com' };
+    expect(resolveBorrowerUserId({ borrowerName: 'Pat Hagenow', borrowerEmail: 'pat@studio.com', users: [], currentUser: me })).toBe('me');
+    // …but only when the borrower IS them — the operator never wins by default
+    expect(resolveBorrowerUserId({ borrowerName: 'Someone Else', borrowerEmail: 'x@y.z', users: [], currentUser: me })).toBeNull();
+  });
+
   it('never falls back to the operator: unknown borrowers resolve to null', () => {
     expect(resolveBorrowerUserId({ borrowerName: 'Walk-in Renter', borrowerEmail: 'x@y.z', users })).toBeNull();
     expect(resolveBorrowerUserId({ borrowerName: '', users: undefined })).toBeNull();
