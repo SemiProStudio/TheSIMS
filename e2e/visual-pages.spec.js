@@ -3,7 +3,7 @@
 // Screenshot comparison tests for main application pages
 // =============================================================================
 
-import { test, expect } from './visual-utils.js';
+import { test, expect, pinVisualClock } from './visual-utils.js';
 import { DashboardPage, LoginPage } from './fixtures.js';
 
 test.describe('Visual Regression - Pages', () => {
@@ -55,6 +55,9 @@ test.describe('Visual Regression - Pages', () => {
 
   test.describe('Dashboard', () => {
     test.beforeEach(async ({ page }) => {
+      // The Today panel and reservation rows are date-relative — see
+      // pinVisualClock for why unpinned dashboards rot as days pass
+      await pinVisualClock(page);
       await page.goto('/');
 
       const dashboard = new DashboardPage(page);

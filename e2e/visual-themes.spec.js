@@ -3,7 +3,7 @@
 // Screenshot comparison tests for different theme variations
 // =============================================================================
 
-import { test, expect } from './visual-utils.js';
+import { test, expect, pinVisualClock } from './visual-utils.js';
 import { DashboardPage, GearListPage } from './fixtures.js';
 
 test.describe('Visual Regression - Themes', () => {
@@ -15,6 +15,8 @@ test.describe('Visual Regression - Themes', () => {
 
     for (const theme of themesToTest) {
       test(`${theme} theme dashboard should match baseline`, async ({ page }) => {
+        // Dashboard captures are date-relative (Today panel) — pin the clock
+        await pinVisualClock(page);
         await page.goto('/');
 
         const dashboard = new DashboardPage(page);
@@ -201,6 +203,8 @@ test.describe('Visual Regression - Themes', () => {
 
   test.describe('High Contrast Themes', () => {
     test('black & white theme should match baseline', async ({ page }) => {
+      // Dashboard capture is date-relative (Today panel) — pin the clock
+      await pinVisualClock(page);
       await page.goto('/');
 
       // 'blackwhite' is the real high-contrast theme (the old 'neon' id
@@ -232,6 +236,8 @@ test.describe('Visual Regression - Responsive Themes', () => {
     test(`dark theme on ${viewport.name} should match baseline`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
 
+      // Dashboard captures are date-relative (Today panel) — pin the clock
+      await pinVisualClock(page);
       await page.goto('/');
 
       // Set dark theme
@@ -252,6 +258,8 @@ test.describe('Visual Regression - Responsive Themes', () => {
     test(`light theme on ${viewport.name} should match baseline`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
 
+      // Dashboard captures are date-relative (Today panel) — pin the clock
+      await pinVisualClock(page);
       await page.goto('/');
 
       // Set light theme

@@ -148,6 +148,29 @@ export { expect };
 // =============================================================================
 
 /**
+ * Pin the page clock for captures that render date-relative content.
+ *
+ * The dashboard's Today panel and reservation rows compare seeded dates
+ * (frozen at seed time) against "today" — so unpinned captures change state
+ * as real days pass. CI runners sit in UTC, which is why baselines generated
+ * during a US afternoon broke that same evening. Same rationale as the
+ * Schedule visual spec's pinned clock: fixed time only freezes Date.now(),
+ * timers still run, and the stored session stays valid. Call BEFORE the
+ * first page.goto().
+ *
+ * Aug 18 2026 is the seeded data's quiet dashboard day — the Wedding
+ * reservation (Aug 16–18) no longer lists as upcoming and the URSA one
+ * (Aug 21–25) hasn't started — matching the state the current dashboard
+ * baselines captured. (The Schedule spec pins Aug 16 instead because it
+ * needs those reservations inside the visible week.) If seed.sql is ever
+ * re-applied, its CURRENT_DATE-relative rows shift and both pinned dates
+ * must be re-derived.
+ */
+export async function pinVisualClock(page) {
+  await page.clock.setFixedTime(new Date('2026-08-18T12:00:00'));
+}
+
+/**
  * Set theme and wait for it to apply
  */
 export async function setTheme(page, themeName) {
