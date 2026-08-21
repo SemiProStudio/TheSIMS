@@ -17,7 +17,7 @@ Every control in **Settings → Notifications** has a producer. Nothing appears 
 | Maintenance reminders | `maintenance_reminder` | daily job, reminders/scheduled work due today | staff who can edit gear |
 | Admin · Damage reports | `damage_report` | damage reported at check-in | every admin |
 | Admin · Overdue summary (daily/weekly) | `overdue_summary` | daily job (weekly = Mondays) | admins who opted in |
-| Admin · Low stock alerts | `low_stock_alert` | daily job | admins who opted in |
+| Admin · Low stock alerts | `low_stock_alert` | daily job | admins who opted in — lists items whose own **Low stock reminder** is on (Item Details / Edit) and whose quantity is at or below their threshold; there is no category-level threshold |
 | "Send me a test email" button | `test_email` | on click | yourself |
 
 Preferences are applied **server-side** in `send-email` for every template: the master switch first, then the per-type toggle. A user who has never saved the screen gets the defaults (everything on except the two admin digests). Admin templates never go to non-admin addresses.

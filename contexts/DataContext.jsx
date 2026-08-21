@@ -166,7 +166,6 @@ export function DataProvider({ children }) {
         catSettings[c.name] = {
           trackQuantity: c.track_quantity || false,
           trackSerialNumbers: c.track_serial_numbers !== false,
-          lowStockThreshold: c.low_stock_threshold || 0,
         };
       });
       setCategories(catNames);

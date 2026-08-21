@@ -19,8 +19,8 @@ const specs = {
   Lighting: [{ name: 'Wattage', required: false }],
 };
 const categorySettings = {
-  Cameras: { trackQuantity: false, trackSerialNumbers: true, lowStockThreshold: 0 },
-  Lighting: { trackQuantity: true, trackSerialNumbers: false, lowStockThreshold: 2 },
+  Cameras: { trackQuantity: false, trackSerialNumbers: true },
+  Lighting: { trackQuantity: true, trackSerialNumbers: false },
 };
 
 function renderCategories(overrides = {}) {

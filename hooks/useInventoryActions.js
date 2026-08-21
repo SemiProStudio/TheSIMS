@@ -131,6 +131,7 @@ export function useInventoryActions({
         currentValue: Number(itemForm.currentValue) || Number(itemForm.purchasePrice) || 0,
         quantity: Number(itemForm.quantity) || 1,
         reorderPoint: Number(itemForm.reorderPoint) || 0,
+        lowStockAlert: Boolean(itemForm.lowStockAlert),
         specs: itemSpecs,
         notes: [],
         reservations: [],
@@ -226,6 +227,7 @@ export function useInventoryActions({
         currentValue: Number(itemForm.currentValue) || 0,
         quantity: Number(itemForm.quantity) || 1,
         reorderPoint: Number(itemForm.reorderPoint) || 0,
+        lowStockAlert: Boolean(itemForm.lowStockAlert),
       };
 
       // Upload the new photo BEFORE touching the row: if it fails, nothing
@@ -664,6 +666,7 @@ export function useInventoryActions({
         specs: { ...(item.specs || {}) },
         quantity: item.quantity ?? 1,
         reorderPoint: item.reorderPoint ?? 0,
+        lowStockAlert: Boolean(item.lowStockAlert),
       });
       openModal(MODALS.EDIT_ITEM);
     },

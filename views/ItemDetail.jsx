@@ -35,9 +35,10 @@ import {
   getStatusLabel,
   countVisibleNotes,
   isOverdue,
+  isLowStock,
 } from '../utils';
 import { ITEM_DETAIL_SECTIONS } from '../constants.js';
-import { Badge, Card, Button, CollapsibleSection, BackButton } from '../components/ui.jsx';
+import { Badge, Card, Button, CollapsibleSection, BackButton, Switch } from '../components/ui.jsx';
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import { Select } from '../components/Select.jsx';
 import NotesSection from '../components/NotesSection.jsx';
@@ -700,6 +701,7 @@ function ItemDetail({
   onUpdateMaintenance,
   onCompleteMaintenance,
   onUpdateValue,
+  onSetLowStockAlert,
   onAddAccessory,
   onRemoveAccessory,
   onSetKitStatus,
@@ -790,12 +792,42 @@ function ItemDetail({
       baseSpecs.push({ name: 'Serial Number', value: displayValue(item.serialNumber) });
     }
 
-    // Add quantity info if category tracks it
+    // Quantity-tracked categories: quantity plus the per-item low-stock
+    // reminder (a switch for editors; the threshold row only while it's on)
     if (catSettings.trackQuantity) {
+      const reminderOn = Boolean(item.lowStockAlert);
+      const low = isLowStock(item, categorySettings);
       baseSpecs.push(
         { name: 'Quantity', value: item.quantity ?? 1 },
-        { name: 'Reorder Point', value: item.reorderPoint ?? 0 },
+        {
+          name: 'Low Stock Reminder',
+          value: (
+            <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
+              {canEditGear && onSetLowStockAlert ? (
+                <Switch
+                  checked={reminderOn}
+                  onChange={onSetLowStockAlert}
+                  label="Low stock reminder"
+                />
+              ) : null}
+              <span style={{ color: low ? colors.warning : colors.textPrimary }}>
+                {reminderOn ? (low ? 'On — low now' : 'On') : 'Off'}
+              </span>
+            </div>
+          ),
+        },
       );
+      if (reminderOn) {
+        baseSpecs.push({
+          name: 'Alert At Or Below',
+          value:
+            Number(item.reorderPoint) > 0 ? (
+              item.reorderPoint
+            ) : (
+              <span style={{ color: colors.warning }}>Not set — edit the item</span>
+            ),
+        });
+      }
     }
 
     // Add category-specific specs. Number fields display with their unit
@@ -813,7 +845,7 @@ function ItemDetail({
     });
 
     return [...baseSpecs, ...specEntries];
-  }, [item, specs, categorySettings]);
+  }, [item, specs, categorySettings, onSetLowStockAlert, canEditGear]);
 
   const sortedSections = useMemo(() => {
     const getPref = (sectionId) => {

@@ -31,7 +31,15 @@ import {
 } from 'lucide-react';
 import { STATUS, DASHBOARD_SECTIONS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, getStatusColor, getTodayISO, isReminderDue, filterBySearch, getStatusLabel } from '../utils';
+import {
+  formatDate,
+  getStatusColor,
+  getTodayISO,
+  isReminderDue,
+  filterBySearch,
+  getStatusLabel,
+  isLowStock,
+} from '../utils';
 import {
   Badge,
   StatCard,
@@ -279,14 +287,8 @@ function Dashboard({
         }
       }
 
-      // Low stock check
-      const catSettings = categorySettings?.[item.category];
-      if (catSettings?.trackQuantity && item.quantity != null) {
-        const threshold = item.reorderPoint || catSettings.lowStockThreshold || 0;
-        if (threshold > 0 && item.quantity <= threshold) {
-          lowStockItems.push(item);
-        }
-      }
+      // Low stock check — the per-item opt-in (shared rule with Search/Reports)
+      if (isLowStock(item, categorySettings)) lowStockItems.push(item);
 
       // Pending maintenance
       const history = item.maintenanceHistory;
@@ -941,11 +943,7 @@ function Dashboard({
                       <div
                         style={{ fontSize: typography.fontSize.xs, color: PANEL_COLORS.lowStock }}
                       >
-                        {item.quantity || 0} remaining (min:{' '}
-                        {item.reorderPoint ||
-                          categorySettings?.[item.category]?.lowStockThreshold ||
-                          0}
-                        )
+                        {item.quantity || 0} remaining (min: {item.reorderPoint || 0})
                       </div>
                     </div>
                     <Badge text={item.category} color={PANEL_COLORS.lowStock} size="xs" />

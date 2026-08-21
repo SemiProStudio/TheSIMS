@@ -178,6 +178,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     addKitItems,
     removeKitItem,
     updateItemValue,
+    setLowStockAlert,
     addItemToPackage,
     reservePackage,
     updateMaintenanceStatus,
@@ -391,6 +392,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           onUpdateMaintenance={openMaintenanceEditModal}
           onCompleteMaintenance={updateMaintenanceStatus}
           onUpdateValue={(newValue) => updateItemValue(selectedItem.id, newValue)}
+          onSetLowStockAlert={(enabled) => setLowStockAlert(selectedItem.id, enabled)}
           onAddToPackage={addItemToPackage}
           onAddAccessory={addRequiredAccessories}
           onRemoveAccessory={removeRequiredAccessory}

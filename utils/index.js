@@ -536,17 +536,23 @@ export const isItemOverdue = (item, todayISO = getTodayISO()) =>
   item.status === 'checked-out' && !!item.dueBack && item.dueBack < todayISO;
 
 /**
- * Whether an item is low on stock — computed from quantity vs. its reorder
- * point (or the category's default threshold). Only quantity-tracked
- * categories qualify.
+ * Whether an item is low on stock. A per-item opt-in: the item must have its
+ * low-stock reminder enabled, sit in a quantity-tracked category, and have a
+ * quantity at or below its own reorder point. (Category-level thresholds were
+ * removed — they flagged whole categories at once.)
  */
 export const isLowStock = (item, categorySettings) => {
+  if (!item?.lowStockAlert) return false;
   const settings = categorySettings?.[item.category];
   if (!settings?.trackQuantity) return false;
   if (item.quantity === undefined || item.quantity === null) return false;
-  const threshold = item.reorderPoint || settings.lowStockThreshold || 0;
+  const threshold = Number(item.reorderPoint) || 0;
   return threshold > 0 && item.quantity <= threshold;
 };
+
+/** Whether the low-stock reminder controls apply to this item at all */
+export const canTrackLowStock = (item, categorySettings) =>
+  Boolean(categorySettings?.[item?.category]?.trackQuantity);
 
 /**
  * Multi-select status match that understands the computed states: 'overdue'

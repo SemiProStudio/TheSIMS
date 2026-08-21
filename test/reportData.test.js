@@ -37,16 +37,42 @@ const TODAY_ISO = '2026-08-14';
 
 describe('computeAlertData', () => {
   const categorySettings = {
-    Consumables: { trackQuantity: true, lowStockThreshold: 5 },
+    Consumables: { trackQuantity: true },
     Cameras: { trackQuantity: false },
   };
 
-  it('detects low stock via quantity thresholds — stored status stays available', () => {
+  it('detects low stock from the per-item reminder — stored status stays available', () => {
     const inventory = [
-      { id: 'A', name: 'Gaff Tape', category: 'Consumables', status: 'available', quantity: 2 },
-      { id: 'B', name: 'Batteries', category: 'Consumables', status: 'available', quantity: 50 },
-      // Not quantity-tracked: never low stock even at quantity 0
-      { id: 'C', name: 'Camera', category: 'Cameras', status: 'available', quantity: 0 },
+      {
+        id: 'A',
+        name: 'Gaff Tape',
+        category: 'Consumables',
+        status: 'available',
+        quantity: 2,
+        reorderPoint: 5,
+        lowStockAlert: true,
+      },
+      {
+        id: 'B',
+        name: 'Batteries',
+        category: 'Consumables',
+        status: 'available',
+        quantity: 50,
+        reorderPoint: 5,
+        lowStockAlert: true,
+      },
+      // Reminder off: never low stock even at quantity 0
+      { id: 'D', name: 'Gels', category: 'Consumables', status: 'available', quantity: 0, reorderPoint: 5 },
+      // Not quantity-tracked: never low stock even with the flag on
+      {
+        id: 'C',
+        name: 'Camera',
+        category: 'Cameras',
+        status: 'available',
+        quantity: 0,
+        reorderPoint: 5,
+        lowStockAlert: true,
+      },
     ];
     const data = computeAlertData(inventory, categorySettings, TODAY_ISO);
     expect(data.lowStock).toBe(1);
@@ -54,7 +80,7 @@ describe('computeAlertData', () => {
     expect(data.allAlerts[0].reasons).toEqual(['Low Stock']);
   });
 
-  it('respects a per-item reorderPoint over the category threshold', () => {
+  it('uses the item reorderPoint as the threshold', () => {
     const inventory = [
       {
         id: 'A',
@@ -63,6 +89,7 @@ describe('computeAlertData', () => {
         status: 'available',
         quantity: 8,
         reorderPoint: 10,
+        lowStockAlert: true,
       },
     ];
     const data = computeAlertData(inventory, categorySettings, TODAY_ISO);

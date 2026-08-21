@@ -15,6 +15,7 @@ import { useItemForm } from '../components/ItemForm.jsx';
 import { SpecFieldInput } from '../components/SpecFieldInput.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
 import ImageField from '../components/ImageField.jsx';
+import LowStockFields from '../components/LowStockFields.jsx';
 import { SmartPasteModal } from './smartPaste/SmartPasteModal.jsx';
 import { applySmartPastePayload } from '../lib/smartPaste/applyPayload.js';
 
@@ -234,54 +235,33 @@ export const ItemModal = memo(function ItemModal({
             </div>
           </div>
 
-          {/* Quantity field - only if category tracks quantity */}
+          {/* Quantity + low-stock reminder - only if category tracks quantity */}
           {currentCategorySettings.trackQuantity && (
-            <div style={{ marginBottom: spacing[3] }}>
-              <label style={styles.label}>Quantity</label>
-              <input
-                type="number"
-                min="0"
-                value={itemForm.quantity || 1}
-                onChange={(e) =>
-                  handleChange('quantity', Math.max(0, parseInt(e.target.value) || 0))
-                }
-                style={{
-                  ...styles.input,
-                  maxWidth: '150px',
-                }}
-              />
-            </div>
-          )}
-
-          {/* Reorder Point field - only for Consumables category */}
-          {currentCategorySettings.trackReorderPoint && (
-            <div style={{ marginBottom: spacing[3] }}>
-              <label style={styles.label}>
-                Reorder Point
-                <span
+            <>
+              <div style={{ marginBottom: spacing[3] }}>
+                <label style={styles.label}>Quantity</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={itemForm.quantity || 1}
+                  onChange={(e) =>
+                    handleChange('quantity', Math.max(0, parseInt(e.target.value) || 0))
+                  }
                   style={{
-                    fontSize: typography.fontSize.xs,
-                    color: colors.textMuted,
-                    fontWeight: typography.fontWeight.normal,
-                    marginLeft: spacing[2],
+                    ...styles.input,
+                    maxWidth: '150px',
                   }}
-                >
-                  (alert when quantity falls below this)
-                </span>
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={itemForm.reorderPoint || 0}
-                onChange={(e) =>
-                  handleChange('reorderPoint', Math.max(0, parseInt(e.target.value) || 0))
+                />
+              </div>
+              <LowStockFields
+                enabled={itemForm.lowStockAlert}
+                threshold={itemForm.reorderPoint}
+                onChange={(patch) =>
+                  Object.entries(patch).forEach(([key, value]) => handleChange(key, value))
                 }
-                style={{
-                  ...styles.input,
-                  maxWidth: '150px',
-                }}
+                inputId="item-modal-low-stock-threshold"
               />
-            </div>
+            </>
           )}
 
           {/* Purchase Price and Current Value */}

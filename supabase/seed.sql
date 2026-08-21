@@ -222,6 +222,16 @@ INSERT INTO specs (category_name, name, required, sort_order, field_type, unit, 
 ON CONFLICT (category_name, name) DO NOTHING;
 
 -- =============================================================================
+-- LOW-STOCK REMINDERS (per-item opt-in; off by default everywhere else)
+-- These eight quantity-tracked sample items are opted in so the dashboard's
+-- Low Stock panel has content for demos and the E2E visual baselines.
+-- =============================================================================
+UPDATE inventory SET low_stock_alert = true, reorder_point = 2
+WHERE id IN ('AU1001', 'AU1002', 'AU1003', 'LI1001', 'LI1002', 'LI1003');
+UPDATE inventory SET low_stock_alert = true, reorder_point = 1
+WHERE id IN ('SU1001', 'SU1002');
+
+-- =============================================================================
 -- INITIAL AUDIT LOG ENTRY
 -- =============================================================================
 INSERT INTO audit_log (type, description, user_name) VALUES

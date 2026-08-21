@@ -106,7 +106,11 @@ test.describe('Email Notifications', () => {
       // The confirmation email goes out alongside the inventory write, so the
       // toast can beat the commit — poll the row rather than read it once
       const db = await adminDb();
-      const { data: me } = await db.auth.getUser();
+      // The signed-in session already carries the user id. getUser() is
+      // validated against the auth server and fails once another spec's
+      // logout (global scope) revokes this helper's session mid-run.
+      const { data: sessionData } = await db.auth.getSession();
+      const me = { user: sessionData.session.user };
       await expect
         .poll(
           async () => {

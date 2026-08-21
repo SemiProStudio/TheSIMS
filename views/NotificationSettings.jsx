@@ -17,49 +17,15 @@ import {
   Loader2,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { Card, Button, PageHeader } from '../components/ui.jsx';
+import { Card, Button, PageHeader, Switch } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { usePermissions } from '../contexts/PermissionsContext.js';
 
 import { error as logError } from '../lib/logger.js';
 
 // Toggle switch component
-const Toggle = memo(function Toggle({ checked, onChange, disabled = false, label }) {
-  return (
-    <button
-      onClick={() => !disabled && onChange(!checked)}
-      disabled={disabled}
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      style={{
-        width: 44,
-        height: 24,
-        borderRadius: 12,
-        border: 'none',
-        background: checked ? colors.primary : colors.bgLight,
-        position: 'relative',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        transition: 'background 0.2s ease',
-        opacity: disabled ? 0.5 : 1,
-      }}
-    >
-      <div
-        style={{
-          width: 20,
-          height: 20,
-          borderRadius: '50%',
-          background: colors.textPrimary,
-          position: 'absolute',
-          top: 2,
-          left: checked ? 22 : 2,
-          transition: 'left 0.2s ease',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-        }}
-      />
-    </button>
-  );
-});
+// Toggle is the shared Switch (components/ui.jsx)
+const Toggle = Switch;
 
 // Setting row component
 const SettingRow = memo(function SettingRow({

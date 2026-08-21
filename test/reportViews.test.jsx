@@ -126,7 +126,7 @@ describe('MaintenanceReportPanel', () => {
 
 describe('AlertsReportPanel', () => {
   it('shows a derived low-stock item that a status check would miss', () => {
-    dataState.categorySettings = { Consumables: { trackQuantity: true, lowStockThreshold: 5 } };
+    dataState.categorySettings = { Consumables: { trackQuantity: true } };
     render(
       <AlertsReportPanel
         inventory={[
@@ -136,6 +136,8 @@ describe('AlertsReportPanel', () => {
             category: 'Consumables',
             status: 'available',
             quantity: 2,
+            reorderPoint: 5,
+            lowStockAlert: true,
           },
         ]}
         onViewItem={noop}

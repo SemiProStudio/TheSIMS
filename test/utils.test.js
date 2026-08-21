@@ -465,33 +465,56 @@ describe('isItemOverdue', () => {
 });
 
 describe('isLowStock', () => {
-  const settings = { Consumables: { trackQuantity: true, lowStockThreshold: 3 } };
+  // Per-item opt-in: the flag must be ON and the item's own reorder point
+  // is the only threshold (the category-level threshold was removed)
+  const settings = { Consumables: { trackQuantity: true } };
+  const on = { category: 'Consumables', lowStockAlert: true };
 
-  it('uses the item reorder point when present', () => {
-    expect(isLowStock({ category: 'Consumables', quantity: 5, reorderPoint: 5 }, settings)).toBe(
-      true,
-    );
-    expect(isLowStock({ category: 'Consumables', quantity: 6, reorderPoint: 5 }, settings)).toBe(
-      false,
-    );
+  it('is low at or below the item reorder point when the reminder is on', () => {
+    expect(isLowStock({ ...on, quantity: 5, reorderPoint: 5 }, settings)).toBe(true);
+    expect(isLowStock({ ...on, quantity: 2, reorderPoint: 5 }, settings)).toBe(true);
+    expect(isLowStock({ ...on, quantity: 6, reorderPoint: 5 }, settings)).toBe(false);
   });
 
-  it('falls back to the category threshold', () => {
-    expect(isLowStock({ category: 'Consumables', quantity: 3 }, settings)).toBe(true);
-    expect(isLowStock({ category: 'Consumables', quantity: 4 }, settings)).toBe(false);
+  it('is never low while the reminder is off — whatever the numbers say', () => {
+    expect(isLowStock({ category: 'Consumables', quantity: 0, reorderPoint: 5 }, settings)).toBe(
+      false,
+    );
+    expect(
+      isLowStock({ category: 'Consumables', lowStockAlert: false, quantity: 1, reorderPoint: 5 }, settings),
+    ).toBe(false);
+  });
+
+  it('needs a threshold above zero', () => {
+    expect(isLowStock({ ...on, quantity: 0, reorderPoint: 0 }, settings)).toBe(false);
+    expect(isLowStock({ ...on, quantity: 0 }, settings)).toBe(false);
   });
 
   it('ignores untracked categories and undefined quantities', () => {
-    expect(isLowStock({ category: 'Cameras', quantity: 0 }, settings)).toBe(false);
-    expect(isLowStock({ category: 'Consumables' }, settings)).toBe(false);
-    expect(isLowStock({ category: 'Consumables', quantity: 1 }, {})).toBe(false);
+    expect(isLowStock({ ...on, category: 'Cameras', quantity: 0, reorderPoint: 5 }, settings)).toBe(
+      false,
+    );
+    expect(isLowStock({ ...on, reorderPoint: 5 }, settings)).toBe(false);
+    expect(isLowStock({ ...on, quantity: 1, reorderPoint: 5 }, {})).toBe(false);
+  });
+
+  it('the legacy category threshold is ignored even if a stale settings object carries one', () => {
+    const stale = { Consumables: { trackQuantity: true, lowStockThreshold: 3 } };
+    expect(isLowStock({ category: 'Consumables', quantity: 1 }, stale)).toBe(false);
+    expect(isLowStock({ ...on, quantity: 1 }, stale)).toBe(false);
   });
 });
 
 describe('matchesStatusSelection', () => {
-  const settings = { Consumables: { trackQuantity: true, lowStockThreshold: 3 } };
+  const settings = { Consumables: { trackQuantity: true } };
   const overdueItem = { status: 'checked-out', dueBack: '2020-01-01', category: 'Cameras' };
-  const lowStockItem = { status: 'available', category: 'Consumables', quantity: 1 };
+  const lowStockItem = {
+    status: 'available',
+    category: 'Consumables',
+    quantity: 1,
+    reorderPoint: 3,
+    lowStockAlert: true,
+  };
 
   it('matches everything when no statuses are selected', () => {
     expect(matchesStatusSelection(overdueItem, [], settings)).toBe(true);

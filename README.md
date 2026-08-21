@@ -23,12 +23,12 @@ SIMS manages the full lifecycle of production equipment: acquisition, storage, c
 - QR code label generation and camera-based QR scanning for quick item lookup
 - CSV import/export for batch data management
 - Image upload with automatic thumbnail generation and lazy loading
-- Consumables tracking with quantity management and reorder point alerts
+- Quantity tracking with per-item low-stock reminders (opt-in per item, with the item's own threshold)
 
 ### Categories & Specifications
 
 - 11 default categories: Cameras, Lenses, Lighting, Audio, Support, Grip, Accessories, Storage, Monitors, Power, Consumables
-- Custom categories with per-category settings (quantity tracking, serial number requirements, low stock thresholds)
+- Custom categories with per-category settings (quantity tracking, serial number requirements)
 - Custom spec fields per category (required/optional) with drag-to-reorder
 - Hierarchical location management (buildings, rooms, shelves, containers)
 
