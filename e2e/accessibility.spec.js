@@ -73,7 +73,11 @@ test.describe('Theme System', () => {
       .poll(() => page.evaluate(() => localStorage.getItem('sims-theme')))
       .toBe('cheese');
 
-    // The tile is painted by .app-wrapper::before from --theme-bg-image
+    // The tile is painted by html.theme-tile .app-wrapper::before from
+    // --theme-bg-image (the pseudo-element only exists for tile themes)
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.classList.contains('theme-tile')))
+      .toBe(true);
     await expect
       .poll(() =>
         page.evaluate(() =>
@@ -103,6 +107,9 @@ test.describe('Theme System', () => {
         () => getComputedStyle(document.querySelector('.app-wrapper'), '::before').backgroundImage,
       ),
     ).toBe('none');
+    expect(await page.evaluate(() => document.documentElement.classList.contains('theme-tile'))).toBe(
+      false,
+    );
   });
 
   test('modern theme applies shape and type tokens, and they reset on switch', async ({

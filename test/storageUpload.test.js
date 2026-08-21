@@ -11,7 +11,7 @@ vi.mock('../lib/supabase.js', () => ({
   supabase: null,
 }));
 
-const { storageService, STORED_IMAGE_LIMIT_BYTES } = await import('../lib/storage.js');
+const { storageService, STORED_IMAGE_LIMIT_BYTES, UPLOAD_TIMEOUT_MS } = await import('../lib/storage.js');
 
 function makeBucket({ fullError = null, thumbError = null } = {}) {
   const uploads = [];
@@ -114,5 +114,21 @@ describe('storageService.uploadRenditions', () => {
     expect(storageService.uploadFromDataUrl).toBeUndefined();
     expect(typeof storageService.uploadImage).toBe('function');
     expect(typeof storageService.uploadPending).toBe('function');
+  });
+});
+
+describe('storageService.uploadRenditions — stalled network', () => {
+  it('rejects with a timeout instead of hanging when the upload never settles', async () => {
+    vi.useFakeTimers();
+    try {
+      const bucket = { upload: vi.fn(() => new Promise(() => {})), remove: vi.fn(), getPublicUrl: vi.fn() };
+      getSupabase.mockResolvedValue({ storage: { from: () => bucket } });
+      const pending = storageService.uploadRenditions({ full: blob(1000), thumb: blob(100) }, 'ITEM1');
+      const assertion = expect(pending).rejects.toThrow(/timed out/);
+      await vi.advanceTimersByTimeAsync(UPLOAD_TIMEOUT_MS + 10);
+      await assertion;
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

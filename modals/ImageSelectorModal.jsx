@@ -8,7 +8,7 @@
 
 import { memo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Image, Trash2 } from 'lucide-react';
+import { Image, Loader2, Trash2 } from 'lucide-react';
 import { spacing } from '../theme.js';
 import { Button } from '../components/ui.jsx';
 import ImageField from '../components/ImageField.jsx';
@@ -67,7 +67,7 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
           cropTitle="Crop item photo"
           disabled={uploading}
           previewSize={96}
-          pendingHint="uploaded when you click Use This Image"
+          pendingHint="click Use This Image to save it"
         />
         {error && (
           <p role="alert" style={{ margin: 0, color: 'var(--danger)', fontSize: 13 }}>
@@ -87,7 +87,9 @@ export const ImageSelectorModal = memo(function ImageSelectorModal({
           <Button
             onClick={handleUseImage}
             disabled={!pending?.working || uploading}
-            icon={uploading ? null : Image}
+            icon={uploading ? Loader2 : Image}
+            className={uploading ? 'btn-busy' : undefined}
+            aria-busy={uploading}
           >
             {uploading ? 'Uploading…' : 'Use This Image'}
           </Button>

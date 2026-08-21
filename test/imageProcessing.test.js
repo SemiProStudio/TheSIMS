@@ -9,6 +9,8 @@ import {
   clampCrop,
   isImageFile,
   encodeUnderCap,
+  canvasToBlob,
+  TO_BLOB_TIMEOUT_MS,
   FULL_MAX_EDGE,
   THUMB_SIZE,
   FULL_CAP_BYTES,
@@ -120,5 +122,68 @@ describe('pipeline constants', () => {
     // Bucket file_size_limit is 2 MB (migration 20260820120000)
     expect(FULL_CAP_BYTES).toBeLessThan(2 * 1024 * 1024);
     expect(FULL_QUALITY_LADDER[0]).toBeGreaterThan(FULL_QUALITY_LADDER.at(-1));
+  });
+});
+
+// -----------------------------------------------------------------------------
+// canvasToBlob watchdog — Safari has been seen never invoking the toBlob
+// callback; the synchronous encoder must take over so uploads can't hang
+// -----------------------------------------------------------------------------
+describe('canvasToBlob', () => {
+  const PNG_DATA_URL = 'data:image/jpeg;base64,/9j/4AAQ'; // any short payload
+
+  it('resolves with the toBlob result when the browser calls back', async () => {
+    const blob = new Blob(['x'], { type: 'image/jpeg' });
+    const canvas = {
+      toBlob: vi.fn((cb) => cb(blob)),
+      toDataURL: vi.fn(),
+    };
+    await expect(canvasToBlob(canvas, 'image/jpeg', 0.8)).resolves.toBe(blob);
+    expect(canvas.toDataURL).not.toHaveBeenCalled();
+  });
+
+  it('rejects when toBlob hands back null', async () => {
+    const canvas = { toBlob: vi.fn((cb) => cb(null)), toDataURL: vi.fn() };
+    await expect(canvasToBlob(canvas, 'image/jpeg', 0.8)).rejects.toThrow('encoding failed');
+  });
+
+  it('falls back to toDataURL when toBlob never calls back', async () => {
+    vi.useFakeTimers();
+    try {
+      const canvas = {
+        toBlob: vi.fn(), // never calls back
+        toDataURL: vi.fn(() => PNG_DATA_URL),
+      };
+      const pending = canvasToBlob(canvas, 'image/jpeg', 0.8, { timeoutMs: 50 });
+      await vi.advanceTimersByTimeAsync(60);
+      const blob = await pending;
+      expect(canvas.toDataURL).toHaveBeenCalledWith('image/jpeg', 0.8);
+      expect(blob.type).toBe('image/jpeg');
+      expect(blob.size).toBeGreaterThan(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ignores a late toBlob callback after the fallback won', async () => {
+    vi.useFakeTimers();
+    try {
+      let lateCb;
+      const canvas = {
+        toBlob: vi.fn((cb) => { lateCb = cb; }),
+        toDataURL: vi.fn(() => PNG_DATA_URL),
+      };
+      const pending = canvasToBlob(canvas, 'image/jpeg', 0.8, { timeoutMs: 50 });
+      await vi.advanceTimersByTimeAsync(60);
+      const first = await pending;
+      lateCb(new Blob(['late'])); // must not throw or change the result
+      expect(first.type).toBe('image/jpeg');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('uses a watchdog long enough for real encodes', () => {
+    expect(TO_BLOB_TIMEOUT_MS).toBeGreaterThanOrEqual(5000);
   });
 });

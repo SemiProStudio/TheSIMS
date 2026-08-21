@@ -14,6 +14,7 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
+  Loader2,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Card, Button, PageHeader } from '../components/ui.jsx';
@@ -397,7 +398,15 @@ function NotificationSettings({
               borderTop: `1px solid ${colors.borderLight}`,
             }}
           >
-            <Button variant="secondary" size="sm" icon={Send} onClick={handleSendTest} disabled={testState.busy}>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={testState.busy ? Loader2 : Send}
+              className={testState.busy ? 'btn-busy' : undefined}
+              aria-busy={testState.busy}
+              onClick={handleSendTest}
+              disabled={testState.busy}
+            >
               {testState.busy ? 'Sending…' : 'Send me a test email'}
             </Button>
             {testState.message && (
