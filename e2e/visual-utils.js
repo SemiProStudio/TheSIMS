@@ -158,16 +158,17 @@ export { expect };
  * timers still run, and the stored session stays valid. Call BEFORE the
  * first page.goto().
  *
- * Aug 18 2026 is the seeded data's quiet dashboard day — the Wedding
- * reservation (Aug 16–18) no longer lists as upcoming and the URSA one
- * (Aug 21–25) hasn't started — matching the state the current dashboard
- * baselines captured. (The Schedule spec pins Aug 16 instead because it
- * needs those reservations inside the visible week.) If seed.sql is ever
- * re-applied, its CURRENT_DATE-relative rows shift and both pinned dates
- * must be re-derived.
+ * Aug 19 2026 is the seeded data's quiet dashboard day: the Wedding
+ * reservation (Aug 16–18) has fully ended — note the upcoming panel keeps a
+ * reservation through its END day, so Aug 18 still shows it — and the URSA
+ * one (Aug 21–25) hasn't started. This matches the state the linux
+ * dashboard baselines captured. (The Schedule spec pins Aug 16 instead
+ * because it needs those reservations inside the visible week.) If seed.sql
+ * is ever re-applied, its CURRENT_DATE-relative rows shift and both pinned
+ * dates must be re-derived.
  */
 export async function pinVisualClock(page) {
-  await page.clock.setFixedTime(new Date('2026-08-18T12:00:00'));
+  await page.clock.setFixedTime(new Date('2026-08-19T12:00:00'));
 }
 
 /**
