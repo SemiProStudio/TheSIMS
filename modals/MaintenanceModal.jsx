@@ -10,14 +10,15 @@ import { MAINTENANCE_TYPES } from '../constants.js';
 import { toLocalYMD, getTodayISO } from '../utils';
 import { parseMoney } from '../lib/csv.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { Button } from '../components/ui.jsx';
+import { Button, Input } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
-import { Modal, ModalHeader } from './ModalBase.jsx';
+import { Modal, ModalHeader, ModalFooter } from './ModalBase.jsx';
 
 export const MaintenanceModal = memo(function MaintenanceModal({
   item,
   editingRecord,
+  initialValues,
   onSave,
   onClose,
 }) {
@@ -57,6 +58,9 @@ export const MaintenanceModal = memo(function MaintenanceModal({
       status: 'scheduled',
       notes: '',
       warrantyWork: false,
+      // Seeded by flows that already know what happened — e.g. the check-in
+      // damage handoff pre-fills the description so it isn't re-typed
+      ...initialValues,
     };
   });
 
@@ -167,12 +171,12 @@ export const MaintenanceModal = memo(function MaintenanceModal({
         >
           <div>
             <label
-              style={{
-                ...styles.label,
-                color: !formData.type || errors.type ? colors.danger : undefined,
-              }}
+              className={!formData.type || errors.type ? 'label label-error' : 'label'}
             >
-              Maintenance Type <span style={{ color: colors.danger }}>*</span>
+              Maintenance Type{' '}
+              <span aria-hidden="true" style={{ color: colors.danger }}>
+                *
+              </span>
             </label>
             <Select
               value={formData.type}
@@ -188,7 +192,7 @@ export const MaintenanceModal = memo(function MaintenanceModal({
           </div>
 
           <div>
-            <label style={styles.label}>Status</label>
+            <label className="label">Status</label>
             <Select
               value={formData.status}
               onChange={(e) => handleChange('status', e.target.value)}
@@ -206,12 +210,12 @@ export const MaintenanceModal = memo(function MaintenanceModal({
         {/* Description */}
         <div style={{ marginBottom: spacing[4] }}>
           <label
-            style={{
-              ...styles.label,
-              color: !formData.description || errors.description ? colors.danger : undefined,
-            }}
+            className={!formData.description || errors.description ? 'label label-error' : 'label'}
           >
-            Description <span style={{ color: colors.danger }}>*</span>
+            Description{' '}
+            <span aria-hidden="true" style={{ color: colors.danger }}>
+              *
+            </span>
           </label>
           <textarea
             value={formData.description}
@@ -241,27 +245,21 @@ export const MaintenanceModal = memo(function MaintenanceModal({
             marginBottom: spacing[4],
           }}
         >
-          <div>
-            <label style={styles.label}>Vendor / Service Provider</label>
-            <input
-              type="text"
-              value={formData.vendor}
-              onChange={(e) => handleChange('vendor', e.target.value)}
-              placeholder="e.g., Canon Service Center"
-              style={styles.input}
-            />
-          </div>
+          <Input
+            label="Vendor / Service Provider"
+            type="text"
+            value={formData.vendor}
+            onChange={(e) => handleChange('vendor', e.target.value)}
+            placeholder="e.g., Canon Service Center"
+          />
 
-          <div>
-            <label style={styles.label}>Vendor Contact</label>
-            <input
-              type="text"
-              value={formData.vendorContact}
-              onChange={(e) => handleChange('vendorContact', e.target.value)}
-              placeholder="Phone or email"
-              style={styles.input}
-            />
-          </div>
+          <Input
+            label="Vendor Contact"
+            type="text"
+            value={formData.vendorContact}
+            onChange={(e) => handleChange('vendorContact', e.target.value)}
+            placeholder="Phone or email"
+          />
         </div>
 
         {/* Cost and Warranty */}
@@ -273,24 +271,14 @@ export const MaintenanceModal = memo(function MaintenanceModal({
             marginBottom: spacing[4],
           }}
         >
-          <div>
-            <label style={styles.label}>Cost ($)</label>
-            <input
-              type="text"
-              value={formData.cost}
-              onChange={(e) => handleChange('cost', e.target.value)}
-              placeholder="0.00"
-              style={{
-                ...styles.input,
-                borderColor: errors.cost ? colors.danger : colors.border,
-              }}
-            />
-            {errors.cost && (
-              <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>
-                {errors.cost}
-              </span>
-            )}
-          </div>
+          <Input
+            label="Cost ($)"
+            type="text"
+            value={formData.cost}
+            onChange={(e) => handleChange('cost', e.target.value)}
+            placeholder="0.00"
+            error={errors.cost}
+          />
 
           <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: spacing[2] }}>
             <label
@@ -324,7 +312,7 @@ export const MaintenanceModal = memo(function MaintenanceModal({
           }}
         >
           <div>
-            <label style={styles.label}>Scheduled Date</label>
+            <label className="label">Scheduled Date</label>
             <DatePicker
               value={formData.scheduledDate}
               onChange={(e) => handleChange('scheduledDate', e.target.value)}
@@ -334,7 +322,7 @@ export const MaintenanceModal = memo(function MaintenanceModal({
           </div>
 
           <div>
-            <label style={styles.label}>Completed Date</label>
+            <label className="label">Completed Date</label>
             <DatePicker
               value={formData.completedDate}
               onChange={(e) => handleChange('completedDate', e.target.value)}
@@ -346,8 +334,8 @@ export const MaintenanceModal = memo(function MaintenanceModal({
         </div>
 
         {/* Notes */}
-        <div style={{ marginBottom: spacing[4] }}>
-          <label style={styles.label}>Notes</label>
+        <div>
+          <label className="label">Notes</label>
           <textarea
             value={formData.notes}
             onChange={(e) => handleChange('notes', e.target.value)}
@@ -356,17 +344,15 @@ export const MaintenanceModal = memo(function MaintenanceModal({
             style={{ ...styles.input, resize: 'vertical' }}
           />
         </div>
-
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} icon={Save}>
-            {isEdit ? 'Update Record' : 'Add Record'}
-          </Button>
-        </div>
       </div>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button onClick={handleSubmit} icon={Save}>
+          {isEdit ? 'Update Record' : 'Add Record'}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 });

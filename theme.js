@@ -52,7 +52,6 @@ export const colors = {
 
   // Semantic colors
   danger: 'var(--danger)',
-  dangerBg: 'var(--danger-bg)',
   success: 'var(--success)',
   warning: 'var(--warning)',
 
@@ -161,16 +160,29 @@ export const shadows = {
   card: 'var(--shadow-card)',
 };
 
+// Responsive breakpoints (px). Keep in sync with the index.css media queries:
+// ≤phone = off-canvas drawer nav + full-screen modal sheets stay ≤tablet;
+// phone<w≤desktop = sidebar icon rail by default.
+export const breakpoints = {
+  phone: 640,
+  tablet: 768,
+  desktop: 1024,
+};
+
 // Z-index layers
 export const zIndex = {
   base: 0,
   dropdown: 100,
   sticky: 200,
   fixed: 300,
-  modalBackdrop: 400,
-  modal: 500,
-  popover: 600,
-  tooltip: 700,
+  modalBackdrop: 1090,
+  // Mobile chrome (.mobile-header 998, sidebar drawer 1000 in index.css) must
+  // stay UNDER open modals, so the modal layer sits above 1000; dropdown
+  // portals (Select/DatePicker) and toasts render higher still.
+  modal: 1100,
+  popover: 1150,
+  confirm: 1200,
+  tooltip: 1250,
 };
 
 // Transitions
@@ -225,7 +237,7 @@ export const styles = {
   input: {
     width: '100%',
     padding: `${spacing[3]}px ${spacing[4]}px`,
-    background: 'var(--input-bg, rgba(93, 138, 168, 0.1))',
+    background: 'var(--input-bg, color-mix(in srgb, var(--primary) 10%, transparent))',
     border: `1px solid ${colors.border}`,
     borderRadius: borderRadius.lg,
     color: colors.textPrimary,
@@ -240,7 +252,7 @@ export const styles = {
     width: '100%',
     padding: `${spacing[3]}px ${spacing[4]}px`,
     paddingRight: `${spacing[8]}px`, // Extra space for dropdown arrow
-    background: 'var(--input-bg, rgba(93, 138, 168, 0.1))',
+    background: 'var(--input-bg, color-mix(in srgb, var(--primary) 10%, transparent))',
     border: `1px solid ${colors.border}`,
     borderRadius: borderRadius.lg,
     color: colors.textPrimary,

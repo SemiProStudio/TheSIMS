@@ -15,6 +15,8 @@ import {
   Trash2,
   MessageSquare,
   Package,
+  LogOut,
+  ClipboardList,
 } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate, getStatusColor, getTodayISO, getStatusLabel } from '../utils';
@@ -137,6 +139,8 @@ function ReservationDetail({
   onDeleteNote,
   user,
   onViewItem,
+  onCheckOutItems,
+  onCreatePackList,
 }) {
   const { canEdit } = usePermissions();
   const canEditSchedule = canEdit('schedule');
@@ -202,16 +206,31 @@ function ReservationDetail({
             <p style={{ color: colors.textSecondary, margin: `0 0 ${spacing[4]}px` }}>
               {itemCount > 1 ? `${itemCount} items reserved` : `${item.name} - ${item.brand}`}
             </p>
-            {canEditSchedule && (
-              <div style={{ display: 'flex', gap: spacing[3] }}>
-                <Button variant="secondary" onClick={onEdit} icon={Edit}>
-                  Edit Reservation
+            <div style={{ display: 'flex', gap: spacing[3], flexWrap: 'wrap' }}>
+              {/* The reservation is the job — acting on it (check out the
+                  gear, build the pack list) belongs here, not scattered
+                  across three views */}
+              {onCheckOutItems && (
+                <Button onClick={onCheckOutItems} icon={LogOut}>
+                  Check Out Items
                 </Button>
-                <Button variant="secondary" danger onClick={onDelete} icon={Trash2}>
-                  Cancel Reservation
+              )}
+              {onCreatePackList && (
+                <Button variant="secondary" onClick={onCreatePackList} icon={ClipboardList}>
+                  Create Pack List
                 </Button>
-              </div>
-            )}
+              )}
+              {canEditSchedule && (
+                <>
+                  <Button variant="secondary" onClick={onEdit} icon={Edit}>
+                    Edit Reservation
+                  </Button>
+                  <Button variant="secondary" danger onClick={onDelete} icon={Trash2}>
+                    Cancel Reservation
+                  </Button>
+                </>
+              )}
+            </div>
           </Card>
 
           {/* Schedule & Location */}

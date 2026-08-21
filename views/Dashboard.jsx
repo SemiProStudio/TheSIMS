@@ -26,6 +26,7 @@ import {
   Bookmark,
   Hourglass,
   Plus,
+  CalendarClock,
   Trash2,
 } from 'lucide-react';
 import { STATUS, DASHBOARD_SECTIONS } from '../constants.js';
@@ -44,6 +45,7 @@ import { useData } from '../contexts/DataContext.js';
 
 // Panel color CSS variables for dashboard sections
 const PANEL_COLORS = {
+  today: 'var(--primary)',
   stats: 'var(--panel-stats)',
   search: 'var(--panel-search)',
   checkedOut: 'var(--panel-checkedout)',
@@ -86,8 +88,10 @@ const listItemStyle = (panelColor) => ({
   borderRadius: borderRadius.md,
   cursor: 'pointer',
   marginBottom: spacing[2],
-  background: withOpacity(panelColor, 15),
-  border: `1px solid ${withOpacity(panelColor, 40)}`,
+  // Quiet accent tint — the row is the information, the section chrome is
+  // neutral, so 10/22 reads as color-coding without the old slab effect
+  background: withOpacity(panelColor, 10),
+  border: `1px solid ${withOpacity(panelColor, 22)}`,
   width: '100%',
   boxSizing: 'border-box',
   textAlign: 'left',
@@ -363,17 +367,147 @@ function Dashboard({
       .slice(0, 6);
   }, [inventory, today]);
 
+  // Today panel: the studio manager's morning questions in one place —
+  // what's overdue, what's due back today, what goes out today
+  const todayData = useMemo(() => {
+    const dueBackToday = stats.checkedOutItems.filter((i) => i.dueBack === today);
+    const goingOutToday = inventory
+      .flatMap((i) => (i.reservations || []).map((r) => ({ ...r, item: i })))
+      .filter((r) => r.status !== 'cancelled' && r.start === today)
+      .sort((a, b) => (a.item?.name || '').localeCompare(b.item?.name || ''));
+    return {
+      dueBackToday,
+      goingOutToday,
+      total: stats.overdue.length + dueBackToday.length + goingOutToday.length,
+    };
+  }, [stats.checkedOutItems, stats.overdue, inventory, today]);
+
   // Quick search results — same shared matcher and fields as the gear list
   // and the Search view, so the three can't silently drift apart again
   const allSearchResults = useMemo(() => {
     if (!quickSearch.trim()) return [];
-    return filterBySearch(inventory, quickSearch, ['name', 'brand', 'id', 'serialNumber']);
+    return filterBySearch(inventory, quickSearch, [
+      'name',
+      'brand',
+      'id',
+      'serialNumber',
+      'checkedOutTo',
+    ]);
   }, [inventory, quickSearch]);
   const searchResults = allSearchResults.slice(0, 5);
 
   // Render sections
   const renderSection = (sectionId) => {
     switch (sectionId) {
+      case 'today':
+        return (
+          <CollapsibleSection
+            key="today"
+            title="Today"
+            icon={CalendarClock}
+            badge={todayData.total || null}
+            badgeColor={PANEL_COLORS.today}
+            headerColor={PANEL_COLORS.today}
+            collapsed={isCollapsed('today')}
+            onToggleCollapse={() => toggleCollapse('today')}
+            padding={false}
+          >
+            {todayData.total === 0 ? (
+              <div style={emptyStateStyle}>Nothing due in or out today</div>
+            ) : (
+              <div style={{ padding: spacing[4], maxHeight: 320, overflowY: 'auto' }}>
+                {stats.overdue.map((item) => (
+                  <button
+                    type="button"
+                    className="dash-row"
+                    key={`over-${item.id}`}
+                    onClick={() => onViewItem(item.id)}
+                    style={listItemStyle(colors.danger)}
+                  >
+                    <Hourglass size={16} color={colors.danger} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: typography.fontSize.sm,
+                          color: colors.textPrimary,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {item.name}
+                      </div>
+                      <div style={{ fontSize: typography.fontSize.xs, color: colors.danger }}>
+                        {item.checkedOutTo || 'Unknown'}
+                        {item.dueBack ? ` • was due ${formatDate(item.dueBack)}` : ''}
+                      </div>
+                    </div>
+                    <Badge text="Overdue" color={colors.danger} size="xs" />
+                    <ChevronRight size={16} color={colors.textMuted} />
+                  </button>
+                ))}
+                {todayData.dueBackToday.map((item) => (
+                  <button
+                    type="button"
+                    className="dash-row"
+                    key={`due-${item.id}`}
+                    onClick={() => onViewItem(item.id)}
+                    style={listItemStyle(PANEL_COLORS.today)}
+                  >
+                    <LogIn size={16} color={PANEL_COLORS.today} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: typography.fontSize.sm,
+                          color: colors.textPrimary,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {item.name}
+                      </div>
+                      <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                        Due back today • {item.checkedOutTo || 'Unknown'}
+                      </div>
+                    </div>
+                    <ChevronRight size={16} color={colors.textMuted} />
+                  </button>
+                ))}
+                {todayData.goingOutToday.map((r) => (
+                  <button
+                    type="button"
+                    className="dash-row"
+                    key={`out-${r.id}-${r.item.id}`}
+                    onClick={() => onViewItem(r.item.id)}
+                    style={listItemStyle(PANEL_COLORS.reservations)}
+                  >
+                    <LogOut size={16} color={PANEL_COLORS.reservations} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: typography.fontSize.sm,
+                          color: colors.textPrimary,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {r.item.name}
+                      </div>
+                      <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                        Goes out today{r.project ? ` • ${r.project}` : ''}
+                        {r.reservedBy ? ` • ${r.reservedBy}` : ''}
+                      </div>
+                    </div>
+                    <ChevronRight size={16} color={colors.textMuted} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </CollapsibleSection>
+        );
+
       case 'stats':
         return (
           <CollapsibleSection
@@ -467,7 +601,7 @@ function Dashboard({
                 value={quickSearch}
                 onChange={setQuickSearch}
                 onClear={() => setQuickSearch('')}
-                placeholder="Search by name, ID, brand, or serial..."
+                placeholder="Search by name, ID, brand, serial, or borrower..."
               />
             </div>
 
@@ -1099,9 +1233,23 @@ function Dashboard({
         }
       />
 
-      {/* Render sections in order */}
+      {/* Render sections in order. Stats + quick search stay full-width
+          leads; the remaining panels flow into two columns on wide screens
+          (see .dashboard-columns in index.css) instead of stretching each
+          panel across the whole desktop viewport. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
-        {sectionOrder.map((sectionId) => renderSection(sectionId))}
+        {sectionOrder
+          .filter((id) => id === 'stats' || id === 'quickSearch')
+          .map((sectionId) => renderSection(sectionId))}
+        <div className="dashboard-columns">
+          {sectionOrder
+            .filter((id) => id !== 'stats' && id !== 'quickSearch')
+            .map((sectionId) => (
+              <div key={sectionId} className="dashboard-columns-item">
+                {renderSection(sectionId)}
+              </div>
+            ))}
+        </div>
       </div>
     </>
   );

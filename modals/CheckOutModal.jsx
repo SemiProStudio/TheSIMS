@@ -12,6 +12,7 @@ import { Badge, Button } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
+import { useMediaQuery } from '../hooks/useMediaQuery.js';
 
 export const CheckOutModal = memo(function CheckOutModal({
   item,
@@ -35,6 +36,10 @@ export const CheckOutModal = memo(function CheckOutModal({
   });
 
   const [errors, setErrors] = useState({});
+
+  // The 2fr/1fr project row keeps its ratio on desktop but must stack on
+  // phones — same breakpoint as the .responsive-form-grid collapse
+  const isPhone = useMediaQuery('(max-width: 480px)');
 
   // Reservations overlapping the checkout window [today, dueDate] — checkout
   // was previously blind to reservations, so gear reserved for a job could
@@ -131,7 +136,8 @@ export const CheckOutModal = memo(function CheckOutModal({
       notes: formData.notes.trim(),
       conditionAtCheckout: formData.condition,
       checkedOutDate: getTodayISO(),
-      checkedOutTime: new Date().toLocaleTimeString(),
+      // ISO, not toLocaleTimeString(): persisted values must be locale-independent
+      checkedOutTime: new Date().toISOString(),
     });
   };
 
@@ -262,7 +268,7 @@ export const CheckOutModal = memo(function CheckOutModal({
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3] }}>
+          <div className="responsive-form-grid">
             <div>
               <label style={styles.label}>Email</label>
               <input
@@ -332,7 +338,7 @@ export const CheckOutModal = memo(function CheckOutModal({
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '2fr 1fr',
+              gridTemplateColumns: isPhone ? '1fr' : '2fr 1fr',
               gap: spacing[3],
               marginBottom: spacing[3],
             }}

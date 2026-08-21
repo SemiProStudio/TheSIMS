@@ -124,7 +124,7 @@ test.describe('Inventory Management', () => {
       await addButton.click();
 
       // Add Item is a full page (ItemFormPage), not a modal
-      await expect(page.locator('h2:has-text("Add New Item")')).toBeVisible();
+      await expect(page.locator('h2:has-text("Add Item")')).toBeVisible();
     });
 
     test('should validate required fields', async ({ page }) => {
@@ -132,7 +132,7 @@ test.describe('Inventory Management', () => {
       await expect(addButton).toBeVisible();
       await addButton.click();
 
-      await expect(page.locator('h2:has-text("Add New Item")')).toBeVisible();
+      await expect(page.locator('h2:has-text("Add Item")')).toBeVisible();
 
       // The app gates submission by DISABLING save until required fields are
       // filled — with an empty form the save button must be disabled
@@ -147,7 +147,7 @@ test.describe('Inventory Management', () => {
       const name = `${E2E_PREFIX} Created ${Date.now()}`;
       try {
         await page.locator('button:has-text("Add Item")').first().click();
-        await expect(page.locator('h2:has-text("Add New Item")')).toBeVisible();
+        await expect(page.locator('h2:has-text("Add Item")')).toBeVisible();
 
         await page.locator('input[placeholder="e.g., Alpha a7 IV"]').fill(name);
         await page.locator('input[placeholder="e.g., Sony"]').fill('E2E Test');
@@ -381,6 +381,10 @@ test.describe('Inventory Management', () => {
           .toBe(1);
 
         await page.getByRole('button', { name: 'Delete' }).click();
+        // Note deletion now confirms first (destructive-action rule);
+        // ConfirmDialog renders as an alertdialog
+        await expect(page.getByRole('alertdialog')).toBeVisible();
+        await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
         await expect(page.getByText('[Note deleted]')).toBeVisible();
       } finally {
         await deleteTestItem(itemId); // item_notes cascade on inventory delete

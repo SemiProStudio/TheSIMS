@@ -3,16 +3,68 @@
 // ============================================================================
 
 import { memo, useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Plus, Save, Trash2, GripVertical, Search } from 'lucide-react';
+import { Plus, Save, Trash2, GripVertical, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { CONDITION, DEFAULT_NEW_CATEGORY_SETTINGS } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { Card, Badge, Button, PageHeader } from '../components/ui.jsx';
+import { Card, Badge, Button, PageHeader, Input } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 import { useItemForm } from '../components/ItemForm.jsx';
 import { SpecFieldInput } from '../components/SpecFieldInput.jsx';
 import { SmartPasteModal } from '../modals/smartPaste/SmartPasteModal.jsx';
 import { applySmartPastePayload } from '../lib/smartPaste/applyPayload.js';
+
+// ============================================================================
+// Touch-accessible reorder buttons — HTML5 drag-and-drop never fires on touch
+// devices, so draggable rows also get explicit move up/down controls.
+// ============================================================================
+
+function RowMoveButtons({ onMoveUp, onMoveDown, isFirst, isLast }) {
+  const buttonStyle = (disabled) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12, // 16px icon + padding = 40px touch target
+    margin: '-8px 0', // don't let the 40px target inflate row height
+    background: 'transparent',
+    border: 'none',
+    borderRadius: borderRadius.md,
+    color: colors.textMuted,
+    opacity: disabled ? 0.35 : 1,
+    cursor: disabled ? 'default' : 'pointer',
+    flexShrink: 0,
+  });
+  return (
+    <div style={{ display: 'flex', flexShrink: 0 }}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onMoveUp();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        draggable={false}
+        disabled={isFirst}
+        aria-label="Move up"
+        style={buttonStyle(isFirst)}
+      >
+        <ChevronUp size={16} />
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onMoveDown();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        draggable={false}
+        disabled={isLast}
+        aria-label="Move down"
+        style={buttonStyle(isLast)}
+      >
+        <ChevronDown size={16} />
+      </button>
+    </div>
+  );
+}
 
 // ============================================================================
 // Add/Edit Item Page
@@ -61,7 +113,7 @@ export const ItemFormPage = memo(function ItemFormPage({
   return (
     <>
       <PageHeader
-        title={isEdit ? 'Edit Item' : 'Add New Item'}
+        title={isEdit ? 'Edit Item' : 'Add Item'}
         subtitle={
           isEdit ? `Editing ${itemForm.name || 'item'}` : 'Add a new item to your inventory'
         }
@@ -116,44 +168,28 @@ export const ItemFormPage = memo(function ItemFormPage({
 
             {/* Name and Brand */}
             <div className="responsive-form-grid" style={{ marginBottom: spacing[4] }}>
-              <div>
-                <label
-                  style={{ ...styles.label, color: !itemForm.name ? colors.danger : undefined }}
-                >
-                  Name <span style={{ color: colors.danger }}>*</span>
-                </label>
-                <input
-                  value={itemForm.name}
-                  onChange={(e) => handleChange('name', e.target.value)}
-                  placeholder="e.g., Alpha a7 IV"
-                  style={{
-                    ...styles.input,
-                    borderColor: !itemForm.name ? colors.danger : colors.border,
-                  }}
-                />
-              </div>
-              <div>
-                <label
-                  style={{ ...styles.label, color: !itemForm.brand ? colors.danger : undefined }}
-                >
-                  Brand <span style={{ color: colors.danger }}>*</span>
-                </label>
-                <input
-                  value={itemForm.brand}
-                  onChange={(e) => handleChange('brand', e.target.value)}
-                  placeholder="e.g., Sony"
-                  style={{
-                    ...styles.input,
-                    borderColor: !itemForm.brand ? colors.danger : colors.border,
-                  }}
-                />
-              </div>
+              <Input
+                label="Name"
+                required
+                value={itemForm.name}
+                onChange={(e) => handleChange('name', e.target.value)}
+                placeholder="e.g., Alpha a7 IV"
+                className={!itemForm.name ? 'input-error' : undefined}
+              />
+              <Input
+                label="Brand"
+                required
+                value={itemForm.brand}
+                onChange={(e) => handleChange('brand', e.target.value)}
+                placeholder="e.g., Sony"
+                className={!itemForm.brand ? 'input-error' : undefined}
+              />
             </div>
 
             {/* Category and Condition */}
             <div className="responsive-form-grid" style={{ marginBottom: spacing[4] }}>
               <div>
-                <label style={styles.label}>Category</label>
+                <label className="label">Category</label>
                 <Select
                   value={itemForm.category}
                   onChange={(e) => handleChange('category', e.target.value)}
@@ -162,7 +198,7 @@ export const ItemFormPage = memo(function ItemFormPage({
                 />
               </div>
               <div>
-                <label style={styles.label}>Condition</label>
+                <label className="label">Condition</label>
                 <Select
                   value={itemForm.condition}
                   onChange={(e) => handleChange('condition', e.target.value)}
@@ -184,54 +220,52 @@ export const ItemFormPage = memo(function ItemFormPage({
                 }}
               >
                 <div className="responsive-form-grid">
-                  <div>
-                    <label style={styles.label}>
-                      Quantity
-                      <span
-                        style={{
-                          fontSize: typography.fontSize.xs,
-                          color: colors.textMuted,
-                          fontWeight: typography.fontWeight.normal,
-                          marginLeft: spacing[1],
-                        }}
-                      >
-                        (this category tracks quantities)
-                      </span>
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={itemForm.quantity || 1}
-                      onChange={(e) =>
-                        handleChange('quantity', Math.max(0, parseInt(e.target.value) || 0))
-                      }
-                      style={styles.input}
-                    />
-                  </div>
-                  <div>
-                    <label style={styles.label}>
-                      Reorder Point
-                      <span
-                        style={{
-                          fontSize: typography.fontSize.xs,
-                          color: colors.textMuted,
-                          fontWeight: typography.fontWeight.normal,
-                          marginLeft: spacing[1],
-                        }}
-                      >
-                        (alert when below)
-                      </span>
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={itemForm.reorderPoint || 0}
-                      onChange={(e) =>
-                        handleChange('reorderPoint', Math.max(0, parseInt(e.target.value) || 0))
-                      }
-                      style={styles.input}
-                    />
-                  </div>
+                  <Input
+                    label={
+                      <>
+                        Quantity
+                        <span
+                          style={{
+                            fontSize: typography.fontSize.xs,
+                            color: colors.textMuted,
+                            fontWeight: typography.fontWeight.normal,
+                            marginLeft: spacing[1],
+                          }}
+                        >
+                          (this category tracks quantities)
+                        </span>
+                      </>
+                    }
+                    type="number"
+                    min="0"
+                    value={itemForm.quantity || 1}
+                    onChange={(e) =>
+                      handleChange('quantity', Math.max(0, parseInt(e.target.value) || 0))
+                    }
+                  />
+                  <Input
+                    label={
+                      <>
+                        Reorder Point
+                        <span
+                          style={{
+                            fontSize: typography.fontSize.xs,
+                            color: colors.textMuted,
+                            fontWeight: typography.fontWeight.normal,
+                            marginLeft: spacing[1],
+                          }}
+                        >
+                          (alert when below)
+                        </span>
+                      </>
+                    }
+                    type="number"
+                    min="0"
+                    value={itemForm.reorderPoint || 0}
+                    onChange={(e) =>
+                      handleChange('reorderPoint', Math.max(0, parseInt(e.target.value) || 0))
+                    }
+                  />
                 </div>
               </div>
             )}
@@ -248,32 +282,26 @@ export const ItemFormPage = memo(function ItemFormPage({
 
             {/* Purchase Price and Current Value */}
             <div className="responsive-form-grid" style={{ marginBottom: spacing[4] }}>
-              <div>
-                <label style={styles.label}>Purchase Price</label>
-                <input
-                  type="number"
-                  value={itemForm.purchasePrice}
-                  onChange={(e) => handleChange('purchasePrice', e.target.value)}
-                  placeholder="0.00"
-                  style={styles.input}
-                />
-              </div>
-              <div>
-                <label style={styles.label}>Current Value</label>
-                <input
-                  type="number"
-                  value={itemForm.currentValue}
-                  onChange={(e) => handleChange('currentValue', e.target.value)}
-                  placeholder="0.00"
-                  style={styles.input}
-                />
-              </div>
+              <Input
+                label="Purchase Price"
+                type="number"
+                value={itemForm.purchasePrice}
+                onChange={(e) => handleChange('purchasePrice', e.target.value)}
+                placeholder="0.00"
+              />
+              <Input
+                label="Current Value"
+                type="number"
+                value={itemForm.currentValue}
+                onChange={(e) => handleChange('currentValue', e.target.value)}
+                placeholder="0.00"
+              />
             </div>
 
             {/* Location and Serial Number */}
             <div className="responsive-form-grid" style={{ marginBottom: spacing[4] }}>
               <div>
-                <label style={styles.label}>Location</label>
+                <label className="label">Location</label>
                 {flattenedLocations.length > 0 ? (
                   <Select
                     value={itemForm.location || ''}
@@ -288,62 +316,35 @@ export const ItemFormPage = memo(function ItemFormPage({
                     aria-label="Location"
                   />
                 ) : (
-                  <input
+                  <Input
                     value={itemForm.location}
                     onChange={(e) => handleChange('location', e.target.value)}
                     placeholder="e.g., Shelf A-1"
-                    style={styles.input}
                   />
                 )}
               </div>
-              <div>
-                <label
-                  style={{
-                    ...styles.label,
-                    color:
-                      (currentCategorySettings.trackSerialNumbers && !itemForm.serialNumber) ||
-                      duplicateSerialNumber
-                        ? colors.danger
-                        : undefined,
-                  }}
-                >
-                  Serial Number
-                  {currentCategorySettings.trackSerialNumbers && (
-                    <span style={{ color: colors.danger, marginLeft: spacing[1] }}>*</span>
-                  )}
-                </label>
-                <input
-                  value={itemForm.serialNumber}
-                  onChange={(e) => handleChange('serialNumber', e.target.value)}
-                  placeholder={currentCategorySettings.trackSerialNumbers ? 'Required' : 'Optional'}
-                  style={{
-                    ...styles.input,
-                    borderColor:
-                      (currentCategorySettings.trackSerialNumbers && !itemForm.serialNumber) ||
-                      duplicateSerialNumber
-                        ? colors.danger
-                        : colors.border,
-                  }}
-                />
-                {duplicateSerialNumber && (
-                  <span
-                    style={{
-                      color: colors.danger,
-                      fontSize: typography.fontSize.xs,
-                      display: 'block',
-                      marginTop: spacing[1],
-                    }}
-                  >
-                    Serial number already exists on &quot;{duplicateSerialNumber.name}&quot; (
-                    {duplicateSerialNumber.id})
-                  </span>
-                )}
-              </div>
+              <Input
+                label="Serial Number"
+                required={currentCategorySettings.trackSerialNumbers}
+                value={itemForm.serialNumber}
+                onChange={(e) => handleChange('serialNumber', e.target.value)}
+                placeholder={currentCategorySettings.trackSerialNumbers ? 'Required' : 'Optional'}
+                className={
+                  currentCategorySettings.trackSerialNumbers && !itemForm.serialNumber
+                    ? 'input-error'
+                    : undefined
+                }
+                error={
+                  duplicateSerialNumber
+                    ? `Serial number already exists on "${duplicateSerialNumber.name}" (${duplicateSerialNumber.id})`
+                    : undefined
+                }
+              />
             </div>
 
             {/* Purchase Date */}
             <div style={{ marginBottom: spacing[4] }}>
-              <label style={styles.label}>Purchase Date</label>
+              <label className="label">Purchase Date</label>
               <DatePicker
                 value={itemForm.purchaseDate}
                 onChange={(e) => handleChange('purchaseDate', e.target.value)}
@@ -658,6 +659,19 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
     setDirty(true);
   };
 
+  // Touch-accessible move — same reorder as handleDrop, one step at a time
+  const moveField = (index, delta) => {
+    const targetIndex = index + delta;
+    if (targetIndex < 0 || targetIndex >= (editSpecs[selectedCategory] || []).length) return;
+    setEditSpecs((prev) => {
+      const arr = [...prev[selectedCategory]];
+      const [moved] = arr.splice(index, 1);
+      arr.splice(targetIndex, 0, moved);
+      return { ...prev, [selectedCategory]: arr };
+    });
+    setDirty(true);
+  };
+
   const toggleAllRequired = (value) => {
     setEditSpecs((prev) => ({
       ...prev,
@@ -765,7 +779,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
               }}
             >
               <div>
-                <label style={styles.label}>Category</label>
+                <label className="label">Category</label>
                 <Select
                   value={selectedCategory}
                   onChange={(e) => {
@@ -814,9 +828,9 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
                     border: `1px solid ${withOpacity(colors.primary, 30)}`,
                   }}
                 >
-                  <label style={styles.label}>New Field Name</label>
-                  <div style={{ display: 'flex', gap: spacing[2] }}>
-                    <input
+                  <label className="label">New Field Name</label>
+                  <div style={{ display: 'flex', gap: spacing[2], alignItems: 'flex-start' }}>
+                    <Input
                       ref={addInputRef}
                       type="text"
                       value={newFieldName}
@@ -829,11 +843,8 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
                         if (e.key === 'Escape') handleCancelAdd();
                       }}
                       placeholder="Enter field name..."
-                      style={{
-                        ...styles.input,
-                        flex: 1,
-                        borderColor: duplicateError ? colors.danger : undefined,
-                      }}
+                      error={duplicateError || undefined}
+                      containerStyle={{ flex: 1 }}
                     />
                     <Button onClick={handleAddField} icon={Plus}>
                       Add
@@ -842,17 +853,6 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
                       Cancel
                     </Button>
                   </div>
-                  {duplicateError && (
-                    <div
-                      style={{
-                        fontSize: typography.fontSize.xs,
-                        color: colors.danger,
-                        marginTop: spacing[1],
-                      }}
-                    >
-                      {duplicateError}
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -950,11 +950,19 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
                       }}
                     >
                       {canDrag && (
-                        <GripVertical
-                          size={16}
-                          color={colors.textMuted}
-                          style={{ flexShrink: 0, cursor: 'grab' }}
-                        />
+                        <>
+                          <GripVertical
+                            size={16}
+                            color={colors.textMuted}
+                            style={{ flexShrink: 0, cursor: 'grab' }}
+                          />
+                          <RowMoveButtons
+                            onMoveUp={() => moveField(field.originalIndex, -1)}
+                            onMoveDown={() => moveField(field.originalIndex, 1)}
+                            isFirst={field.originalIndex === 0}
+                            isLast={field.originalIndex === currentSpecs.length - 1}
+                          />
+                        </>
                       )}
                       {(() => {
                         const isDup = isDuplicateFieldName(field.name, field.originalIndex);
@@ -1284,6 +1292,19 @@ export const CategoriesPage = memo(function CategoriesPage({
     setDirty(true);
   };
 
+  // Touch-accessible move — same reorder as handleDrop, one step at a time
+  const moveRow = (index, delta) => {
+    const targetIndex = index + delta;
+    if (targetIndex < 0 || targetIndex >= rows.length) return;
+    setRows((prev) => {
+      const arr = [...prev];
+      const [moved] = arr.splice(index, 1);
+      arr.splice(targetIndex, 0, moved);
+      return arr;
+    });
+    setDirty(true);
+  };
+
   const handleSave = () => {
     if (hasDuplicateCategories || hasEmptyNames) return;
     // Remap the stable-keyed edit state to final names, and report renames
@@ -1376,9 +1397,9 @@ export const CategoriesPage = memo(function CategoriesPage({
                   border: `1px solid ${withOpacity(colors.primary, 30)}`,
                 }}
               >
-                <label style={styles.label}>New Category Name</label>
-                <div style={{ display: 'flex', gap: spacing[2] }}>
-                  <input
+                <label className="label">New Category Name</label>
+                <div style={{ display: 'flex', gap: spacing[2], alignItems: 'flex-start' }}>
+                  <Input
                     ref={addInputRef}
                     type="text"
                     value={newCategoryName}
@@ -1395,11 +1416,8 @@ export const CategoriesPage = memo(function CategoriesPage({
                       }
                     }}
                     placeholder="Enter category name..."
-                    style={{
-                      ...styles.input,
-                      flex: 1,
-                      borderColor: categoryError ? colors.danger : undefined,
-                    }}
+                    error={categoryError || undefined}
+                    containerStyle={{ flex: 1 }}
                   />
                   <Button onClick={handleAddCategory} icon={Plus}>
                     Add
@@ -1415,17 +1433,6 @@ export const CategoriesPage = memo(function CategoriesPage({
                     Cancel
                   </Button>
                 </div>
-                {categoryError && (
-                  <div
-                    style={{
-                      fontSize: typography.fontSize.xs,
-                      color: colors.danger,
-                      marginTop: spacing[1],
-                    }}
-                  >
-                    {categoryError}
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -1471,6 +1478,12 @@ export const CategoriesPage = memo(function CategoriesPage({
                       size={16}
                       color={colors.textMuted}
                       style={{ flexShrink: 0, cursor: 'grab' }}
+                    />
+                    <RowMoveButtons
+                      onMoveUp={() => moveRow(index, -1)}
+                      onMoveDown={() => moveRow(index, 1)}
+                      isFirst={index === 0}
+                      isLast={index === rows.length - 1}
                     />
                     <div style={{ flex: 1 }}>
                       <input

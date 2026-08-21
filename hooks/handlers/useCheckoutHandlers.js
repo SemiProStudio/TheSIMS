@@ -25,6 +25,8 @@ export function useCheckoutHandlers({
   const [checkinItemData, setCheckinItemData] = useState(null);
   const [maintenanceItem, setMaintenanceItem] = useState(null);
   const [editingMaintenanceRecord, setEditingMaintenanceRecord] = useState(null);
+  // Seed values for a NEW maintenance record (damage→repair handoff)
+  const [maintenancePrefill, setMaintenancePrefill] = useState(null);
 
   // ---- Checkout ----
 
@@ -37,6 +39,88 @@ export function useCheckoutHandlers({
       }
     },
     [inventory, openModal],
+  );
+
+  // Batch checkout: one borrower/due date applied to many items at once
+  // (reservation load-outs, bulk check-out). Persist-per-item so a single
+  // failure doesn't block the rest; dataContext.checkOutItem patches local
+  // inventory state itself.
+  const processBatchCheckout = useCallback(
+    async ({
+      items,
+      borrowerName,
+      clientId = null,
+      clientName = null,
+      project = '',
+      dueDate,
+    }) => {
+      let done = 0;
+      const failed = [];
+      for (const target of items) {
+        try {
+          await dataContext.checkOutItem(target.id, {
+            userId: currentUser?.id,
+            userName: borrowerName,
+            clientId,
+            clientName,
+            project,
+            dueBack: dueDate,
+          });
+        } catch (err) {
+          logError('Batch checkout failed for', target.id, err);
+          failed.push(target.name || target.id);
+          continue;
+        }
+        done++;
+        addAuditLog({
+          type: 'item_checkout',
+          description: `${target.name || target.id} checked out to ${borrowerName}`,
+          user: currentUser?.name || 'Unknown',
+          itemId: target.id,
+        });
+        addChangeLog({
+          type: 'checkout',
+          itemId: target.id,
+          itemType: 'item',
+          itemName: target.name || target.id,
+          description: `Checked out to ${borrowerName} for ${project || 'unspecified project'}`,
+          changes: [
+            { field: 'status', oldValue: STATUS.AVAILABLE, newValue: STATUS.CHECKED_OUT },
+            { field: 'checkedOutTo', newValue: borrowerName },
+            { field: 'dueBack', newValue: dueDate },
+          ],
+        });
+        if (selectedItem?.id === target.id) {
+          setSelectedItem((prev) => ({
+            ...prev,
+            status: STATUS.CHECKED_OUT,
+            checkedOutTo: borrowerName,
+            checkedOutToUserId: currentUser?.id || null,
+            dueBack: dueDate,
+            checkoutProject: project,
+            checkoutClientId: clientId || null,
+          }));
+        }
+      }
+      if (done) {
+        addToast(`${done} item${done === 1 ? '' : 's'} checked out to ${borrowerName}`, 'success');
+      }
+      if (failed.length) {
+        addToast(`Failed to check out: ${failed.join(', ')}`, 'error');
+      }
+      closeModal();
+      return { done, failed };
+    },
+    [
+      currentUser,
+      selectedItem,
+      setSelectedItem,
+      closeModal,
+      addAuditLog,
+      addChangeLog,
+      addToast,
+      dataContext,
+    ],
   );
 
   const openCheckinModal = useCallback(
@@ -262,12 +346,110 @@ export function useCheckoutHandlers({
       addToast(`${checkinItemData?.name || 'Item'} checked in successfully`, 'success');
       closeModal();
       setCheckinItemData(null);
+
+      // Damage → maintenance handoff: the damage description was just typed;
+      // don't make the user re-find the item and re-type it. Opens a NEW
+      // repair record pre-filled; Cancel simply skips logging.
+      if (damageReported) {
+        const damagedItem = checkinItemData ||
+          currentItem || { id: itemId, name: itemId, maintenanceHistory: [] };
+        setMaintenanceItem(damagedItem);
+        setEditingMaintenanceRecord(null);
+        setMaintenancePrefill({
+          type: 'Repair',
+          description: damageDescription || returnNotes || '',
+        });
+        openModal(MODALS.MAINTENANCE);
+        addToast('Damage reported — log the repair, or cancel to skip', 'info');
+      }
     },
     [
       currentUser,
       selectedItem,
       setSelectedItem,
       checkinItemData,
+      closeModal,
+      openModal,
+      addAuditLog,
+      addChangeLog,
+      addToast,
+      dataContext,
+      inventory,
+    ],
+  );
+
+  // Bulk check-in: the end-of-job cart comes back in one pass. Condition
+  // stays as recorded (damage goes through the single check-in flow);
+  // reservation-covered items return to 'reserved' exactly like the single
+  // flow. dataContext.checkInItem patches local inventory itself.
+  const processBatchCheckin = useCallback(
+    async ({ itemIds, returnNotes = '' }) => {
+      const returnedBy =
+        currentUser?.name || currentUser?.email?.split('@')[0] || 'Unknown';
+      const targets = inventory.filter(
+        (i) => itemIds.includes(i.id) && i.status === STATUS.CHECKED_OUT,
+      );
+      let done = 0;
+      const failed = [];
+      for (const target of targets) {
+        const hasReservationToday = hasActiveReservation(target, getTodayISO());
+        try {
+          await dataContext.checkInItem(target.id, {
+            returnedBy,
+            userId: currentUser?.id,
+            condition: target.condition,
+            conditionNotes: '',
+            returnNotes,
+            damageReported: false,
+            damageDescription: '',
+            returnStatus: hasReservationToday ? STATUS.RESERVED : undefined,
+          });
+        } catch (err) {
+          logError('Bulk check-in failed for', target.id, err);
+          failed.push(target.name || target.id);
+          continue;
+        }
+        done++;
+        addAuditLog({
+          type: 'item_checkin',
+          description: `${target.name || target.id} returned by ${returnedBy}`,
+          user: currentUser?.name || 'Unknown',
+          itemId: target.id,
+        });
+        addChangeLog({
+          type: 'checkin',
+          itemId: target.id,
+          itemType: 'item',
+          itemName: target.name || target.id,
+          description: `Returned by ${returnedBy} (bulk check-in)`,
+          changes: [
+            {
+              field: 'status',
+              oldValue: STATUS.CHECKED_OUT,
+              newValue: hasReservationToday ? STATUS.RESERVED : STATUS.AVAILABLE,
+            },
+          ],
+        });
+        if (selectedItem?.id === target.id) {
+          setSelectedItem((prev) => ({
+            ...prev,
+            status: hasReservationToday ? STATUS.RESERVED : STATUS.AVAILABLE,
+            checkedOutTo: null,
+            checkedOutToUserId: null,
+            checkedOutDate: null,
+            dueBack: null,
+          }));
+        }
+      }
+      if (done) addToast(`${done} item${done === 1 ? '' : 's'} checked in`, 'success');
+      if (failed.length) addToast(`Failed to check in: ${failed.join(', ')}`, 'error');
+      closeModal();
+      return { done, failed };
+    },
+    [
+      currentUser,
+      selectedItem,
+      setSelectedItem,
       closeModal,
       addAuditLog,
       addChangeLog,
@@ -454,6 +636,26 @@ export function useCheckoutHandlers({
         user: currentUser?.name || 'Unknown',
         itemId: itemId,
       });
+
+      // Completing the LAST open record on a needs-attention item returns it
+      // to Available — a finished repair used to leave the item stuck in the
+      // alert bucket until someone edited its status by hand
+      if (newStatus === 'completed' && currentItem?.status === STATUS.NEEDS_ATTENTION) {
+        const stillOpen = applyStatus(prevHistory).some(
+          (m) => m.status !== 'completed' && m.status !== 'cancelled',
+        );
+        if (!stillOpen) {
+          try {
+            await dataContext.updateItem(itemId, { status: STATUS.AVAILABLE });
+            setSelectedItem((prev) =>
+              prev && prev.id === itemId ? { ...prev, status: STATUS.AVAILABLE } : prev,
+            );
+            addToast(`${selectedItem.name} marked Available again`, 'success');
+          } catch (err) {
+            logError('Failed to clear needs-attention after repair:', err);
+          }
+        }
+      }
     },
     [selectedItem, setSelectedItem, inventory, currentUser, addAuditLog, addToast, dataContext],
   );
@@ -466,12 +668,16 @@ export function useCheckoutHandlers({
     openCheckoutModal,
     openCheckinModal,
     processCheckout,
+    processBatchCheckout,
     processCheckin,
+    processBatchCheckin,
     // Maintenance state
     maintenanceItem,
     setMaintenanceItem,
     editingMaintenanceRecord,
     setEditingMaintenanceRecord,
+    maintenancePrefill,
+    setMaintenancePrefill,
     // Maintenance handlers
     openMaintenanceModal,
     saveMaintenance,

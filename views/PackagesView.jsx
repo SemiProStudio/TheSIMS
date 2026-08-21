@@ -1299,7 +1299,7 @@ function PackagesView({
           title="No Packages Found"
           description={
             packages.length === 0
-              ? 'Packages group individual items together for specific jobs or purposes.'
+              ? 'Packages are reusable gear groupings you rent out as a unit — build one per setup (interview kit, wedding rig) and reserve it again and again. For a one-off job checklist, use Pack Lists.'
               : 'No packages match your search.'
           }
           action={

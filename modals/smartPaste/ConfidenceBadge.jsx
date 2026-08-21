@@ -8,10 +8,10 @@ import { colors, withOpacity } from '../../theme.js';
 export function ConfidenceBadge({ confidence }) {
   let color, label;
   if (confidence >= 85) {
-    color = colors.available || '#4ade80';
+    color = colors.available;
     label = 'Direct';
   } else if (confidence >= 60) {
-    color = colors.accent1 || '#facc15';
+    color = colors.accent1;
     label = 'Likely';
   } else {
     color = colors.textMuted;

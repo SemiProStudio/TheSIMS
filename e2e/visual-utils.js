@@ -162,15 +162,21 @@ export async function setTheme(page, themeName) {
 /**
  * Get list of available themes
  */
+// Keep in sync with themes-data.js `themes` (static, non-generated ids only)
 export const availableThemes = [
   'dark',
   'light',
   'darker',
-  'ocean',
-  'forest',
-  'sunset',
-  'neon',
+  'primaries',
+  'pastel',
+  'terminal',
+  'blackwhite',
+  'vibrant',
   'muted',
+  'xp',
+  'cheese',
+  'cats',
+  'dogs',
 ];
 
 // =============================================================================

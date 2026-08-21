@@ -18,12 +18,12 @@ export function ImportStatus({ importStatus, ocrProgress }) {
         background: importStatus.startsWith('error')
           ? `${withOpacity(colors.danger, 10)}`
           : importStatus.startsWith('success')
-            ? `${withOpacity(colors.available || '#4ade80', 10)}`
+            ? `${withOpacity(colors.available, 10)}`
             : `${withOpacity(colors.primary, 10)}`,
         color: importStatus.startsWith('error')
           ? colors.danger
           : importStatus.startsWith('success')
-            ? colors.available || '#4ade80'
+            ? colors.available
             : colors.primary,
       }}
     >

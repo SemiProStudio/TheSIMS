@@ -66,7 +66,8 @@ export const CheckInModal = memo(function CheckInModal({ item, currentUser, onCh
       damageReported: formData.damageReported,
       damageDescription: formData.damageDescription.trim(),
       returnDate: getTodayISO(),
-      returnTime: new Date().toLocaleTimeString(),
+      // ISO, not toLocaleTimeString(): persisted values must be locale-independent
+      returnTime: new Date().toISOString(),
     });
   };
 
@@ -141,12 +142,8 @@ export const CheckInModal = memo(function CheckInModal({ item, currentUser, onCh
           }}
         >
           <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: spacing[3],
-              fontSize: typography.fontSize.sm,
-            }}
+            className="responsive-form-grid"
+            style={{ fontSize: typography.fontSize.sm }}
           >
             <div>
               <span style={{ color: colors.textMuted }}>Checked out to:</span>
@@ -199,7 +196,7 @@ export const CheckInModal = memo(function CheckInModal({ item, currentUser, onCh
             Item was <strong>{item.condition}</strong> at checkout. Please verify current condition:
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: spacing[2] }}>
+          <div className="responsive-form-grid" style={{ gap: spacing[2] }}>
             {conditions.map((cond) => (
               <label
                 key={cond.value}

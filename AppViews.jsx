@@ -4,9 +4,10 @@
 // Reads state from contexts; receives assembled handlers from App.
 // ============================================================================
 
-import { lazy, Suspense, memo } from 'react';
+import { lazy, Suspense, memo, useState } from 'react';
 import { VIEWS, MODALS, STATUS } from './constants.js';
 import { error as logError } from './lib/logger.js';
+import { formatDate } from './utils';
 import { useToast } from './contexts/ToastContext.js';
 import { locationsService } from './lib/services.js';
 import { useAdminHandlers } from './hooks/handlers/useAdminHandlers.js';
@@ -76,6 +77,7 @@ const ItemFormPage = lazy(() =>
 const SpecsPage = lazy(() =>
   import('./views/AdminPages.jsx').then((m) => ({ default: m.SpecsPage })),
 );
+const BatchCheckOutModal = lazy(() => import('./modals/BatchCheckOutModal.jsx'));
 const CategoriesPage = lazy(() =>
   import('./views/AdminPages.jsx').then((m) => ({ default: m.CategoriesPage })),
 );
@@ -181,7 +183,59 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
     resetItemForm,
     resetReservationForm,
     openModal,
+    processBatchCheckout,
   } = handlers;
+
+  // Batch checkout launched from a reservation detail — null means closed
+  const [batchCheckoutItems, setBatchCheckoutItems] = useState(null);
+
+  // All inventory items belonging to a reservation's group (shared group_id,
+  // with the legacy project+dates fallback)
+  const reservationGroupItems = (reservation) => {
+    if (!reservation) return [];
+    return inventory.filter((invItem) =>
+      (invItem.reservations || []).some(
+        (r) =>
+          r.id === reservation.id ||
+          (reservation.groupId
+            ? r.groupId === reservation.groupId
+            : r.project === reservation.project &&
+              r.start === reservation.start &&
+              r.end === reservation.end),
+      ),
+    );
+  };
+
+  // Reservation → pack list: same items, one click, no re-typing
+  const handleCreatePackListFromReservation = async () => {
+    const groupItems = reservationGroupItems(selectedReservation);
+    if (!groupItems.length) {
+      addToast('This reservation has no items to build a pack list from', 'error');
+      return;
+    }
+    const name = `${selectedReservation.project || 'Reservation'} — ${formatDate(selectedReservation.start)}`;
+    try {
+      await dataContext.createPackList({
+        name,
+        items: groupItems.map((i) => ({ id: i.id, quantity: 1 })),
+        packages: [],
+        created_by_id: currentUser?.id || null,
+        created_by_name: currentUser?.name || null,
+        reservation_group_id: selectedReservation.groupId || selectedReservation.id || null,
+      });
+    } catch (err) {
+      logError('Failed to create pack list from reservation:', err);
+      addToast('Failed to create pack list — nothing was saved', 'error');
+      return;
+    }
+    addAuditLog({
+      type: 'pack_list_created',
+      description: `Pack list "${name}" created from reservation`,
+      user: currentUser?.name || 'Unknown',
+    });
+    addToast(`Pack list "${name}" created`, 'success');
+    setCurrentView(VIEWS.PACK_LISTS);
+  };
 
   // Users & roles admin operations — persist-first with correct ordering
   const { saveRole, deleteRole, assignUsersToRole, changeUserRole, deleteUser } = useAdminHandlers({
@@ -489,8 +543,9 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
                 deleteReservation(itemId, resId);
               } else {
                 logError('Cannot delete: missing item or reservation ID', { itemId, resId });
-                alert(
+                addToast(
                   'Unable to cancel reservation — missing reference. Please go back and try again.',
+                  'error',
                 );
               }
             }}
@@ -499,7 +554,27 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             onDeleteNote={reservationNoteHandlers.delete}
             user={currentUser}
             onViewItem={navigateToItem}
+            onCheckOutItems={
+              canEdit('gear_list')
+                ? () => setBatchCheckoutItems(reservationGroupItems(selectedReservation))
+                : undefined
+            }
+            onCreatePackList={
+              canEdit('pack_lists') ? handleCreatePackListFromReservation : undefined
+            }
           />
+          {batchCheckoutItems && (
+            <BatchCheckOutModal
+              reservation={selectedReservation}
+              items={batchCheckoutItems}
+              currentUser={currentUser}
+              onConfirm={async (payload) => {
+                await processBatchCheckout(payload);
+                setBatchCheckoutItems(null);
+              }}
+              onClose={() => setBatchCheckoutItems(null)}
+            />
+          )}
         </Suspense>
       )}
 
@@ -509,7 +584,11 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           editor). AdminPanel filters its cards per permission. */}
       {currentView === VIEWS.ADMIN && canAccessView(VIEWS.ADMIN, { canView, canEdit }) && (
         <Suspense fallback={<ViewLoading message="Loading Admin Panel..." />}>
-          <AdminPanel setCurrentView={setCurrentView} />
+          <AdminPanel
+            setCurrentView={setCurrentView}
+            onOpenImport={() => openModal(MODALS.CSV_IMPORT)}
+            onOpenExport={() => openModal(MODALS.DATABASE_EXPORT)}
+          />
         </Suspense>
       )}
 

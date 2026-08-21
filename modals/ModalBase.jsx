@@ -66,8 +66,12 @@ export const Modal = memo(function Modal({ onClose, maxWidth = 500, title, child
 
   return (
     <div className="modal-backdrop" style={styles.modal} onClick={onClose} role="presentation">
+      {/* .modal-box: at ≤768px index.css turns every modal into a full-screen
+          sheet (full width/height, no radius, flex column) so forms, the
+          on-screen keyboard, and the close button all behave on phones */}
       <div
         ref={modalRef}
+        className="modal-box"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
         style={{ ...styles.modalBox, maxWidth }}
@@ -109,7 +113,14 @@ export const ModalHeader = memo(function ModalHeader({ title, onClose }) {
           border: 'none',
           color: colors.textMuted,
           cursor: 'pointer',
-          padding: spacing[1],
+          // 40px touch target (negative margin keeps the header visually tight)
+          minWidth: 40,
+          minHeight: 40,
+          margin: -6,
+          padding: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
         aria-label="Close dialog"
         type="button"
@@ -145,6 +156,7 @@ export const ModalFooter = memo(function ModalFooter({ children }) {
 export const ModalBody = memo(function ModalBody({ children, noPadding = false }) {
   return (
     <div
+      className="modal-body"
       style={{
         padding: noPadding ? 0 : spacing[4],
         maxHeight: '70vh',

@@ -4,6 +4,7 @@
 // ============================================================================
 
 import { useState, memo } from 'react';
+import { ScanLine } from 'lucide-react';
 import { colors, spacing, typography, borderRadius } from '../theme.js';
 import { VIEWS, MODALS } from '../constants.js';
 
@@ -72,6 +73,27 @@ export default memo(function MobileHeader({
           SIMS
         </span>
       </div>
+      {/* Scanning is the most frequent on-set action — one tap from anywhere,
+          not two taps into the drawer */}
+      <button
+        onClick={() => onOpenModal(MODALS.QR_SCANNER)}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          borderRadius: borderRadius.md,
+          minWidth: 40,
+          minHeight: 40,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: colors.textPrimary,
+          marginRight: spacing[1],
+        }}
+        aria-label="Scan QR code"
+      >
+        <ScanLine size={22} />
+      </button>
       {currentUser && (
         <div style={{ position: 'relative' }}>
           <button

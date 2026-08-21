@@ -38,9 +38,9 @@ export function DiffView({ diffResults, onHideDiff: _onHideDiff }) {
       </div>
       {diffResults.map(({ specName, status, oldValue, newValue }) => {
         const statusColors = {
-          changed: colors.accent1 || '#facc15',
-          added: colors.available || '#4ade80',
-          removed: colors.danger || '#f87171',
+          changed: colors.accent1,
+          added: colors.available,
+          removed: colors.danger,
           unchanged: withOpacity(colors.textMuted, 40),
         };
         if (status === 'unchanged') return null;
@@ -72,7 +72,7 @@ export function DiffView({ diffResults, onHideDiff: _onHideDiff }) {
               {oldValue && (
                 <div
                   style={{
-                    color: status === 'changed' ? colors.danger || '#f87171' : colors.textMuted,
+                    color: status === 'changed' ? colors.danger : colors.textMuted,
                     textDecoration: status === 'changed' ? 'line-through' : 'none',
                   }}
                 >
@@ -85,7 +85,7 @@ export function DiffView({ diffResults, onHideDiff: _onHideDiff }) {
                 color:
                   status === 'removed'
                     ? withOpacity(colors.textMuted, 40)
-                    : colors.available || '#4ade80',
+                    : colors.available,
                 fontWeight: status === 'added' ? 600 : 400,
               }}
             >

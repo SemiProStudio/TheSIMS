@@ -121,6 +121,80 @@ export function useReservationHandlers({
         );
       }
 
+      // Structural edit: the item list can change now. Added items get new
+      // rows in the same group; removed items get their rows CANCELLED (not
+      // hard-deleted) so history survives.
+      const currentIds = [...relatedByItem.keys()];
+      const desiredIds = reservationForm.itemIds?.length ? reservationForm.itemIds : currentIds;
+      const toAdd = desiredIds.filter((id) => !currentIds.includes(id));
+      const toRemove = currentIds.filter((id) => !desiredIds.includes(id));
+
+      for (const targetItemId of toAdd) {
+        const targetItem = inventory.find((i) => i.id === targetItemId);
+        if (!targetItem) continue;
+        const newRow = {
+          id: generateId(),
+          ...reservationForm,
+          groupId: original.groupId || null,
+          notes: [],
+          dueBack: reservationForm.end,
+        };
+        try {
+          const dbResult = await dataContext.createReservation(targetItemId, {
+            ...reservationForm,
+            groupId: original.groupId || null,
+            createdById: currentUser?.id || null,
+            createdByName: currentUser?.name || null,
+          });
+          if (dbResult?.id) newRow.id = dbResult.id;
+        } catch (err) {
+          logError('Failed to add item to reservation:', targetItemId, err);
+          addToast(`Failed to add ${targetItem.name} to the reservation`, 'error');
+          continue;
+        }
+        dataContext.patchInventoryItem(targetItemId, (invItem) => ({
+          reservations: [...(invItem.reservations || []), newRow],
+        }));
+        if (selectedItem?.id === targetItemId) {
+          setSelectedItem((prev) => ({
+            ...prev,
+            reservations: [...(prev.reservations || []), newRow],
+          }));
+        }
+        await reconcileItemReservedStatus(targetItemId, [
+          ...(targetItem.reservations || []),
+          newRow,
+        ]);
+      }
+
+      for (const removeItemId of toRemove) {
+        const rowIdsForItem = relatedByItem.get(removeItemId) || [];
+        if (!rowIdsForItem.length) continue;
+        const invItem = inventory.find((i) => i.id === removeItemId);
+        try {
+          await dataContext.cancelReservations(rowIdsForItem);
+        } catch (err) {
+          logError('Failed to remove item from reservation:', removeItemId, err);
+          addToast(`Failed to remove ${invItem?.name || removeItemId} from the reservation`, 'error');
+          continue;
+        }
+        const remaining = (invItem?.reservations || []).filter(
+          (r) => !rowIdsForItem.includes(r.id),
+        );
+        dataContext.patchInventoryItem(removeItemId, (patchItem) => ({
+          reservations: (patchItem.reservations || []).filter(
+            (r) => !rowIdsForItem.includes(r.id),
+          ),
+        }));
+        if (selectedItem?.id === removeItemId) {
+          setSelectedItem((prev) => ({
+            ...prev,
+            reservations: (prev.reservations || []).filter((r) => !rowIdsForItem.includes(r.id)),
+          }));
+        }
+        await reconcileItemReservedStatus(removeItemId, remaining);
+      }
+
       const groupSize = relatedByItem.size || 1;
       const groupSuffix = groupSize > 1 ? ` (${groupSize} items)` : '';
       addChangeLog({
@@ -312,6 +386,21 @@ export function useReservationHandlers({
   const openEditReservation = useCallback(
     (reservation) => {
       setEditingReservationId(reservation.id);
+      // Seed the full group's items so edit mode can add/remove items —
+      // same group matching as saveReservation (group_id, legacy fallback)
+      const groupItemIds = [];
+      inventory.forEach((invItem) => {
+        const inGroup = (invItem.reservations || []).some(
+          (r) =>
+            r.id === reservation.id ||
+            (reservation.groupId
+              ? r.groupId === reservation.groupId
+              : r.project === reservation.project &&
+                r.start === reservation.start &&
+                r.end === reservation.end),
+        );
+        if (inGroup) groupItemIds.push(invItem.id);
+      });
       setReservationForm({
         project: reservation.project,
         projectType: reservation.projectType || 'Other',
@@ -324,10 +413,12 @@ export function useReservationHandlers({
         contactPhone: formatPhoneNumber(reservation.contactPhone) || '',
         contactEmail: reservation.contactEmail || '',
         location: reservation.location || '',
+        itemIds: groupItemIds,
+        itemId: groupItemIds[0] || '',
       });
       openModal(MODALS.ADD_RESERVATION);
     },
-    [openModal, setEditingReservationId, setReservationForm],
+    [openModal, setEditingReservationId, setReservationForm, inventory],
   );
 
   const deleteReservation = useCallback(

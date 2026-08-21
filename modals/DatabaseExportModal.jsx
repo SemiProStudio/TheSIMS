@@ -12,7 +12,7 @@ import PropTypes from 'prop-types';
 import { Download } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button } from '../components/ui.jsx';
-import { Modal, ModalHeader } from './ModalBase.jsx';
+import { Modal, ModalHeader, ModalFooter } from './ModalBase.jsx';
 import { downloadCSV, getTodayISO } from '../utils';
 import { backupService } from '../lib/services.js';
 import {
@@ -240,16 +240,15 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({ onClose }
           </p>
         )}
 
-        {/* Action buttons */}
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
-          <Button variant="secondary" onClick={onClose} disabled={exporting}>
-            Cancel
-          </Button>
-          <Button onClick={handleExport} icon={Download} disabled={exporting}>
-            {exporting ? 'Exporting…' : `Export ${exportFormat.toUpperCase()}`}
-          </Button>
-        </div>
       </div>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose} disabled={exporting}>
+          Cancel
+        </Button>
+        <Button onClick={handleExport} icon={Download} disabled={exporting}>
+          {exporting ? 'Exporting…' : `Export ${exportFormat.toUpperCase()}`}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 });

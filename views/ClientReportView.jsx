@@ -141,8 +141,18 @@ export const ClientReportPanel = memo(function ClientReportPanel({
               description="Add clients to see them in this report."
             />
           ) : (
-            <div style={{ flex: 1, overflowY: 'auto', minHeight: 200 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                overflowX: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                minHeight: 200,
+              }}
+            >
+              {/* One container scrolls both axes — matches the other report tables;
+                  minWidth keeps the five columns readable on narrow screens */}
+              <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${colors.border}` }}>
                     <th
@@ -246,7 +256,7 @@ export const ClientReportPanel = memo(function ClientReportPanel({
                           >
                             {client.name}
                           </span>
-                          {client.favorite && <span style={{ color: '#f59e0b' }}>★</span>}
+                          {client.favorite && <span style={{ color: colors.warning }}>★</span>}
                         </div>
                         {client.company && client.type === 'Individual' && (
                           <div

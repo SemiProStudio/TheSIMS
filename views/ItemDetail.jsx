@@ -61,10 +61,11 @@ const SECTION_COLORS = {
   kitContents: 'var(--sidebar-item4)',
 };
 
-// Helper to create item style with panel-colored background
+// Helper to create item style with panel-colored background — quiet tint on
+// the neutral section surface (see CollapsibleSection)
 const getItemStyle = (panelColor) => ({
-  background: withOpacity(panelColor, 20),
-  border: `1px solid ${withOpacity(panelColor, 50)}`,
+  background: withOpacity(panelColor, 10),
+  border: `1px solid ${withOpacity(panelColor, 22)}`,
   borderRadius: borderRadius.md,
   padding: `${spacing[3]}px ${spacing[4]}px`,
   marginBottom: spacing[2],
@@ -298,6 +299,14 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
                       color: colors.textMuted,
                       cursor: 'pointer',
                       padding: spacing[1],
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      // ≥40px touch target; negative margins keep the 22x22
+                      // layout footprint so the row doesn't grow
+                      minWidth: 40,
+                      minHeight: 40,
+                      margin: -9,
                     }}
                   >
                     <Trash2 size={14} />
@@ -536,6 +545,14 @@ const KitContentsSection = memo(function KitContentsSection({
                       color: colors.textMuted,
                       cursor: 'pointer',
                       padding: spacing[1],
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      // ≥40px touch target; negative margins keep the 22x22
+                      // layout footprint so the row doesn't grow
+                      minWidth: 40,
+                      minHeight: 40,
+                      margin: -9,
                     }}
                   >
                     <Trash2 size={14} />
@@ -709,9 +726,23 @@ function ItemDetail({
   const isCheckedOut = item?.status === 'checked-out';
 
   const [collapsedSections, setCollapsedSections] = useState(() => {
+    // Archive sections (read-only history) start collapsed while empty — an
+    // expanded empty panel is scroll noise. An explicit saved preference wins,
+    // and toggling in-session works normally after mount.
+    const timelineEmpty =
+      !(item?.checkoutHistory || []).length &&
+      !(item?.maintenanceHistory || []).length &&
+      !(item?.notes || []).length &&
+      !(item?.reminders || []).length &&
+      !(item?.reservations || []).length;
+    const emptyArchiveDefaults = {
+      checkoutHistory: !(item?.checkoutHistory || []).length,
+      timeline: timelineEmpty,
+    };
     const initial = {};
     Object.values(ITEM_DETAIL_SECTIONS).forEach((s) => {
-      initial[s.id] = layoutPrefs?.sections?.[s.id]?.collapsed || false;
+      initial[s.id] =
+        layoutPrefs?.sections?.[s.id]?.collapsed ?? (emptyArchiveDefaults[s.id] || false);
     });
     return initial;
   });
@@ -893,6 +924,11 @@ function ItemDetail({
                     color: colors.textPrimary,
                     cursor: 'pointer',
                     padding: '2px 4px',
+                    // ≥40px touch target; negative margins keep the 24x20
+                    // layout footprint so the header row doesn't grow
+                    minWidth: 40,
+                    minHeight: 40,
+                    margin: '-10px -8px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -977,6 +1013,14 @@ function ItemDetail({
                             color: colors.textMuted,
                             cursor: 'pointer',
                             padding: spacing[1],
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            // ≥40px touch target; negative margins keep the
+                            // 22x22 layout footprint so the row doesn't grow
+                            minWidth: 40,
+                            minHeight: 40,
+                            margin: -9,
                           }}
                         >
                           <Trash2 size={14} />
@@ -1043,6 +1087,11 @@ function ItemDetail({
                     color: colors.textPrimary,
                     cursor: 'pointer',
                     padding: '2px 4px',
+                    // ≥40px touch target; negative margins keep the 24x20
+                    // layout footprint so the header row doesn't grow
+                    minWidth: 40,
+                    minHeight: 40,
+                    margin: '-10px -8px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

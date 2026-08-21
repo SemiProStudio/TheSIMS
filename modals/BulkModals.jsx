@@ -344,6 +344,95 @@ export const BulkDeleteModal = memo(function BulkDeleteModal({
 });
 
 // ============================================================================
+// Bulk Check-In Modal — the end-of-job cart of gear comes back in one go.
+// Only checked-out items in the selection are returned; the rest are skipped.
+// Condition is left as recorded — flag damage per item via the single
+// check-in flow when something came back broken.
+// ============================================================================
+export const BulkCheckInModal = memo(function BulkCheckInModal({
+  selectedIds = [],
+  inventory = [],
+  onConfirm,
+  onClose,
+}) {
+  const [returnNotes, setReturnNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const idList = Array.isArray(selectedIds) ? selectedIds : [];
+  const invList = Array.isArray(inventory) ? inventory : [];
+  const checkedOut = invList.filter(
+    (item) => idList.includes(item.id) && item.status === STATUS.CHECKED_OUT,
+  );
+  const skippedCount = idList.length - checkedOut.length;
+
+  const handleConfirm = async () => {
+    if (!checkedOut.length || submitting) return;
+    setSubmitting(true);
+    await onConfirm({ itemIds: checkedOut.map((i) => i.id), returnNotes: returnNotes.trim() });
+  };
+
+  return (
+    <Modal onClose={onClose} maxWidth={450}>
+      <ModalHeader title="Check In Items" onClose={onClose} />
+      <div style={{ padding: spacing[4] }}>
+        <p style={{ color: colors.textSecondary, marginBottom: spacing[4] }}>
+          Check in{' '}
+          <strong style={{ color: colors.textPrimary }}>{checkedOut.length}</strong> checked-out
+          item{checkedOut.length === 1 ? '' : 's'}
+          {skippedCount > 0 ? ` (${skippedCount} not checked out — skipped)` : ''}. Condition stays
+          as recorded; use the single check-in to report damage.
+        </p>
+
+        <div style={{ marginBottom: spacing[4], maxHeight: 180, overflowY: 'auto' }}>
+          {checkedOut.map((item) => (
+            <div
+              key={item.id}
+              style={{
+                fontSize: typography.fontSize.sm,
+                color: colors.textPrimary,
+                padding: `${spacing[1]}px 0`,
+              }}
+            >
+              {item.name}
+              <span style={{ color: colors.textMuted }}>
+                {' '}
+                — {item.checkedOutTo || 'unknown borrower'}
+              </span>
+            </div>
+          ))}
+          {checkedOut.length === 0 && (
+            <p style={{ color: colors.textMuted, fontSize: typography.fontSize.sm, margin: 0 }}>
+              None of the selected items are checked out.
+            </p>
+          )}
+        </div>
+
+        <div style={{ marginBottom: spacing[4] }}>
+          <label className="label">Return Notes (applied to all)</label>
+          <input
+            value={returnNotes}
+            onChange={(e) => setReturnNotes(e.target.value)}
+            placeholder="e.g., Returned after Smith wedding"
+            style={{ ...styles.input }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirm} disabled={!checkedOut.length || submitting}>
+            {submitting
+              ? 'Checking In...'
+              : `Check In ${checkedOut.length} Item${checkedOut.length === 1 ? '' : 's'}`}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+});
+
+// ============================================================================
 // PropTypes
 // ============================================================================
 

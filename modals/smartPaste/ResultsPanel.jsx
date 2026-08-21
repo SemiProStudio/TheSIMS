@@ -219,7 +219,7 @@ export function ResultsPanel({
             }}
           >
             <span>Matched Specifications ({matchedFields.length})</span>
-            <Check size={12} style={{ color: colors.available || '#4ade80' }} />
+            <Check size={12} style={{ color: colors.available }} />
           </div>
 
           {matchedFields.map(({ specName, data, isRequired }) => {
@@ -290,7 +290,7 @@ export function ResultsPanel({
                 <div key={specName} style={{ breakInside: 'avoid', display: 'flex', gap: 4 }}>
                   <span style={{ opacity: 0.5 }}>—</span>
                   <span>{specName}</span>
-                  {isRequired && <span style={{ color: colors.danger || '#f87171' }}>*</span>}
+                  {isRequired && <span style={{ color: colors.danger }}>*</span>}
                 </div>
               ))}
             </div>

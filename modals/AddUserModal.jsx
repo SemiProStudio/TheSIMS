@@ -6,10 +6,10 @@
 import { memo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Plus } from 'lucide-react';
-import { colors, styles, spacing, typography } from '../theme.js';
-import { Button } from '../components/ui.jsx';
+import { spacing } from '../theme.js';
+import { Button, Input } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
-import { Modal, ModalHeader } from './ModalBase.jsx';
+import { Modal, ModalHeader, ModalFooter } from './ModalBase.jsx';
 
 export const AddUserModal = memo(function AddUserModal({
   onSave,
@@ -70,85 +70,40 @@ export const AddUserModal = memo(function AddUserModal({
     <Modal onClose={onClose} maxWidth={450}>
       <ModalHeader title="Add User" onClose={onClose} />
       <div style={{ padding: spacing[4] }}>
-        <div style={{ marginBottom: spacing[3] }}>
-          <label
-            style={{
-              ...styles.label,
-              color: !form.name || errors.name ? colors.danger : undefined,
-            }}
-          >
-            Name <span style={{ color: colors.danger }}>*</span>
-          </label>
-          <input
-            value={form.name}
-            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-            placeholder="Full name"
-            style={{
-              ...styles.input,
-              borderColor: !form.name || errors.name ? colors.danger : colors.border,
-            }}
-          />
-          {errors.name && (
-            <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>
-              {errors.name}
-            </span>
-          )}
-        </div>
+        <Input
+          label="Name"
+          required
+          value={form.name}
+          onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+          placeholder="Full name"
+          error={errors.name}
+          containerStyle={{ marginBottom: spacing[3] }}
+        />
 
-        <div style={{ marginBottom: spacing[3] }}>
-          <label
-            style={{
-              ...styles.label,
-              color: !form.email || errors.email ? colors.danger : undefined,
-            }}
-          >
-            Email <span style={{ color: colors.danger }}>*</span>
-          </label>
-          <input
-            type="email"
-            value={form.email}
-            onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-            placeholder="user@example.com"
-            style={{
-              ...styles.input,
-              borderColor: !form.email || errors.email ? colors.danger : colors.border,
-            }}
-          />
-          {errors.email && (
-            <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>
-              {errors.email}
-            </span>
-          )}
-        </div>
+        <Input
+          label="Email"
+          required
+          type="email"
+          value={form.email}
+          onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+          placeholder="user@example.com"
+          error={errors.email}
+          containerStyle={{ marginBottom: spacing[3] }}
+        />
 
-        <div style={{ marginBottom: spacing[3] }}>
-          <label
-            style={{
-              ...styles.label,
-              color: !form.password || errors.password ? colors.danger : undefined,
-            }}
-          >
-            Password <span style={{ color: colors.danger }}>*</span>
-          </label>
-          <input
-            type="password"
-            value={form.password}
-            onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-            placeholder="Minimum 6 characters"
-            style={{
-              ...styles.input,
-              borderColor: !form.password || errors.password ? colors.danger : colors.border,
-            }}
-          />
-          {errors.password && (
-            <span style={{ color: colors.danger, fontSize: typography.fontSize.xs }}>
-              {errors.password}
-            </span>
-          )}
-        </div>
+        <Input
+          label="Password"
+          required
+          type="password"
+          value={form.password}
+          onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+          placeholder="Minimum 6 characters"
+          error={errors.password}
+          containerStyle={{ marginBottom: spacing[3] }}
+        />
 
-        <div style={{ marginBottom: spacing[4] }}>
-          <label style={styles.label}>Role</label>
+        <div>
+          <label className="label">Role</label>
           <Select
             value={form.roleId}
             onChange={(e) => setForm((prev) => ({ ...prev, roleId: e.target.value }))}
@@ -156,16 +111,15 @@ export const AddUserModal = memo(function AddUserModal({
             aria-label="Role"
           />
         </div>
-
-        <div style={{ display: 'flex', gap: spacing[3], justifyContent: 'flex-end' }}>
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} icon={Plus}>
-            Add User
-          </Button>
-        </div>
       </div>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button onClick={handleSave} icon={Plus}>
+          Add User
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 });

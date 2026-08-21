@@ -7,6 +7,7 @@ import { memo, useState, useCallback, useRef } from 'react';
 import { Plus, Reply, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDate } from '../utils';
+import { ConfirmDialog } from './ui.jsx';
 
 // Single note component with replies
 const Note = memo(function Note({
@@ -260,6 +261,15 @@ function NotesSection({
   readOnly = false,
 }) {
   const [newNoteText, setNewNoteText] = useState('');
+  // Deleting a note is destructive (soft-deleted, but not undoable from the
+  // UI) — every other destructive action in the app confirms first
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+
+  const requestDelete = useCallback((noteId) => setPendingDeleteId(noteId), []);
+  const confirmDelete = useCallback(() => {
+    if (pendingDeleteId) onDelete(pendingDeleteId);
+    setPendingDeleteId(null);
+  }, [pendingDeleteId, onDelete]);
 
   const handleSubmitNote = useCallback(() => {
     if (newNoteText.trim()) {
@@ -333,7 +343,7 @@ function NotesSection({
                 key={note.id}
                 note={note}
                 onReply={onReply}
-                onDelete={onDelete}
+                onDelete={requestDelete}
                 panelColor={panelColor}
                 readOnly={readOnly}
               />
@@ -341,6 +351,14 @@ function NotesSection({
           )}
         </div>
       </div>
+      <ConfirmDialog
+        isOpen={pendingDeleteId !== null}
+        title="Delete Note"
+        message="Delete this note? Its replies stay visible under a deleted-note stub."
+        confirmText="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </>
   );
 }

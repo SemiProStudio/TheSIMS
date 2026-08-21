@@ -3,7 +3,7 @@
 // Renders the active modal based on activeModal from ModalContext.
 // ============================================================================
 
-import { lazy, Suspense, memo, useEffect } from 'react';
+import { lazy, Suspense, memo, useEffect, useRef } from 'react';
 import { VIEWS, MODALS } from './constants.js';
 import { generateItemCode } from './utils';
 import { runImport } from './lib/importItems.js';
@@ -62,6 +62,9 @@ const BulkCategoryModal = lazy(() =>
 );
 const BulkDeleteModal = lazy(() =>
   import('./modals/BulkModals.jsx').then((m) => ({ default: m.BulkDeleteModal })),
+);
+const BulkCheckInModal = lazy(() =>
+  import('./modals/BulkModals.jsx').then((m) => ({ default: m.BulkCheckInModal })),
 );
 const AddUserModal = lazy(() =>
   import('./modals/AddUserModal.jsx').then((m) => ({ default: m.AddUserModal })),
@@ -128,6 +131,11 @@ export default memo(function AppModals({ handlers, currentUser }) {
     }
   }, [activeModal, ensureClients, canSeeClients]);
 
+  // Persistent scan loop — flag lives here, but the effect that reads
+  // openModal must sit below the handlers destructuring (TDZ otherwise)
+  const returnToScannerRef = useRef(false);
+  const prevModalRef = useRef(activeModal);
+
   // Destructure handlers
   const {
     createItem,
@@ -148,10 +156,13 @@ export default memo(function AppModals({ handlers, currentUser }) {
     openCheckinModal,
     processCheckout,
     processCheckin,
+    processBatchCheckin,
     // Maintenance
     maintenanceItem,
     editingMaintenanceRecord,
     setEditingMaintenanceRecord,
+    maintenancePrefill,
+    setMaintenancePrefill,
     saveMaintenance,
     // Bulk actions
     bulkActionIds,
@@ -161,6 +172,31 @@ export default memo(function AppModals({ handlers, currentUser }) {
     applyBulkCategory,
     applyBulkDelete,
   } = handlers;
+
+  // Persistent scan loop: a checkout/check-in launched FROM the scanner
+  // returns to the scanner when it closes (confirm or cancel alike), so a
+  // 20-item load-out is scan→confirm→scan→confirm instead of re-opening the
+  // scanner from the nav every time. Closing the scanner itself ends the loop.
+  useEffect(() => {
+    const prev = prevModalRef.current;
+    prevModalRef.current = activeModal;
+    if (!returnToScannerRef.current) return;
+    const closedQuickAction =
+      (prev === MODALS.CHECK_OUT || prev === MODALS.CHECK_IN) && !activeModal;
+    if (closedQuickAction) {
+      returnToScannerRef.current = false;
+      openModal(MODALS.QR_SCANNER);
+    } else if (
+      activeModal &&
+      activeModal !== MODALS.QR_SCANNER &&
+      activeModal !== MODALS.CHECK_OUT &&
+      activeModal !== MODALS.CHECK_IN
+    ) {
+      // Some other modal took over (e.g. the damage→maintenance handoff) —
+      // the scan run is over, don't resurrect the scanner later
+      returnToScannerRef.current = false;
+    }
+  }, [activeModal, openModal]);
 
   return (
     <>
@@ -295,6 +331,7 @@ export default memo(function AppModals({ handlers, currentUser }) {
               // item_details gate offered buttons the DB would refuse)
               canEdit('gear_list')
                 ? (item) => {
+                    returnToScannerRef.current = true; // resume scanning after
                     closeModal();
                     // Use openCheckoutModal which properly sets internal state
                     // (fixes bug: setCheckoutItem was not exposed by useCheckoutHandlers)
@@ -305,6 +342,7 @@ export default memo(function AppModals({ handlers, currentUser }) {
             onQuickCheckin={
               canEdit('gear_list')
                 ? (item) => {
+                    returnToScannerRef.current = true; // resume scanning after
                     closeModal();
                     // Use openCheckinModal which properly sets internal state
                     openCheckinModal(item.id);
@@ -379,10 +417,12 @@ export default memo(function AppModals({ handlers, currentUser }) {
           <MaintenanceModal
             item={maintenanceItem}
             editingRecord={editingMaintenanceRecord}
+            initialValues={maintenancePrefill}
             onSave={saveMaintenance}
             onClose={() => {
               closeModal();
               setEditingMaintenanceRecord(null);
+              setMaintenancePrefill(null);
             }}
           />
         )}
@@ -467,6 +507,21 @@ export default memo(function AppModals({ handlers, currentUser }) {
             selectedIds={bulkActionIds}
             inventory={inventory}
             onApply={applyBulkStatus}
+            onClose={() => {
+              closeModal();
+              setBulkActionIds([]);
+            }}
+          />
+        )}
+
+        {activeModal === MODALS.BULK_CHECK_IN && (
+          <BulkCheckInModal
+            selectedIds={bulkActionIds}
+            inventory={inventory}
+            onConfirm={async (payload) => {
+              await processBatchCheckin(payload);
+              setBulkActionIds([]);
+            }}
             onClose={() => {
               closeModal();
               setBulkActionIds([]);

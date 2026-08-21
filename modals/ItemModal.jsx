@@ -322,14 +322,7 @@ export const ItemModal = memo(function ItemModal({
           </div>
 
           {/* Name and Brand */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: spacing[3],
-              marginBottom: spacing[3],
-            }}
-          >
+          <div className="responsive-form-grid" style={{ marginBottom: spacing[3] }}>
             <div>
               <label
                 style={{
@@ -381,14 +374,7 @@ export const ItemModal = memo(function ItemModal({
           </div>
 
           {/* Category and Condition */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: spacing[3],
-              marginBottom: spacing[3],
-            }}
-          >
+          <div className="responsive-form-grid" style={{ marginBottom: spacing[3] }}>
             <div>
               <label style={styles.label}>Category</label>
               <Select
@@ -460,14 +446,7 @@ export const ItemModal = memo(function ItemModal({
           )}
 
           {/* Purchase Price and Current Value */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: spacing[3],
-              marginBottom: spacing[3],
-            }}
-          >
+          <div className="responsive-form-grid" style={{ marginBottom: spacing[3] }}>
             <div>
               <label style={styles.label}>Purchase Price</label>
               <input
@@ -491,14 +470,7 @@ export const ItemModal = memo(function ItemModal({
           </div>
 
           {/* Location and Serial Number */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: spacing[3],
-              marginBottom: spacing[3],
-            }}
-          >
+          <div className="responsive-form-grid" style={{ marginBottom: spacing[3] }}>
             <div>
               <label style={styles.label}>Location</label>
               {flattenedLocations.length > 0 ? (
@@ -619,7 +591,7 @@ export const ItemModal = memo(function ItemModal({
                   >
                     Required Fields
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3] }}>
+                  <div className="responsive-form-grid">
                     {categorySpecs
                       .filter((s) => s.required)
                       .map((spec) => {
@@ -659,7 +631,7 @@ export const ItemModal = memo(function ItemModal({
                   >
                     Optional Fields
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing[3] }}>
+                  <div className="responsive-form-grid">
                     {categorySpecs
                       .filter((s) => !s.required)
                       .map((spec) => (

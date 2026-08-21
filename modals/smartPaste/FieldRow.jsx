@@ -55,7 +55,7 @@ export function FieldRow({
       >
         <span>{specName}</span>
         {isRequired && (
-          <span style={{ color: colors.danger || '#f87171', fontSize: 10, fontWeight: 700 }}>
+          <span style={{ color: colors.danger, fontSize: 10, fontWeight: 700 }}>
             *
           </span>
         )}
@@ -105,8 +105,8 @@ export function FieldRow({
                     fontWeight: 600,
                     padding: '1px 6px',
                     borderRadius: 4,
-                    background: withOpacity(colors.danger || '#f87171', 15),
-                    color: colors.danger || '#f87171',
+                    background: withOpacity(colors.danger, 15),
+                    color: colors.danger,
                     textTransform: 'uppercase',
                     letterSpacing: '0.04em',
                     lineHeight: '16px',
@@ -181,7 +181,7 @@ export function FieldRow({
               <div
                 style={{
                   fontSize: 11,
-                  color: colors.accent1 || '#facc15',
+                  color: colors.accent1,
                   marginTop: 2,
                   display: 'flex',
                   alignItems: 'center',

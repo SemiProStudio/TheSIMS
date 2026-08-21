@@ -54,15 +54,8 @@
   --on-primary: #ffffff;
   --on-danger: #ffffff;
   --on-success: #0b0d10;
-  --danger-bg: rgba(190, 125, 125, 0.1);
   --success: #6b9e78;
   --warning: #b5a56b;
-
-  /* RGB values for rgba() usage */
-  --primary-rgb: 93, 138, 168;
-  --accent2-rgb: 122, 143, 122;
-  --danger-rgb: 181, 107, 107;
-  --status-needs-attention-rgb: 181, 143, 107;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -70,8 +63,9 @@
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
   --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.25);
 
-  /* Input */
-  --input-bg: rgba(106, 154, 184, 0.12);
+  /* Inputs derive their tint from the active theme's primary via the
+     color-mix fallback in each rule — a static --input-bg here would pin
+     every theme to the dark theme's blue tint */
 
   /* Custom cursor */
   --theme-cursor: default;
@@ -86,34 +80,6 @@
   --focus-ring-danger: var(--focus-ring-width) var(--focus-ring-style)
     var(--focus-ring-color-danger);
 
-  /* Additional variables for CSS modules */
-  --text-on-primary: #ffffff;
-  --bg-hover: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(106, 154, 184, 0.4);
-  --primary-hover: color-mix(in srgb, var(--primary) 85%, white);
-  --danger-hover: #dc2626;
-  --bg-tertiary: var(--bg-light);
-  --bg-secondary: var(--bg-medium); /* Alias for CSS modules */
-  --border-color: var(--border); /* Alias for CSS modules */
-  --text-primary-solid: #e8ecf0;
-
-  /* Spacing scale for CSS modules */
-  --spacing-1: 4px;
-  --spacing-2: 8px;
-  --spacing-3: 12px;
-  --spacing-4: 16px;
-  --spacing-5: 20px;
-  --spacing-6: 24px;
-  --spacing-8: 32px;
-  --spacing-10: 40px;
-  --spacing-12: 48px;
-
-  /* Border radius scale */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-full: 9999px;
 }
 
 /* Reset default browser styles that cause white borders */
@@ -184,21 +150,21 @@ a:focus-visible {
 [onclick]:focus-visible {
   outline: var(--focus-ring);
   outline-offset: 0;
-  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.2);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
 /* List items that are interactive */
 .list-item:focus-visible,
 .selection-item:focus-visible {
   outline: none;
-  background: rgba(var(--primary-rgb), 0.15);
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
   box-shadow: inset 0 0 0 2px var(--primary);
 }
 
 /* Sidebar navigation items */
 .sidebar-nav-btn:focus-visible {
   outline: none;
-  background: rgba(var(--primary-rgb), 0.2) !important;
+  background: color-mix(in srgb, var(--primary) 20%, transparent) !important;
   box-shadow: inset 0 0 0 2px var(--primary);
 }
 
@@ -206,7 +172,7 @@ a:focus-visible {
 .admin-card:focus-visible {
   outline: var(--focus-ring);
   outline-offset: 0;
-  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.2);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
 /* Tab buttons */
@@ -217,7 +183,7 @@ a:focus-visible {
 .modal-close:focus-visible {
   outline: var(--focus-ring);
   outline-offset: 0;
-  background: rgba(var(--primary-rgb), 0.15);
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
   border-radius: 50%;
 }
 
@@ -279,6 +245,18 @@ body {
   overscroll-behavior-x: none;
 }
 
+/* Global spinner animation — used by the Spinner component and any raw
+   Loader icon. Must live here (not scoped inside a component's <style>) so
+   views that render a spinning icon without mounting Spinner still animate. */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Ensure the app fills the viewport completely */
 #root {
   min-height: 100%;
@@ -317,7 +295,7 @@ body {
   background-color: var(--bg-light);
   color: var(--text-primary);
   /* Force browser to use dark mode styling for native dropdown */
-  color-scheme: dark;
+  color-scheme: var(--color-scheme, dark);
 }
 
 .app-wrapper select option {
@@ -562,7 +540,7 @@ body {
 
 .sidebar-collapse-btn:hover {
   background: var(--primary);
-  color: white;
+  color: var(--on-primary);
   border-color: var(--primary);
 }
 
@@ -628,6 +606,39 @@ body {
   }
 }
 
+/* ============================================================================
+   Mobile modal sheets — every ModalBase modal becomes a full-screen sheet
+   at phone widths: full width/height, no radius, flex column so the body
+   scrolls under the keyboard and the close button stays reachable
+   ============================================================================ */
+@media (max-width: 768px) {
+  .modal-backdrop {
+    align-items: stretch !important;
+    padding: 0 !important;
+  }
+
+  .modal-box {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100dvh;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    display: flex;
+    flex-direction: column;
+    /* Keep content clear of notches/home indicators */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .modal-box .modal-body {
+    max-height: none !important;
+    flex: 1;
+    min-height: 0;
+  }
+}
+
 /* Sidebar overlay - hidden by default, only shows on mobile when sidebar is open */
 /* Sidebar overlay - hidden by default on desktop */
 .sidebar-overlay {
@@ -664,8 +675,8 @@ body {
   }
 }
 
-/* Small tablet - collapsible sidebar */
-@media (max-width: 768px) {
+/* Phones - off-canvas drawer nav (641-1024px keeps the sidebar as a rail) */
+@media (max-width: 640px) {
   .app-sidebar {
     position: fixed;
     left: 0;
@@ -768,7 +779,7 @@ body {
   display: none !important;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .mobile-header {
     display: flex !important;
     position: fixed;
@@ -911,9 +922,11 @@ body {
 
 /* Small Button Modifier */
 .btn-sm {
-  padding: 4px 8px;
-  font-size: 10px;
+  /* Small, but still a usable touch target */
+  padding: 6px 10px;
+  font-size: 12px;
   gap: 4px;
+  min-height: 32px;
 }
 
 /* Full Width Button */
@@ -989,7 +1002,7 @@ body {
     border-color 150ms ease,
     box-shadow 150ms ease;
   /* Force browser to use dark mode styling for native dropdown */
-  color-scheme: dark;
+  color-scheme: var(--color-scheme, dark);
 }
 
 .select:focus {
@@ -1043,7 +1056,7 @@ input[type='time'] {
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease;
-  color-scheme: dark;
+  color-scheme: var(--color-scheme, dark);
   min-height: 46px;
   cursor: pointer;
 }
@@ -1230,6 +1243,29 @@ input[type='date']::-moz-calendar-picker-indicator {
   border-color: var(--card-accent-color, var(--primary));
 }
 
+/* ============================================================================
+   Dashboard panel columns — single column by default; two masonry-style
+   columns on wide desktops so panels stop stretching across the full width
+   ============================================================================ */
+.dashboard-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 1200px) {
+  .dashboard-columns {
+    display: block;
+    columns: 2;
+    column-gap: 16px;
+  }
+
+  .dashboard-columns-item {
+    break-inside: avoid;
+    margin-bottom: 16px;
+  }
+}
+
 /* Collapsible section header hover */
 .collapsible-header {
   transition: background 150ms ease;
@@ -1237,10 +1273,11 @@ input[type='date']::-moz-calendar-picker-indicator {
 }
 
 .collapsible-header:hover {
-  /* Uses CSS variable set inline for the accent color */
+  /* Uses CSS variable set inline for the accent color. Sections sit on a
+     neutral surface now, so the hover is a whisper of the accent, not a wash */
   background: color-mix(
     in srgb,
-    var(--section-accent-color, var(--primary)) 45%,
+    var(--section-accent-color, var(--primary)) 10%,
     transparent
   ) !important;
 }
@@ -1398,21 +1435,21 @@ button:disabled,
 }
 
 .selection-item:hover {
-  background: rgba(var(--primary-rgb), 0.1);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .selection-item.selected {
-  background: rgba(var(--primary-rgb), 0.2);
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
   border-color: var(--primary);
 }
 
 .selection-item.selected-secondary {
-  background: rgba(var(--accent2-rgb), 0.2);
+  background: color-mix(in srgb, var(--accent2) 20%, transparent);
   border-color: var(--accent2);
 }
 
 .selection-item.partial {
-  background: rgba(var(--primary-rgb), 0.1);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
   border: 1px dashed var(--primary);
 }
 
@@ -1489,7 +1526,7 @@ button:disabled,
 }
 
 .list-item:hover {
-  background: rgba(var(--primary-rgb), 0.05);
+  background: color-mix(in srgb, var(--primary) 5%, transparent);
 }
 
 .list-item:last-child {
@@ -1653,7 +1690,7 @@ button:disabled,
 
 .btn-icon:hover {
   color: var(--text-primary);
-  background: rgba(var(--primary-rgb), 0.1);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .btn-icon.danger {
@@ -1661,7 +1698,7 @@ button:disabled,
 }
 
 .btn-icon.danger:hover {
-  background: rgba(var(--danger-rgb), 0.1);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 /* Data loading shimmer bar */

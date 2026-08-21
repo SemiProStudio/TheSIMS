@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { formatDateTime } from '../utils';
-import { Card, SearchInput, Badge, BackButton, PageHeader } from '../components/ui.jsx';
+import { Card, SearchInput, Badge, BackButton, PageHeader, EmptyState } from '../components/ui.jsx';
 
 // Change type icons and colors
 const CHANGE_TYPE_CONFIG = {
@@ -477,19 +477,11 @@ function ChangeLog({
             ))}
           </div>
         ) : (
-          <div
-            style={{
-              padding: spacing[6],
-              textAlign: 'center',
-              color: colors.textMuted,
-            }}
-          >
-            <History size={48} style={{ opacity: 0.3, marginBottom: spacing[3] }} />
-            <p style={{ margin: 0 }}>No changes recorded yet.</p>
-            <p style={{ margin: `${spacing[1]}px 0 0`, fontSize: typography.fontSize.sm }}>
-              Changes to items, kits, and packages will appear here.
-            </p>
-          </div>
+          <EmptyState
+            icon={History}
+            title="No changes recorded yet"
+            description="Changes to items, kits, and packages will appear here."
+          />
         )}
       </Card>
     </>

@@ -285,7 +285,7 @@ const ImageCropEditor = memo(function ImageCropEditor({
           touchAction: 'none',
           overflow: 'hidden',
           borderRadius: overlayBorderRadius,
-          background: colors.surfaceAlt || '#1a1a2e',
+          background: colors.bgMedium,
         }}
       >
         {/* Canvas preview showing cropped area */}

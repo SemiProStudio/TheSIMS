@@ -37,7 +37,9 @@ test.describe.serial('csv import', () => {
       `"${NAME_A}",cameras,ZZZ-SN-${STAMP},"$1,234","line one\nline two"\n` +
       `"${NAME_B}",Lenses,,,\n`;
 
-    await pages.dashboard.sidebar.locator('button:has-text("Import CSV")').click();
+    // Import moved from the sidebar nav to the Admin Panel data tools
+    await pages.dashboard.navigateTo('Admin Panel');
+    await page.getByText('Import CSV', { exact: true }).click();
     await expect(page.getByText('Import from CSV')).toBeVisible();
     await page.setInputFiles('input[type="file"]', {
       name: 'import.csv',
@@ -93,7 +95,9 @@ test.describe('database export', () => {
     await page.goto('/');
     await pages.dashboard.expectDashboard();
 
-    await pages.dashboard.sidebar.locator('button:has-text("Export Data")').click();
+    // Export moved from the sidebar nav to the Admin Panel data tools
+    await pages.dashboard.navigateTo('Admin Panel');
+    await page.getByText('Export Data', { exact: true }).click();
     await expect(page.getByText('Export Database')).toBeVisible();
 
     const downloadPromise = page.waitForEvent('download');
@@ -153,6 +157,11 @@ test.describe('permission gating', () => {
   test('standard user does not see the database export', async ({ page, pages }) => {
     await page.goto('/');
     await pages.dashboard.expectDashboard();
+    // Export now lives in the Admin Panel; a standard user has no route to
+    // it — no Admin Panel nav entry, and no stray Export Data control
+    await expect(
+      pages.dashboard.sidebar.locator('button:has-text("Admin Panel")'),
+    ).toHaveCount(0);
     await expect(
       pages.dashboard.sidebar.locator('button:has-text("Export Data")'),
     ).toHaveCount(0);

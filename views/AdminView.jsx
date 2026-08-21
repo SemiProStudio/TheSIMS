@@ -5,13 +5,23 @@
 
 import { memo } from 'react';
 import PropTypes from 'prop-types';
-import { Users, Shield, MapPin, Sliders, FolderTree, Clock, FileText } from 'lucide-react';
+import {
+  Users,
+  Shield,
+  MapPin,
+  Sliders,
+  FolderTree,
+  Clock,
+  FileText,
+  Upload,
+  Download,
+} from 'lucide-react';
 import { VIEWS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Card } from '../components/ui.jsx';
 import { usePermissions } from '../contexts/PermissionsContext.js';
 
-export const AdminPanel = memo(function AdminPanel({ setCurrentView }) {
+export const AdminPanel = memo(function AdminPanel({ setCurrentView, onOpenImport, onOpenExport }) {
   const { canView, canEdit } = usePermissions();
 
   // Each card carries the same permission its target view requires — the hub
@@ -80,8 +90,30 @@ export const AdminPanel = memo(function AdminPanel({ setCurrentView }) {
       color: colors.accent3,
       permissionId: 'admin_audit',
     },
-  ].filter((card) =>
-    card.requireEdit ? canEdit(card.permissionId) : canView(card.permissionId),
+    // Data tools — moved here from the sidebar nav (they're occasional admin
+    // actions, not daily destinations). Same permission gates as before:
+    // import follows gear_list EDIT, the full-database export follows
+    // admin_users VIEW.
+    {
+      icon: Upload,
+      label: 'Import CSV',
+      description: 'Bulk-add inventory from a spreadsheet',
+      action: onOpenImport,
+      color: colors.accent2,
+      permissionId: 'gear_list',
+      requireEdit: true,
+    },
+    {
+      icon: Download,
+      label: 'Export Data',
+      description: 'Full database backup and exports',
+      action: onOpenExport,
+      color: colors.primary,
+      permissionId: 'admin_users',
+    },
+  ].filter(
+    (card) =>
+      card.action && (card.requireEdit ? canEdit(card.permissionId) : canView(card.permissionId)),
   );
 
   return (
@@ -147,4 +179,8 @@ export const AdminPanel = memo(function AdminPanel({ setCurrentView }) {
 AdminPanel.propTypes = {
   /** Function to change the current view */
   setCurrentView: PropTypes.func.isRequired,
+  /** Opens the CSV import modal (card hidden when absent) */
+  onOpenImport: PropTypes.func,
+  /** Opens the database export modal (card hidden when absent) */
+  onOpenExport: PropTypes.func,
 };

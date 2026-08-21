@@ -153,14 +153,19 @@ describe('Dashboard reservations', () => {
 
   it('shows ongoing reservations with an Active badge and date range', () => {
     renderDashboard();
-    const activeRow = screen.getByText(/Active Shoot/).closest('button');
-    expect(within(activeRow).getByText('Active')).toBeInTheDocument();
+    // The reservation can also appear in the Today panel ("goes out today"),
+    // so find the Upcoming Reservations row — the one carrying the badge
+    const activeRow = screen
+      .getAllByText(/Active Shoot/)
+      .map((el) => el.closest('button'))
+      .find((btn) => btn && within(btn).queryByText('Active'));
+    expect(activeRow).toBeTruthy();
     expect(screen.getByText(/Future Shoot/)).toBeInTheDocument();
   });
 });
 
 describe('Dashboard quick search', () => {
-  const searchInput = () => screen.getByPlaceholderText('Search by name, ID, brand, or serial...');
+  const searchInput = () => screen.getByPlaceholderText('Search by name, ID, brand, serial, or borrower...');
 
   it('does not crash on items with a null brand', () => {
     renderDashboard();
@@ -267,7 +272,11 @@ describe('Dashboard accessibility and copy', () => {
   it('panel list rows are buttons', () => {
     renderDashboard();
     expect(screen.getByText('Sensor cleaning').closest('button')).not.toBeNull();
-    expect(screen.getByText('Beta Camera').closest('button')).not.toBeNull();
+    // A checked-out item can appear in several panels (Today, Checked Out) —
+    // every appearance must be a clickable row
+    for (const el of screen.getAllByText('Beta Camera')) {
+      expect(el.closest('button')).not.toBeNull();
+    }
   });
 
   it('uses accurate empty-state copy for the checked-out panel', () => {

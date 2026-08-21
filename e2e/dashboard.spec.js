@@ -93,7 +93,7 @@ test.describe('Dashboard quick search', () => {
   });
 
   test('finds items and opens the first result with Enter', async ({ page, pages }) => {
-    const input = page.getByPlaceholder('Search by name, ID, brand, or serial...');
+    const input = page.getByPlaceholder('Search by name, ID, brand, serial, or borrower...');
     await input.fill('LE1002');
     await expect(page.getByRole('button', { name: /LE1002/ }).first()).toBeVisible();
 
@@ -103,7 +103,7 @@ test.describe('Dashboard quick search', () => {
   });
 
   test('offers View all N results for broad queries', async ({ page }) => {
-    const input = page.getByPlaceholder('Search by name, ID, brand, or serial...');
+    const input = page.getByPlaceholder('Search by name, ID, brand, serial, or borrower...');
     await input.fill('a'); // matches nearly everything in the seed set
 
     const viewAll = page.getByRole('button', { name: /View all \d+ results/ });

@@ -303,7 +303,7 @@ describe('loading and empty states', () => {
   it('shows the empty state with a Clear Filters escape hatch', () => {
     resetState({ query: 'zzz-nothing-matches' });
     renderSearch();
-    expect(screen.getByText('No results found matching your search')).toBeInTheDocument();
+    expect(screen.getByText('No results match your search')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Clear Filters' }));
     expect(filterState.setGlobalSearchQuery).toHaveBeenCalledWith('');
     expect(filterState.setGlobalSearchTypes).toHaveBeenCalledWith([]);

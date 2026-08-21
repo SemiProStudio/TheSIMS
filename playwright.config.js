@@ -112,9 +112,18 @@ export default defineConfig({
     },
     {
       name: 'chromium',
-      testIgnore: /visual-.*\.spec\.js/,
+      testIgnore: /visual-.*\.spec\.js|mobile\.spec\.js/,
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
       dependencies: ['setup'],
+    },
+    // Phone-layer smoke tests (drawer nav, scan shortcut, modal sheets).
+    // Read-only, so they run after the mutating functional suite alongside
+    // the visual project without racing it.
+    {
+      name: 'chromium-mobile',
+      testMatch: /mobile\.spec\.js/,
+      use: { ...devices['Pixel 7'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['chromium'],
     },
     {
       name: 'chromium-visual',

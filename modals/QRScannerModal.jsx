@@ -5,7 +5,7 @@
 // link (see lib/qrData.js).
 // ============================================================================
 
-import { memo, useState, useRef } from 'react';
+import { memo, useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Flashlight } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
@@ -69,6 +69,18 @@ export const QRScannerModal = memo(function QRScannerModal({
     startScanning();
   };
 
+  // Auto-start the camera on open — scanning is the whole point of this
+  // modal, and the extra "Start Camera" tap was pure friction at the cage.
+  // If there is no camera (or permission is denied) cameraError shows and
+  // manual entry still works; the Start Camera button remains as the retry.
+  const autoStartedRef = useRef(false);
+  useEffect(() => {
+    if (autoStartedRef.current) return;
+    autoStartedRef.current = true;
+    startScanning();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Handle manual code entry (accepts bare IDs, serials, or pasted deep links)
   const handleManualLookup = () => {
     if (!manualCode.trim()) return;
@@ -94,7 +106,10 @@ export const QRScannerModal = memo(function QRScannerModal({
     }
   };
 
-  const error = cameraError || lookupError;
+  // Lookup errors first: with the camera auto-starting, a headless or
+  // camera-less environment always carries a cameraError, and it must not
+  // mask the actionable "no item found" feedback from manual entry
+  const error = lookupError || cameraError;
 
   const foundItem = found?.type === 'item' ? found.entity : null;
   const foundPackage = found?.type === 'package' ? found.entity : null;

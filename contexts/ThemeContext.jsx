@@ -2,12 +2,13 @@
 // Theme Context - Manages theme switching with CSS variables
 // ============================================================================
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import {
   themes,
   generateRandomTheme,
   DEFAULT_CUSTOM_THEME,
   pickOnColor,
+  isLightColor,
   PRIMARY_FILL_MIXES,
   DANGER_FILL_MIXES,
 } from '../themes-data.js';
@@ -33,7 +34,6 @@ const loadCustomTheme = () => {
           ...colors,
           '--bg-card-solid':
             colors['--bg-card'] || colors['--bg-light'] || DEFAULT_CUSTOM_THEME['--bg-card-solid'],
-          '--danger-bg': (colors['--danger'] || DEFAULT_CUSTOM_THEME['--danger']) + '20',
           // Ensure focus ring colors are set
           '--focus-ring-color':
             colors['--focus-ring-color'] ||
@@ -78,14 +78,16 @@ export function ThemeProvider({ children }) {
     const root = document.documentElement;
     const body = document.body;
 
+    // Copy before deriving: the fallback derivations below must never
+    // mutate the module-level theme definitions in themes-data.js
     let colors;
     if (theme.isRandom) {
-      colors = generatedColors || generateRandomTheme();
+      colors = { ...(generatedColors || generateRandomTheme()) };
     } else if (theme.isCustom) {
       const customTheme = loadCustomTheme();
-      colors = customTheme?.colors || DEFAULT_CUSTOM_THEME;
+      colors = { ...(customTheme?.colors || DEFAULT_CUSTOM_THEME) };
     } else {
-      colors = theme.colors;
+      colors = { ...theme.colors };
     }
 
     // Ensure focus ring colors are set (derive from primary if not explicitly set)
@@ -112,6 +114,17 @@ export function ThemeProvider({ children }) {
     Object.entries(colors).forEach(([property, value]) => {
       root.style.setProperty(property, value);
     });
+
+    // Native form controls (select dropdowns, date pickers, scrollbars)
+    // follow the theme's actual lightness — a hardcoded dark scheme gave
+    // every light theme dark native dropdowns
+    root.style.setProperty('--color-scheme', isLightColor(colors['--bg-dark']) ? 'light' : 'dark');
+
+    // Keep the PWA/browser chrome color in step with the theme
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta && colors['--bg-dark']) {
+      themeColorMeta.setAttribute('content', colors['--bg-dark']);
+    }
 
     // Apply background image
     if (theme.backgroundImage) {
@@ -164,7 +177,12 @@ export function ThemeProvider({ children }) {
     return colors;
   }, []);
 
-  useEffect(() => {
+  // useLayoutEffect: applying before paint removes the one-frame flash of
+  // the CSS default (dark) palette for users on any other theme. Announce
+  // only actual switches — announcing on mount read "Theme changed" to
+  // screen readers on every page load.
+  const isFirstApply = useRef(true);
+  useLayoutEffect(() => {
     let theme = themes[themeId] || themes.dark;
 
     if (theme.isCustom) {
@@ -175,13 +193,16 @@ export function ThemeProvider({ children }) {
       }
     }
 
+    const shouldAnnounce = !isFirstApply.current;
+    isFirstApply.current = false;
+
     if (theme.isRandom) {
       const newColors = generateRandomTheme();
       setRandomColors(newColors);
-      applyTheme(theme, newColors, true);
+      applyTheme(theme, newColors, shouldAnnounce);
     } else {
       setRandomColors(null);
-      applyTheme(theme, null, true);
+      applyTheme(theme, null, shouldAnnounce);
     }
   }, [themeId, applyTheme]);
 

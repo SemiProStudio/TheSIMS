@@ -7,7 +7,7 @@
 // ============================================================================
 
 import { memo, useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { STATUS_LABELS } from '../constants.js';
+import { STATUS, STATUS_LABELS } from '../constants.js';
 import {
   Plus,
   Grid,
@@ -38,7 +38,9 @@ import { getStatusColor,
   matchesStatusSelection,
   formatDate,
   getTodayISO,
+  getAllReservationConflicts,
   generateId, getStatusLabel } from '../utils';
+import { DatePicker } from '../components/DatePicker.jsx';
 import {
   Badge,
   Card,
@@ -51,6 +53,7 @@ import {
 import { OptimizedImage } from '../components/OptimizedImage.jsx';
 import { Select } from '../components/Select.jsx';
 import { useDebounce, usePagination } from '../hooks/index.js';
+import { useMediaQuery } from '../hooks/useMediaQuery.js';
 import { KITS_FILTER, SORT_OPTIONS, sortItems } from '../lib/gearListOptions.js';
 import { usePermissions } from '../contexts/PermissionsContext.js';
 import { ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
@@ -59,7 +62,8 @@ import { ViewOnlyBanner } from '../contexts/PermissionsContext.jsx';
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 250, 500];
 const DEFAULT_PAGE_SIZE = 25;
 
-const SEARCH_FIELDS = ['name', 'brand', 'id', 'serialNumber'];
+// checkedOutTo: "what does Jake still have out?" must be answerable by search
+const SEARCH_FIELDS = ['name', 'brand', 'id', 'serialNumber', 'checkedOutTo'];
 
 // Checkbox component for consistent styling (real checkbox semantics)
 const Checkbox = memo(function Checkbox({ checked, indeterminate, onChange, size = 20, label }) {
@@ -501,26 +505,32 @@ const GridItem = memo(function GridItem({
   );
 });
 
-// Memoized list item component for performance
+// Memoized list item component for performance.
+// `compact` (viewports ≤640px) tightens the row for touch: 40px thumbnail,
+// name first with ID/status badges inline below, 44px minimum tap target.
+// Desktop rendering is untouched — visual baselines pin it.
 const ListItem = memo(function ListItem({
   item,
   onViewItem,
   selectionMode,
   isSelected,
   onToggleSelect,
+  compact = false,
 }) {
   const isOverdue =
     item.status === 'checked-out' && item.dueBack && item.dueBack < getTodayISO();
+  const thumbSize = compact ? 40 : 56;
   return (
     <Card
       aria-label={`${item.name} - ${item.status}${isSelected ? ', selected' : ''}`}
       onClick={(e) => (selectionMode ? onToggleSelect(item.id, e) : onViewItem(item.id))}
       style={{
         cursor: 'pointer',
-        padding: spacing[3],
+        padding: compact ? `${spacing[2]}px ${spacing[3]}px` : spacing[3],
         display: 'flex',
         alignItems: 'center',
-        gap: spacing[3],
+        gap: compact ? spacing[2] : spacing[3],
+        ...(compact && { minHeight: 44 }),
         outline: isSelected ? `2px solid ${colors.primary}` : 'none',
         outlineOffset: '-2px',
         ...(selectionMode && { userSelect: 'none' }),
@@ -541,16 +551,16 @@ const ListItem = memo(function ListItem({
           src={item.image}
           alt={item.name}
           size="thumbnail"
-          width={56}
-          height={56}
+          width={thumbSize}
+          height={thumbSize}
           style={{ borderRadius: borderRadius.md }}
           objectFit="cover"
         />
       ) : (
         <div
           style={{
-            width: 56,
-            height: 56,
+            width: thumbSize,
+            height: thumbSize,
             borderRadius: borderRadius.md,
             background: `${withOpacity(colors.primary, 10)}`,
             display: 'flex',
@@ -564,53 +574,96 @@ const ListItem = memo(function ListItem({
           No img
         </div>
       )}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            display: 'flex',
-            gap: spacing[1],
-            marginBottom: spacing[1],
-            flexWrap: 'wrap',
-          }}
-        >
-          <Badge text={item.id} color={colors.primary} />
-          <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
-          <Badge text={item.category} color={colors.accent2} />
-          {item.isKit && <Badge text="Kit" color={colors.accent1} />}
-          {isOverdue && <Badge text="Overdue" color={colors.danger} />}
-        </div>
-        <div
-          style={{
-            fontWeight: typography.fontWeight.medium,
-            color: colors.textPrimary,
-          }}
-        >
-          {item.name}
-        </div>
-        <div
-          style={{
-            fontSize: typography.fontSize.sm,
-            color: colors.textMuted,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {[item.brand, item.location, item.condition].filter(Boolean).join(' • ')}
-        </div>
-        {item.status === 'checked-out' && (
+      {compact ? (
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
-              fontSize: typography.fontSize.xs,
-              color: isOverdue ? colors.danger : colors.checkedOut,
-              marginTop: 2,
+              fontWeight: typography.fontWeight.medium,
+              fontSize: typography.fontSize.sm,
+              color: colors.textPrimary,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
-            {item.checkedOutTo || 'Unknown'}
-            {item.dueBack ? ` • Due ${formatDate(item.dueBack)}` : ''}
+            {item.name}
           </div>
-        )}
-      </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[1],
+              marginTop: 2,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Badge text={item.id} color={colors.primary} size="xs" />
+            <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} size="xs" />
+            {item.isKit && <Badge text="Kit" color={colors.accent1} size="xs" />}
+            {isOverdue && <Badge text="Overdue" color={colors.danger} size="xs" />}
+          </div>
+          {item.status === 'checked-out' && (
+            <div
+              style={{
+                fontSize: typography.fontSize.xs,
+                color: isOverdue ? colors.danger : colors.checkedOut,
+                marginTop: 2,
+              }}
+            >
+              {item.checkedOutTo || 'Unknown'}
+              {item.dueBack ? ` • Due ${formatDate(item.dueBack)}` : ''}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: spacing[1],
+              marginBottom: spacing[1],
+              flexWrap: 'wrap',
+            }}
+          >
+            <Badge text={item.id} color={colors.primary} />
+            <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} />
+            <Badge text={item.category} color={colors.accent2} />
+            {item.isKit && <Badge text="Kit" color={colors.accent1} />}
+            {isOverdue && <Badge text="Overdue" color={colors.danger} />}
+          </div>
+          <div
+            style={{
+              fontWeight: typography.fontWeight.medium,
+              color: colors.textPrimary,
+            }}
+          >
+            {item.name}
+          </div>
+          <div
+            style={{
+              fontSize: typography.fontSize.sm,
+              color: colors.textMuted,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {[item.brand, item.location, item.condition].filter(Boolean).join(' • ')}
+          </div>
+          {item.status === 'checked-out' && (
+            <div
+              style={{
+                fontSize: typography.fontSize.xs,
+                color: isOverdue ? colors.danger : colors.checkedOut,
+                marginTop: 2,
+              }}
+            >
+              {item.checkedOutTo || 'Unknown'}
+              {item.dueBack ? ` • Due ${formatDate(item.dueBack)}` : ''}
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   );
 });
@@ -664,6 +717,9 @@ const SelectionToolbar = memo(function SelectionToolbar({
             flexWrap: 'wrap',
           }}
         >
+          <Button size="sm" variant="secondary" onClick={() => onBulkAction('checkin')}>
+            Check In
+          </Button>
           <Button size="sm" variant="secondary" onClick={() => onBulkAction('status')}>
             Change Status
           </Button>
@@ -716,6 +772,24 @@ function GearList({
   const { canEdit } = usePermissions();
   const canEditGearList = canEdit('gear_list');
 
+  // Small screens default to LIST mode — the square grid cards render one
+  // enormous ~350px tile per row on phones. This is only a fallback default:
+  // a saved profile pref (uiPrefs.gearListGridView, written by App when the
+  // user toggles) or an explicit toggle click this session always wins.
+  // Desktop (>640px) behavior is byte-identical — visual baselines pin it.
+  const isSmallScreen = useMediaQuery('(max-width: 640px)');
+  const hasSavedViewMode = typeof uiPrefs?.gearListGridView === 'boolean';
+  const [viewModePicked, setViewModePicked] = useState(false);
+  const effectiveGridView =
+    isSmallScreen && !hasSavedViewMode && !viewModePicked ? false : isGridView;
+  const chooseViewMode = useCallback(
+    (grid) => {
+      setViewModePicked(true);
+      setIsGridView(grid);
+    },
+    [setIsGridView],
+  );
+
   // Sort and page size are per-user profile prefs. Legacy device values are
   // migrated into the profile at login, so there is no localStorage read
   // here — a shared machine must not leak one user's prefs to the next.
@@ -724,6 +798,10 @@ function GearList({
     const saved = uiPrefs?.gearListSort;
     return SORT_OPTIONS.some((o) => o.value === saved) ? saved : 'default';
   });
+  // Date-range availability filter (session-only): "what's free for my
+  // shoot?" — the defining question of rental prep
+  const [availStart, setAvailStart] = useState('');
+  const [availEnd, setAvailEnd] = useState('');
 
   // Persist changes only — the mount value came from the profile
   const prefsMountedRef = useRef(false);
@@ -756,7 +834,11 @@ function GearList({
 
   // Check if any filters are active
   const hasActiveFilters =
-    searchQuery || categoryFilter !== 'all' || statusFilter !== 'all' || sortBy !== 'default';
+    searchQuery ||
+    categoryFilter !== 'all' ||
+    statusFilter !== 'all' ||
+    sortBy !== 'default' ||
+    (availStart && availEnd);
 
   // Save (or update, when the name already exists) the current filters
   const saveCurrentView = useCallback(
@@ -829,8 +911,25 @@ function GearList({
       );
     }
 
+    // Availability for a date range: no overlapping reservation, no checkout
+    // that runs into the window, and not sidelined (needs-attention/missing)
+    if (availStart && availEnd) {
+      result = result.filter((item) => {
+        if (item.status === STATUS.NEEDS_ATTENTION || item.status === STATUS.MISSING) return false;
+        return !getAllReservationConflicts(item, availStart, availEnd).hasConflicts;
+      });
+    }
+
     return result;
-  }, [inventory, debouncedSearch, categoryFilter, statusFilter, categorySettings]);
+  }, [
+    inventory,
+    debouncedSearch,
+    categoryFilter,
+    statusFilter,
+    categorySettings,
+    availStart,
+    availEnd,
+  ]);
 
   // Sort after filtering; pagination consumes the sorted list
   const sortedItems = useMemo(() => sortItems(filteredItems, sortBy), [filteredItems, sortBy]);
@@ -930,6 +1029,8 @@ function GearList({
     setCategoryFilter('all');
     setStatusFilter('all');
     setSortBy('default');
+    setAvailStart('');
+    setAvailEnd('');
   }, [setSearchQuery, setCategoryFilter, setStatusFilter]);
 
   return (
@@ -1035,6 +1136,27 @@ function GearList({
             </button>
           )}
 
+          {/* Availability date range — "free for my shoot?" */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: spacing[1] }}>
+            <div style={{ width: 140 }}>
+              <DatePicker
+                value={availStart}
+                onChange={(e) => setAvailStart(e.target.value)}
+                placeholder="Available from"
+                aria-label="Available from date"
+              />
+            </div>
+            <span style={{ color: colors.textMuted, fontSize: typography.fontSize.sm }}>–</span>
+            <div style={{ width: 140 }}>
+              <DatePicker
+                value={availEnd}
+                onChange={(e) => setAvailEnd(e.target.value)}
+                placeholder="to"
+                aria-label="Available until date"
+              />
+            </div>
+          </div>
+
           {/* Category Filter */}
           <Select
             value={categoryFilter}
@@ -1078,29 +1200,29 @@ function GearList({
             }}
           >
             <button
-              onClick={() => setIsGridView(true)}
+              onClick={() => chooseViewMode(true)}
               aria-label="Grid view"
-              aria-pressed={isGridView}
+              aria-pressed={effectiveGridView}
               style={{
                 ...styles.btnSec,
                 border: 'none',
                 padding: '12px 14px',
-                background: isGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
-                color: isGridView ? colors.primary : colors.textSecondary,
+                background: effectiveGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
+                color: effectiveGridView ? colors.primary : colors.textSecondary,
               }}
             >
               <Grid size={18} />
             </button>
             <button
-              onClick={() => setIsGridView(false)}
+              onClick={() => chooseViewMode(false)}
               aria-label="List view"
-              aria-pressed={!isGridView}
+              aria-pressed={!effectiveGridView}
               style={{
                 ...styles.btnSec,
                 border: 'none',
                 padding: '12px 14px',
-                background: !isGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
-                color: !isGridView ? colors.primary : colors.textSecondary,
+                background: !effectiveGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
+                color: !effectiveGridView ? colors.primary : colors.textSecondary,
               }}
             >
               <List size={18} />
@@ -1110,12 +1232,16 @@ function GearList({
       </div>
 
       {/* Grid View - Square Items */}
-      {isGridView ? (
+      {effectiveGridView ? (
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-            gap: spacing[4],
+            // ≤640px: narrower minimum so an explicitly chosen grid shows two
+            // columns on phones instead of one enormous full-width square
+            gridTemplateColumns: isSmallScreen
+              ? 'repeat(auto-fill, minmax(140px, 1fr))'
+              : 'repeat(auto-fill, minmax(180px, 1fr))',
+            gap: isSmallScreen ? spacing[3] : spacing[4],
           }}
         >
           {paginatedItems.map((item) => (
@@ -1140,6 +1266,7 @@ function GearList({
               selectionMode={selectionMode}
               isSelected={selectedIds.has(item.id)}
               onToggleSelect={toggleSelect}
+              compact={isSmallScreen}
             />
           ))}
         </div>

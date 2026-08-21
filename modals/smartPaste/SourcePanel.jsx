@@ -66,7 +66,7 @@ export function SourcePanel({ sourceLines, fields, unmatchedPairs, highlightedLi
                 background: isHighlighted
                   ? withOpacity(colors.primary, 20)
                   : isMatched
-                    ? withOpacity(colors.available || '#4ade80', 8)
+                    ? withOpacity(colors.available, 8)
                     : 'transparent',
                 color: isMatched
                   ? colors.textSecondary
@@ -76,9 +76,9 @@ export function SourcePanel({ sourceLines, fields, unmatchedPairs, highlightedLi
                 borderLeft: isHighlighted
                   ? `3px solid ${colors.primary}`
                   : isMatched
-                    ? `3px solid ${withOpacity(colors.available || '#4ade80', 40)}`
+                    ? `3px solid ${withOpacity(colors.available, 40)}`
                     : isUnmatched
-                      ? `3px solid ${withOpacity(colors.accent1 || '#facc15', 30)}`
+                      ? `3px solid ${withOpacity(colors.accent1, 30)}`
                       : '3px solid transparent',
                 transition: 'background 0.3s, border-color 0.3s',
               }}

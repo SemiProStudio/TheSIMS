@@ -40,6 +40,7 @@ import {
   PageHeader,
 } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
+import { Modal, ModalHeader } from '../modals/ModalBase.jsx';
 import LoadErrorBanner from '../components/LoadErrorBanner.jsx';
 import { useData } from '../contexts/DataContext.js';
 import { useToast } from '../contexts/ToastContext.js';
@@ -51,6 +52,7 @@ import { openPrintWindow } from '../lib/printUtil.js';
 import { buildPackListExportHTML } from './packListExport.js';
 import { parseScannedCode, truncateScannedCode } from '../lib/qrData.js';
 import { useQRScanner } from '../hooks/useQRScanner.js';
+import { useMediaQuery } from '../hooks/useMediaQuery.js';
 
 function PackListsView({
   packLists,
@@ -75,6 +77,10 @@ function PackListsView({
   // fetching" from "user has no pack lists" and shows a misleading empty state
   const packListsLoaded = dataContext?.packListsLoaded !== false;
   const packListsLoadFailed = Boolean(ctxData?.lazyErrors?.packLists);
+
+  // Create/edit view: the two selection panes sit side by side on desktop but
+  // must stack on phones — each keeps half the height and its own scroll
+  const isNarrowScreen = useMediaQuery('(max-width: 768px)');
 
   // Lazy-load pack lists on mount
   useEffect(() => {
@@ -791,13 +797,12 @@ function PackListsView({
       <>
         <PageHeader title="Pack Lists" />
 
-        <div className="modal-backdrop" style={styles.modal}>
-          <div style={{ ...styles.modalBox, maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
-              <h3 style={{ margin: 0, color: colors.textPrimary }}>
-                {namePromptPrevName !== null ? 'Rename Pack List' : 'New Pack List'}
-              </h3>
-            </div>
+        <Modal onClose={handleNamePromptCancel} maxWidth={400}>
+          <ModalHeader
+            title={namePromptPrevName !== null ? 'Rename Pack List' : 'New Pack List'}
+            onClose={handleNamePromptCancel}
+          />
+          <div>
             <div style={{ padding: spacing[4] }}>
               <label style={{ ...styles.label, color: isNameEmpty ? colors.danger : undefined }}>
                 Pack List Name <span style={{ color: colors.danger }}>*</span>
@@ -840,7 +845,7 @@ function PackListsView({
               </Button>
             </div>
           </div>
-        </div>
+        </Modal>
       </>
     );
   }
@@ -889,7 +894,8 @@ function PackListsView({
             flex: 1,
             minHeight: 0,
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: isNarrowScreen ? '1fr' : '1fr 1fr',
+            gridTemplateRows: isNarrowScreen ? '1fr 1fr' : undefined,
             gap: spacing[4],
           }}
         >
@@ -1189,15 +1195,15 @@ function PackListsView({
               </Button>
             )}
             {canEditPackLists && (
-              <button
-                className="btn-icon danger"
-                aria-label={`Delete ${selectedList.name}`}
+              <Button
+                variant="secondary"
+                danger
                 onClick={() =>
                   setConfirmDelete({ isOpen: true, id: selectedList.id, name: selectedList.name })
                 }
-              >
-                <Trash2 size={16} />
-              </button>
+                icon={Trash2}
+                aria-label={`Delete ${selectedList.name}`}
+              />
             )}
           </div>
         </div>
@@ -1490,11 +1496,9 @@ function PackListsView({
 
         {/* Export Modal */}
         {showExport && (
-          <div className="modal-backdrop" style={styles.modal} onClick={() => setShowExport(false)}>
-            <div onClick={(e) => e.stopPropagation()} style={{ ...styles.modalBox, maxWidth: 450 }}>
-              <div style={{ padding: spacing[4], borderBottom: `1px solid ${colors.borderLight}` }}>
-                <h3 style={{ margin: 0, color: colors.textPrimary }}>Export Pack List</h3>
-              </div>
+          <Modal onClose={() => setShowExport(false)} maxWidth={450}>
+            <ModalHeader title="Export Pack List" onClose={() => setShowExport(false)} />
+            <div>
               <div style={{ padding: spacing[4] }}>
                 <div style={{ marginBottom: spacing[3] }}>
                   <label style={styles.label}>Sort By</label>
@@ -1572,7 +1576,7 @@ function PackListsView({
                 </Button>
               </div>
             </div>
-          </div>
+          </Modal>
         )}
 
         {/* Scan to Pack Modal */}
@@ -1659,11 +1663,11 @@ function PackListsView({
       ) : filteredPackLists.length === 0 ? (
         <EmptyState
           icon={Box}
-          title={packLists.length === 0 ? 'No Pack Lists Yet' : 'No Pack Lists Found'}
+          title={packLists.length === 0 ? 'No pack lists yet' : 'No pack lists match your search'}
           description={
             packLists.length === 0
               ? 'Create a pack list to build a checklist of packages and items for a specific job or project.'
-              : 'No pack lists match your search.'
+              : 'Try adjusting your search.'
           }
         />
       ) : (
@@ -1694,16 +1698,16 @@ function PackListsView({
                     {list.name}
                   </h3>
                   {canEditPackLists && (
-                    <button
-                      className="btn-icon danger"
-                      aria-label={`Delete ${list.name}`}
+                    <Button
+                      variant="secondary"
+                      danger
                       onClick={(e) => {
                         e.stopPropagation();
                         setConfirmDelete({ isOpen: true, id: list.id, name: list.name });
                       }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                      icon={Trash2}
+                      aria-label={`Delete ${list.name}`}
+                    />
                   )}
                 </div>
                 <div
@@ -1935,6 +1939,16 @@ function ScanToPackOverlay({
     };
   }, []);
 
+  // Escape closes the overlay like every other dialog in the app. No
+  // backdrop-close on purpose — a stray tap mid-scan shouldn't end the run.
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
   const flashBg =
     flashItem?.status === 'packed'
       ? colors.success
@@ -1945,7 +1959,7 @@ function ScanToPackOverlay({
           : colors.danger;
 
   return (
-    <div className="modal-backdrop" style={{ ...styles.modal, zIndex: 1000 }}>
+    <div className="modal-backdrop" style={styles.modal}>
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -2061,7 +2075,7 @@ function ScanToPackOverlay({
                       border: 'none',
                       borderRadius: borderRadius.md,
                       padding: spacing[2],
-                      color: '#fff',
+                      color: torchOn ? colors.onPrimary : '#fff',
                       cursor: 'pointer',
                       display: 'flex',
                     }}

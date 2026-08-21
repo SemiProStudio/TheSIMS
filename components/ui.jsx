@@ -6,7 +6,7 @@
 import { memo, forwardRef, useState, useCallback, useRef, useEffect, useId } from 'react';
 import PropTypes from 'prop-types';
 import { ArrowLeft } from 'lucide-react';
-import { colors, styles, borderRadius, spacing, typography, withOpacity } from '../theme.js';
+import { colors, styles, borderRadius, spacing, typography, withOpacity, zIndex } from '../theme.js';
 
 // ============================================================================
 // BackButton - Consistent back navigation
@@ -285,11 +285,15 @@ export const CollapsibleSection = memo(function CollapsibleSection({
   const contentId = useId();
 
   return (
+    // Neutral surface, accent EDGE. Section identity comes from the left
+    // accent border + colored icon — not from washing the whole panel in the
+    // accent, which stacked every screen into a wall of colored slabs.
     <div
       style={{
-        background: withAlpha(accentColor, 0.18),
+        background: colors.bgCard,
         borderRadius: borderRadius.lg,
-        border: `1px solid ${withAlpha(accentColor, 0.35)}`,
+        border: `1px solid ${colors.border}`,
+        borderLeft: `3px solid ${accentColor}`,
         overflow: 'hidden',
         ...style,
       }}
@@ -307,9 +311,8 @@ export const CollapsibleSection = memo(function CollapsibleSection({
           gap: spacing[2],
           cursor: 'pointer',
           userSelect: 'none',
-          background: collapsed ? withAlpha(accentColor, 0.3) : withAlpha(accentColor, 0.38),
-          borderBottom: collapsed ? 'none' : `1px solid ${withAlpha(accentColor, 0.4)}`,
-          borderLeft: `4px solid ${accentColor}`,
+          background: 'transparent',
+          borderBottom: collapsed ? 'none' : `1px solid ${colors.borderLight}`,
         }}
       >
         <button
@@ -342,7 +345,7 @@ export const CollapsibleSection = memo(function CollapsibleSection({
           {badge !== undefined && badge !== null && (
             <span
               style={{
-                background: withAlpha(accentColor, 0.5),
+                background: withAlpha(accentColor, 0.15),
                 color: colors.textPrimary,
                 padding: '2px 8px',
                 borderRadius: borderRadius.full,
@@ -363,7 +366,6 @@ export const CollapsibleSection = memo(function CollapsibleSection({
           id={contentId}
           style={{
             padding: padding ? spacing[4] : 0,
-            background: withAlpha(accentColor, 0.3),
           }}
         >
           {children}
@@ -382,6 +384,7 @@ export const Input = memo(
     {
       label,
       error,
+      required = false,
       icon: Icon,
       style: customStyle,
       containerStyle,
@@ -390,13 +393,24 @@ export const Input = memo(
     },
     ref,
   ) {
+    const errorId = useId();
     const inputClassNames = ['input', error && 'input-error', customClassName]
       .filter(Boolean)
       .join(' ');
 
     return (
       <div style={containerStyle}>
-        {label && <label className={error ? 'label label-error' : 'label'}>{label}</label>}
+        {label && (
+          <label className={error ? 'label label-error' : 'label'}>
+            {label}
+            {required && (
+              <span aria-hidden="true" style={{ color: colors.danger }}>
+                {' '}
+                *
+              </span>
+            )}
+          </label>
+        )}
         <div style={{ position: 'relative' }}>
           {Icon && (
             <div
@@ -414,6 +428,9 @@ export const Input = memo(
           <input
             ref={ref}
             className={inputClassNames}
+            aria-required={required || undefined}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? errorId : undefined}
             style={{
               ...(Icon && { paddingLeft: spacing[10] }),
               ...customStyle,
@@ -423,10 +440,13 @@ export const Input = memo(
         </div>
         {error && (
           <span
+            id={errorId}
+            role="alert"
             style={{
               color: colors.danger,
               fontSize: typography.fontSize.xs,
               marginTop: spacing[1],
+              display: 'block',
             }}
           >
             {error}
@@ -599,7 +619,7 @@ export const ConfirmDialog = memo(function ConfirmDialog({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000,
+        zIndex: zIndex.confirm,
       }}
       onClick={onCancel}
       role="presentation"
@@ -924,7 +944,7 @@ export const Pagination = memo(function Pagination({
     padding: 0,
     justifyContent: 'center',
     background: isActive ? colors.primary : 'transparent',
-    color: isActive ? '#fff' : colors.textPrimary,
+    color: isActive ? colors.onPrimary : colors.textPrimary,
     border: isActive ? 'none' : `1px solid ${colors.border}`,
     fontWeight: isActive ? typography.fontWeight.medium : typography.fontWeight.normal,
   });
@@ -1028,7 +1048,7 @@ export const SkipLink = memo(function SkipLink({
         zIndex: 9999,
         padding: `${spacing[2]}px ${spacing[4]}px`,
         background: colors.primary,
-        color: '#fff',
+        color: colors.onPrimary,
         textDecoration: 'none',
         borderRadius: borderRadius.md,
       }}

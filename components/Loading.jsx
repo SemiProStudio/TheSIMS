@@ -36,12 +36,6 @@ export function Spinner({ size = 40, color = 'var(--primary)', className = '' })
         strokeLinecap="round"
         fill="none"
       />
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </svg>
   );
 }
@@ -83,7 +77,9 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000,
+    // Match the modal layer (theme.js zIndex.modal) so lazy-modal loading
+    // overlays sit above the fixed mobile header, like the modals they precede
+    zIndex: 1100,
   },
   modalLoadingBox: {
     backgroundColor: 'var(--bg-medium)',

@@ -69,7 +69,7 @@ export const UsersPanel = memo(function UsersPanel({
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: typography.fontWeight.semibold,
-                  color: '#fff',
+                  color: colors.onPrimary,
                   fontSize: typography.fontSize.lg,
                 }}
               >

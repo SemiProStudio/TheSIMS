@@ -283,12 +283,12 @@ describe('lazy loading', () => {
       dataContext: makeDataContext({ packListsLoaded: false }),
     });
     expect(screen.getByText('Loading pack lists...')).toBeInTheDocument();
-    expect(screen.queryByText('No Pack Lists Yet')).not.toBeInTheDocument();
+    expect(screen.queryByText('No pack lists yet')).not.toBeInTheDocument();
   });
 
   it('shows the empty state once loaded with no lists', () => {
     renderView({ packLists: [] });
-    expect(screen.getByText('No Pack Lists Yet')).toBeInTheDocument();
+    expect(screen.getByText('No pack lists yet')).toBeInTheDocument();
     expect(screen.queryByText('Loading pack lists...')).not.toBeInTheDocument();
   });
 });
