@@ -756,6 +756,7 @@ export default function App() {
     applyBulkLocation,
     applyBulkCategory,
     applyBulkDelete,
+    applyBulkPhoto,
     openEditItem,
     addChangeLog,
   } = inventoryActions;
@@ -1182,6 +1183,7 @@ export default function App() {
       applyBulkLocation,
       applyBulkCategory,
       applyBulkDelete,
+      applyBulkPhoto,
     }),
     [
       createItem,
@@ -1211,6 +1213,7 @@ export default function App() {
       applyBulkLocation,
       applyBulkCategory,
       applyBulkDelete,
+      applyBulkPhoto,
     ],
   );
 

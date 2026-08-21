@@ -36,6 +36,9 @@ const ImageSelectorModal = lazy(() =>
 const QRScannerModal = lazy(() =>
   import('./modals/QRScannerModal.jsx').then((m) => ({ default: m.QRScannerModal })),
 );
+const BulkPhotosModal = lazy(() =>
+  import('./modals/BulkPhotosModal.jsx').then((m) => ({ default: m.BulkPhotosModal })),
+);
 const CSVImportModal = lazy(() =>
   import('./modals/CSVImportModal.jsx').then((m) => ({ default: m.CSVImportModal })),
 );
@@ -171,6 +174,7 @@ export default memo(function AppModals({ handlers, currentUser }) {
     applyBulkLocation,
     applyBulkCategory,
     applyBulkDelete,
+    applyBulkPhoto,
   } = handlers;
 
   // Persistent scan loop: a checkout/check-in launched FROM the scanner
@@ -277,7 +281,6 @@ export default memo(function AppModals({ handlers, currentUser }) {
             an upload whose save can only fail */}
         {activeModal === MODALS.IMAGE_SELECT && canEdit('gear_list') && (
           <ImageSelectorModal
-            images={[]}
             currentImage={selectedItem?.image}
             itemId={selectedItem?.id}
             onSelect={selectImage}
@@ -355,6 +358,10 @@ export default memo(function AppModals({ handlers, currentUser }) {
 
         {/* Defense-in-depth: openers are gated, but the modal layer enforces
             its own key so no future openModal caller can bypass it */}
+        {activeModal === MODALS.BULK_PHOTOS && canEdit('gear_list') && (
+          <BulkPhotosModal items={inventory} onApplyPhoto={applyBulkPhoto} onClose={closeModal} />
+        )}
+
         {activeModal === MODALS.CSV_IMPORT && canEdit('gear_list') && (
           <CSVImportModal
             categories={categories}

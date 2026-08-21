@@ -1,6 +1,11 @@
 // ============================================================================
-// ImageCropEditor - Canvas-based image crop, zoom, and pan editor
-// Used for profile photos and item images
+// ImageCropEditor - Canvas-based square crop with zoom and pan
+// Works on the pipeline's WORKING image (see lib/imageProcessing.js) and
+// returns a crop rectangle in working-image pixels — encoding happens later,
+// once, in the pipeline. Drawing from the already-downscaled working canvas
+// keeps pan/zoom smooth on phones even for 50-megapixel originals, and never
+// taints a canvas (the old version loaded stored URLs without CORS and its
+// export threw "Tainted canvases may not be exported").
 // ============================================================================
 
 import { memo, useState, useRef, useCallback, useEffect } from 'react';
@@ -18,50 +23,13 @@ const ZOOM_STEP = 0.1;
 const ZOOM_WHEEL_SENSITIVITY = 0.002;
 
 // ============================================================================
-// Helper: crop image on a canvas and return data URL
-// ============================================================================
-function cropImageToCanvas(image, cropArea, outputSize, borderRadiusPx = 0) {
-  const canvas = document.createElement('canvas');
-  canvas.width = outputSize;
-  canvas.height = outputSize;
-  const ctx = canvas.getContext('2d');
-
-  // Optional: clip to rounded rect for preview (final output is always square)
-  if (borderRadiusPx > 0) {
-    ctx.beginPath();
-    const r = borderRadiusPx;
-    ctx.moveTo(r, 0);
-    ctx.arcTo(outputSize, 0, outputSize, outputSize, r);
-    ctx.arcTo(outputSize, outputSize, 0, outputSize, r);
-    ctx.arcTo(0, outputSize, 0, 0, r);
-    ctx.arcTo(0, 0, outputSize, 0, r);
-    ctx.closePath();
-    ctx.clip();
-  }
-
-  ctx.drawImage(
-    image,
-    cropArea.x,
-    cropArea.y,
-    cropArea.size,
-    cropArea.size,
-    0,
-    0,
-    outputSize,
-    outputSize,
-  );
-
-  return canvas.toDataURL('image/jpeg', 0.9);
-}
-
-// ============================================================================
 // ImageCropEditor Component
 // ============================================================================
 const ImageCropEditor = memo(function ImageCropEditor({
-  imageSrc,
+  working,
+  initialCrop = null,
   onCropComplete,
   onCancel,
-  outputSize = 400,
   cropShape = 'rounded-square', // 'rounded-square' | 'circle' | 'square'
   cropBorderRadius = 12,
   title = 'Crop Image',
@@ -71,35 +39,38 @@ const ImageCropEditor = memo(function ImageCropEditor({
   const [pan, setPan] = useState({ x: 0, y: 0 }); // pan offset in image-space pixels
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageNatural, setImageNatural] = useState({ width: 0, height: 0 });
 
   // Refs
   const containerRef = useRef(null);
-  const imageRef = useRef(null);
   const canvasPreviewRef = useRef(null);
 
-  // ============================================================================
-  // Image loading
-  // ============================================================================
+  const imageLoaded = Boolean(working?.canvas);
+  const imageNatural = { width: working?.width || 0, height: working?.height || 0 };
+  const sourceCanvas = working?.canvas || null;
+
+  // A new working image (or a previous crop to resume from) resets the view
   useEffect(() => {
-    const img = new Image();
-    img.onload = () => {
-      imageRef.current = img;
-      setImageNatural({ width: img.naturalWidth, height: img.naturalHeight });
-      setImageLoaded(true);
-      // Center the image
+    if (!working?.canvas) return;
+    const natW = working.width;
+    const natH = working.height;
+    if (initialCrop && initialCrop.size > 0) {
+      const base = Math.min(natW, natH);
+      setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, base / initialCrop.size)));
+      setPan({
+        x: initialCrop.x + initialCrop.size / 2 - natW / 2,
+        y: initialCrop.y + initialCrop.size / 2 - natH / 2,
+      });
+    } else {
       setPan({ x: 0, y: 0 });
       setZoom(1);
-    };
-    img.src = imageSrc;
-  }, [imageSrc]);
+    }
+  }, [working, initialCrop]);
 
   // ============================================================================
   // Calculate crop area in image coordinates
   // ============================================================================
   const getCropArea = useCallback(() => {
-    if (!imageRef.current) return { x: 0, y: 0, size: 0 };
+    if (!sourceCanvas) return { x: 0, y: 0, size: 0 };
 
     const { width: natW, height: natH } = imageNatural;
     // The visible crop size in image-space: the smaller dimension divided by zoom
@@ -119,13 +90,14 @@ const ImageCropEditor = memo(function ImageCropEditor({
     y = Math.max(0, Math.min(y, natH - cropSize));
 
     return { x, y, size: cropSize };
-  }, [imageNatural, zoom, pan]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceCanvas, imageNatural.width, imageNatural.height, zoom, pan]);
 
   // ============================================================================
   // Draw preview on canvas
   // ============================================================================
   useEffect(() => {
-    if (!imageLoaded || !canvasPreviewRef.current || !imageRef.current) return;
+    if (!sourceCanvas || !canvasPreviewRef.current) return;
 
     const canvas = canvasPreviewRef.current;
     const ctx = canvas.getContext('2d');
@@ -137,7 +109,7 @@ const ImageCropEditor = memo(function ImageCropEditor({
 
     // Draw cropped region
     ctx.drawImage(
-      imageRef.current,
+      sourceCanvas,
       cropArea.x,
       cropArea.y,
       cropArea.size,
@@ -147,7 +119,7 @@ const ImageCropEditor = memo(function ImageCropEditor({
       displaySize,
       displaySize,
     );
-  }, [imageLoaded, zoom, pan, getCropArea]);
+  }, [sourceCanvas, zoom, pan, getCropArea]);
 
   // ============================================================================
   // Mouse/Touch handlers for panning
@@ -160,7 +132,7 @@ const ImageCropEditor = memo(function ImageCropEditor({
 
   const handlePointerMove = useCallback(
     (e) => {
-      if (!isDragging || !imageRef.current) return;
+      if (!isDragging || !sourceCanvas) return;
       e.preventDefault();
 
       const { width: natW, height: natH } = imageNatural;
@@ -188,7 +160,8 @@ const ImageCropEditor = memo(function ImageCropEditor({
 
       setDragStart({ x: e.clientX, y: e.clientY });
     },
-    [isDragging, dragStart, imageNatural, zoom],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isDragging, dragStart, imageNatural.width, imageNatural.height, zoom, sourceCanvas],
   );
 
   const handlePointerUp = useCallback(() => {
@@ -238,12 +211,10 @@ const ImageCropEditor = memo(function ImageCropEditor({
   // Commit crop
   // ============================================================================
   const handleCropComplete = useCallback(() => {
-    if (!imageRef.current) return;
-    const cropArea = getCropArea();
-    const dataUrl = cropImageToCanvas(imageRef.current, cropArea, outputSize, 0);
-    // Always output square — the display layer handles rounding
-    onCropComplete(dataUrl);
-  }, [getCropArea, outputSize, onCropComplete]);
+    if (!imageLoaded) return;
+    // Square region in working-image pixels; the pipeline renders + encodes it
+    onCropComplete(getCropArea());
+  }, [imageLoaded, getCropArea, onCropComplete]);
 
   // ============================================================================
   // Crop overlay shape
@@ -254,7 +225,7 @@ const ImageCropEditor = memo(function ImageCropEditor({
   // ============================================================================
   // Render
   // ============================================================================
-  if (!imageSrc) return null;
+  if (!working) return null;
 
   return (
     <div style={{ padding: spacing[4] }}>
@@ -422,14 +393,22 @@ const ImageCropEditor = memo(function ImageCropEditor({
 });
 
 ImageCropEditor.propTypes = {
-  /** Data URL or URL of image to crop */
-  imageSrc: PropTypes.string.isRequired,
-  /** Called with cropped image data URL */
+  /** Working image from lib/imageProcessing loadWorkingImage */
+  working: PropTypes.shape({
+    canvas: PropTypes.object,
+    width: PropTypes.number,
+    height: PropTypes.number,
+  }),
+  /** Previous crop to resume from (working-image pixels) */
+  initialCrop: PropTypes.shape({
+    x: PropTypes.number,
+    y: PropTypes.number,
+    size: PropTypes.number,
+  }),
+  /** Called with the chosen square crop {x, y, size} in working-image pixels */
   onCropComplete: PropTypes.func.isRequired,
   /** Called when user cancels crop */
   onCancel: PropTypes.func.isRequired,
-  /** Output image size in pixels */
-  outputSize: PropTypes.number,
   /** Crop overlay shape */
   cropShape: PropTypes.oneOf(['rounded-square', 'circle', 'square']),
   /** Border radius for rounded-square mode */

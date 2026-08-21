@@ -147,12 +147,26 @@ export async function addTestMaintenance(itemId, { type, status = 'scheduled', i
 export async function deleteTestItem(id) {
   if (!id) return;
   const db = await adminDb();
+  await deleteTestItemImages(id);
   await db.from('checkout_history').delete().eq('item_id', id);
   await db.from('reservations').delete().eq('item_id', id);
   await db.from('item_reminders').delete().eq('item_id', id);
   await db.from('maintenance_records').delete().eq('item_id', id);
   const { error } = await db.from('inventory').delete().eq('id', id);
   if (error) throw new Error(`deleteTestItem(${id}) failed: ${error.message}`);
+}
+
+/**
+ * Remove every object the image pipeline stored under `<itemId>/` in the
+ * equipment-images bucket (the admin E2E user holds gear_list edit, which the
+ * storage delete policy keys on). Best-effort: a missing folder is fine.
+ */
+export async function deleteTestItemImages(itemId) {
+  if (!itemId) return;
+  const db = await adminDb();
+  const { data } = await db.storage.from('equipment-images').list(itemId, { limit: 100 });
+  const paths = (data || []).filter((f) => f.id !== null).map((f) => `${itemId}/${f.name}`);
+  if (paths.length) await db.storage.from('equipment-images').remove(paths);
 }
 
 /** Delete items created through the UI (their ids are auto-generated). */

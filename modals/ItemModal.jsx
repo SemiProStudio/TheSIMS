@@ -5,7 +5,7 @@
 
 import { memo, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Plus, Save, Trash2, Upload, X } from 'lucide-react';
+import { Plus, Save, Trash2 } from 'lucide-react';
 import { CONDITION } from '../constants.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Badge, Button } from '../components/ui.jsx';
@@ -14,7 +14,7 @@ import { DatePicker } from '../components/DatePicker.jsx';
 import { useItemForm } from '../components/ItemForm.jsx';
 import { SpecFieldInput } from '../components/SpecFieldInput.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
-import ImageCropEditor from '../components/ImageCropEditor.jsx';
+import ImageField from '../components/ImageField.jsx';
 import { SmartPasteModal } from './smartPaste/SmartPasteModal.jsx';
 import { applySmartPastePayload } from '../lib/smartPaste/applyPayload.js';
 
@@ -36,8 +36,6 @@ export const ItemModal = memo(function ItemModal({
   onDelete,
 }) {
   const [showSmartPaste, setShowSmartPaste] = useState(false);
-  const [cropSrc, setCropSrc] = useState(null);
-  const [imageUploading, setImageUploading] = useState(false);
 
   // Use the shared ItemForm hook for validation and computed values
   const {
@@ -64,31 +62,14 @@ export const ItemModal = memo(function ItemModal({
     categories,
   });
 
-  // Image crop handler — uploads to Supabase Storage when editing, stores base64 for new items
-  const handleCropComplete = useCallback(
-    async (croppedDataUrl) => {
-      setCropSrc(null);
-
-      if (isEdit && itemId) {
-        setImageUploading(true);
-        try {
-          const { storageService } = await import('../lib/index.js');
-          // Upload only — the OLD storage object stays until the save
-          // commits (useInventoryActions.updateItem cleans it up afterwards).
-          // Deleting it here meant Cancel, or a failed save, left the DB
-          // referencing a destroyed image.
-          const result = await storageService.uploadFromDataUrl(croppedDataUrl, itemId);
-          handleChange('image', result.url);
-        } catch (_err) {
-          handleChange('image', croppedDataUrl);
-        } finally {
-          setImageUploading(false);
-        }
-      } else {
-        handleChange('image', croppedDataUrl);
-      }
+  // The picker hands us a pending (already downscaled) image; the save
+  // handlers in useInventoryActions upload it and write the URL — so a
+  // cancelled edit never orphans an upload and base64 never reaches the DB
+  const handleImageChange = useCallback(
+    ({ value, pending }) => {
+      setItemForm((prev) => ({ ...prev, image: value, pendingImage: pending }));
     },
-    [isEdit, itemId, handleChange],
+    [setItemForm],
   );
 
   // Handle save with validation. The hook toasts and rethrows on failure so
@@ -170,156 +151,14 @@ export const ItemModal = memo(function ItemModal({
             </div>
           )}
 
-          {/* Image Upload Section */}
-          <div style={{ marginBottom: spacing[4] }}>
-            <label style={styles.label}>Image (Optional)</label>
-
-            {cropSrc ? (
-              /* Crop editor mode */
-              <ImageCropEditor
-                imageSrc={cropSrc}
-                onCropComplete={handleCropComplete}
-                onCancel={() => setCropSrc(null)}
-                outputSize={600}
-                cropShape="square"
-                title="Crop item image"
-              />
-            ) : (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing[3],
-                  padding: spacing[3],
-                  border: `1px dashed ${colors.border}`,
-                  borderRadius: borderRadius.md,
-                  background: colors.bgLight,
-                  opacity: imageUploading ? 0.6 : 1,
-                }}
-              >
-                {itemForm.image ? (
-                  <>
-                    <img
-                      src={itemForm.image}
-                      alt="Item preview"
-                      style={{
-                        width: 80,
-                        height: 80,
-                        objectFit: 'cover',
-                        borderRadius: borderRadius.md,
-                      }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: typography.fontSize.sm,
-                          color: colors.textSecondary,
-                        }}
-                      >
-                        {imageUploading ? 'Uploading...' : 'Image attached'}
-                      </p>
-                      <button
-                        onClick={() => setCropSrc(itemForm.image)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: colors.primary,
-                          fontSize: typography.fontSize.sm,
-                          cursor: 'pointer',
-                          padding: 0,
-                          marginTop: spacing[1],
-                        }}
-                      >
-                        Resize / Crop
-                      </button>
-                      <button
-                        onClick={() => {
-                          // Clear the form only — the storage object is
-                          // deleted after the save commits (a click here used
-                          // to destroy it immediately, surviving Cancel)
-                          handleChange('image', null);
-                        }}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: colors.danger,
-                          fontSize: typography.fontSize.sm,
-                          cursor: 'pointer',
-                          padding: 0,
-                          marginTop: spacing[1],
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: spacing[1],
-                        }}
-                      >
-                        <X size={14} /> Remove image
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div
-                      style={{
-                        width: 80,
-                        height: 80,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: withOpacity(colors.primary, 10),
-                        borderRadius: borderRadius.md,
-                        color: colors.textMuted,
-                      }}
-                    >
-                      <Upload size={24} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif"
-                        id="item-image-upload"
-                        style={{ display: 'none' }}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            if (file.size > 5 * 1024 * 1024) return;
-                            if (!file.type.startsWith('image/')) return;
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              setCropSrc(event.target.result);
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                          if (e.target) e.target.value = '';
-                        }}
-                      />
-                      <label
-                        htmlFor="item-image-upload"
-                        style={{
-                          ...styles.btnSec,
-                          display: 'inline-flex',
-                          cursor: 'pointer',
-                          fontSize: typography.fontSize.sm,
-                        }}
-                      >
-                        <Upload size={14} style={{ marginRight: spacing[1] }} />
-                        Choose Image
-                      </label>
-                      <p
-                        style={{
-                          margin: `${spacing[1]}px 0 0`,
-                          fontSize: typography.fontSize.xs,
-                          color: colors.textMuted,
-                        }}
-                      >
-                        JPG, PNG, or WebP (max 5MB)
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+          {/* Image — any size; processed client-side, uploaded on save */}
+          <ImageField
+            value={itemForm.image}
+            pending={itemForm.pendingImage}
+            onChange={handleImageChange}
+            inputId="item-image-upload"
+            cropTitle="Crop item image"
+          />
 
           {/* Name and Brand */}
           <div className="responsive-form-grid" style={{ marginBottom: spacing[3] }}>

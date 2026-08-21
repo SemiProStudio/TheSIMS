@@ -15,13 +15,19 @@ import {
   FileText,
   Upload,
   Download,
+  ImagePlus,
 } from 'lucide-react';
 import { VIEWS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Card } from '../components/ui.jsx';
 import { usePermissions } from '../contexts/PermissionsContext.js';
 
-export const AdminPanel = memo(function AdminPanel({ setCurrentView, onOpenImport, onOpenExport }) {
+export const AdminPanel = memo(function AdminPanel({
+  setCurrentView,
+  onOpenImport,
+  onOpenExport,
+  onOpenBulkPhotos,
+}) {
   const { canView, canEdit } = usePermissions();
 
   // Each card carries the same permission its target view requires — the hub
@@ -104,6 +110,15 @@ export const AdminPanel = memo(function AdminPanel({ setCurrentView, onOpenImpor
       requireEdit: true,
     },
     {
+      icon: ImagePlus,
+      label: 'Bulk Photos',
+      description: 'Attach many item photos at once, matched by filename',
+      action: onOpenBulkPhotos,
+      color: colors.accent3,
+      permissionId: 'gear_list',
+      requireEdit: true,
+    },
+    {
       icon: Download,
       label: 'Export Data',
       description: 'Full database backup and exports',
@@ -181,6 +196,7 @@ AdminPanel.propTypes = {
   setCurrentView: PropTypes.func.isRequired,
   /** Opens the CSV import modal (card hidden when absent) */
   onOpenImport: PropTypes.func,
+  onOpenBulkPhotos: PropTypes.func,
   /** Opens the database export modal (card hidden when absent) */
   onOpenExport: PropTypes.func,
 };

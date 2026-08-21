@@ -587,6 +587,7 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           <AdminPanel
             setCurrentView={setCurrentView}
             onOpenImport={() => openModal(MODALS.CSV_IMPORT)}
+            onOpenBulkPhotos={() => openModal(MODALS.BULK_PHOTOS)}
             onOpenExport={() => openModal(MODALS.DATABASE_EXPORT)}
           />
         </Suspense>
