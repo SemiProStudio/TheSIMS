@@ -1244,25 +1244,20 @@ input[type='date']::-moz-calendar-picker-indicator {
 }
 
 /* ============================================================================
-   Dashboard panel columns — single column by default; two masonry-style
-   columns on wide desktops so panels stop stretching across the full width
+   Dashboard panel columns — one stack by default; two INDEPENDENT stacks on
+   wide desktops (Dashboard.jsx splits the panels; each stack is its own flex
+   column, so collapsing a panel never reflows the other column)
    ============================================================================ */
 .dashboard-columns {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 16px;
+  align-items: start;
 }
 
 @media (min-width: 1200px) {
   .dashboard-columns {
-    display: block;
-    columns: 2;
-    column-gap: 16px;
-  }
-
-  .dashboard-columns-item {
-    break-inside: avoid;
-    margin-bottom: 16px;
+    grid-template-columns: 1fr 1fr;
   }
 }
 
