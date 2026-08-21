@@ -103,10 +103,23 @@ test.describe('Email Notifications', () => {
         timeout: 15000,
       });
 
+      // The confirmation email goes out alongside the inventory write, so the
+      // toast can beat the commit — poll the row rather than read it once
       const db = await adminDb();
       const { data: me } = await db.auth.getUser();
-      const { data } = await db.from('inventory').select('checked_out_to_user_id').eq('id', id).single();
-      expect(data.checked_out_to_user_id).toBe(me.user.id);
+      await expect
+        .poll(
+          async () => {
+            const { data } = await db
+              .from('inventory')
+              .select('checked_out_to_user_id')
+              .eq('id', id)
+              .maybeSingle();
+            return data?.checked_out_to_user_id ?? null;
+          },
+          { timeout: 15000 },
+        )
+        .toBe(me.user.id);
     } finally {
       await deleteTestItem(id);
     }

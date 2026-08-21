@@ -279,11 +279,14 @@ test.describe.serial('per-user settings round-trips', () => {
     await pages.dashboard.expectDashboard();
     await openUserMenu(page);
     await page.getByRole('button', { name: /Notification Settings/ }).click();
+    // The stored row is fetched after login and resynced into the form when
+    // it arrives — on a loaded CI runner that can take longer than the
+    // default 5s expect timeout, so wait for the real value, not the default
     const after = page.getByRole('switch', { name: 'Overdue notifications' });
     if (initiallyChecked) {
-      await expect(after).not.toBeChecked();
+      await expect(after).not.toBeChecked({ timeout: 20000 });
     } else {
-      await expect(after).toBeChecked();
+      await expect(after).toBeChecked({ timeout: 20000 });
     }
   });
 
