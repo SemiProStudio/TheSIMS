@@ -96,16 +96,17 @@ test.describe('Email Notifications', () => {
       await modal.getByRole('button', { name: 'Confirm Check Out' }).click();
       await expect(modal).toBeHidden();
 
+      // Toast first — it auto-dismisses, so it must be asserted before the DB
+      // round-trips. A registered recipient passes the allow-list; the only
+      // failure left is the (deliberately) unconfigured Resend key on TEST
+      await expect(page.getByRole('alert').filter({ hasText: 'Email service not configured' })).toBeVisible({
+        timeout: 15000,
+      });
+
       const db = await adminDb();
       const { data: me } = await db.auth.getUser();
       const { data } = await db.from('inventory').select('checked_out_to_user_id').eq('id', id).single();
       expect(data.checked_out_to_user_id).toBe(me.user.id);
-
-      // A registered recipient passes the allow-list; the only failure left is
-      // the (deliberately) unconfigured Resend key on the test project
-      await expect(page.getByRole('alert').filter({ hasText: 'Email service not configured' })).toBeVisible({
-        timeout: 15000,
-      });
     } finally {
       await deleteTestItem(id);
     }

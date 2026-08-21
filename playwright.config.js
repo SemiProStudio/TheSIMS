@@ -116,6 +116,17 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
       dependencies: ['setup'],
     },
+    // Sweep stray E2E data BETWEEN the mutating functional suite and the
+    // read-only captures. A functional test that hits its timeout has its
+    // worker restarted, which kills the in-flight `finally` cleanup — one
+    // such leak (a checked-out "ZZZ E2E" item) landed in 14 regenerated
+    // dashboard baselines on 2026-08-21. The pre-run sweep in auth.setup
+    // can't help there; this one runs after the leak can happen.
+    {
+      name: 'sweep',
+      testMatch: /sweep\.setup\.js/,
+      dependencies: ['chromium'],
+    },
     // Phone-layer smoke tests (drawer nav, scan shortcut, modal sheets).
     // Read-only, so they run after the mutating functional suite alongside
     // the visual project without racing it.
@@ -123,13 +134,13 @@ export default defineConfig({
       name: 'chromium-mobile',
       testMatch: /mobile\.spec\.js/,
       use: { ...devices['Pixel 7'], storageState: 'e2e/.auth/admin.json' },
-      dependencies: ['chromium'],
+      dependencies: ['sweep'],
     },
     {
       name: 'chromium-visual',
       testMatch: /visual-.*\.spec\.js/,
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
-      dependencies: ['chromium'],
+      dependencies: ['sweep'],
     },
   ],
 
