@@ -42,6 +42,7 @@ import {
 } from '../components/ui.jsx';
 import { usePermissions } from '../contexts/PermissionsContext.js';
 import { useData } from '../contexts/DataContext.js';
+import { useMediaQuery } from '../hooks/useMediaQuery.js';
 
 // Panel color CSS variables for dashboard sections
 const PANEL_COLORS = {
@@ -221,6 +222,21 @@ function Dashboard({
       .sort((a, b) => a.order - b.order)
       .map((s) => s.id);
   }, [layoutPrefs]);
+
+  // Two independent panel stacks on wide desktops (same breakpoint as the
+  // .dashboard-columns CSS); one ordered stack below it
+  const isTwoColumn = useMediaQuery('(min-width: 1200px)');
+  const panelIds = useMemo(
+    () => sectionOrder.filter((id) => id !== 'stats' && id !== 'quickSearch'),
+    [sectionOrder],
+  );
+  const panelColumns = useMemo(
+    () =>
+      isTwoColumn
+        ? [panelIds.filter((_, idx) => idx % 2 === 0), panelIds.filter((_, idx) => idx % 2 === 1)]
+        : [panelIds],
+    [isTwoColumn, panelIds],
+  );
 
   // Computed stats — single-pass over inventory for performance
   const stats = useMemo(() => {
@@ -1234,21 +1250,26 @@ function Dashboard({
       />
 
       {/* Render sections in order. Stats + quick search stay full-width
-          leads; the remaining panels flow into two columns on wide screens
-          (see .dashboard-columns in index.css) instead of stretching each
-          panel across the whole desktop viewport. */}
+          leads; the remaining panels split into two INDEPENDENT stacks on
+          wide screens (matches .dashboard-columns min-width in index.css).
+          The old CSS multi-column flow re-balanced panels across columns
+          whenever one collapsed, so collapsing a left panel shuffled the
+          right column. Two flex stacks keep each column's panels where the
+          user left them; narrow screens render one stack in configured order. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
         {sectionOrder
           .filter((id) => id === 'stats' || id === 'quickSearch')
           .map((sectionId) => renderSection(sectionId))}
         <div className="dashboard-columns">
-          {sectionOrder
-            .filter((id) => id !== 'stats' && id !== 'quickSearch')
-            .map((sectionId) => (
-              <div key={sectionId} className="dashboard-columns-item">
-                {renderSection(sectionId)}
-              </div>
-            ))}
+          {panelColumns.map((column, columnIdx) => (
+            <div
+              key={columnIdx}
+              className="dashboard-columns-stack"
+              style={{ display: 'flex', flexDirection: 'column', gap: spacing[4], minWidth: 0 }}
+            >
+              {column.map((sectionId) => renderSection(sectionId))}
+            </div>
+          ))}
         </div>
       </div>
     </>
