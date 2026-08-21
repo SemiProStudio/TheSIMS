@@ -2,13 +2,13 @@
 // Profile Modal Component
 // ============================================================================
 
-import { memo, useState, useRef, useMemo } from 'react';
-import { Upload, Save, Eye, EyeOff } from 'lucide-react';
+import { memo, useState, useMemo } from 'react';
+import { Save, Eye, EyeOff } from 'lucide-react';
 import { colors, styles, spacing, borderRadius, typography } from '../theme.js';
 import { formatPhoneNumber, handlePhoneInput } from '../utils';
 import { Button } from '../components/ui.jsx';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from './ModalBase.jsx';
-import ImageCropEditor from '../components/ImageCropEditor.jsx';
+import ImageField from '../components/ImageField.jsx';
 
 // Field definitions: [key, label, type, placeholder, maxLength]
 const PROFILE_FIELDS = [
@@ -37,8 +37,6 @@ function ProfileModal({ user, onSave, onClose }) {
     },
   });
   const [errors, setErrors] = useState({});
-  const [cropSrc, setCropSrc] = useState(null);
-  const fileInputRef = useRef(null);
 
   const validators = {
     email: (v) => {
@@ -84,60 +82,37 @@ function ProfileModal({ user, onSave, onClose }) {
     }));
   };
 
-  const handleLogoUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setErrors((prev) => ({ ...prev, logo: 'Image must be smaller than 5MB' }));
-        return;
-      }
-      if (!file.type.startsWith('image/')) {
-        setErrors((prev) => ({ ...prev, logo: 'Please select an image file' }));
-        return;
-      }
-      setErrors((prev) => ({ ...prev, logo: null }));
-      const reader = new FileReader();
-      reader.onload = (ev) => setCropSrc(ev.target.result);
-      reader.readAsDataURL(file);
-    }
-    if (e.target) e.target.value = '';
+  // The picker holds the photo as PENDING; it is uploaded when the profile is
+  // saved, so Cancel never orphans an upload and base64 never reaches the row
+  const [pendingLogo, setPendingLogo] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const handleLogoChange = ({ value, pending }) => {
+    setProfile((prev) => ({ ...prev, logo: value }));
+    setPendingLogo(pending);
+    setErrors((prev) => ({ ...prev, logo: null }));
   };
 
-  const [logoUploading, setLogoUploading] = useState(false);
-
-  const handleCropComplete = async (croppedDataUrl) => {
-    setCropSrc(null);
-
-    if (user?.id) {
-      setLogoUploading(true);
+  const handleSave = async () => {
+    if (!validateAll()) return;
+    let nextProfile = profile;
+    if (pendingLogo?.working) {
+      if (!user?.id) {
+        setErrors((prev) => ({ ...prev, logo: 'Sign in again to upload a photo.' }));
+        return;
+      }
+      setSaving(true);
       try {
         const { storageService } = await import('../lib/index.js');
-
-        // Upload only — never destroy the old logo before the profile save
-        // commits (Cancel or a failed save would leave the account pointing
-        // at a deleted object). The old object is orphaned at worst.
-        const result = await storageService.uploadFromDataUrl(
-          croppedDataUrl,
-          `profiles/${user.id}`,
-        );
-        handleChange('logo', result.url);
-      } catch (_err) {
-        handleChange('logo', croppedDataUrl);
-      } finally {
-        setLogoUploading(false);
+        const result = await storageService.uploadPending(pendingLogo, `profiles/${user.id}`);
+        nextProfile = { ...profile, logo: result.url };
+      } catch (err) {
+        setErrors((prev) => ({ ...prev, logo: err?.message || 'Photo upload failed.' }));
+        setSaving(false);
+        return;
       }
-    } else {
-      handleChange('logo', croppedDataUrl);
+      setSaving(false);
     }
-  };
-
-  const handleCropCancel = () => {
-    setCropSrc(null);
-  };
-
-  const handleSave = () => {
-    if (!validateAll()) return;
-    onSave({ ...user, profile });
+    onSave({ ...user, profile: nextProfile });
     onClose();
   };
 
@@ -192,101 +167,21 @@ function ProfileModal({ user, onSave, onClose }) {
             </label>
           </div>
 
-          {cropSrc ? (
-            <ImageCropEditor
-              imageSrc={cropSrc}
-              onCropComplete={handleCropComplete}
-              onCancel={handleCropCancel}
-              outputSize={400}
-              cropShape="rounded-square"
-              cropBorderRadius={12}
-              title="Crop your photo"
-            />
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4] }}>
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: borderRadius.lg,
-                  border: `2px dashed ${colors.border}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  overflow: 'hidden',
-                  opacity: profile.showFields.logo ? 1 : 0.5,
-                  transition: 'opacity 0.2s',
-                }}
-              >
-                {profile.logo ? (
-                  <img
-                    src={profile.logo}
-                    alt=""
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <Upload size={24} color={colors.textMuted} />
-                )}
-              </div>
-              <div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={logoUploading}
-                >
-                  {logoUploading ? 'Uploading...' : 'Upload Photo'}
-                </Button>
-                {profile.logo && (
-                  <>
-                    <button
-                      onClick={() => setCropSrc(profile.logo)}
-                      style={{
-                        display: 'block',
-                        background: 'none',
-                        border: 'none',
-                        color: colors.primary,
-                        cursor: 'pointer',
-                        fontSize: typography.fontSize.sm,
-                        marginTop: spacing[2],
-                      }}
-                    >
-                      Resize / Crop
-                    </button>
-                    <button
-                      onClick={() => {
-                        // Clear the form only — deleting the storage object
-                        // here survived Cancel and broke the saved logo
-                        handleChange('logo', null);
-                      }}
-                      style={{
-                        display: 'block',
-                        background: 'none',
-                        border: 'none',
-                        color: colors.danger,
-                        cursor: 'pointer',
-                        fontSize: typography.fontSize.sm,
-                        marginTop: spacing[1],
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </>
-                )}
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                onChange={handleLogoUpload}
-                style={{ display: 'none' }}
-              />
-            </div>
-          )}
+          <ImageField
+            label={null}
+            value={profile.logo}
+            pending={pendingLogo}
+            onChange={handleLogoChange}
+            inputId="profile-logo-upload"
+            cropShape="rounded-square"
+            cropTitle="Crop your photo"
+            disabled={saving}
+            previewRadius={12}
+            pendingHint="saved with your profile"
+          />
           {errors.logo && (
             <div
+              role="alert"
               style={{
                 color: colors.danger,
                 fontSize: typography.fontSize.xs,

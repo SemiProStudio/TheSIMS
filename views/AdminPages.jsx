@@ -11,6 +11,7 @@ import { Select } from '../components/Select.jsx';
 import { DatePicker } from '../components/DatePicker.jsx';
 import { useItemForm } from '../components/ItemForm.jsx';
 import { SpecFieldInput } from '../components/SpecFieldInput.jsx';
+import ImageField from '../components/ImageField.jsx';
 import { SmartPasteModal } from '../modals/smartPaste/SmartPasteModal.jsx';
 import { applySmartPastePayload } from '../lib/smartPaste/applyPayload.js';
 
@@ -84,6 +85,13 @@ export const ItemFormPage = memo(function ItemFormPage({
   editingItemId,
 }) {
   const [showSmartPaste, setShowSmartPaste] = useState(false);
+
+  const handleImageChange = useCallback(
+    ({ value, pending }) => {
+      setItemForm((prev) => ({ ...prev, image: value, pendingImage: pending }));
+    },
+    [setItemForm],
+  );
 
   // Use the shared ItemForm hook for validation and computed values
   const {
@@ -165,6 +173,15 @@ export const ItemFormPage = memo(function ItemFormPage({
             >
               Basic Information
             </h3>
+
+            {/* Photo — any size; downscaled client-side and uploaded on save */}
+            <ImageField
+              value={itemForm.image}
+              pending={itemForm.pendingImage}
+              onChange={handleImageChange}
+              inputId="item-form-image-upload"
+              cropTitle="Crop item image"
+            />
 
             {/* Name and Brand */}
             <div className="responsive-form-grid" style={{ marginBottom: spacing[4] }}>

@@ -215,6 +215,7 @@ export const MODALS = {
   IMAGE_SELECT: 'image-select',
   IMAGE_PREVIEW: 'image-preview',
   CSV_IMPORT: 'csv-import',
+  BULK_PHOTOS: 'bulk-photos',
   DATABASE_EXPORT: 'database-export',
   CHECK_OUT: 'check-out',
   CHECK_IN: 'check-in',
@@ -805,6 +806,8 @@ export const EMPTY_ITEM_FORM = {
   serialNumber: '',
   condition: CONDITION.EXCELLENT,
   image: null,
+  // Picked-but-not-yet-uploaded photo (components/ImageField); never persisted
+  pendingImage: null,
   specs: {},
   // Quantity tracking fields (used when category has trackQuantity: true)
   quantity: 1,

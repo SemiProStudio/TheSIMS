@@ -119,9 +119,13 @@ export function useInventoryActions({
         if (itemForm.specs[f.name]) itemSpecs[f.name] = itemForm.specs[f.name];
       });
 
+      // The picker keeps the chosen photo as a PENDING working image; it is
+      // uploaded after the row exists so the DB never holds base64
+      const { pendingImage, ...formFields } = itemForm;
       const newItem = {
-        ...itemForm,
+        ...formFields,
         id,
+        image: pendingImage ? null : formFields.image || null,
         status: STATUS.AVAILABLE,
         purchasePrice: Number(itemForm.purchasePrice) || 0,
         currentValue: Number(itemForm.currentValue) || Number(itemForm.purchasePrice) || 0,
@@ -154,17 +158,17 @@ export function useInventoryActions({
         itemId: id,
       });
 
-      // If image is a base64 data URL, upload to storage and update the item
-      if (newItem.image && newItem.image.startsWith('data:')) {
+      if (pendingImage) {
         try {
           const { storageService } = await import('../lib/index.js');
-          const result = await storageService.uploadFromDataUrl(newItem.image, id);
-          if (result?.url && !result.url.startsWith('data:')) {
-            await dataContext.updateItem(id, { image: result.url });
-          }
+          const result = await storageService.uploadPending(pendingImage, id);
+          await dataContext.updateItem(id, { image: result.url });
         } catch (uploadErr) {
-          logError('Failed to upload image to storage after item creation:', uploadErr);
-          // Non-fatal — item was created with base64 fallback
+          logError('Photo upload failed after item creation:', uploadErr);
+          addToast(
+            `${newItem.name} was added, but its photo could not be uploaded — add it again from Edit.`,
+            'warning',
+          );
         }
       }
 
@@ -214,14 +218,23 @@ export function useInventoryActions({
         if (itemForm.specs[f.name]) itemSpecs[f.name] = itemForm.specs[f.name];
       });
 
+      const { pendingImage, ...formFields } = itemForm;
       const updates = {
-        ...itemForm,
+        ...formFields,
         specs: itemSpecs,
         purchasePrice: Number(itemForm.purchasePrice) || 0,
         currentValue: Number(itemForm.currentValue) || 0,
         quantity: Number(itemForm.quantity) || 1,
         reorderPoint: Number(itemForm.reorderPoint) || 0,
       };
+
+      // Upload the new photo BEFORE touching the row: if it fails, nothing
+      // changed and the modal stays open with the picked image intact
+      if (pendingImage) {
+        const { storageService } = await import('../lib/index.js');
+        const result = await storageService.uploadPending(pendingImage, editingItemId);
+        updates.image = result.url;
+      }
 
       // Find the original item to track changes
       const originalItem = inventory.find((i) => i.id === editingItemId);
@@ -647,6 +660,7 @@ export function useInventoryActions({
         serialNumber: item.serialNumber || '',
         condition: item.condition || 'Excellent',
         image: item.image || null,
+        pendingImage: null,
         specs: { ...(item.specs || {}) },
         quantity: item.quantity ?? 1,
         reorderPoint: item.reorderPoint ?? 0,
@@ -654,6 +668,47 @@ export function useInventoryActions({
       openModal(MODALS.EDIT_ITEM);
     },
     [setEditingItemId, setItemForm, openModal],
+  );
+
+  // ============================================================================
+  // Bulk Photos — persist one uploaded photo URL onto an item
+  // (modals/BulkPhotosModal). Persist first; the old storage object is only
+  // removed once the row no longer references it.
+  // ============================================================================
+  const applyBulkPhoto = useCallback(
+    async (itemId, url) => {
+      const item = inventory.find((i) => i.id === itemId);
+      const oldImage = item?.image || null;
+      await dataContext.updateItem(itemId, { image: url });
+      setSelectedItem((prev) => (prev?.id === itemId ? { ...prev, image: url } : prev));
+      addChangeLog({
+        type: 'updated',
+        itemId,
+        itemType: 'item',
+        itemName: item?.name || itemId,
+        description: `Photo ${oldImage ? 'replaced' : 'added'} via Bulk Photos`,
+        changes: [
+          {
+            field: 'image',
+            oldValue: oldImage ? 'had image' : 'no image',
+            newValue: 'image updated',
+          },
+        ],
+      });
+      if (oldImage && oldImage !== url) {
+        try {
+          const { storageService, isStorageUrl, getStoragePathFromUrl } =
+            await import('../lib/index.js');
+          if (isStorageUrl(oldImage)) {
+            const oldPath = getStoragePathFromUrl(oldImage);
+            if (oldPath) await storageService.deleteImage(oldPath).catch(() => {});
+          }
+        } catch (_e) {
+          /* non-fatal — an orphaned storage object at worst */
+        }
+      }
+    },
+    [inventory, dataContext, setSelectedItem, addChangeLog],
   );
 
   return {
@@ -681,6 +736,7 @@ export function useInventoryActions({
     // Helpers
     openEditItem,
     addChangeLog,
+    applyBulkPhoto,
   };
 }
 
