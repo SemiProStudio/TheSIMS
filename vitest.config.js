@@ -41,14 +41,18 @@ export default defineConfig({
         'public/', // Static assets
       ],
       thresholds: {
-        // HONEST baseline against the full codebase (was 40% against a
-        // shrunken denominator of test-loaded files only — measured actuals
-        // at the time of this change: 23.1 / 20.6 / 15.7 / 24.2).
-        // Ratchet these up as real coverage improves — never down.
-        statements: 22,
-        branches: 19,
-        functions: 14,
-        lines: 23,
+        // Whole-codebase gate, kept ~3 points under measured actuals so it
+        // catches a real regression without tripping on noise. History:
+        //   2026-08-0x  22 / 19 / 14 / 23  (actuals 23.1 / 20.6 / 15.7 / 24.2)
+        //   2026-08-22  50 / 45 / 42 / 51  (actuals 53.0 / 48.3 / 45.2 / 54.5
+        //               after the mutation-hook suites)
+        // Ratchet these up as real coverage improves — never down. Rule for
+        // PRs touching hooks/ or lib/: the touched file's own coverage may
+        // not drop (compare `npm run test:coverage` before/after).
+        statements: 50,
+        branches: 45,
+        functions: 42,
+        lines: 51,
       },
     },
   },
