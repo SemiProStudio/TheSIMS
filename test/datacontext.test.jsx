@@ -143,7 +143,9 @@ vi.mock('../lib/services.js', () => ({
   },
 }));
 
-vi.mock('../constants.js', () => ({
+vi.mock('../constants.js', async (importOriginal) => ({
+  // Partial: utils (status reconciliation) reads STATUS from the real module
+  ...(await importOriginal()),
   DEFAULT_ROLES: [{ id: 'admin', name: 'Admin' }],
   DEFAULT_LOCATIONS: [{ id: 'loc-1', name: 'Main Storage' }],
   DEFAULT_SPECS: {},

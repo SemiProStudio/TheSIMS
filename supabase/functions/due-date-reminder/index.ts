@@ -8,7 +8,8 @@
 //   3. maintenance reminders                   → staff who can edit gear
 //   4. low-stock alert (admin digest)          → admins who opted in
 //   5. overdue summary (admin digest)          → admins who opted in
-//   0. housekeeping: stale `pending` log rows → failed
+//   0. housekeeping: stale `pending` log rows → failed; reserved/available
+//      statuses reconciled against today's reservations
 //
 // Recipient preferences are applied in send-email (master switch + per-type
 // toggle, defaults when no row); this job applies the SCHEDULE rules (which
@@ -101,6 +102,16 @@ Deno.serve(async (req: Request) => {
       .update({ status: 'failed', error_message: 'No response recorded within 10 minutes' })
       .eq('status', 'pending')
       .lt('created_at', new Date(Date.now() - 10 * 60 * 1000).toISOString());
+
+    // 0b. Reconcile 'reserved' ↔ 'available' against today's reservations.
+    //     The app does this whenever it merges reservations; this is the
+    //     safety net for days nobody opens it (a stored 'reserved' used to
+    //     outlive its reservation indefinitely).
+    const { data: reconciled, error: reconcileError } = await supabase.rpc(
+      'reconcile_reservation_statuses',
+    );
+    if (reconcileError) console.warn('Reservation status reconcile failed:', reconcileError.message);
+    const reconciledCount = (reconciled || []).length;
 
     // Staff recipients with their preference rows, once
     const { data: recipientRows, error: recipientsError } = await supabase.rpc(
@@ -238,7 +249,14 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log('Daily notifications complete:', counts);
-    return jsonResponse({ success: true, date: todayKey, ...counts, processed: outcomes.length, details: outcomes });
+    return jsonResponse({
+      success: true,
+      date: todayKey,
+      ...counts,
+      reconciledStatuses: reconciledCount,
+      processed: outcomes.length,
+      details: outcomes,
+    });
   } catch (error) {
     console.error('Daily notifications error:', error);
     return errorResponse('Internal error', 500);

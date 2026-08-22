@@ -6,7 +6,7 @@
 // =============================================================================
 
 import { test, expect, pickDate } from './fixtures.js';
-import { createTestItem, deleteTestItem, E2E_PREFIX } from './db.js';
+import { createTestItem, deleteTestItem, addTestReservation, E2E_PREFIX } from './db.js';
 
 test.describe('Reservation Creation', () => {
   test('creates a reservation from the item detail', async ({ page, pages }) => {
@@ -79,6 +79,61 @@ test.describe('Reservation Creation', () => {
       const startValue = await startInput.inputValue();
       expect(startValue).toBeTruthy();
       await expect(endInput).toHaveValue(startValue);
+    } finally {
+      await deleteTestItem(id);
+    }
+  });
+});
+
+// =============================================================================
+// Stored status vs. today's reservations
+// 'reserved' is written when a reservation starts but nothing fired when it
+// ENDED, so the stored value outlived the booking (prod 2026-08-21: 7 items).
+// The app now re-derives reserved/available whenever reservations load.
+// =============================================================================
+test.describe('Reservation status reconciliation', () => {
+  test('a stored "reserved" item whose reservation has ended shows as available', async ({
+    page,
+    pages,
+  }) => {
+    const name = `${E2E_PREFIX} StaleReserved ${Date.now()}`;
+    const id = await createTestItem({
+      name,
+      status: 'reserved',
+      // Stale borrower leftovers like the prod row had — must not surface
+      columns: { checked_out_to_name: 'Ghost Borrower', due_back: '2026-05-01' },
+    });
+    try {
+      await addTestReservation(id, { startInDays: -10, endInDays: -7 });
+      await page.goto('/');
+      await pages.dashboard.expectDashboard();
+      await pages.dashboard.navigateTo('Gear List');
+      await pages.gearList.expectGearList();
+      await pages.gearList.search(id);
+      await expect(pages.gearList.itemRow(name, 'available')).toBeVisible({ timeout: 15000 });
+      await pages.gearList.itemRow(name, 'available').click();
+      await pages.itemDetail.expectItemDetail();
+      await expect(page.getByText('Ghost Borrower')).toBeHidden();
+      await expect(page.getByRole('button', { name: 'Check Out', exact: true })).toBeVisible();
+    } finally {
+      await deleteTestItem(id);
+    }
+  });
+
+  test('a stored "available" item with a reservation covering today shows as reserved', async ({
+    page,
+    pages,
+  }) => {
+    const name = `${E2E_PREFIX} NowReserved ${Date.now()}`;
+    const id = await createTestItem({ name, status: 'available' });
+    try {
+      await addTestReservation(id, { startInDays: -1, endInDays: 1 });
+      await page.goto('/');
+      await pages.dashboard.expectDashboard();
+      await pages.dashboard.navigateTo('Gear List');
+      await pages.gearList.expectGearList();
+      await pages.gearList.search(id);
+      await expect(pages.gearList.itemRow(name, 'reserved')).toBeVisible({ timeout: 15000 });
     } finally {
       await deleteTestItem(id);
     }

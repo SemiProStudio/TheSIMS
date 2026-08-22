@@ -242,6 +242,21 @@ export const hasActiveReservation = (item, todayISO) => {
 };
 
 /**
+ * The status an item SHOULD carry given its reservations today, or null when
+ * the stored status is already right. Only moves between 'reserved' and
+ * 'available': an item is flipped to 'reserved' when a reservation starts
+ * but time passing is not an event anything handles, so a stored 'reserved'
+ * outlives its reservation until something reconciles it. Other statuses
+ * (checked-out, missing, needs-attention) own their own transitions.
+ */
+export const reservationStatusCorrection = (item, todayISO) => {
+  if (!item) return null;
+  if (item.status !== STATUS.RESERVED && item.status !== STATUS.AVAILABLE) return null;
+  const desired = hasActiveReservation(item, todayISO) ? STATUS.RESERVED : STATUS.AVAILABLE;
+  return desired === item.status ? null : desired;
+};
+
+/**
  * Group per-item reservation rows into logical multi-item reservations.
  * Rows created together share a group_id; legacy rows (NULL group_id) fall
  * back to project+dates matching. Each group carries the ids of every row

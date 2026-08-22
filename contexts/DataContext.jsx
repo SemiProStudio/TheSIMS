@@ -36,6 +36,7 @@ import {
   validateMaintenanceRecord,
 } from '../lib/validators.js';
 import { updateById, removeById, getTodayISO } from '../utils';
+import { reconcileReservedStatuses } from '../lib/reconcileReservedStatuses.js';
 import DataContext from './DataContext.js';
 
 // =============================================================================
@@ -219,12 +220,14 @@ export function DataProvider({ children }) {
       const maintenanceByItemId = groupByItemId(maintenanceData);
 
       setInventory((prev) =>
-        prev.map((item) => ({
-          ...item,
-          reservations: reservationsByItemId[item.id] || item.reservations || [],
-          reminders: remindersByItemId[item.id] || item.reminders || [],
-          maintenanceHistory: maintenanceByItemId[item.id] || item.maintenanceHistory || [],
-        })),
+        reconcileReservedStatuses(
+          prev.map((item) => ({
+            ...item,
+            reservations: reservationsByItemId[item.id] || item.reservations || [],
+            reminders: remindersByItemId[item.id] || item.reminders || [],
+            maintenanceHistory: maintenanceByItemId[item.id] || item.maintenanceHistory || [],
+          })),
+        ),
       );
 
       setPackages(packagesData || []);
@@ -465,10 +468,12 @@ export function DataProvider({ children }) {
           reservationsByItemId[res.itemId].push(res);
         });
         setInventory((prev) =>
-          prev.map((item) =>
-            reservationsByItemId[item.id]
-              ? { ...item, reservations: reservationsByItemId[item.id] }
-              : item,
+          reconcileReservedStatuses(
+            prev.map((item) =>
+              reservationsByItemId[item.id]
+                ? { ...item, reservations: reservationsByItemId[item.id] }
+                : item,
+            ),
           ),
         );
       }

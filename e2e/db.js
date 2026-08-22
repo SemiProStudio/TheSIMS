@@ -131,6 +131,19 @@ export async function addTestReminder(itemId, { title, dueInDays = 0, completed 
   if (error) throw new Error(`addTestReminder failed: ${error.message}`);
 }
 
+/** Attach a confirmed reservation to a private item (status fixtures). */
+export async function addTestReservation(itemId, { startInDays, endInDays, project } = {}) {
+  const db = await adminDb();
+  const { error } = await db.from('reservations').insert({
+    item_id: itemId,
+    project: project || `${E2E_PREFIX} Reservation`,
+    start_date: isoDate(startInDays ?? 0),
+    end_date: isoDate(endInDays ?? 0),
+    status: 'confirmed',
+  });
+  if (error) throw new Error(`addTestReservation failed: ${error.message}`);
+}
+
 /** Attach a maintenance record to a private item (dashboard fixtures). */
 export async function addTestMaintenance(itemId, { type, status = 'scheduled', inDays = 3 } = {}) {
   const db = await adminDb();
