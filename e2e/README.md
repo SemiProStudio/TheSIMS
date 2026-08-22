@@ -66,7 +66,7 @@ handful of tests that perform real logins; spaced-out runs and CI are fine.)
 ```
 e2e/
 ├── fixtures.js            # Page objects, pickDate, storage-state paths
-├── db.js                  # Supabase admin helpers: private items, cleanup
+├── db.js                  # Supabase helpers: admin/user clients, anon REST, private items, cleanup
 ├── auth.setup.js          # setup project: data cleanup + one-time logins
 ├── global-teardown.js     # post-run data cleanup
 ├── visual-utils.js        # Visual regression utilities
@@ -78,6 +78,7 @@ e2e/
 ├── notifications.spec.js  # Notification settings
 ├── qr-labels.spec.js      # Labels view, QR modal, scanner manual entry, ?item= deep link
 ├── accessibility.spec.js  # Themes, keyboard, ARIA, responsive
+├── security.spec.js       # Anon key reaches nothing; standard-user RLS matrix; forced admin views refused
 ├── visual-pages.spec.js   # Full-page screenshots
 ├── visual-components.spec.js # Component screenshots
 └── visual-themes.spec.js  # Theme variation screenshots
@@ -90,6 +91,30 @@ bodies had never executed because their selectors matched nothing — the
 notification spec tested labels that never existed, and four of the six
 "theme" baselines screenshotted a fallback theme because ids like `ocean`
 were never real.)
+
+## Security regression suite
+
+`security.spec.js` is the live half of the database hardening guard; the
+offline half is `test/migrationSecurityLint.test.js`. Both read the same
+model — `supabase/migrationSurface.js` replays `supabase/migrations/` and
+records every table, view and function with its RLS / `security_invoker` /
+EXECUTE-grant state. The spec then probes each one against the TEST project
+three ways: raw REST with only the anon key (must return zero rows or 42501
+everywhere, every RPC denied), the standard `role_user` session (no
+inventory/admin writes, own user row only, cannot self-promote, service-role
+RPCs denied — for the admin too), and the browser as the standard user
+(forced navigation to admin views shows "Access restricted").
+
+Adding a table or RPC in a migration adds it to the probe automatically. If
+the anon RPC probe reports `PGRST202` for a new function, extend
+`placeholderArg()` so the call resolves — a probe that cannot reach the
+function proves nothing.
+
+Remember the Supabase default grant: a new function is executable by
+`anon`, `authenticated` AND `service_role` until the migration says
+otherwise. Every SECURITY DEFINER function must carry an explicit
+`GRANT … TO authenticated` or `REVOKE … FROM authenticated` (plus `REVOKE …
+FROM PUBLIC, anon`), or the lint fails.
 
 ## Running Tests
 
