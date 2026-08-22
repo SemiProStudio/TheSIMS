@@ -58,6 +58,61 @@ export function adminDb() {
   return clientPromise;
 }
 
+let userClientPromise = null;
+
+/** Supabase client signed in as the STANDARD (role_user) E2E user. */
+export function userDb() {
+  if (!userClientPromise) {
+    userClientPromise = (async () => {
+      const url = requireEnv('VITE_SUPABASE_URL');
+      if (url.includes(PRODUCTION_PROJECT_REF)) {
+        throw new Error('Refusing to run E2E db helpers against the PRODUCTION Supabase project.');
+      }
+      const client = createClient(url, requireEnv('VITE_SUPABASE_ANON_KEY'), {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { error } = await client.auth.signInWithPassword({
+        email: requireEnv('E2E_USER_EMAIL'),
+        password: requireEnv('E2E_USER_PASSWORD'),
+      });
+      if (error) throw new Error(`E2E db helper: user sign-in failed: ${error.message}`);
+      return client;
+    })();
+  }
+  return userClientPromise;
+}
+
+/**
+ * Raw REST/Storage request with ONLY the anon key — what an unauthenticated
+ * visitor holding the public JS bundle can send. Returns { status, body }
+ * with the body parsed when it is JSON.
+ */
+export async function anonRequest(path, { method = 'GET', body, headers = {} } = {}) {
+  const url = requireEnv('VITE_SUPABASE_URL');
+  if (url.includes(PRODUCTION_PROJECT_REF)) {
+    throw new Error('Refusing to probe the PRODUCTION Supabase project.');
+  }
+  const key = requireEnv('VITE_SUPABASE_ANON_KEY');
+  const res = await fetch(`${url}${path}`, {
+    method,
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      'content-type': 'application/json',
+      ...headers,
+    },
+    body: body === undefined ? undefined : typeof body === 'string' ? body : JSON.stringify(body),
+  });
+  const text = await res.text();
+  let parsed = text;
+  try {
+    parsed = text ? JSON.parse(text) : null;
+  } catch {
+    /* non-JSON body (storage errors, empty 204) */
+  }
+  return { status: res.status, body: parsed };
+}
+
 function isoDate(daysFromToday = 0) {
   const d = new Date();
   d.setDate(d.getDate() + daysFromToday);

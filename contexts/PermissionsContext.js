@@ -30,6 +30,10 @@ export const VIEW_PERMISSIONS = {
   [VIEWS.USERS]: 'admin_users',
   [VIEWS.AUDIT_LOG]: 'admin_audit',
   [VIEWS.CHANGE_LOG]: 'admin_audit',
+  // Email Log: admin hub entry + notification_log RLS both key on
+  // admin_notifications; the render gate must agree or a restored/forced
+  // view renders the page (with only the caller's own rows) for anyone.
+  [VIEWS.EMAIL_LOG]: 'admin_notifications',
   [VIEWS.EDIT_SPECS]: 'admin_specs',
   [VIEWS.EDIT_CATEGORIES]: 'admin_categories',
   [VIEWS.ADD_ITEM]: 'gear_list', // Requires edit permission
