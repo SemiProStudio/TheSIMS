@@ -1588,14 +1588,6 @@ export const CategoriesPage = memo(function CategoriesPage({
                       />
                       Require Serial #
                     </label>
-                    {settings.trackQuantity && (
-                      <span
-                        style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}
-                        title="Low-stock reminders are enabled per item (Item Details) — there is no category threshold"
-                      >
-                        Low-stock reminders: per item
-                      </span>
-                    )}
                   </div>
                 </div>
               );

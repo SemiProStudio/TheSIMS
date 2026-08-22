@@ -123,6 +123,6 @@ test.describe('Low-stock reminder (per item)', () => {
     await page.getByText('Edit Categories', { exact: true }).click();
     await expect(page.locator('h2:has-text("Edit Categories")')).toBeVisible();
     await expect(page.getByText('Low stock alert:')).toBeHidden();
-    await expect(page.getByText('Low-stock reminders: per item').first()).toBeVisible();
+    await expect(page.getByText(/low.stock/i)).toBeHidden();
   });
 });
