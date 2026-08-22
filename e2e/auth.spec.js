@@ -4,6 +4,7 @@
 // =============================================================================
 
 import { test, expect, testUsers } from './fixtures.js';
+import { adminDb, createTestItem, deleteTestItem, E2E_PREFIX } from './db.js';
 
 // This spec tests the login flow itself — start logged OUT instead of with
 // the shared admin storage state every other spec reuses.
@@ -151,5 +152,61 @@ test.describe('Authentication', () => {
       await page.waitForTimeout(500);
       await expect(page.locator('button:has-text("Admin Panel")')).not.toBeVisible();
     });
+  });
+});
+
+// =============================================================================
+// Writes after a token refresh
+// auth-js runs onAuthStateChange subscribers inside its auth lock when the
+// access token refreshes. A Supabase call awaited inside that callback
+// deadlocked the client: every session loaded fine, then every save hung
+// forever after the hourly refresh (prod 2026-08-22). This forces the
+// refresh with a fake clock and then performs a real write.
+// =============================================================================
+test.describe('Session refresh', () => {
+  test('a write still lands after the access token refreshes', async ({ page, pages }) => {
+    test.setTimeout(90000);
+    const name = `${E2E_PREFIX} AfterRefresh ${Date.now()}`;
+    const id = await createTestItem({
+      name,
+      columns: { category_name: 'Audio', quantity: 1, serial_number: null, specs: { 'Audio Type': 'E2E' } },
+    });
+    try {
+      // Fake timers must be installed before the app's scripts run so the
+      // client's auto-refresh interval is driven by the fake clock
+      await page.clock.install();
+      await page.goto('/');
+      await pages.login.loginAsAdmin();
+      await pages.dashboard.expectDashboard();
+
+      // Push past the 1h access-token lifetime; the client refreshes against
+      // the real auth server and emits TOKEN_REFRESHED
+      const refreshed = page.waitForResponse(
+        (r) => r.url().includes('grant_type=refresh_token') && r.request().method() === 'POST',
+        { timeout: 30000 },
+      );
+      await page.clock.fastForward('01:05:00');
+      expect((await refreshed).status()).toBe(200);
+
+      // Now a write: toggle the low-stock reminder on a private item
+      await pages.dashboard.navigateTo('Gear List');
+      await pages.gearList.expectGearList();
+      await pages.gearList.openItem(id, name);
+      await pages.itemDetail.expectItemDetail();
+      await page.getByRole('switch', { name: 'Low stock reminder' }).click();
+
+      const db = await adminDb();
+      await expect
+        .poll(
+          async () => {
+            const { data } = await db.from('inventory').select('low_stock_alert').eq('id', id).maybeSingle();
+            return data?.low_stock_alert ?? null;
+          },
+          { timeout: 15000 },
+        )
+        .toBe(true);
+    } finally {
+      await deleteTestItem(id);
+    }
   });
 });
