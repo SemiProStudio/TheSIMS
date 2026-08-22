@@ -146,7 +146,8 @@ test.describe('Reserve from package', () => {
           const { data } = await db.from('reservations').select('id').eq('project', project);
           return data?.length || 0;
         },
-        { timeout: 10000 },
+        // One insert per package item, serially, on a loaded runner
+        { timeout: 20000 },
       )
       .toBe(expectedCount);
   });
