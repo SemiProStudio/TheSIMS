@@ -50,22 +50,35 @@ export function AuthProvider({ children }) {
 
         // Subscribe to auth changes (now that supabase is ready)
         // Skip INITIAL_SESSION — we already handled it above to avoid a flash
-        const { data } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+        // This callback MUST stay synchronous and MUST NOT call Supabase.
+        // auth-js invokes it while holding the auth lock (TOKEN_REFRESHED
+        // fires from inside the refresh flow); a query awaited here needs
+        // that same lock, so it never resolves and the lock is never
+        // released — every later request in the tab hangs. Prod 2026-08-22:
+        // each session loaded fine, then every save hung forever after the
+        // hourly refresh. Defer any Supabase work with setTimeout, as the
+        // Supabase docs prescribe.
+        const { data } = supabase.auth.onAuthStateChange((event, newSession) => {
           if (event === 'INITIAL_SESSION') return;
 
           log('Auth state changed:', event);
           setSession(newSession);
           setUser(newSession?.user ?? null);
 
-          if (newSession?.user) {
-            try {
-              const profile = await usersService.getById(newSession.user.id);
-              setUserProfile(profile);
-            } catch (err) {
-              logError('Failed to fetch user profile:', err);
-            }
-          } else {
+          if (!newSession?.user) {
             setUserProfile(null);
+            return;
+          }
+          // A token refresh changes nothing about the profile; only a sign-in
+          // or a user update warrants a refetch
+          if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+            const userId = newSession.user.id;
+            setTimeout(() => {
+              usersService
+                .getById(userId)
+                .then((profile) => setUserProfile(profile))
+                .catch((err) => logError('Failed to fetch user profile:', err));
+            }, 0);
           }
         });
 
