@@ -201,6 +201,15 @@ npm run test:coverage # Coverage report
 npm run test:e2e      # Playwright E2E
 ```
 
+Coverage is gated in `vitest.config.js` (whole codebase, thresholds kept a
+few points under actuals and ratcheted up as coverage grows — never down).
+A change to `hooks/` or `lib/` must not lower the touched file's own
+coverage; the write paths (`useInventoryActions`, `useCheckoutHandlers`,
+`useNoteHandlers`) have direct hook tests for every failure branch. The
+database hardening is guarded by `test/migrationSecurityLint.test.js`
+(offline, replays `supabase/migrations/`) and `e2e/security.spec.js`
+(live anon / standard-user / admin probes) — see `e2e/README.md`.
+
 ---
 
 ## Theme System
