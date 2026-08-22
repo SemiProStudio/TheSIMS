@@ -79,6 +79,7 @@ e2e/
 ├── qr-labels.spec.js      # Labels view, QR modal, scanner manual entry, ?item= deep link
 ├── accessibility.spec.js  # Themes, keyboard, ARIA, responsive
 ├── security.spec.js       # Anon key reaches nothing; standard-user RLS matrix; forced admin views refused
+├── smart-paste.spec.js    # Paste → parse → review (alternatives, clear, units) → apply → row; batch narrowing
 ├── visual-pages.spec.js   # Full-page screenshots
 ├── visual-components.spec.js # Component screenshots
 └── visual-themes.spec.js  # Theme variation screenshots
