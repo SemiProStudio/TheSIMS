@@ -154,15 +154,22 @@ Dynamic content (timestamps, toasts) is masked or waited out — see
 ## CI/CD Integration
 
 The `e2e` job in `.github/workflows/ci.yml` runs
-`npx playwright test --project=chromium --project=chromium-visual` and skips
-cleanly unless these repository secrets are configured
+`npx playwright test --project=chromium --project=chromium-mobile --project=chromium-visual`
+and skips cleanly unless these repository secrets are configured
 (Settings → Secrets and variables → Actions):
 
 - `E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY` — the test project
 - `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD` — admin test user
 - `E2E_USER_EMAIL`, `E2E_USER_PASSWORD` — standard test user
 
-CI uses 1 worker with 2 retries; reports upload as artifacts on failure.
+CI uses 1 worker with **1 retry** (was 2 — two retries turned every latency
+race into a "flaky" badge, which is how the global-scope sign-out bug hid for
+weeks). After the run `scripts/flake-report.mjs` reads the JSON results and
+writes every retried-and-passed test, with its first-attempt error, to the
+job summary; more than `FLAKE_BUDGET` (1) of them fails the run. One
+retried test per run is the documented boot-hang noise floor; two is a
+signal. The Playwright report (HTML + `results.json`) uploads as an
+artifact on every run.
 
 ## Writing New Tests
 

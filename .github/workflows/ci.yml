@@ -130,9 +130,19 @@ jobs:
 
       - name: Run E2E tests (chromium)
         if: steps.check.outputs.enabled == 'true'
-        # chromium = functional specs, chromium-visual = screenshot specs
-        # (sequenced after chromium so DB mutations never flake screenshots)
-        run: npx playwright test --project=chromium --project=chromium-visual
+        # chromium = functional specs, chromium-mobile = phone-layer smoke
+        # tests, chromium-visual = screenshot specs (both sequenced after
+        # chromium + sweep so DB mutations never flake a capture)
+        run: npx playwright test --project=chromium --project=chromium-mobile --project=chromium-visual
+
+      - name: Flake report
+        # Retries are 1 on CI: a test that passed only on retry is listed
+        # here and more than FLAKE_BUDGET of them fails the run - a latency
+        # race must surface as red, not as a "flaky" badge.
+        if: always() && steps.check.outputs.enabled == 'true'
+        env:
+          FLAKE_BUDGET: 1
+        run: node scripts/flake-report.mjs
 
       - name: Upload Playwright report
         if: always() && steps.check.outputs.enabled == 'true'
