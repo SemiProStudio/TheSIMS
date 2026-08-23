@@ -5,6 +5,7 @@
 // localStorage, which is per-test-context and cannot leak.
 // =============================================================================
 
+import AxeBuilder from '@axe-core/playwright';
 import { test, expect } from './fixtures.js';
 
 // The Theme Selector is reached through the sidebar's user menu.
@@ -47,7 +48,8 @@ test.describe('Theme System', () => {
   }) => {
     await openThemeSelector(page, pages);
 
-    const section = (label) => page.locator('section', { has: page.locator(`h3:text-is("${label}")`) });
+    const section = (label) =>
+      page.locator('section', { has: page.locator(`h3:text-is("${label}")`) });
     await expect(section('Modern')).toBeVisible();
     await expect(section('Legacy')).toBeVisible();
     await expect(section('Custom & Random')).toBeVisible();
@@ -69,9 +71,7 @@ test.describe('Theme System', () => {
   test('novelty theme applies its background tile and themed cursor', async ({ page, pages }) => {
     await openThemeSelector(page, pages);
     await themeCard(page, 'Cheese').click();
-    await expect
-      .poll(() => page.evaluate(() => localStorage.getItem('sims-theme')))
-      .toBe('cheese');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('sims-theme'))).toBe('cheese');
 
     // The tile is painted by html.theme-tile .app-wrapper::before from
     // --theme-bg-image (the pseudo-element only exists for tile themes)
@@ -80,8 +80,9 @@ test.describe('Theme System', () => {
       .toBe(true);
     await expect
       .poll(() =>
-        page.evaluate(() =>
-          getComputedStyle(document.querySelector('.app-wrapper'), '::before').backgroundImage,
+        page.evaluate(
+          () =>
+            getComputedStyle(document.querySelector('.app-wrapper'), '::before').backgroundImage,
         ),
       )
       .toContain('cheese-bg.svg');
@@ -90,9 +91,9 @@ test.describe('Theme System', () => {
     // that is the bug this guards against (it used to revert to the hand)
     const cursorOn = (selector) =>
       page.evaluate((sel) => getComputedStyle(document.querySelector(sel)).cursor, selector);
-    expect(await page.evaluate(() => document.documentElement.classList.contains('theme-cursor'))).toBe(
-      true,
-    );
+    expect(
+      await page.evaluate(() => document.documentElement.classList.contains('theme-cursor')),
+    ).toBe(true);
     expect(await cursorOn('.app-wrapper')).toContain('cheese-cursor.svg');
     expect(await cursorOn('nav button')).toContain('cheese-cursor.svg');
 
@@ -107,9 +108,9 @@ test.describe('Theme System', () => {
         () => getComputedStyle(document.querySelector('.app-wrapper'), '::before').backgroundImage,
       ),
     ).toBe('none');
-    expect(await page.evaluate(() => document.documentElement.classList.contains('theme-tile'))).toBe(
-      false,
-    );
+    expect(
+      await page.evaluate(() => document.documentElement.classList.contains('theme-tile')),
+    ).toBe(false);
   });
 
   test('modern theme applies shape and type tokens, and they reset on switch', async ({
@@ -118,7 +119,10 @@ test.describe('Theme System', () => {
   }) => {
     await openThemeSelector(page, pages);
     const rootVar = (name) =>
-      page.evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name);
+      page.evaluate(
+        (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(),
+        name,
+      );
 
     await themeCard(page, 'Studio').click();
     await expect.poll(() => rootVar('--radius-lg')).toBe('0px');
@@ -137,27 +141,25 @@ test.describe('Theme System', () => {
 
     await themeCard(page, 'Paper').click();
     await expect.poll(() => rootVar('--font-heading')).toContain('Georgia');
-    expect(await page.evaluate(() => getComputedStyle(document.querySelector('h2')).fontFamily)).toContain(
-      'Georgia',
-    );
+    expect(
+      await page.evaluate(() => getComputedStyle(document.querySelector('h2')).fontFamily),
+    ).toContain('Georgia');
 
     // Back to a theme with no overrides: every token returns to its default
     await themeCard(page, 'Dark').click();
     await expect.poll(() => rootVar('--radius-lg')).toBe('10px');
     await expect.poll(cardRadius).toBe('10px');
     expect(await rootVar('--font-heading')).toContain('system-ui'); // back to the body face
-    expect(await page.evaluate(() => getComputedStyle(document.querySelector('h2')).fontFamily)).not.toContain(
-      'Georgia',
-    );
+    expect(
+      await page.evaluate(() => getComputedStyle(document.querySelector('h2')).fontFamily),
+    ).not.toContain('Georgia');
   });
 
   test('switches to the light theme', async ({ page, pages }) => {
     await openThemeSelector(page, pages);
 
     await themeCard(page, 'Light').click();
-    await expect
-      .poll(() => page.evaluate(() => localStorage.getItem('sims-theme')))
-      .toBe('light');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('sims-theme'))).toBe('light');
   });
 
   test('switches to the dark theme', async ({ page, pages }) => {
@@ -165,22 +167,16 @@ test.describe('Theme System', () => {
 
     // Start from light so selecting dark is an actual change
     await themeCard(page, 'Light').click();
-    await expect
-      .poll(() => page.evaluate(() => localStorage.getItem('sims-theme')))
-      .toBe('light');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('sims-theme'))).toBe('light');
 
     await themeCard(page, 'Dark').click();
-    await expect
-      .poll(() => page.evaluate(() => localStorage.getItem('sims-theme')))
-      .toBe('dark');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('sims-theme'))).toBe('dark');
   });
 
   test('theme selection survives a reload', async ({ page, pages }) => {
     await openThemeSelector(page, pages);
     await themeCard(page, 'Light').click();
-    await expect
-      .poll(() => page.evaluate(() => localStorage.getItem('sims-theme')))
-      .toBe('light');
+    await expect.poll(() => page.evaluate(() => localStorage.getItem('sims-theme'))).toBe('light');
 
     await page.reload();
     await pages.dashboard.expectDashboard();
@@ -379,5 +375,100 @@ test.describe('Accessibility', () => {
       );
       expect(overflow).toBeLessThanOrEqual(0);
     });
+  });
+});
+
+// =============================================================================
+// Automated WCAG checks (axe-core)
+// The hand-written checks above cover landmarks, labels and focus rings;
+// axe catches what they don't — contrast, ARIA misuse, missing names on new
+// controls — across the five main views in the default theme. Any
+// violation fails; do not add to `disableRules` without a comment that says
+// why the rule cannot apply here.
+// =============================================================================
+test.describe('Automated accessibility scan (axe, default theme)', () => {
+  const scan = (page) =>
+    new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      // color-contrast is RECORDED (attached to the test report) but not
+      // enforced: the default Legacy dark theme sits at ~3:1 for muted text,
+      // primary-as-text on tinted surfaces and status badges (AA needs
+      // 4.5:1). Raising it is a palette decision tied to choosing a modern
+      // default theme — when that lands, delete this line.
+      .disableRules(['color-contrast'])
+      // Toasts are transient
+      .exclude('.toast-container')
+      .analyze();
+
+  // The contrast scan runs separately so its findings stay visible in the
+  // report without failing the suite (see above)
+  const contrastScan = (page) =>
+    new AxeBuilder({ page }).withRules(['color-contrast']).exclude('.toast-container').analyze();
+
+  const describeViolations = (violations) =>
+    violations
+      .map(
+        (v) =>
+          `${v.id} (${v.impact}): ${v.help}\n` +
+          v.nodes
+            .slice(0, 5)
+            .map(
+              (n) =>
+                `    ${n.target.join(' ')}\n      ${n.html.slice(0, 140)}\n      ${
+                  n.failureSummary?.split('\n')[1] || ''
+                }`,
+            )
+            .join('\n'),
+      )
+      .join('\n');
+
+  async function expectNoViolations(page, view) {
+    const contrast = await contrastScan(page);
+    const contrastNodes = contrast.violations.flatMap((v) => v.nodes).length;
+    await test.info().attach(`contrast-${view}`, {
+      body: `${contrastNodes} color-contrast nodes (not enforced)\n${describeViolations(contrast.violations)}`,
+      contentType: 'text/plain',
+    });
+
+    const results = await scan(page);
+    expect(
+      results.violations,
+      `axe violations on ${view}:\n${describeViolations(results.violations)}`,
+    ).toEqual([]);
+  }
+
+  test.beforeEach(async ({ page, pages }) => {
+    await page.goto('/');
+    await pages.dashboard.expectDashboard();
+  });
+
+  test('Dashboard', async ({ page }) => {
+    await expectNoViolations(page, 'Dashboard');
+  });
+
+  test('Gear List', async ({ page, pages }) => {
+    await pages.dashboard.navigateTo('Gear List');
+    await pages.gearList.expectGearList();
+    await expectNoViolations(page, 'Gear List');
+  });
+
+  test('Item Detail', async ({ page, pages }) => {
+    await pages.dashboard.navigateTo('Gear List');
+    await pages.gearList.expectGearList();
+    await pages.gearList.openItem('CA1001', 'Sony A7S III');
+    await pages.itemDetail.expectItemDetail();
+    await expectNoViolations(page, 'Item Detail');
+  });
+
+  test('Schedule', async ({ page, pages }) => {
+    await pages.dashboard.navigateTo('Schedule');
+    await expect(page.locator('h2:has-text("Schedule")')).toBeVisible({ timeout: 10000 });
+    await expectNoViolations(page, 'Schedule');
+  });
+
+  test('Packages', async ({ page, pages }) => {
+    await pages.dashboard.navigateTo('Packages');
+    await expect(page.locator('h2:has-text("Packages")')).toBeVisible({ timeout: 10000 });
+    await expectNoViolations(page, 'Packages');
   });
 });

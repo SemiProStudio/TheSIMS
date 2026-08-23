@@ -1141,9 +1141,7 @@ function Dashboard({
                           }}
                         >
                           {record.type || 'Maintenance'}
-                          {record.scheduledDate
-                            ? ` • ${formatDate(record.scheduledDate)}`
-                            : ''}
+                          {record.scheduledDate ? ` • ${formatDate(record.scheduledDate)}` : ''}
                         </div>
                       </div>
                       <Badge
@@ -1178,10 +1176,21 @@ function Dashboard({
           >
             {recentActivity.length === 0 ? (
               <div style={emptyStateStyle}>
-                {!auditLogLoaded ? <TierLoading label="Loading activity..." /> : 'No recent activity'}
+                {!auditLogLoaded ? (
+                  <TierLoading label="Loading activity..." />
+                ) : (
+                  'No recent activity'
+                )}
               </div>
             ) : (
-              <div style={{ padding: spacing[4], maxHeight: 300, overflowY: 'auto' }}>
+              <div
+                // Rows for deleted items are plain text, so the scroll region
+                // itself must be reachable from the keyboard
+                tabIndex={0}
+                role="region"
+                aria-label="Recent activity"
+                style={{ padding: spacing[4], maxHeight: 300, overflowY: 'auto' }}
+              >
                 {recentActivity.map((event) => {
                   const EventIcon = ACTIVITY_EVENT_ICONS[event.type] || Activity;
                   const canOpen = event.itemId && inventory.some((i) => i.id === event.itemId);

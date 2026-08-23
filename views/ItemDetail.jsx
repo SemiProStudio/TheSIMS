@@ -289,7 +289,11 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
                     {acc.id} • {acc.category}
                   </div>
                 </div>
-                <Badge text={getStatusLabel(acc.status)} color={getStatusColor(acc.status)} size="sm" />
+                <Badge
+                  text={getStatusLabel(acc.status)}
+                  color={getStatusColor(acc.status)}
+                  size="sm"
+                />
                 {onRemoveAccessory && (
                   <button
                     onClick={() => onRemoveAccessory(item.id, acc.id)}
@@ -334,83 +338,84 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
       {/* Add accessories panel — the whole flow gates on the handler, like
           KitContentsSection: without gear_list edit the button used to render
           anyway and "Add (n)" silently did nothing */}
-      {onAddAccessory && (showAddPanel ? (
-        <div
-          style={{
-            background: withOpacity(effectivePanelColor, 10),
-            borderRadius: borderRadius.md,
-            padding: spacing[3],
-            border: `1px solid ${withOpacity(effectivePanelColor, 30)}`,
-          }}
-        >
-          <div style={{ marginBottom: spacing[2] }}>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search items..."
-              style={{ ...styles.input, width: '100%' }}
-            />
-          </div>
-          <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: spacing[2] }}>
-            {availableItems.slice(0, 50).map((i) => (
-              <label
-                key={i.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing[2],
-                  padding: spacing[2],
-                  cursor: 'pointer',
-                  borderRadius: borderRadius.sm,
-                  background: selectedIds.includes(i.id)
-                    ? withOpacity(effectivePanelColor, 20)
-                    : 'transparent',
+      {onAddAccessory &&
+        (showAddPanel ? (
+          <div
+            style={{
+              background: withOpacity(effectivePanelColor, 10),
+              borderRadius: borderRadius.md,
+              padding: spacing[3],
+              border: `1px solid ${withOpacity(effectivePanelColor, 30)}`,
+            }}
+          >
+            <div style={{ marginBottom: spacing[2] }}>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search items..."
+                style={{ ...styles.input, width: '100%' }}
+              />
+            </div>
+            <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: spacing[2] }}>
+              {availableItems.slice(0, 50).map((i) => (
+                <label
+                  key={i.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: spacing[2],
+                    padding: spacing[2],
+                    cursor: 'pointer',
+                    borderRadius: borderRadius.sm,
+                    background: selectedIds.includes(i.id)
+                      ? withOpacity(effectivePanelColor, 20)
+                      : 'transparent',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(i.id)}
+                    onChange={() => handleToggleSelect(i.id)}
+                    style={{ accentColor: colors.primary }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
+                      {i.name}
+                    </div>
+                    <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                      {i.id}
+                    </div>
+                  </div>
+                </label>
+              ))}
+              {availableItems.length === 0 && (
+                <p style={{ color: colors.textMuted, textAlign: 'center', padding: spacing[2] }}>
+                  No items found
+                </p>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowAddPanel(false);
+                  setSelectedIds([]);
+                  setSearchQuery('');
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(i.id)}
-                  onChange={() => handleToggleSelect(i.id)}
-                  style={{ accentColor: colors.primary }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
-                    {i.name}
-                  </div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                    {i.id}
-                  </div>
-                </div>
-              </label>
-            ))}
-            {availableItems.length === 0 && (
-              <p style={{ color: colors.textMuted, textAlign: 'center', padding: spacing[2] }}>
-                No items found
-              </p>
-            )}
+                Cancel
+              </Button>
+              <Button onClick={handleAddSelected} disabled={selectedIds.length === 0} icon={Plus}>
+                Add ({selectedIds.length})
+              </Button>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setShowAddPanel(false);
-                setSelectedIds([]);
-                setSearchQuery('');
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleAddSelected} disabled={selectedIds.length === 0} icon={Plus}>
-              Add ({selectedIds.length})
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button variant="secondary" onClick={() => setShowAddPanel(true)} icon={Plus} fullWidth>
-          Add Required Accessory
-        </Button>
-      ))}
+        ) : (
+          <Button variant="secondary" onClick={() => setShowAddPanel(true)} icon={Plus} fullWidth>
+            Add Required Accessory
+          </Button>
+        ))}
     </div>
   );
 });
@@ -481,8 +486,8 @@ const KitContentsSection = memo(function KitContentsSection({
             padding: spacing[3],
           }}
         >
-          This item is not a kit. Kits are container items — a camera bag, a
-          lighting case — whose contents print together on kit labels.
+          This item is not a kit. Kits are container items — a camera bag, a lighting case — whose
+          contents print together on kit labels.
         </p>
         {onSetKitStatus && (
           <Button
@@ -653,16 +658,17 @@ const KitContentsSection = memo(function KitContentsSection({
         (onAddKitItems || onSetKitStatus) && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
             {onAddKitItems && (
-              <Button variant="secondary" onClick={() => setShowAddPanel(true)} icon={Plus} fullWidth>
+              <Button
+                variant="secondary"
+                onClick={() => setShowAddPanel(true)}
+                icon={Plus}
+                fullWidth
+              >
                 Add Items to Kit
               </Button>
             )}
             {onSetKitStatus && (
-              <Button
-                variant="secondary"
-                onClick={() => onSetKitStatus(item.id, false)}
-                fullWidth
-              >
+              <Button variant="secondary" onClick={() => onSetKitStatus(item.id, false)} fullWidth>
                 No Longer a Kit
               </Button>
             )}
@@ -991,20 +997,10 @@ function ItemDetail({
                 </p>
               ) : (
                 item.reservations.map((r) => (
-                  <div
-                    key={r.id}
-                    onClick={() => onViewReservation?.(r)}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`View reservation ${r.project}`}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        onViewReservation?.(r);
-                      }
-                    }}
-                    style={{ ...getItemStyle(reservationsColor), cursor: 'pointer' }}
-                  >
+                  // The row is a plain container: the "open" control and the
+                  // delete control are SIBLING buttons (a button nested in a
+                  // role=button row is invalid — axe nested-interactive)
+                  <div key={r.id} style={getItemStyle(reservationsColor)}>
                     <div
                       style={{
                         display: 'flex',
@@ -1012,7 +1008,24 @@ function ItemDetail({
                         alignItems: 'center',
                       }}
                     >
-                      <div>
+                      <button
+                        type="button"
+                        className="dash-row"
+                        onClick={() => onViewReservation?.(r)}
+                        aria-label={`View reservation ${r.project}`}
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          margin: 0,
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          font: 'inherit',
+                          color: 'inherit',
+                        }}
+                      >
                         <div
                           style={{
                             fontSize: typography.fontSize.base,
@@ -1031,7 +1044,7 @@ function ItemDetail({
                         >
                           {formatDate(r.start)} → {formatDate(r.end)}
                         </div>
-                      </div>
+                      </button>
                       {canEditSchedule && (
                         <button
                           onClick={(e) => {
@@ -1344,8 +1357,7 @@ function ItemDetail({
                       padding: spacing[2],
                     }}
                   >
-                    Showing the latest 8 of {historyCount} — the Item Timeline has the full
-                    history
+                    Showing the latest 8 of {historyCount} — the Item Timeline has the full history
                   </p>
                 )}
               </div>
