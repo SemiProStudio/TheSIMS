@@ -98,7 +98,7 @@ SIMS manages the full lifecycle of production equipment: acquisition, storage, c
 | State          | React hooks with memoization (useState, useCallback, useMemo, memo) |
 | QR Codes       | qrcode (generation) + jsQR (camera scanning)                        |
 | PDF Parsing    | pdf.js (CDN, loaded on demand for Smart Paste)                      |
-| Error Tracking | Sentry (optional — inert without `VITE_SENTRY_DSN`)                                                              |
+| Error Tracking | Sentry (optional — inert without `VITE_SENTRY_DSN`)                 |
 | Testing        | Vitest (unit/integration) + Playwright (E2E)                        |
 
 ---
@@ -140,7 +140,6 @@ utils/          Pure helpers (dates, money, status, CSV download, a11y)
 supabase/       schema.sql, migrations/, edge functions
 e2e/            Playwright specs + fixtures; test/ holds the Vitest suite
 ```
-
 
 ## Smart Paste
 
@@ -214,15 +213,15 @@ database hardening is guarded by `test/migrationSecurityLint.test.js`
 
 ## Theme System
 
-23 built-in themes driven by CSS custom properties, grouped in the picker as **Modern**, **Legacy** and **Custom & Random**. Every static theme is gated by `test/theme-contrast.test.js` (WCAG AA body text, 3:1 status text, readable button labels on both gradient stops).
+24 built-in themes driven by CSS custom properties, grouped in the picker as **Modern**, **Legacy** and **Custom & Random**. The default is **Midnight**. Every static theme is gated by `test/theme-contrast.test.js`; every **Modern** theme additionally clears WCAG AA (4.5:1) wherever the app renders an accent as text — active nav labels on their tint, status badges, dashboard sub-text, muted copy — so the axe scan in `e2e/accessibility.spec.js` enforces `color-contrast` on the default theme. `scripts/theme-aa-tune.mjs` audits a theme and suggests the smallest lightness fix.
 
-Themes set more than colour. Each can override shape and type tokens — `--radius-*`, `--font-sans`, `--font-heading`, `--font-mono`, `--heading-weight`, `--heading-tracking`, `--focus-ring-width` (`TOKEN_DEFAULTS` in `themes-data.js`, mirrored in `index.css :root`) — plus an optional background tile (`backgroundImage` / `backgroundOpacity`) and cursor (`cursor` / `cursorHotspot`).
+Themes set more than colour. Each can override shape, type and structure tokens — `--radius-*`, `--font-sans`, `--font-heading`, `--font-mono`, `--heading-weight`, `--heading-tracking`, `--heading-transform`, `--border-width`, `--card-blur`, `--focus-ring-width` (`TOKEN_DEFAULTS` in `themes-data.js`, mirrored in `index.css :root`) — plus an optional background tile (`backgroundImage` / `backgroundOpacity` / `backgroundSize` / `backgroundRepeat`) and cursor (`cursor` / `cursorHotspot`). A theme may also declare a `variant`; ThemeContext writes it to `<html data-theme-variant>` and `index.css` carries structural rules per variant (how the nav marks the active view, how buttons are built, card edges, input fill) — that is what lets Darkroom, Blueprint, Ledger, Aurora and Clay change the construction of the app rather than only its palette.
 
-| Section         | Themes                                                                                                      |
-| --------------- | ----------------------------------------------------------------------------------------------------------- |
-| Modern          | Graphite, Midnight, Arctic, Ember, High Contrast, Paper (serif headings), Dune (mono headings), Sage (rounded), Studio (square, hard shadows), Slate (dot grid) |
-| Legacy          | Light, Dark (default), Darker, Primaries, Pastel, Terminal, Black & White, Vibrant, Muted, XP, Cheese 🧀, Cats 🐱, Dogs 🐕 |
-| Custom & Random | Custom theme editor with live contrast checking; Random rolls a new palette on every switch               |
+| Section         | Themes                                                                                                                                                                                                                                                                                                                                                               |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Modern          | Midnight (default), Paper (serif headings), Dune (mono headings), Sage (rounded), Slate (dot grid), Darkroom (condensed uppercase, hairlines, film grain), Blueprint (grid, dashed cards, mono titles, outline buttons), Ledger (newsprint, 2px rules, hard offsets), Aurora (frosted glass over a gradient, pills), Clay (soft-extruded, borderless), High Contrast |
+| Legacy          | Light, Dark, Darker, Primaries, Pastel, Terminal, Black & White, Vibrant, Muted, XP, Cheese 🧀, Cats 🐱, Dogs 🐕                                                                                                                                                                                                                                                     |
+| Custom & Random | Custom theme editor with live contrast checking; Random rolls a new palette on every switch                                                                                                                                                                                                                                                                          |
 
 Cheese, Cats and Dogs tile cartoon artwork behind the page (`public/*-bg.svg`) and replace the cursor everywhere, including over buttons and inside modals (`html.theme-cursor` in `index.css`).
 

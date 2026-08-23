@@ -472,7 +472,10 @@ function ScheduleView({
                 ...styles.btnSec,
                 border: 'none',
                 background: view === v ? `${withOpacity(colors.primary, 30)}` : 'transparent',
-                color: view === v ? colors.primary : colors.textSecondary,
+                // Body text, not the accent: an accent label on its own
+                // 30% tint cannot reach AA for high-chroma primaries (cyan
+                // on cyan) in any lightness — the tint carries the state
+                color: view === v ? colors.textPrimary : colors.textSecondary,
                 fontWeight:
                   view === v ? typography.fontWeight.medium : typography.fontWeight.normal,
                 textTransform: 'capitalize',

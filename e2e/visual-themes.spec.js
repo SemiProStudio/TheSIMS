@@ -11,7 +11,21 @@ test.describe('Visual Regression - Themes', () => {
     // Real theme ids from themes-data.js. The previous list (ocean/forest/
     // sunset/neon) named themes that DON'T EXIST — every one of those
     // baselines was just a screenshot of the fallback theme.
-    const themesToTest = ['dark', 'light', 'darker', 'terminal', 'pastel', 'vibrant'];
+    // Legacy sample + every structural variant (their index.css rules only
+    // exist while the variant is active, so each needs its own capture)
+    const themesToTest = [
+      'dark',
+      'light',
+      'darker',
+      'terminal',
+      'pastel',
+      'vibrant',
+      'darkroom',
+      'blueprint',
+      'ledger',
+      'aurora',
+      'clay',
+    ];
 
     for (const theme of themesToTest) {
       test(`${theme} theme dashboard should match baseline`, async ({ page }) => {

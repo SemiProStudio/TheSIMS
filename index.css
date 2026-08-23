@@ -8,71 +8,78 @@
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 72px;
 
+  /* Palette defaults = the Midnight theme (the default theme) so the first
+     frame matches what ThemeContext applies before paint. Keep in sync with
+     themes-data.js `midnight`. */
+
   /* Backgrounds */
-  --bg-dark: #1a1d21;
-  --bg-medium: #22262b;
-  --bg-light: #2a2f36;
-  --bg-card: linear-gradient(135deg, rgba(42, 47, 54, 0.6), rgba(34, 38, 43, 0.4));
-  --bg-card-solid: #22262b;
+  --bg-dark: #0a1020;
+  --bg-medium: #0f172a;
+  --bg-light: #162138;
+  --bg-card: linear-gradient(160deg, rgba(30, 41, 59, 0.85), rgba(22, 33, 56, 0.6));
+  --bg-card-solid: #162138;
 
   /* Theme background image - set by ThemeContext for themed backgrounds */
   --theme-bg-image: none;
   --theme-bg-opacity: 1;
+  --theme-bg-size: auto;
+  --theme-bg-repeat: repeat;
 
-  /* Primary/Accent - Matches DEFAULT_CUSTOM_THEME to avoid flash on mount */
-  --primary: #5d8aa8;
-  --primary-light: #7ba3be;
-  --primary-dark: #4a7089;
-  --accent1: #6b9e9e;
-  --accent2: #7a8f7a;
-  --accent3: #8fa5b5;
+  /* Primary/Accent */
+  --primary: #7dd3fc;
+  --primary-light: #bae6fd;
+  --primary-dark: #38bdf8;
+  --accent1: #a78bfa;
+  --accent2: #34d399;
+  --accent3: #f472b6;
 
   /* Status */
-  --status-available: #6b9e78;
-  --status-checked-out: #8fa5b5;
-  --status-reserved: #5d8aa8;
-  --status-needs-attention: #b58f6b;
-  --status-missing: #9e6b6b;
+  --status-available: #34d399;
+  --status-checked-out: #7dd3fc;
+  --status-reserved: #a78bfa;
+  --status-needs-attention: #fbbf24;
+  --status-missing: #fb7185;
 
   /* Condition */
-  --condition-excellent: #6b9e78;
-  --condition-good: #7a8f7a;
-  --condition-fair: #b5a56b;
-  --condition-poor: #b58f6b;
+  --condition-excellent: #34d399;
+  --condition-good: #86efac;
+  --condition-fair: #fbbf24;
+  --condition-poor: #fb923c;
 
-  /* Text - Matches DEFAULT_CUSTOM_THEME to avoid flash on mount */
-  --text-primary: #e2e6ea;
-  --text-secondary: rgba(226, 230, 234, 0.65);
-  --text-muted: rgba(226, 230, 234, 0.4);
+  /* Text */
+  --text-primary: #e6edf7;
+  --text-secondary: #a9b7cc;
+  --text-muted: #7f8fa8;
 
-  /* Borders - Matches DEFAULT_CUSTOM_THEME to avoid flash on mount */
-  --border: rgba(93, 138, 168, 0.2);
-  --border-light: rgba(93, 138, 168, 0.1);
+  /* Borders */
+  --border: rgba(125, 211, 252, 0.14);
+  --border-light: rgba(125, 211, 252, 0.08);
 
   /* Semantic */
-  --danger: #be7d7d;
-  --danger-fill: #be7d7d;
-  --on-primary: #ffffff;
+  --danger: #fb7185;
+  --danger-fill: #e11d48;
+  --on-primary: #0b0d10;
   --on-danger: #ffffff;
   --on-success: #0b0d10;
-  --success: #6b9e78;
-  --warning: #b5a56b;
+  --success: #34d399;
+  --warning: #fbbf24;
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
-  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 1px 2px rgba(2, 6, 23, 0.6);
+  --shadow-md: 0 4px 12px rgba(2, 6, 23, 0.6);
+  --shadow-lg: 0 12px 32px rgba(2, 6, 23, 0.7);
+  --shadow-card: 0 8px 32px rgba(56, 189, 248, 0.08);
 
   /* Inputs derive their tint from the active theme's primary via the
      color-mix fallback in each rule — a static --input-bg here would pin
-     every theme to the dark theme's blue tint */
+     every theme to one tint */
 
   /* Custom cursor */
   --theme-cursor: default;
 
-  /* Shape + type tokens — themes may override these (themes-data.js
-     TOKEN_DEFAULTS mirrors these values; keep the two in sync) */
+  /* Shape + type + structure tokens — themes may override these
+     (themes-data.js TOKEN_DEFAULTS mirrors these values; keep the two in
+     sync — test/themesData.test.js checks) */
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 10px;
@@ -83,6 +90,9 @@
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
   --heading-weight: 700;
   --heading-tracking: 0;
+  --heading-transform: none;
+  --border-width: 1px;
+  --card-blur: 10px;
 
   /* Focus Ring - Accessibility */
   --focus-ring-color: var(--primary-light);
@@ -93,7 +103,6 @@
   --focus-ring: var(--focus-ring-width) var(--focus-ring-style) var(--focus-ring-color);
   --focus-ring-danger: var(--focus-ring-width) var(--focus-ring-style)
     var(--focus-ring-color-danger);
-
 }
 
 /* Reset default browser styles that cause white borders */
@@ -120,6 +129,7 @@ h3 {
   font-family: var(--font-heading);
   font-weight: var(--heading-weight);
   letter-spacing: var(--heading-tracking);
+  text-transform: var(--heading-transform);
 }
 
 /* ============================================================================
@@ -333,7 +343,9 @@ html.theme-tile .app-wrapper::before {
   inset: 0;
   z-index: -1;
   background-image: var(--theme-bg-image);
-  background-repeat: repeat;
+  background-repeat: var(--theme-bg-repeat, repeat);
+  background-size: var(--theme-bg-size, auto);
+  background-position: center top;
   opacity: var(--theme-bg-opacity, 1);
   pointer-events: none;
 }
@@ -930,7 +942,7 @@ html.theme-cursor .btn-secondary:disabled {
   gap: 8px;
   background: transparent;
   color: var(--text-primary);
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   padding: 10px 14px;
   border-radius: var(--radius-lg);
   cursor: pointer;
@@ -1009,7 +1021,7 @@ html.theme-cursor .btn-secondary:disabled {
   width: 100%;
   padding: 12px 16px;
   background: var(--input-bg, color-mix(in srgb, var(--primary) 10%, transparent));
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   border-radius: var(--radius-lg);
   color: var(--text-primary);
   font-size: 14px;
@@ -1279,9 +1291,9 @@ input[type='date']::-moz-calendar-picker-indicator {
 
 .card {
   background: var(--bg-light);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--card-blur));
   border-radius: var(--radius-xl);
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   box-shadow: var(--shadow-card);
 }
 
@@ -1825,4 +1837,201 @@ button:disabled,
 .report-tr:focus-visible {
   outline: var(--focus-ring);
   outline-offset: -2px;
+}
+
+/* ============================================================================
+   Theme variants — structural restyles keyed by html[data-theme-variant]
+   (ThemeContext writes theme.variant there). Tokens carry colour and shape;
+   these rules change how the class-based surfaces are BUILT: nav marker,
+   button construction, card edges, input fill. Inline styles beat selectors,
+   so the inline-styled nav button needs !important here.
+   ============================================================================ */
+
+/* Darkroom — flat surfaces, hairlines, a left rule marks the active view,
+   small-caps controls */
+html[data-theme-variant='darkroom'] .sidebar-nav-btn[aria-current='page'] {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: inset 3px 0 0 var(--nav-active-color);
+}
+html[data-theme-variant='darkroom'] .sidebar-section-title {
+  letter-spacing: 0.18em;
+}
+html[data-theme-variant='darkroom'] .btn,
+html[data-theme-variant='darkroom'] .btn-secondary {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+html[data-theme-variant='darkroom'] .btn {
+  background: var(--primary);
+}
+html[data-theme-variant='darkroom'] .btn:hover {
+  transform: none;
+  filter: brightness(1.08);
+}
+
+/* Blueprint — drafting rules: dashed cards, underlined active view, outline
+   buttons, mono labels */
+html[data-theme-variant='blueprint'] .card {
+  border-style: dashed;
+}
+html[data-theme-variant='blueprint'] .sidebar-nav-btn[aria-current='page'] {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: inset 0 -2px 0 var(--nav-active-color);
+}
+html[data-theme-variant='blueprint'] .sidebar-nav-label,
+html[data-theme-variant='blueprint'] .sidebar-section-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+html[data-theme-variant='blueprint'] .btn {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--primary) 45%, transparent);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 12px;
+}
+html[data-theme-variant='blueprint'] .btn:hover {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  filter: none;
+  transform: none;
+}
+html[data-theme-variant='blueprint'] .btn-secondary {
+  border-style: dashed;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* Ledger — newsprint: 2px rules, hard offset shadows, stamp buttons, the
+   active view printed in reverse */
+html[data-theme-variant='ledger'] .btn {
+  background: var(--primary);
+  border: 2px solid var(--text-primary);
+  box-shadow: 3px 3px 0 var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 800;
+}
+html[data-theme-variant='ledger'] .btn:hover {
+  filter: none;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--text-primary);
+}
+html[data-theme-variant='ledger'] .btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--text-primary);
+}
+html[data-theme-variant='ledger'] .btn-secondary {
+  background: var(--bg-light);
+  border-color: var(--text-primary);
+  box-shadow: 2px 2px 0 var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+html[data-theme-variant='ledger'] .btn-secondary:hover {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--text-primary);
+}
+html[data-theme-variant='ledger'] .input {
+  background: var(--bg-light);
+  border-color: var(--text-primary);
+}
+html[data-theme-variant='ledger'] .input:focus {
+  box-shadow: 3px 3px 0 var(--text-primary);
+}
+html[data-theme-variant='ledger'] .sidebar-nav-btn[aria-current='page'] {
+  background: var(--text-primary) !important;
+  color: var(--bg-light) !important;
+  border-radius: 0 !important;
+}
+html[data-theme-variant='ledger'] .sidebar-nav-btn[aria-current='page'] svg {
+  color: var(--bg-light) !important;
+}
+html[data-theme-variant='ledger'] .sidebar-section-title {
+  letter-spacing: 0.12em;
+  border-bottom: 2px solid var(--text-primary);
+}
+
+/* Aurora — frosted glass over the gradient, pills, glow */
+html[data-theme-variant='aurora'] .card {
+  background: color-mix(in srgb, var(--bg-light) 55%, transparent);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+html[data-theme-variant='aurora'] .btn {
+  background: var(--primary);
+  border-radius: 999px;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+html[data-theme-variant='aurora'] .btn-secondary {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+html[data-theme-variant='aurora'] .input {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+html[data-theme-variant='aurora'] .sidebar-nav-btn[aria-current='page'] {
+  border-radius: 999px !important;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--nav-active-color) 35%, transparent);
+}
+
+/* Clay — soft-extruded: no rules, raised buttons that press in, sunken
+   inputs */
+html[data-theme-variant='clay'] .card {
+  border: none;
+}
+html[data-theme-variant='clay'] .btn {
+  background: var(--primary);
+  border-radius: var(--radius-2xl);
+  box-shadow:
+    6px 6px 12px rgba(163, 177, 198, 0.6),
+    -6px -6px 12px rgba(255, 255, 255, 0.9);
+}
+html[data-theme-variant='clay'] .btn:hover {
+  transform: none;
+  filter: brightness(1.05);
+}
+html[data-theme-variant='clay'] .btn:active {
+  box-shadow:
+    inset 4px 4px 8px rgba(0, 0, 0, 0.25),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.2);
+}
+html[data-theme-variant='clay'] .btn-secondary {
+  border: none;
+  background: var(--bg-medium);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-sm);
+}
+html[data-theme-variant='clay'] .btn-secondary:hover {
+  background: var(--bg-medium);
+  box-shadow:
+    inset 3px 3px 6px rgba(163, 177, 198, 0.5),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+}
+html[data-theme-variant='clay'] .input {
+  border: none;
+  background: var(--bg-dark);
+  box-shadow:
+    inset 4px 4px 8px rgba(163, 177, 198, 0.45),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.85);
+}
+html[data-theme-variant='clay'] .input:focus {
+  box-shadow:
+    inset 4px 4px 8px rgba(163, 177, 198, 0.45),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.85),
+    0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+html[data-theme-variant='clay'] .sidebar-nav-btn[aria-current='page'] {
+  background: var(--bg-medium) !important;
+  border-radius: var(--radius-2xl) !important;
+  box-shadow:
+    4px 4px 8px rgba(163, 177, 198, 0.5),
+    -4px -4px 8px rgba(255, 255, 255, 0.9);
 }

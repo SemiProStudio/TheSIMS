@@ -14,6 +14,11 @@ import {
   DANGER_FILL_MIXES,
 } from '../themes-data.js';
 import { announce } from '../utils/accessibility.js';
+
+// The theme a fresh install (or an unknown saved id) starts on. Midnight is
+// the one dark theme kept from the original modern set and passes WCAG AA
+// everywhere the app renders an accent as text (see scripts/theme-aa-tune).
+export const DEFAULT_THEME_ID = 'midnight';
 import ThemeContext from './ThemeContext.js';
 
 import { warn } from '../lib/logger.js';
@@ -68,9 +73,9 @@ const getAvailableThemes = () => {
 export function ThemeProvider({ children }) {
   const [themeId, setThemeId] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('sims-theme') || 'dark';
+      return localStorage.getItem('sims-theme') || DEFAULT_THEME_ID;
     }
-    return 'dark';
+    return DEFAULT_THEME_ID;
   });
   const [randomColors, setRandomColors] = useState(null);
   const [customThemeColors, setCustomThemeColors] = useState(null);
@@ -141,7 +146,17 @@ export function ThemeProvider({ children }) {
       theme.backgroundImage ? `url("${theme.backgroundImage}")` : 'none',
     );
     root.style.setProperty('--theme-bg-opacity', String(theme.backgroundOpacity ?? 1));
+    // Tiles repeat by default; a full-bleed artwork (Aurora's gradient)
+    // sets size: cover + no-repeat
+    root.style.setProperty('--theme-bg-size', theme.backgroundSize || 'auto');
+    root.style.setProperty('--theme-bg-repeat', theme.backgroundRepeat || 'repeat');
     root.classList.toggle('theme-tile', Boolean(theme.backgroundImage));
+
+    // Structural variant: index.css restyles the class-based surfaces per
+    // html[data-theme-variant] (hairlines + flat cards, dashed blueprint
+    // rules, hard-edged ledger, frosted glass, extruded clay)
+    if (theme.variant) root.dataset.themeVariant = theme.variant;
+    else delete root.dataset.themeVariant;
 
     // Themed cursor: the variable carries the image, the root class switches
     // the !important override on so it beats inline `cursor: pointer`
@@ -190,7 +205,7 @@ export function ThemeProvider({ children }) {
   // screen readers on every page load.
   const isFirstApply = useRef(true);
   useLayoutEffect(() => {
-    let theme = themes[themeId] || themes.dark;
+    let theme = themes[themeId] || themes[DEFAULT_THEME_ID];
 
     if (theme.isCustom) {
       const customTheme = loadCustomTheme();
@@ -232,7 +247,7 @@ export function ThemeProvider({ children }) {
   );
 
   const currentTheme = useMemo(() => {
-    const theme = themes[themeId] || themes.dark;
+    const theme = themes[themeId] || themes[DEFAULT_THEME_ID];
     if (theme.isRandom && randomColors) {
       return { ...theme, colors: randomColors };
     }
