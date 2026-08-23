@@ -16,12 +16,19 @@ import {
   isTrustedCaller,
   isRateLimited,
 } from '../_shared/utils.ts';
+import { escapeLike, resolvePreferences, templateSkipReason } from '../_shared/notificationRules.ts';
 import {
-  ADMIN_TEMPLATES,
-  escapeLike,
-  resolvePreferences,
-  templateSkipReason,
-} from '../_shared/notificationRules.ts';
+  adminTemplateSkipReason,
+  buildDedupKey,
+  buildLogBase,
+  buildTemplateData,
+  dedupWindowStart,
+  isTestEmail,
+  parseSendEmailRequest,
+  recipientGate,
+  resendFailureMessage,
+  resendFailureResponse,
+} from '../_shared/sendEmailPipeline.ts';
 
 const DEFAULT_COMPANY = 'SIMS';
 
@@ -43,11 +50,9 @@ Deno.serve(async (req: Request) => {
     }
     const isService = claims!.role === 'service_role';
 
-    const { to, templateKey, templateData = {}, userId, meta = {} } = await req.json();
-    if (!to || !templateKey) {
-      return errorResponse('Missing required fields: to, templateKey');
-    }
-    const recipient = String(to).trim();
+    const parsed = parseSendEmailRequest(await req.json());
+    if (!parsed.ok) return errorResponse(parsed.error, parsed.status);
+    const { to: recipient, templateKey, templateData, userId, meta } = parsed.request;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -68,20 +73,20 @@ Deno.serve(async (req: Request) => {
       supabase.from('clients').select('id').ilike('email', escapeLike(recipient)).maybeSingle(),
     ]);
 
-    if (!isService) {
-      if (!userMatch && !clientMatch) {
-        console.warn(`Rejected email to unknown address (caller ${claims!.sub}):`, recipient);
-        return errorResponse('Recipient must be a registered user or client', 403);
-      }
-      if (await isRateLimited(supabase, 100)) {
-        console.warn(`Rate limit hit (caller ${claims!.sub})`);
-        return errorResponse('Rate limit exceeded, please try again shortly', 429);
-      }
+    const refusal = recipientGate({ isService, userMatch, clientMatch });
+    if (refusal) {
+      console.warn(`Rejected email to unknown address (caller ${claims!.sub}):`, recipient);
+      return errorResponse(refusal.error, refusal.status);
+    }
+    if (!isService && (await isRateLimited(supabase, 100))) {
+      console.warn(`Rate limit hit (caller ${claims!.sub})`);
+      return errorResponse('Rate limit exceeded, please try again shortly', 429);
     }
 
     // Admin-only templates never go to a non-admin address, whoever asks
-    if (ADMIN_TEMPLATES.has(templateKey) && userMatch?.role_id !== 'role_admin') {
-      return jsonResponse({ success: true, skipped: true, reason: 'not_admin' });
+    const adminSkip = adminTemplateSkipReason(templateKey, userMatch);
+    if (adminSkip) {
+      return jsonResponse({ success: true, skipped: true, reason: adminSkip });
     }
 
     // -------------------------------------------------------------------------
@@ -119,12 +124,7 @@ Deno.serve(async (req: Request) => {
       return errorResponse(`Email template not found: ${templateKey}`, 404);
     }
 
-    const data: Record<string, string> = {
-      company_name: Deno.env.get('COMPANY_NAME') || DEFAULT_COMPANY,
-      ...Object.fromEntries(
-        Object.entries(templateData || {}).map(([k, v]) => [k, v == null ? '' : String(v)]),
-      ),
-    };
+    const data = buildTemplateData(templateData, Deno.env.get('COMPANY_NAME') || DEFAULT_COMPANY);
     const subject = renderTemplate(template.subject, data);
     const htmlBody = renderTemplate(template.body_html, data, true);
     const textBody = template.body_text ? renderTemplate(template.body_text, data) : undefined;
@@ -134,36 +134,31 @@ Deno.serve(async (req: Request) => {
     // -------------------------------------------------------------------------
     // A test email is always attempted — dedup would make "Send me a test
     // email" report "duplicate" on the second click
-    const dedupKey =
-      templateKey === 'test_email'
-        ? `test_email-${recipient}-${Date.now()}`
-        : `${templateKey}-${recipient}-${JSON.stringify(data)}`.slice(0, 255);
-    const { data: existingLog } =
-      templateKey === 'test_email'
-        ? { data: null }
-        : await supabase
-            .from('notification_log')
-            .select('id')
-            .eq('dedup_key', dedupKey)
-            .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-            .limit(1)
-            .maybeSingle();
+    const dedupKey = buildDedupKey(templateKey, recipient, data);
+    const { data: existingLog } = isTestEmail(templateKey)
+      ? { data: null }
+      : await supabase
+          .from('notification_log')
+          .select('id')
+          .eq('dedup_key', dedupKey)
+          .gte('created_at', dedupWindowStart())
+          .limit(1)
+          .maybeSingle();
 
     if (existingLog) {
       console.log('Duplicate notification prevented:', dedupKey);
       return jsonResponse({ success: true, skipped: true, reason: 'duplicate' });
     }
 
-    const logBase = {
-      user_id: recipientUserId,
-      email: recipient,
-      notification_type: templateKey,
+    const logBase = buildLogBase({
+      recipientUserId,
+      recipient,
+      templateKey,
       subject,
-      dedup_key: dedupKey,
-      item_id: meta.itemId || data.item_id || null,
-      reservation_id: meta.reservationId || null,
-      reminder_id: meta.reminderId || null,
-    };
+      dedupKey,
+      meta,
+      data,
+    });
 
     // -------------------------------------------------------------------------
     // Configuration — a missing key is logged as a failed send so the Email
@@ -207,11 +202,11 @@ Deno.serve(async (req: Request) => {
           .from('notification_log')
           .update({
             status: 'failed',
-            error_message: `Resend ${resendResponse.status}: ${resendResult?.message || 'Unknown error'}`,
+            error_message: resendFailureMessage(resendResponse.status, resendResult),
           })
           .eq('id', logEntry.id);
       }
-      return errorResponse(`Failed to send email: ${resendResult?.message || resendResponse.status}`, 502);
+      return errorResponse(resendFailureResponse(resendResponse.status, resendResult), 502);
     }
 
     if (logEntry) {
