@@ -189,7 +189,7 @@ const ItemHistoryView = memo(function ItemHistoryView({ item, changes, onBack, o
 
   return (
     <div>
-      <BackButton onClick={onBack} label="Back to Change Log" />
+      <BackButton onClick={onBack}>Back to Change Log</BackButton>
 
       <Card style={{ marginTop: spacing[4] }}>
         <div

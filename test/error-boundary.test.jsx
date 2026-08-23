@@ -517,29 +517,6 @@ describe('ErrorBoundary Edge Cases', () => {
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();
   });
 
-  // Skipped: React ErrorBoundary catches the first throw but the test component's
-  // counter persists, so subsequent renders succeed. This doesn't test what it claims.
-  it.skip('should handle rapidly re-throwing errors', () => {
-    let throwCount = 0;
-
-    const RapidError = () => {
-      throwCount++;
-      if (throwCount <= 3) {
-        throw new Error(`Error ${throwCount}`);
-      }
-      return <div>Finally stable</div>;
-    };
-
-    const { container } = render(
-      <ErrorBoundary>
-        <RapidError />
-      </ErrorBoundary>,
-    );
-
-    // ErrorBoundary should catch the error and render fallback UI (not the child)
-    expect(container.innerHTML).toContain('Something went wrong');
-  });
-
   it('should handle deeply nested errors', () => {
     const Level3 = () => {
       throw new Error('Deep error');

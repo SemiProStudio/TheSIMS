@@ -581,6 +581,10 @@ const DatePicker = memo(function DatePicker({
           readOnly
           disabled={disabled}
           style={inputStyle}
+          // A read-only field that opens a calendar dialog: combobox is the
+          // role that permits aria-haspopup/aria-expanded (a plain textbox
+          // allows neither — axe aria-allowed-attr)
+          role="combobox"
           aria-label={ariaLabel}
           aria-haspopup="dialog"
           aria-expanded={isOpen}

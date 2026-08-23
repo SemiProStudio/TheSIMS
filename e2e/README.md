@@ -77,7 +77,7 @@ e2e/
 ├── reservations.spec.js   # Reservation creation via item detail
 ├── notifications.spec.js  # Notification settings
 ├── qr-labels.spec.js      # Labels view, QR modal, scanner manual entry, ?item= deep link
-├── accessibility.spec.js  # Themes, keyboard, ARIA, responsive
+├── accessibility.spec.js  # Themes, keyboard, ARIA, responsive, axe scan of the 5 main views
 ├── security.spec.js       # Anon key reaches nothing; standard-user RLS matrix; forced admin views refused
 ├── smart-paste.spec.js    # Paste → parse → review (alternatives, clear, units) → apply → row; batch narrowing
 ├── visual-pages.spec.js   # Full-page screenshots

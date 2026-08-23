@@ -489,6 +489,7 @@ function ScheduleView({
             variant="secondary"
             onClick={() => navigate(-1)}
             icon={ArrowLeft}
+            aria-label="Previous"
             style={{ padding: '12px 14px' }}
           />
           <DatePicker
@@ -503,6 +504,7 @@ function ScheduleView({
             variant="secondary"
             onClick={() => navigate(1)}
             icon={ArrowRight}
+            aria-label="Next"
             style={{ padding: '12px 14px' }}
           />
         </div>

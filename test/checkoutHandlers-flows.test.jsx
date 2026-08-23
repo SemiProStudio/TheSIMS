@@ -29,6 +29,9 @@ const { STATUS, MODALS } = await import('../constants.js');
 const { getTodayISO } = await import('../utils/index.js');
 
 const TODAY = getTodayISO();
+// updateMaintenanceStatus stamps completed_date from toISOString() (UTC day),
+// which differs from the local TODAY after ~19:00 in the Americas
+const TODAY_UTC = new Date().toISOString().slice(0, 10);
 
 const available = { id: 'IT1', name: 'Camera', status: STATUS.AVAILABLE, condition: 'good' };
 const checkedOut = {
@@ -692,7 +695,7 @@ describe('updateMaintenanceStatus — needs-attention release', () => {
 
     expect(dataContext.updateMaintenance).toHaveBeenCalledWith('m1', {
       status: 'completed',
-      completed_date: TODAY,
+      completed_date: TODAY_UTC,
     });
     expect(dataContext.updateItem).toHaveBeenCalledWith('IT1', { status: STATUS.AVAILABLE });
     expect(lastUpdate(deps.setSelectedItem, item).status).toBe(STATUS.AVAILABLE);

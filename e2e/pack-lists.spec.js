@@ -171,22 +171,16 @@ test.describe.serial('pack lists lifecycle', () => {
 
 // =============================================================================
 // Scan-to-Pack package units (QR round)
-// Packages on a list are physical cases — scanning their label packs them.
-// Requires the pack_list_packages.is_packed migration; on a DB that hasn't
-// run it yet these tests SKIP loudly instead of failing.
+// Packages on a list are physical cases — scanning their label packs them
+// (pack_list_packages.is_packed, migration 20260813150000).
 // =============================================================================
 test.describe.serial('scan-to-pack package units', () => {
   const PKG_LIST_NAME = `${E2E_PREFIX} PackList ScanPkg`;
-  let migrated = false;
   let itemCId;
   let listId;
 
   test.beforeAll(async () => {
     const db = await adminDb();
-    const probe = await db.from('pack_list_packages').select('is_packed').limit(1);
-    migrated = !probe.error;
-    if (!migrated) return;
-
     itemCId = await createTestItem({ name: `${E2E_PREFIX} ScanPkgItem` });
     const { data: list, error } = await db
       .from('pack_lists')
@@ -215,8 +209,6 @@ test.describe.serial('scan-to-pack package units', () => {
     page,
     pages,
   }) => {
-    test.skip(!migrated, 'pack_list_packages.is_packed migration not applied to this DB yet');
-
     await page.goto('/');
     await pages.dashboard.expectDashboard();
     await pages.dashboard.navigateTo('Pack Lists');
