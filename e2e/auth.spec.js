@@ -169,7 +169,12 @@ test.describe('Session refresh', () => {
     const name = `${E2E_PREFIX} AfterRefresh ${Date.now()}`;
     const id = await createTestItem({
       name,
-      columns: { category_name: 'Audio', quantity: 1, serial_number: null, specs: { 'Audio Type': 'E2E' } },
+      columns: {
+        category_name: 'Audio',
+        quantity: 1,
+        serial_number: null,
+        specs: { 'Audio Type': 'E2E' },
+      },
     });
     try {
       // Fake timers must be installed before the app's scripts run so the
@@ -191,6 +196,10 @@ test.describe('Session refresh', () => {
       // Now a write: toggle the low-stock reminder on a private item
       await pages.dashboard.navigateTo('Gear List');
       await pages.gearList.expectGearList();
+      // The 65-minute jump fires every pending app timer at once; give the
+      // list a real window to settle before the default 5 s row wait
+      await pages.gearList.search(id);
+      await expect(pages.gearList.itemRow(name, 'available')).toBeVisible({ timeout: 15000 });
       await pages.gearList.openItem(id, name);
       await pages.itemDetail.expectItemDetail();
       await page.getByRole('switch', { name: 'Low stock reminder' }).click();
@@ -199,7 +208,11 @@ test.describe('Session refresh', () => {
       await expect
         .poll(
           async () => {
-            const { data } = await db.from('inventory').select('low_stock_alert').eq('id', id).maybeSingle();
+            const { data } = await db
+              .from('inventory')
+              .select('low_stock_alert')
+              .eq('id', id)
+              .maybeSingle();
             return data?.low_stock_alert ?? null;
           },
           { timeout: 15000 },

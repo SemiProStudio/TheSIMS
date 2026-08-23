@@ -33,6 +33,9 @@ test.describe('Categories editor', () => {
     await expect(page.locator('h2:has-text("Edit Categories")')).toBeVisible();
 
     const firstInput = page.locator('input[aria-label^="Category name"]').first();
+    // The heading renders before the category rows arrive (lazy data) —
+    // wait for the row itself, not just the page (CI retry 2026-08-23)
+    await expect(firstInput).toBeVisible({ timeout: 15000 });
     const original = await firstInput.inputValue();
     await firstInput.click();
     await firstInput.press('End');
