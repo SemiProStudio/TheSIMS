@@ -88,6 +88,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: test
+    # ONE E2E run at a time, across every branch and the baselines workflow:
+    # all of them mutate the same test Supabase project, and two runs that
+    # interleave see each other's "ZZZ E2E" rows (duplicate items, a cleanup
+    # that deletes the other run's fixtures mid-test). Queue, never cancel.
+    concurrency:
+      group: e2e-shared-test-db
+      cancel-in-progress: false
     # Runs against the DEDICATED TEST Supabase project (thesims-test), never
     # production. Skips cleanly when the E2E secrets are not configured.
     env:

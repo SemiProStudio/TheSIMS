@@ -28,6 +28,10 @@ jobs:
     name: Regenerate linux baselines
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Same queue as ci.yml's E2E job — one user of the shared test DB at a time
+    concurrency:
+      group: e2e-shared-test-db
+      cancel-in-progress: false
 
     env:
       VITE_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
