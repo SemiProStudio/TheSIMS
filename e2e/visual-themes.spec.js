@@ -3,7 +3,7 @@
 // Screenshot comparison tests for different theme variations
 // =============================================================================
 
-import { test, expect, pinVisualClock } from './visual-utils.js';
+import { test, expect, pinVisualClock, waitForStable } from './visual-utils.js';
 import { DashboardPage, GearListPage } from './fixtures.js';
 
 test.describe('Visual Regression - Themes', () => {
@@ -31,9 +31,13 @@ test.describe('Visual Regression - Themes', () => {
         }, theme);
 
         await page.reload();
-        await page.waitForTimeout(1000);
+        await waitForStable(page);
         // Let the theme-change toast dismiss before capturing (it skews diffs)
-        await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
+        await page
+          .getByRole('status')
+          .first()
+          .waitFor({ state: 'hidden', timeout: 10000 })
+          .catch(() => {});
 
         // Take screenshot
         await expect(page).toHaveScreenshot(`theme-${theme}-dashboard.png`, {
@@ -54,15 +58,19 @@ test.describe('Visual Regression - Themes', () => {
         localStorage.setItem('sims-theme-override', 'dark');
       });
       await page.reload();
-      await page.waitForTimeout(1000);
+      await waitForStable(page);
       // Let the theme-change toast dismiss before capturing (it skews diffs)
-      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
+      await page
+        .getByRole('status')
+        .first()
+        .waitFor({ state: 'hidden', timeout: 10000 })
+        .catch(() => {});
     });
 
     test('dark theme gear list should match baseline', async ({ page }) => {
       const dashboard = new DashboardPage(page);
       await dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+      await waitForStable(page);
 
       await expect(page).toHaveScreenshot('theme-dark-gear-list.png', {
         maxDiffPixels: 300,
@@ -80,7 +88,7 @@ test.describe('Visual Regression - Themes', () => {
       await page.getByRole('button', { name: 'Check Out', exact: true }).click();
       const modal = page.locator('[role="dialog"]');
       await expect(modal).toBeVisible();
-      await page.waitForTimeout(300);
+      await waitForStable(page);
 
       await expect(modal).toHaveScreenshot('theme-dark-modal.png', {
         maxDiffPixels: 200,
@@ -98,15 +106,19 @@ test.describe('Visual Regression - Themes', () => {
         localStorage.setItem('sims-theme-override', 'light');
       });
       await page.reload();
-      await page.waitForTimeout(1000);
+      await waitForStable(page);
       // Let the theme-change toast dismiss before capturing (it skews diffs)
-      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
+      await page
+        .getByRole('status')
+        .first()
+        .waitFor({ state: 'hidden', timeout: 10000 })
+        .catch(() => {});
     });
 
     test('light theme gear list should match baseline', async ({ page }) => {
       const dashboard = new DashboardPage(page);
       await dashboard.navigateTo('Gear List');
-      await page.waitForTimeout(1000);
+      await waitForStable(page);
 
       await expect(page).toHaveScreenshot('theme-light-gear-list.png', {
         maxDiffPixels: 300,
@@ -123,7 +135,7 @@ test.describe('Visual Regression - Themes', () => {
       await page.getByRole('button', { name: 'Check Out', exact: true }).click();
       const modal = page.locator('[role="dialog"]');
       await expect(modal).toBeVisible();
-      await page.waitForTimeout(300);
+      await waitForStable(page);
 
       await expect(modal).toHaveScreenshot('theme-light-modal.png', {
         maxDiffPixels: 200,
@@ -137,7 +149,7 @@ test.describe('Visual Regression - Themes', () => {
 
       const dashboard = new DashboardPage(page);
       await dashboard.expectDashboard();
-      await page.waitForTimeout(500);
+      await waitForStable(page);
     });
 
     test('theme selector page should match baseline', async ({ page }) => {
@@ -145,7 +157,7 @@ test.describe('Visual Regression - Themes', () => {
       await page.locator('.sidebar-user-section button').first().click();
       await page.locator('.sidebar-user-menu button', { hasText: 'Theme' }).click();
       await expect(page.locator('h2:has-text("Theme Selector")')).toBeVisible();
-      await page.waitForTimeout(500);
+      await waitForStable(page);
 
       await expect(page).toHaveScreenshot('theme-selector.png', {
         maxDiffPixels: 300,
@@ -163,14 +175,18 @@ test.describe('Visual Regression - Themes', () => {
         localStorage.setItem('sims-theme-override', 'dark');
       });
       await page.reload();
-      await page.waitForTimeout(1000);
+      await waitForStable(page);
       // Let the theme-change toast dismiss before capturing (it skews diffs)
-      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
+      await page
+        .getByRole('status')
+        .first()
+        .waitFor({ state: 'hidden', timeout: 10000 })
+        .catch(() => {});
 
       // Tab to a button
       const button = page.locator('button:has-text("Gear List")');
       await button.focus();
-      await page.waitForTimeout(200);
+      await waitForStable(page);
 
       await expect(button).toHaveScreenshot('focus-ring-dark.png', {
         maxDiffPixels: 50,
@@ -186,14 +202,18 @@ test.describe('Visual Regression - Themes', () => {
         localStorage.setItem('sims-theme-override', 'light');
       });
       await page.reload();
-      await page.waitForTimeout(1000);
+      await waitForStable(page);
       // Let the theme-change toast dismiss before capturing (it skews diffs)
-      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
+      await page
+        .getByRole('status')
+        .first()
+        .waitFor({ state: 'hidden', timeout: 10000 })
+        .catch(() => {});
 
       // Tab to a button
       const button = page.locator('button:has-text("Gear List")');
       await button.focus();
-      await page.waitForTimeout(200);
+      await waitForStable(page);
 
       await expect(button).toHaveScreenshot('focus-ring-light.png', {
         maxDiffPixels: 50,
@@ -214,9 +234,13 @@ test.describe('Visual Regression - Themes', () => {
         localStorage.setItem('sims-theme-override', 'blackwhite');
       });
       await page.reload();
-      await page.waitForTimeout(1000);
+      await waitForStable(page);
       // Let the theme-change toast dismiss before capturing (it skews diffs)
-      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
+      await page
+        .getByRole('status')
+        .first()
+        .waitFor({ state: 'hidden', timeout: 10000 })
+        .catch(() => {});
 
       await expect(page).toHaveScreenshot('theme-blackwhite-contrast.png', {
         maxDiffPixels: 300,
@@ -246,9 +270,13 @@ test.describe('Visual Regression - Responsive Themes', () => {
         localStorage.setItem('sims-theme-override', 'dark');
       });
       await page.reload();
-      await page.waitForTimeout(1000);
+      await waitForStable(page);
       // Let the theme-change toast dismiss before capturing (it skews diffs)
-      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
+      await page
+        .getByRole('status')
+        .first()
+        .waitFor({ state: 'hidden', timeout: 10000 })
+        .catch(() => {});
 
       await expect(page).toHaveScreenshot(`theme-dark-${viewport.name}.png`, {
         maxDiffPixels: 300,
@@ -268,9 +296,13 @@ test.describe('Visual Regression - Responsive Themes', () => {
         localStorage.setItem('sims-theme-override', 'light');
       });
       await page.reload();
-      await page.waitForTimeout(1000);
+      await waitForStable(page);
       // Let the theme-change toast dismiss before capturing (it skews diffs)
-      await page.getByRole("status").first().waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
+      await page
+        .getByRole('status')
+        .first()
+        .waitFor({ state: 'hidden', timeout: 10000 })
+        .catch(() => {});
 
       await expect(page).toHaveScreenshot(`theme-light-${viewport.name}.png`, {
         maxDiffPixels: 300,

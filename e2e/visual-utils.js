@@ -42,11 +42,7 @@ export const visualConfig = {
  * Take a screenshot with consistent settings
  */
 export async function takeSnapshot(page, name, options = {}) {
-  // Wait for any animations to complete
-  await page.waitForTimeout(500);
-
-  // Wait for network to be idle
-  await page.waitForLoadState('networkidle').catch(() => {});
+  await waitForStable(page);
 
   // Mask dynamic elements
   const masks = [];
@@ -63,6 +59,52 @@ export async function takeSnapshot(page, name, options = {}) {
     ...options,
     mask: masks,
   });
+}
+
+/**
+ * Wait until the page has genuinely settled before a capture — the replacement
+ * for the fixed `waitForTimeout` sleeps the visual specs used to carry.
+ * "Settled" means: no in-flight network, web fonts ready, no image still
+ * decoding, no spinner (anything animating `spin`), and two consecutive
+ * layout snapshots `settleMs` apart that are identical. A mid-load capture
+ * leaked into a linux baseline once because a sleep happened to be shorter
+ * than that run's tier-2 fetch; this waits for the condition instead.
+ */
+export async function waitForStable(page, { timeout = 10000, settleMs = 150 } = {}) {
+  await page.waitForLoadState('networkidle', { timeout }).catch(() => {});
+  await page.evaluate(() => document.fonts?.ready).catch(() => {});
+
+  const snapshot = () =>
+    page.evaluate(() => {
+      const all = document.querySelectorAll('body *');
+      let sum = 0;
+      let spinning = false;
+      for (const el of all) {
+        const r = el.getBoundingClientRect();
+        sum += r.x + r.y + r.width + r.height;
+        if (!spinning && el.tagName === 'svg' && getComputedStyle(el).animationName === 'spin') {
+          spinning = true;
+        }
+      }
+      const imagesPending = Array.from(document.images).some((img) => !img.complete);
+      return JSON.stringify({
+        busy: spinning || imagesPending,
+        count: all.length,
+        sum: Math.round(sum),
+        text: document.body.innerText.length,
+        scroll: document.documentElement.scrollHeight,
+      });
+    });
+
+  const deadline = Date.now() + timeout;
+  let previous = null;
+  while (Date.now() < deadline) {
+    const current = await snapshot();
+    if (current === previous && !JSON.parse(current).busy) return;
+    previous = current;
+    await page.waitForTimeout(settleMs);
+  }
+  // Time out quietly: the capture that follows will show what was unstable
 }
 
 /**
@@ -116,8 +158,7 @@ export const test = base.extend({
     const dashboard = new DashboardPage(page);
     await dashboard.expectDashboard();
 
-    // Wait for initial load
-    await page.waitForTimeout(1000);
+    await waitForStable(page);
 
     await use(page);
   },
@@ -180,7 +221,7 @@ export async function setTheme(page, themeName) {
   }, themeName);
 
   await page.reload();
-  await page.waitForTimeout(500);
+  await waitForStable(page);
 }
 
 /**
