@@ -151,6 +151,19 @@ the Actions tab, which uploads the baselines as a downloadable artifact.)
 Dynamic content (timestamps, toasts) is masked or waited out — see
 `visual-themes.spec.js` for the theme-toast pattern.
 
+**Capture policy (2026-08-23).** Four captures are full-viewport *with* the
+navigation chrome: dashboard, gear list, item detail (visual-pages) and the
+theme selector (visual-themes). Every other page capture masks the sidebar,
+so a navigation tweak invalidates four page baselines plus the sidebar's own
+component capture — not all 22 on two platforms. Mobile/tablet captures
+keep the shell because the responsive shell is what they test.
+
+**No settle sleeps.** Captures wait on `waitForStable(page)` (visual-utils):
+network idle, fonts ready, no image decoding, no spinner, and two identical
+layout snapshots 150 ms apart. Do not reintroduce `waitForTimeout` before a
+capture — a sleep that happens to be shorter than one run's fetch is how a
+mid-load frame ends up as a baseline.
+
 ## CI/CD Integration
 
 The `e2e` job in `.github/workflows/ci.yml` runs

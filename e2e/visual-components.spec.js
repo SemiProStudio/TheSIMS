@@ -8,7 +8,7 @@
 // here — opening modals and toggling client-side view state is fine.
 // =============================================================================
 
-import { test, expect, componentSelectors } from './visual-utils.js';
+import { test, expect, componentSelectors, waitForStable } from './visual-utils.js';
 import { DashboardPage, GearListPage, ItemDetailPage } from './fixtures.js';
 
 async function gotoGearList(page) {
@@ -26,7 +26,7 @@ test.describe('Visual Regression - Components', () => {
 
     const dashboard = new DashboardPage(page);
     await dashboard.expectDashboard();
-    await page.waitForTimeout(1000);
+    await waitForStable(page);
   });
 
   test.describe('Sidebar', () => {
@@ -41,7 +41,7 @@ test.describe('Visual Regression - Components', () => {
     test('sidebar collapsed should match baseline', async ({ page }) => {
       await page.getByRole('button', { name: 'Collapse sidebar' }).click();
       // Width transition is 0.3s
-      await page.waitForTimeout(600);
+      await waitForStable(page);
 
       const sidebar = page.locator(componentSelectors.sidebar);
       await expect(sidebar).toHaveScreenshot('sidebar-collapsed.png', {
@@ -52,7 +52,7 @@ test.describe('Visual Regression - Components', () => {
     test('sidebar active item should match baseline', async ({ page }) => {
       const gearListButton = page.locator('button:has-text("Gear List")');
       await gearListButton.click();
-      await page.waitForTimeout(500);
+      await waitForStable(page);
 
       const sidebar = page.locator(componentSelectors.sidebar);
       await expect(sidebar).toHaveScreenshot('sidebar-active.png', {
@@ -70,7 +70,7 @@ test.describe('Visual Regression - Components', () => {
       await page.getByRole('button', { name: 'Check Out', exact: true }).click();
       const modal = page.locator('[role="dialog"]');
       await expect(modal).toBeVisible();
-      await page.waitForTimeout(300);
+      await waitForStable(page);
 
       await expect(modal).toHaveScreenshot('modal-check-out.png', {
         maxDiffPixels: 200,
@@ -90,7 +90,7 @@ test.describe('Visual Regression - Components', () => {
       // with the current user) → validation messages render
       await modal.getByRole('button', { name: 'Confirm Check Out' }).click();
       await expect(modal.getByText('Due date is required')).toBeVisible();
-      await page.waitForTimeout(300);
+      await waitForStable(page);
 
       // The failed submit scrolls the first invalid field into view and the
       // final scroll offset is timing-dependent — this baseline used to flake
@@ -100,7 +100,7 @@ test.describe('Visual Regression - Components', () => {
         el.scrollTop = 0;
         for (const div of el.querySelectorAll('div')) div.scrollTop = 0;
       });
-      await page.waitForTimeout(200);
+      await waitForStable(page);
 
       await expect(modal).toHaveScreenshot('form-validation-errors.png', {
         maxDiffPixels: 200,
@@ -118,7 +118,7 @@ test.describe('Visual Regression - Components', () => {
 
       const modal = page.locator('[role="dialog"]');
       await expect(modal.getByText('Delete Items')).toBeVisible();
-      await page.waitForTimeout(300);
+      await waitForStable(page);
 
       await expect(modal).toHaveScreenshot('bulk-delete-dialog.png', {
         maxDiffPixels: 100,
@@ -135,10 +135,12 @@ test.describe('Visual Regression - Components', () => {
       await gotoGearList(page);
       await page.locator('button:has-text("Add Item")').first().click();
       await expect(page.locator('h2:has-text("Add Item")')).toBeVisible();
-      await page.waitForTimeout(500);
+      await waitForStable(page);
 
       await expect(page).toHaveScreenshot('add-item-page.png', {
         maxDiffPixels: 300,
+        // The previewed item id is random per render (generateItemCode)
+        mask: [page.getByText('Auto-generated ID').locator('..')],
       });
     });
   });
@@ -158,7 +160,7 @@ test.describe('Visual Regression - Components', () => {
       const button = page.locator('button:has-text("Gear List")');
       await expect(button).toBeVisible();
       await button.hover();
-      await page.waitForTimeout(200);
+      await waitForStable(page);
 
       await expect(button).toHaveScreenshot('button-hover.png', {
         maxDiffPixels: 50,
@@ -169,7 +171,7 @@ test.describe('Visual Regression - Components', () => {
       const button = page.locator('button:has-text("Gear List")');
       await expect(button).toBeVisible();
       await button.focus();
-      await page.waitForTimeout(200);
+      await waitForStable(page);
 
       await expect(button).toHaveScreenshot('button-focus.png', {
         maxDiffPixels: 50,
@@ -194,7 +196,7 @@ test.describe('Visual Regression - Components', () => {
       const gearList = await gotoGearList(page);
 
       await page.getByRole('button', { name: 'Grid view' }).click();
-      await page.waitForTimeout(500);
+      await waitForStable(page);
 
       const card = gearList.itemRow('Sony A7S III', 'available');
       await expect(card).toBeVisible();
@@ -209,7 +211,7 @@ test.describe('Visual Regression - Components', () => {
       await gotoGearList(page);
 
       await page.getByRole('button', { name: 'List view' }).click();
-      await page.waitForTimeout(500);
+      await waitForStable(page);
 
       await expect(page).toHaveScreenshot('gear-list-list-view.png', {
         maxDiffPixels: 300,
@@ -243,7 +245,7 @@ test.describe('Visual Regression - Login Form', () => {
     await page.goto('/');
     // Wait for the REAL React form — the static pre-React shell has no <form>
     await expect(page.locator('input[type="email"]')).toBeVisible();
-    await page.waitForTimeout(500);
+    await waitForStable(page);
 
     const form = page.locator('form');
     await expect(form).toHaveScreenshot('form-login.png', {
