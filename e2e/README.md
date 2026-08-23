@@ -162,6 +162,12 @@ and skips cleanly unless these repository secrets are configured
 - `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD` — admin test user
 - `E2E_USER_EMAIL`, `E2E_USER_PASSWORD` — standard test user
 
+E2E runs are serialized across all branches and the baselines workflow
+(`concurrency: e2e-shared-test-db`, queue without cancelling): every run
+mutates the same test project, and two interleaved runs see each other's
+`ZZZ E2E` rows. Locally, never run the suite while a CI E2E run is in flight
+for the same reason.
+
 CI uses 1 worker with **1 retry** (was 2 — two retries turned every latency
 race into a "flaky" badge, which is how the global-scope sign-out bug hid for
 weeks). After the run `scripts/flake-report.mjs` reads the JSON results and
