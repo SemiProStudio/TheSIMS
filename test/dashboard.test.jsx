@@ -10,7 +10,7 @@
 // - keyboard accessibility: headers, stat cards, and rows are real buttons
 // =============================================================================
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 
 vi.mock('../contexts/PermissionsContext.js', () => ({
@@ -82,10 +82,34 @@ const makeInventory = () => [
     id: 'CA7',
     name: 'Eta Camera',
     reservations: [
-      { id: 'res-active', start: iso(-1), end: iso(2), project: 'Active Shoot', status: 'confirmed' },
-      { id: 'res-future', start: iso(5), end: iso(6), project: 'Future Shoot', status: 'confirmed' },
-      { id: 'res-cancelled', start: iso(9), end: iso(10), project: 'Cancelled Shoot', status: 'cancelled' },
-      { id: 'res-ended', start: iso(-10), end: iso(-8), project: 'Ended Shoot', status: 'confirmed' },
+      {
+        id: 'res-active',
+        start: iso(-1),
+        end: iso(2),
+        project: 'Active Shoot',
+        status: 'confirmed',
+      },
+      {
+        id: 'res-future',
+        start: iso(5),
+        end: iso(6),
+        project: 'Future Shoot',
+        status: 'confirmed',
+      },
+      {
+        id: 'res-cancelled',
+        start: iso(9),
+        end: iso(10),
+        project: 'Cancelled Shoot',
+        status: 'cancelled',
+      },
+      {
+        id: 'res-ended',
+        start: iso(-10),
+        end: iso(-8),
+        project: 'Ended Shoot',
+        status: 'confirmed',
+      },
     ],
   }),
 ];
@@ -165,7 +189,8 @@ describe('Dashboard reservations', () => {
 });
 
 describe('Dashboard quick search', () => {
-  const searchInput = () => screen.getByPlaceholderText('Search by name, ID, brand, serial, or borrower...');
+  const searchInput = () =>
+    screen.getByPlaceholderText('Search by name, ID, brand, serial, or borrower...');
 
   it('does not crash on items with a null brand', () => {
     renderDashboard();
@@ -291,7 +316,10 @@ describe('Dashboard accessibility and copy', () => {
 describe('Dashboard low stock panel (per-item opt-in)', () => {
   const consumable = (overrides) =>
     baseItem({ category: 'Consumables', quantity: 1, reorderPoint: 3, ...overrides });
-  const categorySettings = { Consumables: { trackQuantity: true }, Cameras: { trackQuantity: false } };
+  const categorySettings = {
+    Consumables: { trackQuantity: true },
+    Cameras: { trackQuantity: false },
+  };
 
   it('lists only items whose reminder is on and that sit at or below their own threshold', () => {
     renderDashboard({
@@ -301,7 +329,13 @@ describe('Dashboard low stock panel (per-item opt-in)', () => {
         consumable({ id: 'CO2', name: 'Gels', lowStockAlert: false }), // same numbers, opted out
         consumable({ id: 'CO3', name: 'Batteries', lowStockAlert: true, quantity: 10 }), // plenty
         consumable({ id: 'CO4', name: 'No threshold', lowStockAlert: true, reorderPoint: 0 }),
-        baseItem({ id: 'CA9', name: 'Untracked Cam', quantity: 0, reorderPoint: 5, lowStockAlert: true }),
+        baseItem({
+          id: 'CA9',
+          name: 'Untracked Cam',
+          quantity: 0,
+          reorderPoint: 5,
+          lowStockAlert: true,
+        }),
       ],
     });
     expect(screen.getByText('Gaff Tape')).toBeInTheDocument();
@@ -317,5 +351,65 @@ describe('Dashboard low stock panel (per-item opt-in)', () => {
       inventory: [consumable({ id: 'CO1', name: 'Gaff Tape' })],
     });
     expect(screen.getByText('No low stock items')).toBeInTheDocument();
+  });
+});
+
+// The two column stacks are sized to the window on wide screens so panels
+// share the column instead of each stopping at a cap while the page scrolls
+// past the bottom; narrow screens keep the capped, free-flowing stack.
+describe('Dashboard column fill (wide screens)', () => {
+  const originalMatchMedia = window.matchMedia;
+  const wide = (matches) => {
+    window.matchMedia = (query) => ({
+      matches: query === '(min-width: 1200px)' ? matches : false,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    });
+  };
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+  });
+
+  it('sizes the columns to the window and lets panels share them, capped at their content', () => {
+    wide(true);
+    window.innerHeight = 1400;
+    const { view } = renderDashboard();
+    const columns = view.container.querySelector('.dashboard-columns');
+    expect(columns).toHaveClass('dashboard-columns-fill');
+    // jsdom lays nothing out (top = 0), so the whole window is available
+    expect(columns.style.height).toBe('1400px');
+
+    const panels = view.container.querySelectorAll('.dashboard-panel');
+    expect(panels.length).toBe(8);
+    for (const panel of panels) {
+      expect(panel.style.flex).toBe('1 1 0px');
+      expect(panel.style.maxHeight).toBe('max-content');
+    }
+    // A busy list fills its panel and scrolls inside it (no hard cap)
+    const reminders = screen.getByText('Sensor cleaning').closest('.dashboard-panel');
+    const list = reminders.querySelector('.collapsible-content > div');
+    expect(list.style.maxHeight).toBe('');
+    expect(list.style.flex).toBe('1 1 0%');
+    expect(list.style.overflowY).toBe('auto');
+  });
+
+  it('never sizes the columns shorter than the floor on a short window', () => {
+    wide(true);
+    window.innerHeight = 500;
+    const { view } = renderDashboard();
+    expect(view.container.querySelector('.dashboard-columns').style.height).toBe('720px');
+  });
+
+  it('keeps the capped free-flowing stack below the breakpoint', () => {
+    wide(false);
+    const { view } = renderDashboard();
+    const columns = view.container.querySelector('.dashboard-columns');
+    expect(columns).not.toHaveClass('dashboard-columns-fill');
+    expect(columns.style.height).toBe('');
+    const reminders = screen.getByText('Sensor cleaning').closest('.dashboard-panel');
+    const list = reminders.querySelector('.collapsible-content > div');
+    expect(list.style.maxHeight).toBe('240px');
+    expect(reminders.style.maxHeight).toBe('');
   });
 });

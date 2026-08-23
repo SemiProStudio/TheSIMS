@@ -1339,6 +1339,13 @@ input[type='date']::-moz-calendar-picker-indicator {
   }
 }
 
+/* Sized to the window (Dashboard sets the height): the one row IS the
+   container, so both stacks stretch to it and their panels share it */
+.dashboard-columns-fill {
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+}
+
 /* Collapsible section header hover */
 .collapsible-header {
   transition: background 150ms ease;
