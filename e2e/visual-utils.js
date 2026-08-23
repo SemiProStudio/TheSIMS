@@ -230,16 +230,17 @@ export async function setTheme(page, themeName) {
 // Keep in sync with themes-data.js `themes` (static, non-generated ids only)
 export const availableThemes = [
   // Modern
-  'graphite',
   'midnight',
-  'arctic',
-  'ember',
-  'contrast',
   'paper',
   'dune',
   'sage',
-  'studio',
   'slate',
+  'darkroom',
+  'blueprint',
+  'ledger',
+  'aurora',
+  'clay',
+  'contrast',
   // Legacy
   'dark',
   'light',

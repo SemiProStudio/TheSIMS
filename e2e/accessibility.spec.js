@@ -37,7 +37,7 @@ test.describe('Theme System', () => {
     await openThemeSelector(page, pages);
 
     // A sample of the built-in themes from themes-data.js must be present
-    for (const name of ['Dark', 'Light', 'Darker', 'Terminal', 'Pastel', 'Vibrant', 'Graphite']) {
+    for (const name of ['Dark', 'Light', 'Darker', 'Terminal', 'Pastel', 'Vibrant', 'Midnight']) {
       await expect(themeCard(page, name)).toBeVisible();
     }
   });
@@ -58,7 +58,7 @@ test.describe('Theme System', () => {
     for (const name of ['Dark', 'Light', 'Cheese', 'Cats', 'Dogs', 'XP']) {
       await expect(section('Legacy').getByText(name, { exact: true })).toBeVisible();
     }
-    for (const name of ['Graphite', 'Paper', 'Studio']) {
+    for (const name of ['Midnight', 'Paper', 'Darkroom', 'Clay']) {
       await expect(section('Modern').getByText(name, { exact: true })).toBeVisible();
     }
     await expect(section('Custom & Random').getByText('Random', { exact: true })).toBeVisible();
@@ -124,11 +124,19 @@ test.describe('Theme System', () => {
         name,
       );
 
-    await themeCard(page, 'Studio').click();
+    await themeCard(page, 'Ledger').click();
     await expect.poll(() => rootVar('--radius-lg')).toBe('0px');
     expect(await page.evaluate(() => getComputedStyle(document.body).fontFamily)).toContain(
       'Helvetica',
     );
+    // Structural variant reaches the DOM: uppercase titles, 2px rules
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.dataset.themeVariant))
+      .toBe('ledger');
+    await expect.poll(() => rootVar('--border-width')).toBe('2px');
+    expect(
+      await page.evaluate(() => getComputedStyle(document.querySelector('h2')).textTransform),
+    ).toBe('uppercase');
     // Real rendered radius, not just the variable (theme cards use
     // borderRadius.lg and animate `all 150ms`, hence the polls)
     const cardRadius = () =>
@@ -146,8 +154,13 @@ test.describe('Theme System', () => {
     ).toContain('Georgia');
 
     // Back to a theme with no overrides: every token returns to its default
+    // and the variant attribute is gone
     await themeCard(page, 'Dark').click();
     await expect.poll(() => rootVar('--radius-lg')).toBe('10px');
+    await expect.poll(() => rootVar('--border-width')).toBe('1px');
+    expect(
+      await page.evaluate(() => document.documentElement.dataset.themeVariant),
+    ).toBeUndefined();
     await expect.poll(cardRadius).toBe('10px');
     expect(await rootVar('--font-heading')).toContain('system-ui'); // back to the body face
     expect(
@@ -387,23 +400,15 @@ test.describe('Accessibility', () => {
 // why the rule cannot apply here.
 // =============================================================================
 test.describe('Automated accessibility scan (axe, default theme)', () => {
+  // Every rule is enforced, colour contrast included: the default theme
+  // (Midnight) and every modern theme clear AA wherever an accent is
+  // rendered as text (test/theme-contrast.test.js pins that offline).
   const scan = (page) =>
     new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      // color-contrast is RECORDED (attached to the test report) but not
-      // enforced: the default Legacy dark theme sits at ~3:1 for muted text,
-      // primary-as-text on tinted surfaces and status badges (AA needs
-      // 4.5:1). Raising it is a palette decision tied to choosing a modern
-      // default theme — when that lands, delete this line.
-      .disableRules(['color-contrast'])
       // Toasts are transient
       .exclude('.toast-container')
       .analyze();
-
-  // The contrast scan runs separately so its findings stay visible in the
-  // report without failing the suite (see above)
-  const contrastScan = (page) =>
-    new AxeBuilder({ page }).withRules(['color-contrast']).exclude('.toast-container').analyze();
 
   const describeViolations = (violations) =>
     violations
@@ -423,13 +428,6 @@ test.describe('Automated accessibility scan (axe, default theme)', () => {
       .join('\n');
 
   async function expectNoViolations(page, view) {
-    const contrast = await contrastScan(page);
-    const contrastNodes = contrast.violations.flatMap((v) => v.nodes).length;
-    await test.info().attach(`contrast-${view}`, {
-      body: `${contrastNodes} color-contrast nodes (not enforced)\n${describeViolations(contrast.violations)}`,
-      contentType: 'text/plain',
-    });
-
     const results = await scan(page);
     expect(
       results.violations,

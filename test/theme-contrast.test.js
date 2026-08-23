@@ -19,7 +19,9 @@ import {
   pickOnColor,
   PRIMARY_FILL_MIXES,
   DANGER_FILL_MIXES,
+  VARIANT_BUTTON_STYLE,
 } from '../themes-data.js';
+import { audit } from '../scripts/theme-aa-tune.mjs';
 
 // Derived at runtime by ThemeContext.applyTheme when a theme omits them —
 // not required in the static definitions
@@ -32,7 +34,11 @@ function parseColor(c) {
   const hex = c.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
   if (!hex) return null; // rgba()/hsl() values are skipped by callers
   let h = hex[1];
-  if (h.length === 3) h = h.split('').map((x) => x + x).join('');
+  if (h.length === 3)
+    h = h
+      .split('')
+      .map((x) => x + x)
+      .join('');
   return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
 }
 
@@ -115,6 +121,28 @@ describe('text contrast (WCAG AA)', () => {
   });
 });
 
+// --- Accents rendered as SMALL text (WCAG AA 4.5:1) ---------------------------
+// The app renders accent colours as text in several places axe flags:
+// the active nav label on a 20% tint of its own colour, 10px status badges
+// on a 15% tint, 12px dashboard panel sub-text on the card surface, plus
+// muted/secondary text and primary/danger as text. Every MODERN theme must
+// clear all of them — legacy themes are kept as they were. The pair list
+// lives in scripts/theme-aa-tune.mjs, which also suggests the smallest
+// lightness fix when a theme fails here.
+
+describe('modern themes read at AA wherever an accent becomes text', () => {
+  const modern = MODERN_THEME_IDS.map((id) => [id, themes[id]]);
+  it.each(modern)('%s', (_, theme) => {
+    const fails = audit(theme.colors).map(
+      (f) => `${f.key} (${f.label}) ${f.ratio.toFixed(2)}:1 < ${f.min}:1`,
+    );
+    expect(
+      fails,
+      `${theme.id} — run scripts/theme-aa-tune.mjs ${theme.id}:\n  ${fails.join('\n  ')}`,
+    ).toEqual([]);
+  });
+});
+
 // --- Dashboard panel tints ---------------------------------------------------
 // --panel-* colours tint each dashboard card's icon and sub-text as well as
 // the alpha wash behind them. Modern themes must keep them legible on the
@@ -136,7 +164,20 @@ describe('button label contrast', () => {
     const label = parseColor(theme.colors['--on-primary']);
     const primary = parseColor(theme.colors['--primary']);
     expect(label, `${theme.id} needs --on-primary`).toBeTruthy();
-    for (const pct of PRIMARY_FILL_MIXES) {
+    // Variant CSS may replace the gradient construction (index.css): model
+    // the fill that actually renders for this theme
+    const style = VARIANT_BUTTON_STYLE[theme.variant] || 'gradient';
+    if (style === 'outline') {
+      // --primary text on the page surface
+      const ratio = contrast(primary, parseColor(theme.colors['--bg-medium']));
+      expect(
+        ratio,
+        `${theme.id}: outline .btn text is ${ratio.toFixed(2)}:1`,
+      ).toBeGreaterThanOrEqual(4.5);
+      return;
+    }
+    const mixes = style === 'flat' ? [100] : PRIMARY_FILL_MIXES;
+    for (const pct of mixes) {
       const fill = mixTowardBlack(primary, pct);
       const ratio = contrast(label, fill);
       expect(
@@ -192,8 +233,11 @@ describe('pickOnColor', () => {
     // Same mixes the .btn gradient uses — this proves the runtime fallback
     // derivation (custom themes) matches the hand-tuned static values
     for (const theme of staticThemes) {
+      const style = VARIANT_BUTTON_STYLE[theme.variant] || 'gradient';
+      if (style === 'outline') continue; // no label on a fill
+      const mixes = style === 'flat' ? [100] : PRIMARY_FILL_MIXES;
       expect(
-        pickOnColor(theme.colors['--primary'], PRIMARY_FILL_MIXES),
+        pickOnColor(theme.colors['--primary'], mixes),
         `${theme.id}: pickOnColor disagrees with --on-primary`,
       ).toBe(theme.colors['--on-primary']);
     }

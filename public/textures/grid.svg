@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <!-- Blueprint theme: drafting grid — fine lines every 24px, a heavier rule
+       every 120px -->
+  <g stroke="#8fd9ff" fill="none">
+    <path d="M24 0V120M48 0V120M72 0V120M96 0V120M0 24H120M0 48H120M0 72H120M0 96H120" stroke-width="0.5" opacity="0.18"/>
+    <path d="M0 0.5H120M0.5 0V120" stroke-width="1" opacity="0.32"/>
+  </g>
+</svg>
