@@ -35,8 +35,12 @@ export default defineConfig({
   // Fail the build on CI if you accidentally left test.only in the source code
   forbidOnly: !!process.env.CI,
 
-  // Retry on CI only
-  retries: process.env.CI ? 2 : 0,
+  // ONE retry on CI, none locally. Two retries turned every latency race
+  // into a "flaky" badge instead of a failure, which is how the global-scope
+  // sign-out bug hid for weeks. A single retry still absorbs the rare
+  // boot-hang, and scripts/flake-report.mjs turns the retried tests into a
+  // visible job summary and fails the run past FLAKE_BUDGET.
+  retries: process.env.CI ? 1 : 0,
 
   // Opt out of parallel tests on CI
   workers: process.env.CI ? 1 : undefined,
@@ -45,7 +49,13 @@ export default defineConfig({
   // open: 'never' — the default ('on-failure') launches the OS default
   // browser (Safari) after any failed local run. View the report on demand
   // with `npx playwright show-report` instead.
-  reporter: [['html', { outputFolder: 'playwright-report', open: 'never' }], ['list']],
+  // JSON sits inside the report folder so the CI artifact carries it and
+  // scripts/flake-report.mjs can read it after the run.
+  reporter: [
+    ['html', { outputFolder: 'playwright-report', open: 'never' }],
+    ['json', { outputFile: 'playwright-report/results.json' }],
+    ['list'],
+  ],
 
   // Shared settings for all projects
   use: {
