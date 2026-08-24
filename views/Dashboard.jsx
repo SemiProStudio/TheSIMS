@@ -95,6 +95,11 @@ const MIN_COLUMNS_HEIGHT = 720;
 // One list row (padding + two lines + its margin) — the floor a list keeps
 // when its column is shared out, so a busy panel always shows a full row
 const LIST_ROW_HEIGHT = 70;
+// Header bar + list padding + one row: a shrinking panel stops here. The
+// section root's overflow:hidden zeroes its automatic flex minimum, so the
+// floor has to live on the panel itself. Four list panels per column (the
+// most possible) still fit inside MIN_COLUMNS_HEIGHT at this floor.
+const PANEL_MIN_HEIGHT = 46 + LIST_ROW_HEIGHT + 32;
 
 // Shared list row style builder. Rows render as <button> for keyboard access,
 // so button defaults are reset here.
@@ -265,26 +270,37 @@ function Dashboard({
     min: MIN_COLUMNS_HEIGHT,
   });
   const fill = isTwoColumn && columnsHeight != null;
-  const panelProps = fill
-    ? {
-        className: 'dashboard-panel',
-        style: {
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0,
-          flex: '1 1 0px',
-          maxHeight: 'max-content',
-        },
-        contentStyle: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' },
-      }
-    : { className: 'dashboard-panel' };
+  // Every basis in the chain is `auto`, never an intrinsic keyword or 0:
+  // WebKit resolves a flex item's max-content through a flex-basis-0 child
+  // as (roughly) nothing, which collapsed every panel to its header bar in
+  // Safari. A panel sits at its natural height, never grows, and — when it
+  // has rows to give up — shrinks with its column, so the longer a list the
+  // more of the squeeze it absorbs. Empty or collapsed panels stay rigid.
+  const panelPropsFor = (shrinkable) =>
+    fill
+      ? {
+          className: 'dashboard-panel',
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            flex: shrinkable ? '0 1 auto' : '0 0 auto',
+            minHeight: shrinkable ? PANEL_MIN_HEIGHT : undefined,
+          },
+          contentStyle: {
+            flex: '1 1 auto',
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          },
+        }
+      : { className: 'dashboard-panel' };
   // A panel's scrollable list: fills its panel when sharing a column,
   // otherwise stops at `cap` and scrolls
   const listBodyStyle = (rowCount, cap) =>
     fill
       ? {
           padding: spacing[4],
-          flex: 1,
+          flex: '1 1 auto',
           minHeight: Math.min(rowCount, 1) * LIST_ROW_HEIGHT + spacing[4] * 2,
           overflowY: 'auto',
         }
@@ -465,7 +481,7 @@ function Dashboard({
         return (
           <CollapsibleSection
             key="today"
-            {...panelProps}
+            {...panelPropsFor(!isCollapsed('today') && todayData.total > 0)}
             title="Today"
             icon={CalendarClock}
             badge={todayData.total || null}
@@ -760,7 +776,7 @@ function Dashboard({
         return (
           <CollapsibleSection
             key="checkedOut"
-            {...panelProps}
+            {...panelPropsFor(!isCollapsed('checkedOut') && stats.checkedOutItems.length > 0)}
             title="Currently Checked Out"
             icon={LogOut}
             badge={stats.checkedOutItems.length || null}
@@ -838,7 +854,7 @@ function Dashboard({
         return (
           <CollapsibleSection
             key="alerts"
-            {...panelProps}
+            {...panelPropsFor(!isCollapsed('alerts') && stats.alerts.length > 0)}
             title="Alerts"
             icon={AlertTriangle}
             badge={stats.alerts.length || null}
@@ -898,7 +914,7 @@ function Dashboard({
         return (
           <CollapsibleSection
             key="reminders"
-            {...panelProps}
+            {...panelPropsFor(!isCollapsed('reminders') && stats.dueReminders.length > 0)}
             title="Due Reminders"
             icon={Bell}
             badge={stats.dueReminders.length || null}
@@ -945,7 +961,7 @@ function Dashboard({
         return (
           <CollapsibleSection
             key="lowStock"
-            {...panelProps}
+            {...panelPropsFor(!isCollapsed('lowStock') && stats.lowStockItems.length > 0)}
             title="Low Stock Items"
             icon={TrendingDown}
             badge={stats.lowStockItems.length || null}
@@ -1008,7 +1024,7 @@ function Dashboard({
         return (
           <CollapsibleSection
             key="reservations"
-            {...panelProps}
+            {...panelPropsFor(!isCollapsed('reservations') && upcomingReservations.length > 0)}
             title="Upcoming Reservations"
             icon={Calendar}
             badge={upcomingReservations.length || null}
@@ -1145,7 +1161,7 @@ function Dashboard({
           <CollapsibleSection
             key="maintenance"
             id="dash-section-maintenance"
-            {...panelProps}
+            {...panelPropsFor(!isCollapsed('maintenance') && stats.pendingMaintenance.length > 0)}
             title="Upcoming Maintenance"
             icon={Wrench}
             badge={stats.pendingMaintenance.length || null}
@@ -1215,7 +1231,7 @@ function Dashboard({
         return (
           <CollapsibleSection
             key="recentActivity"
-            {...panelProps}
+            {...panelPropsFor(!isCollapsed('recentActivity') && recentActivity.length > 0)}
             title="Recent Activity"
             icon={Activity}
             badge={null}

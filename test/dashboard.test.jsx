@@ -371,7 +371,7 @@ describe('Dashboard column fill (wide screens)', () => {
     window.matchMedia = originalMatchMedia;
   });
 
-  it('sizes the columns to the window and lets panels share them, capped at their content', () => {
+  it('sizes the columns to the window; panels with rows shrink, empty ones stay rigid', () => {
     wide(true);
     window.innerHeight = 1400;
     const { view } = renderDashboard();
@@ -383,15 +383,25 @@ describe('Dashboard column fill (wide screens)', () => {
     const panels = view.container.querySelectorAll('.dashboard-panel');
     expect(panels.length).toBe(8);
     for (const panel of panels) {
-      expect(panel.style.flex).toBe('1 1 0px');
-      expect(panel.style.maxHeight).toBe('max-content');
+      // Never an intrinsic keyword and never flex-basis 0 — WebKit resolves
+      // a panel's intrinsic height through a basis-0 child as ~nothing and
+      // collapsed every panel to its header bar in Safari
+      expect(panel.style.maxHeight).toBe('');
+      expect(panel.style.flex).toMatch(/^0 [01] auto$/);
     }
-    // A busy list fills its panel and scrolls inside it (no hard cap)
+    // A panel with rows gives up height when its column is squeezed, but
+    // never below its header + one row
     const reminders = screen.getByText('Sensor cleaning').closest('.dashboard-panel');
+    expect(reminders.style.flex).toBe('0 1 auto');
+    expect(reminders.style.minHeight).toBe('148px');
     const list = reminders.querySelector('.collapsible-content > div');
     expect(list.style.maxHeight).toBe('');
-    expect(list.style.flex).toBe('1 1 0%');
+    expect(list.style.flex).toBe('1 1 auto');
     expect(list.style.overflowY).toBe('auto');
+    // An empty panel is rigid: nothing to give, nothing to clip
+    const lowStock = screen.getByText('No low stock items').closest('.dashboard-panel');
+    expect(lowStock.style.flex).toBe('0 0 auto');
+    expect(lowStock.style.minHeight).toBe('');
   });
 
   it('never sizes the columns shorter than the floor on a short window', () => {
