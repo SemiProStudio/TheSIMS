@@ -271,6 +271,14 @@ describe('formatMoney', () => {
     expect(formatMoney(1234567)).toBe('$1,234,567');
   });
 
+  it('parses string amounts instead of degrading (B10 regression)', () => {
+    // String.prototype.toLocaleString ignores number options — "3498.5"
+    // used to render as "$3498.5" with no grouping and a stray decimal
+    expect(formatMoney('3498.5')).toBe('$3,499');
+    expect(formatMoney('$1,234.99')).toBe('$1,235');
+    expect(formatMoney('not a number')).toBe('$0');
+  });
+
   it('should round decimal values', () => {
     expect(formatMoney(1234.56)).toBe('$1,235');
   });

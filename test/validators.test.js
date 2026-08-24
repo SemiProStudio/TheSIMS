@@ -356,6 +356,17 @@ describe('validateItem (extended)', () => {
     expect(empty.isValid).toBe(true);
   });
 
+  it('sanitizes currentValue like the other currency fields (B10 regression)', () => {
+    // It was validated but skipped in the sanitize step, so a "$3,498.50"
+    // string sailed through to storage as-is
+    const result = validateItem({ ...validItem, currentValue: '$3,498.50' });
+    expect(result.isValid).toBe(true);
+    expect(result.data.currentValue).toBe(3498.5);
+
+    const untouched = validateItem({ ...validItem });
+    expect(untouched.data.currentValue).toBeUndefined();
+  });
+
   it('should skip undefined/null/empty value fields', () => {
     const result = validateItem({ ...validItem, value: undefined });
     expect(result.isValid).toBe(true);

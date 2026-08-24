@@ -18,6 +18,7 @@ import {
   notificationPreferencesService,
   emailService,
   inventoryService,
+  itemNotesService,
   clientsService,
   packagesService,
   packListsService,
@@ -482,7 +483,14 @@ describe('maintenanceService', () => {
   });
 
   describe('create', () => {
-    it('should reject invalid maintenance records', async () => {
+    it('propagates DB refusal (validation happens at the DataContext boundary, in camelCase)', async () => {
+      // The service used to re-run the camelCase validator against its
+      // snake_case row — type/description lined up by accident, the date
+      // fields never matched (B12). The redundant pass is gone; the insert
+      // error path is what the service owns.
+      getSupabase.mockResolvedValueOnce(
+        createMockSupabaseClient(null, new Error('null value in column "type"')),
+      );
       await expect(maintenanceService.create({})).rejects.toThrow();
     });
 
@@ -789,5 +797,87 @@ describe('clientsService (extended)', () => {
       const result = await clientsService.delete('client-1');
       expect(result).toBeDefined();
     });
+  });
+});
+
+// =============================================================================
+// Audit phase-2 regressions (2026-08-24): B5, B6, B7
+// =============================================================================
+
+describe('locationsService.syncAll delete honesty (B5)', () => {
+  it('throws when the delete is refused instead of silently resurrecting the branch', async () => {
+    // The old per-row loop ignored every delete result — an RLS or network
+    // refusal left the branch "deleted" in the UI until the next fetch
+    // brought it back
+    let call = 0;
+    const from = vi.fn(() => {
+      call += 1;
+      // 1st: select existing ids; 2nd: the delete (refused)
+      if (call === 1) return createChain([{ id: 'L1' }, { id: 'L2' }], null);
+      return createChain(null, new Error('RLS refused'));
+    });
+    getSupabase.mockResolvedValue({ from });
+    await expect(
+      locationsService.syncAll([{ id: 'L1', name: 'Keep', type: 'room' }]),
+    ).rejects.toThrow('RLS refused');
+  });
+
+  it('completes when delete and upsert both succeed', async () => {
+    let call = 0;
+    const from = vi.fn(() => {
+      call += 1;
+      if (call === 1) return createChain([{ id: 'L1' }, { id: 'GONE' }], null);
+      return createChain(null, null);
+    });
+    getSupabase.mockResolvedValue({ from });
+    await expect(
+      locationsService.syncAll([{ id: 'L1', name: 'Keep', type: 'room' }]),
+    ).resolves.toBeUndefined();
+    // select + delete + upsert
+    expect(from).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('threaded notes orphan handling (B6)', () => {
+  it('surfaces a reply whose parent is missing at the root instead of dropping it', async () => {
+    const rows = [
+      { id: 'n1', note: 'root note', parent_id: null, created_at: '2026-08-01T00:00:00Z' },
+      { id: 'n2', note: 'reply to a deleted parent', parent_id: 'GONE', created_at: '2026-08-02T00:00:00Z' },
+      { id: 'n3', note: 'reply to n1', parent_id: 'n1', created_at: '2026-08-03T00:00:00Z' },
+    ];
+    getSupabase.mockResolvedValueOnce(createMockSupabaseClient(rows));
+    const threaded = await itemNotesService.getByItemId('ITEM1');
+    expect(threaded.map((n) => n.id).sort()).toEqual(['n1', 'n2']);
+    expect(threaded.find((n) => n.id === 'n1').replies.map((r) => r.id)).toEqual(['n3']);
+  });
+});
+
+describe('emailService.sendDamageReport recipient guard (B7)', () => {
+  it('fails loudly when there is nobody to email ([].every() used to report success)', async () => {
+    const mock = createMockSupabaseClient({});
+    getSupabase.mockResolvedValue(mock);
+    const result = await emailService.sendDamageReport({
+      admins: [],
+      item: { id: 'X', name: 'Camera' },
+      reportedBy: 'Tech',
+      description: 'cracked',
+    });
+    expect(result.success).toBe(false);
+    expect(result.sent).toBe(0);
+    expect(result.error).toMatch(/no admin/i);
+    expect(mock.functions.invoke).not.toHaveBeenCalled();
+  });
+
+  it('treats admins without an email address as absent', async () => {
+    const mock = createMockSupabaseClient({});
+    getSupabase.mockResolvedValue(mock);
+    const result = await emailService.sendDamageReport({
+      admins: [{ id: 'a1', email: null }, { id: 'a2' }],
+      item: { id: 'X', name: 'Camera' },
+      reportedBy: 'Tech',
+      description: 'cracked',
+    });
+    expect(result.success).toBe(false);
+    expect(mock.functions.invoke).not.toHaveBeenCalled();
   });
 });

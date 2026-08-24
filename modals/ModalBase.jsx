@@ -3,10 +3,38 @@
 // Shared modal wrapper and header components with accessibility
 // ============================================================================
 
-import { memo, useRef, useEffect, useCallback } from 'react';
+import {
+  memo,
+  useRef,
+  useEffect,
+  useCallback,
+  useId,
+  useMemo,
+  useState,
+  createContext,
+  useContext,
+} from 'react';
 import PropTypes from 'prop-types';
 import { X } from 'lucide-react';
 import { colors, styles, spacing, typography } from '../theme.js';
+
+// Body scroll lock is shared by every open modal. A per-instance set/clear
+// let a nested modal (Item → Smart Paste) restore scrolling behind its
+// still-open parent when it closed — so the lock is reference-counted.
+let openModalCount = 0;
+const lockBodyScroll = () => {
+  openModalCount += 1;
+  document.body.style.overflow = 'hidden';
+};
+const unlockBodyScroll = () => {
+  openModalCount = Math.max(0, openModalCount - 1);
+  if (openModalCount === 0) document.body.style.overflow = '';
+};
+
+// Lets ModalHeader hand its (per-instance) title id up to Modal for
+// aria-labelledby — nested modals used to both render id="modal-title",
+// and dialogs whose callers skipped Modal's `title` prop had no name.
+const ModalTitleContext = createContext(null);
 
 // ============================================================================
 // Base Modal Component with Accessibility
@@ -14,6 +42,13 @@ import { colors, styles, spacing, typography } from '../theme.js';
 export const Modal = memo(function Modal({ onClose, maxWidth = 500, title, children }) {
   const modalRef = useRef(null);
   const previousActiveElement = useRef(null);
+  const titleId = useId();
+  // Flipped by a ModalHeader inside this modal registering itself
+  const [hasHeaderTitle, setHasHeaderTitle] = useState(false);
+  const titleContextValue = useMemo(
+    () => ({ titleId, registerTitle: () => setHasHeaderTitle(true) }),
+    [titleId],
+  );
 
   // Store the previously focused element and focus the modal
   useEffect(() => {
@@ -24,11 +59,10 @@ export const Modal = memo(function Modal({ onClose, maxWidth = 500, title, child
       modalRef.current.focus();
     }
 
-    // Prevent body scroll when modal is open
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
 
     return () => {
-      document.body.style.overflow = '';
+      unlockBodyScroll();
       // Return focus to previous element
       if (previousActiveElement.current && previousActiveElement.current.focus) {
         previousActiveElement.current.focus();
@@ -77,10 +111,13 @@ export const Modal = memo(function Modal({ onClose, maxWidth = 500, title, child
         style={{ ...styles.modalBox, maxWidth }}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={title ? 'modal-title' : undefined}
+        aria-labelledby={hasHeaderTitle ? titleId : undefined}
+        aria-label={!hasHeaderTitle && title ? title : undefined}
         tabIndex={-1}
       >
-        {children}
+        <ModalTitleContext.Provider value={titleContextValue}>
+          {children}
+        </ModalTitleContext.Provider>
       </div>
     </div>
   );
@@ -90,6 +127,15 @@ export const Modal = memo(function Modal({ onClose, maxWidth = 500, title, child
 // Modal Header
 // ============================================================================
 export const ModalHeader = memo(function ModalHeader({ title, onClose }) {
+  const titleContext = useContext(ModalTitleContext);
+  const registerTitle = titleContext?.registerTitle;
+
+  // Tell the enclosing Modal a real title exists so its aria-labelledby
+  // points here (most callers pass the title to ModalHeader, not Modal)
+  useEffect(() => {
+    if (registerTitle) registerTitle();
+  }, [registerTitle]);
+
   return (
     <div
       style={{
@@ -101,7 +147,7 @@ export const ModalHeader = memo(function ModalHeader({ title, onClose }) {
       }}
     >
       <h3
-        id="modal-title"
+        id={titleContext?.titleId}
         style={{ margin: 0, fontSize: typography.fontSize.lg, color: colors.textPrimary }}
       >
         {title}

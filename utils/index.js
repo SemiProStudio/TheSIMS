@@ -230,11 +230,15 @@ export const getAllReservationConflicts = (
 
 /**
  * Whether the item has a reservation covering todayISO. Drives the
- * 'reserved' ↔ 'available' status reconciliation — cancelled rows never
- * reach local state, so every reservation here counts.
+ * 'reserved' ↔ 'available' status reconciliation. Cancelled AND completed
+ * rows are excluded — the server-side reconcile_reservation_statuses() RPC
+ * skips both, and cancelled rows are additionally filtered at fetch; the
+ * two rules must agree or an item flips reserved↔available between the
+ * daily job and the client merge.
  */
 export const hasActiveReservation = (item, todayISO) => {
   return (item?.reservations || []).some((r) => {
+    if (r.status === 'cancelled' || r.status === 'completed') return false;
     const start = r.start || r.startDate;
     const end = r.end || r.endDate;
     return start && end && start <= todayISO && end >= todayISO;
@@ -303,13 +307,19 @@ export const stableColorIndex = (str, paletteSize) => {
 
 /**
  * Format a number as currency
- * @param {number} amount - The amount to format
+ * @param {number|string} amount - The amount to format (strings are parsed;
+ *   String.prototype.toLocaleString ignores number options, which rendered
+ *   string input as "$3498.5")
  * @returns {string} Formatted currency like "$1,234"
  */
 export const formatMoney = (amount) => {
+  const num =
+    typeof amount === 'number'
+      ? amount
+      : parseFloat(String(amount ?? '').replace(/[$,\s]/g, ''));
   return (
     '$' +
-    (amount || 0).toLocaleString('en-US', {
+    (Number.isFinite(num) ? num : 0).toLocaleString('en-US', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     })

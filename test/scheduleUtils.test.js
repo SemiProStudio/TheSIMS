@@ -82,6 +82,22 @@ describe('hasActiveReservation', () => {
       false,
     );
   });
+
+  it('ignores completed and cancelled reservations (B11: must match the server rule)', () => {
+    // reconcile_reservation_statuses() skips cancelled AND completed rows —
+    // counting them client-side flips the item reserved↔available between
+    // the daily job and the client merge
+    const covering = { start: '2026-08-10', end: '2026-08-12' };
+    expect(
+      hasActiveReservation({ reservations: [{ ...covering, status: 'completed' }] }, '2026-08-11'),
+    ).toBe(false);
+    expect(
+      hasActiveReservation({ reservations: [{ ...covering, status: 'cancelled' }] }, '2026-08-11'),
+    ).toBe(false);
+    expect(
+      hasActiveReservation({ reservations: [{ ...covering, status: 'confirmed' }] }, '2026-08-11'),
+    ).toBe(true);
+  });
 });
 
 describe('stableColorIndex', () => {
