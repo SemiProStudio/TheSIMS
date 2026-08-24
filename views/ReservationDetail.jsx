@@ -137,7 +137,6 @@ function ReservationDetail({
   onAddNote,
   onReplyNote,
   onDeleteNote,
-  user,
   onViewItem,
   onCheckOutItems,
   onCreatePackList,
@@ -545,12 +544,15 @@ function ReservationDetail({
                 />
               )}
             </h3>
+            {/* readOnly like every other NotesSection host — without it a
+                schedule-view-only role got an add-note box whose save RLS
+                then refused */}
             <NotesSection
               notes={reservation.notes || []}
               onAddNote={onAddNote}
               onReply={onReplyNote}
               onDelete={onDeleteNote}
-              user={user}
+              readOnly={!canEditSchedule}
             />
           </Card>
         </div>

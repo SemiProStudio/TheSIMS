@@ -380,6 +380,20 @@ describe('parseProductText', () => {
     expect(result.purchasePrice).toBe('1299.99');
   });
 
+  it('ranks MSRP over Retail Price per the declared priority (B2 regression)', () => {
+    // "retail price".includes('price') used to hand Retail Price the generic
+    // 'price' rank (3), beating MSRP's own rank (4) — inverted priority
+    const text = 'Sony Camera\nRetail Price: $2,500\nMSRP: $2,000\nSensor Type: CMOS';
+    const result = parseProductText(text, specsConfig);
+    expect(result.purchasePrice).toBe('2000');
+  });
+
+  it('still ranks the bare "Price" label above MSRP', () => {
+    const text = 'Sony Camera\nMSRP: $2,999\nPrice: $2,499\nSensor Type: CMOS';
+    const result = parseProductText(text, specsConfig);
+    expect(result.purchasePrice).toBe('2499');
+  });
+
   it('should note non-USD currency', () => {
     const text = 'This camera costs €2,199\nSensor Type: CMOS';
     const result = parseProductText(text, specsConfig);
