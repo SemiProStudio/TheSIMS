@@ -82,10 +82,7 @@ export function DiffView({ diffResults }) {
             </div>
             <div
               style={{
-                color:
-                  status === 'removed'
-                    ? withOpacity(colors.textMuted, 40)
-                    : colors.available,
+                color: status === 'removed' ? withOpacity(colors.textMuted, 40) : colors.available,
                 fontWeight: status === 'added' ? 600 : 400,
               }}
             >

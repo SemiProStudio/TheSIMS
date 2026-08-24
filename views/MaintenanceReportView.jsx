@@ -24,7 +24,6 @@ import {
 } from '../lib/reportData.js';
 import { useData } from '../contexts/DataContext.js';
 
-
 export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
   inventory,
   currentUser,
@@ -39,7 +38,10 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
   }, [ensureMaintenance]);
 
   const allMaintenanceRecords = useMemo(() => collectMaintenanceRecords(inventory), [inventory]);
-  const stats = useMemo(() => computeMaintenanceStats(allMaintenanceRecords), [allMaintenanceRecords]);
+  const stats = useMemo(
+    () => computeMaintenanceStats(allMaintenanceRecords),
+    [allMaintenanceRecords],
+  );
   const sortedRecords = useMemo(
     () => sortMaintenanceRecords(allMaintenanceRecords),
     [allMaintenanceRecords],
@@ -55,7 +57,6 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
         .map(([type, cost]) => ({ label: type, value: cost, color: colors.warning })),
     [stats.costByType],
   );
-
 
   const formatStatus = (status) => {
     switch (status) {
@@ -188,7 +189,11 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
                     }}
                   >
                     <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
-                      <Badge text={record.type} color={getMaintenanceStatusColor(record.status)} size="xs" />
+                      <Badge
+                        text={record.type}
+                        color={getMaintenanceStatusColor(record.status)}
+                        size="xs"
+                      />
                       <Badge
                         text={formatStatus(record.status)}
                         color={getMaintenanceStatusColor(record.status)}

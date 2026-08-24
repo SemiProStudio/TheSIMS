@@ -6,19 +6,19 @@ Last reviewed 2026-08-21 (see `sims-notifications-evaluation-2026-08-21.md` for 
 
 Every control in **Settings → Notifications** has a producer. Nothing appears in that screen that the backend does not honour.
 
-| Setting | Email (template_key) | When | Recipient |
-|---|---|---|---|
-| Checkout confirmations | `checkout_confirmation` | item checked out | the borrower's email from the check-out form |
-| Return confirmations | `checkin_confirmation` | item checked in | the borrower (linked client, else matching user) |
-| Reservation confirmations | `reservation_confirmation` | reservation created | the reservation's contact email |
-| Reservation reminders (+ days) | `reservation_reminder` | daily job, N days before start | the reservation's contact email |
-| Remind me before due dates (+ days) | `due_date_reminder` | daily job, on the chosen days | the borrower — linked client, else the user |
-| Overdue notifications | `overdue_notice` | daily job, each day overdue | same as above |
-| Maintenance reminders | `maintenance_reminder` | daily job, reminders/scheduled work due today | staff who can edit gear |
-| Admin · Damage reports | `damage_report` | damage reported at check-in | every admin |
-| Admin · Overdue summary (daily/weekly) | `overdue_summary` | daily job (weekly = Mondays) | admins who opted in |
-| Admin · Low stock alerts | `low_stock_alert` | daily job | admins who opted in — lists items whose own **Low stock reminder** is on (Item Details / Edit) and whose quantity is at or below their threshold; there is no category-level threshold |
-| "Send me a test email" button | `test_email` | on click | yourself |
+| Setting                                | Email (template_key)       | When                                          | Recipient                                                                                                                                                                              |
+| -------------------------------------- | -------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Checkout confirmations                 | `checkout_confirmation`    | item checked out                              | the borrower's email from the check-out form                                                                                                                                           |
+| Return confirmations                   | `checkin_confirmation`     | item checked in                               | the borrower (linked client, else matching user)                                                                                                                                       |
+| Reservation confirmations              | `reservation_confirmation` | reservation created                           | the reservation's contact email                                                                                                                                                        |
+| Reservation reminders (+ days)         | `reservation_reminder`     | daily job, N days before start                | the reservation's contact email                                                                                                                                                        |
+| Remind me before due dates (+ days)    | `due_date_reminder`        | daily job, on the chosen days                 | the borrower — linked client, else the user                                                                                                                                            |
+| Overdue notifications                  | `overdue_notice`           | daily job, each day overdue                   | same as above                                                                                                                                                                          |
+| Maintenance reminders                  | `maintenance_reminder`     | daily job, reminders/scheduled work due today | staff who can edit gear                                                                                                                                                                |
+| Admin · Damage reports                 | `damage_report`            | damage reported at check-in                   | every admin                                                                                                                                                                            |
+| Admin · Overdue summary (daily/weekly) | `overdue_summary`          | daily job (weekly = Mondays)                  | admins who opted in                                                                                                                                                                    |
+| Admin · Low stock alerts               | `low_stock_alert`          | daily job                                     | admins who opted in — lists items whose own **Low stock reminder** is on (Item Details / Edit) and whose quantity is at or below their threshold; there is no category-level threshold |
+| "Send me a test email" button          | `test_email`               | on click                                      | yourself                                                                                                                                                                               |
 
 Preferences are applied **server-side** in `send-email` for every template: the master switch first, then the per-type toggle. A user who has never saved the screen gets the defaults (everything on except the two admin digests). Admin templates never go to non-admin addresses.
 
@@ -52,12 +52,12 @@ Template syntax: `{{variable}}`; `{{#if variable}}…{{/if}}` renders when the v
 
 ### Edge Function secrets
 
-| Secret | Purpose |
-|---|---|
-| `RESEND_API_KEY` | Resend API key. Without it, `send-email` logs a `failed` row ("RESEND_API_KEY not configured") and returns 500. |
-| `FROM_EMAIL` | e.g. `SIMS <notifications@yourdomain.com>` — the domain must be **verified** in Resend or every send fails with a Resend 403. |
-| `CRON_SECRET` | Shared secret the scheduler sends as `x-cron-secret` to the daily job. |
-| `COMPANY_NAME` | Optional. Signature name used by the daily job's emails (app-sent emails use the signed-in user's Business Name from their profile, else "SIMS"). |
+| Secret           | Purpose                                                                                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RESEND_API_KEY` | Resend API key. Without it, `send-email` logs a `failed` row ("RESEND_API_KEY not configured") and returns 500.                                   |
+| `FROM_EMAIL`     | e.g. `SIMS <notifications@yourdomain.com>` — the domain must be **verified** in Resend or every send fails with a Resend 403.                     |
+| `CRON_SECRET`    | Shared secret the scheduler sends as `x-cron-secret` to the daily job.                                                                            |
+| `COMPANY_NAME`   | Optional. Signature name used by the daily job's emails (app-sent emails use the signed-in user's Business Name from their profile, else "SIMS"). |
 
 Set with `supabase secrets set NAME=value --project-ref <ref>` or in the dashboard under Edge Functions → Secrets. `supabase secrets list --project-ref <ref>` shows names (never values).
 

@@ -65,9 +65,7 @@ describe('calculateDepreciation guards', () => {
       DEPRECIATION_METHODS.DECLINING_BALANCE,
     );
     // Exactly 3 full schedule years — the old ceil/floor arms credited 2
-    const threeYears = result.schedule
-      .slice(0, 3)
-      .reduce((sum, row) => sum + row.depreciation, 0);
+    const threeYears = result.schedule.slice(0, 3).reduce((sum, row) => sum + row.depreciation, 0);
     expect(result.totalDepreciation).toBeCloseTo(threeYears, 6);
   });
 });

@@ -76,27 +76,19 @@ const maintenanceInventory = [
 
 describe('MaintenanceReportPanel', () => {
   it('requests the full record set on mount', () => {
-    render(
-      <MaintenanceReportPanel inventory={[]} onViewItem={noop} onBack={noop} />,
-    );
+    render(<MaintenanceReportPanel inventory={[]} onViewItem={noop} onBack={noop} />);
     expect(dataState.ensureMaintenance).toHaveBeenCalledTimes(1);
   });
 
   it('announces while the full history is still loading', () => {
     dataState.maintenanceLoaded = false;
-    render(
-      <MaintenanceReportPanel inventory={[]} onViewItem={noop} onBack={noop} />,
-    );
+    render(<MaintenanceReportPanel inventory={[]} onViewItem={noop} onBack={noop} />);
     expect(screen.getByRole('status')).toHaveTextContent('Loading full maintenance history');
   });
 
   it('cost stats come from completed records: warranty splits out as savings', () => {
     render(
-      <MaintenanceReportPanel
-        inventory={maintenanceInventory}
-        onViewItem={noop}
-        onBack={noop}
-      />,
+      <MaintenanceReportPanel inventory={maintenanceInventory} onViewItem={noop} onBack={noop} />,
     );
     // $100 completed non-warranty; $50 warranty savings (scoped to the stat
     // cards — the raw amounts also appear in record rows and charts)
@@ -218,13 +210,27 @@ const groupedInventory = [
   {
     id: 'CAM1',
     reservations: [
-      { id: 'r1', groupId: 'g1', clientId: 'CL001', project: 'Ad', start: '2026-08-05', end: '2026-08-06' },
+      {
+        id: 'r1',
+        groupId: 'g1',
+        clientId: 'CL001',
+        project: 'Ad',
+        start: '2026-08-05',
+        end: '2026-08-06',
+      },
     ],
   },
   {
     id: 'CAM2',
     reservations: [
-      { id: 'r2', groupId: 'g1', clientId: 'CL001', project: 'Ad', start: '2026-08-05', end: '2026-08-06' },
+      {
+        id: 'r2',
+        groupId: 'g1',
+        clientId: 'CL001',
+        project: 'Ad',
+        start: '2026-08-05',
+        end: '2026-08-06',
+      },
     ],
   },
 ];

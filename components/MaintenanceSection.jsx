@@ -57,12 +57,7 @@ const formatStatus = (status) => {
 };
 
 // Single maintenance entry component
-const MaintenanceEntry = memo(function MaintenanceEntry({
-  entry,
-  onComplete,
-  onEdit,
-  panelColor,
-}) {
+const MaintenanceEntry = memo(function MaintenanceEntry({ entry, onComplete, onEdit, panelColor }) {
   const [expanded, setExpanded] = useState(false);
   const StatusIcon = getMaintenanceStatusIcon(entry.status);
   const statusColor = getMaintenanceStatusColor(entry.status);

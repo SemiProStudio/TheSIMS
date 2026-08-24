@@ -20,11 +20,11 @@ same migrations as production plus `supabase/seed.sql` sample data
 
 **Projects** (see `playwright.config.js`):
 
-| Project           | What it runs                | Notes                                        |
-| ----------------- | --------------------------- | -------------------------------------------- |
-| `setup`           | `auth.setup.js`             | Cleans stray E2E data, logs in once per run  |
-| `chromium`        | Functional specs            | May create/delete private DB rows            |
-| `chromium-visual` | `visual-*.spec.js`          | Depends on `chromium`; strictly read-only    |
+| Project           | What it runs       | Notes                                       |
+| ----------------- | ------------------ | ------------------------------------------- |
+| `setup`           | `auth.setup.js`    | Cleans stray E2E data, logs in once per run |
+| `chromium`        | Functional specs   | May create/delete private DB rows           |
+| `chromium-visual` | `visual-*.spec.js` | Depends on `chromium`; strictly read-only   |
 
 The visual project runs only after every functional test has finished and
 deleted its private data, so screenshots always see the pristine seeded
@@ -153,7 +153,7 @@ the Actions tab, which uploads the baselines as a downloadable artifact.)
 Dynamic content (timestamps, toasts) is masked or waited out — see
 `visual-themes.spec.js` for the theme-toast pattern.
 
-**Capture policy (2026-08-23).** Four captures are full-viewport *with* the
+**Capture policy (2026-08-23).** Four captures are full-viewport _with_ the
 navigation chrome: dashboard, gear list, item detail (visual-pages) and the
 theme selector (visual-themes). Every other page capture masks the sidebar,
 so a navigation tweak invalidates four page baselines plus the sidebar's own

@@ -457,10 +457,7 @@ function PackagesView({
           // Keep the editor OPEN and state untouched — the old path applied
           // the rename locally anyway and closed, so the screen showed a
           // change the reload would revert
-          addToast(
-            'Failed to update package: ' + (err.message || 'Please try again.'),
-            'error',
-          );
+          addToast('Failed to update package: ' + (err.message || 'Please try again.'), 'error');
           return;
         }
       } else {
@@ -926,7 +923,11 @@ function PackagesView({
                         )}
                       </div>
                     )}
-                    <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} size="sm" />
+                    <Badge
+                      text={getStatusLabel(item.status)}
+                      color={getStatusColor(item.status)}
+                      size="sm"
+                    />
                   </div>
                 );
               })

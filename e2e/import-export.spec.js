@@ -159,11 +159,7 @@ test.describe('permission gating', () => {
     await pages.dashboard.expectDashboard();
     // Export now lives in the Admin Panel; a standard user has no route to
     // it — no Admin Panel nav entry, and no stray Export Data control
-    await expect(
-      pages.dashboard.sidebar.locator('button:has-text("Admin Panel")'),
-    ).toHaveCount(0);
-    await expect(
-      pages.dashboard.sidebar.locator('button:has-text("Export Data")'),
-    ).toHaveCount(0);
+    await expect(pages.dashboard.sidebar.locator('button:has-text("Admin Panel")')).toHaveCount(0);
+    await expect(pages.dashboard.sidebar.locator('button:has-text("Export Data")')).toHaveCount(0);
   });
 });

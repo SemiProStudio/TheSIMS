@@ -30,9 +30,7 @@ test.describe('reports hub', () => {
     }
 
     // The inventory status donut is a real labeled image
-    await expect(
-      page.getByRole('img', { name: /Inventory by status/ }).first(),
-    ).toBeVisible();
+    await expect(page.getByRole('img', { name: /Inventory by status/ }).first()).toBeVisible();
 
     // Maintenance card resolves its lazy full-history load (no stuck spinner)
     await expect(page.getByText('Loading history…')).toHaveCount(0, { timeout: 15000 });

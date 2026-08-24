@@ -275,9 +275,7 @@ export const groupReservationsForSchedule = (inventory) => {
 
   const groups = {};
   all.forEach((r) => {
-    const key = r.groupId
-      ? `g:${r.groupId}`
-      : `${r.project || 'unnamed'}_${r.start}_${r.end}`;
+    const key = r.groupId ? `g:${r.groupId}` : `${r.project || 'unnamed'}_${r.start}_${r.end}`;
     if (!groups[key]) {
       groups[key] = { ...r, groupKey: key, items: [r.item], itemCount: 1, reservationIds: [r.id] };
     } else {
@@ -314,9 +312,7 @@ export const stableColorIndex = (str, paletteSize) => {
  */
 export const formatMoney = (amount) => {
   const num =
-    typeof amount === 'number'
-      ? amount
-      : parseFloat(String(amount ?? '').replace(/[$,\s]/g, ''));
+    typeof amount === 'number' ? amount : parseFloat(String(amount ?? '').replace(/[$,\s]/g, ''));
   return (
     '$' +
     (Number.isFinite(num) ? num : 0).toLocaleString('en-US', {
@@ -1004,7 +1000,6 @@ export const calculateDepreciation = (
     schedule,
     // 100% salvage (or a zero price) makes depreciableAmount 0 — 0/0 used to
     // surface as "NaN%" and an invalid NaN-width progress bar
-    percentDepreciated:
-      depreciableAmount > 0 ? (totalDepreciation / depreciableAmount) * 100 : 0,
+    percentDepreciated: depreciableAmount > 0 ? (totalDepreciation / depreciableAmount) * 100 : 0,
   };
 };

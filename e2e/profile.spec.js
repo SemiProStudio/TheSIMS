@@ -175,8 +175,7 @@ test.describe.serial('per-user settings round-trips', () => {
     // DB truth: stored in the profile, not a device store
     await expect
       .poll(
-        async () =>
-          ((await readProfile()).savedFilterViews || []).some((v) => v.name === viewName),
+        async () => ((await readProfile()).savedFilterViews || []).some((v) => v.name === viewName),
         { timeout: 10000 },
       )
       .toBe(true);
@@ -290,10 +289,7 @@ test.describe.serial('per-user settings round-trips', () => {
     }
   });
 
-  test('saving Profile Settings preserves every other stored setting', async ({
-    page,
-    pages,
-  }) => {
+  test('saving Profile Settings preserves every other stored setting', async ({ page, pages }) => {
     // Preconditions from the earlier serial tests: theme, layout collapse,
     // and sort are all in the profile
     const before = await readProfile();

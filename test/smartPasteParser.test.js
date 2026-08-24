@@ -1003,9 +1003,9 @@ describe('diffSpecs', () => {
     const newFields = new Map([['Weight (g)', { value: '658', confidence: 90 }]]);
     const diff = diffSpecs(existing, newFields);
     expect(diff[0].status).toBe('unchanged');
-    expect(diffSpecs({ Count: 3 }, new Map([['Count', { value: '5', confidence: 80 }]]))[0].status).toBe(
-      'changed',
-    );
+    expect(
+      diffSpecs({ Count: 3 }, new Map([['Count', { value: '5', confidence: 80 }]]))[0].status,
+    ).toBe('changed');
   });
 });
 

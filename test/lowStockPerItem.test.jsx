@@ -63,7 +63,9 @@ beforeEach(() => {
 
 describe('ItemDetail low-stock reminder row', () => {
   it('is absent for categories that do not track quantity', () => {
-    render(<ItemDetail {...baseProps} item={item({ category: 'Cameras' })} onSetLowStockAlert={noop} />);
+    render(
+      <ItemDetail {...baseProps} item={item({ category: 'Cameras' })} onSetLowStockAlert={noop} />,
+    );
     expect(screen.queryByText('Low Stock Reminder')).not.toBeInTheDocument();
     expect(screen.queryByRole('switch', { name: 'Low stock reminder' })).not.toBeInTheDocument();
   });
@@ -88,7 +90,10 @@ describe('ItemDetail low-stock reminder row', () => {
 
   it('shows the threshold and "low now" once the reminder is on', () => {
     render(
-      <ItemDetail {...baseProps} item={item({ lowStockAlert: true, quantity: 2, reorderPoint: 5 })} />,
+      <ItemDetail
+        {...baseProps}
+        item={item({ lowStockAlert: true, quantity: 2, reorderPoint: 5 })}
+      />,
     );
     expect(screen.getByText('On — low now')).toBeInTheDocument();
     expect(screen.getByText('Alert At Or Below')).toBeInTheDocument();

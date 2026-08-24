@@ -22,9 +22,7 @@ export const BatchCheckOutModal = memo(function BatchCheckOutModal({
   onConfirm,
   onClose,
 }) {
-  const [borrowerName, setBorrowerName] = useState(
-    reservation?.user || currentUser?.name || '',
-  );
+  const [borrowerName, setBorrowerName] = useState(reservation?.user || currentUser?.name || '');
   const [dueDate, setDueDate] = useState(reservation?.end || getTodayISO());
   const [acknowledged, setAcknowledged] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +63,10 @@ export const BatchCheckOutModal = memo(function BatchCheckOutModal({
   return (
     <Modal onClose={onClose} maxWidth={520}>
       <ModalHeader title="Check Out Reservation" onClose={onClose} />
-      <div className="modal-body" style={{ padding: spacing[4], maxHeight: '70vh', overflowY: 'auto' }}>
+      <div
+        className="modal-body"
+        style={{ padding: spacing[4], maxHeight: '70vh', overflowY: 'auto' }}
+      >
         <p
           style={{
             margin: `0 0 ${spacing[4]}px`,
@@ -117,7 +118,9 @@ export const BatchCheckOutModal = memo(function BatchCheckOutModal({
               }}
             >
               <LogOut size={14} color={colors.primary} />
-              <span style={{ flex: 1, color: colors.textPrimary, fontSize: typography.fontSize.sm }}>
+              <span
+                style={{ flex: 1, color: colors.textPrimary, fontSize: typography.fontSize.sm }}
+              >
                 {item.name}
               </span>
               <Badge text={item.id} color={colors.primary} size="xs" />
@@ -141,7 +144,11 @@ export const BatchCheckOutModal = memo(function BatchCheckOutModal({
               <span style={{ flex: 1, color: colors.textMuted, fontSize: typography.fontSize.sm }}>
                 {item.name} — skipped
               </span>
-              <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} size="xs" />
+              <Badge
+                text={getStatusLabel(item.status)}
+                color={getStatusColor(item.status)}
+                size="xs"
+              />
             </div>
           ))}
           {checkoutable.length === 0 && (

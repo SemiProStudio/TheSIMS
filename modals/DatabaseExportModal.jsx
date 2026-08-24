@@ -95,7 +95,10 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({ onClose }
         });
         const specList = Array.from(specHeaders);
 
-        const headers = [...INVENTORY_CSV_COLUMNS.map(([h]) => h), ...specList.map((s) => `spec:${s}`)];
+        const headers = [
+          ...INVENTORY_CSV_COLUMNS.map(([h]) => h),
+          ...specList.map((s) => `spec:${s}`),
+        ];
         const csvRows = rows.map((r) => [
           ...INVENTORY_CSV_COLUMNS.map(([, get]) => get(r) ?? ''),
           ...specList.map((s) => r.specs?.[s] ?? ''),
@@ -239,7 +242,6 @@ export const DatabaseExportModal = memo(function DatabaseExportModal({ onClose }
             {progressLabel}
           </p>
         )}
-
       </div>
       <ModalFooter>
         <Button variant="secondary" onClick={onClose} disabled={exporting}>

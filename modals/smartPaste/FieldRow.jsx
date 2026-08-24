@@ -55,9 +55,7 @@ export function FieldRow({
       >
         <span>{specName}</span>
         {isRequired && (
-          <span style={{ color: colors.danger, fontSize: 10, fontWeight: 700 }}>
-            *
-          </span>
+          <span style={{ color: colors.danger, fontSize: 10, fontWeight: 700 }}>*</span>
         )}
       </div>
 

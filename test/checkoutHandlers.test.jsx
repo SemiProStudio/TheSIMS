@@ -117,7 +117,9 @@ describe('processCheckin success path', () => {
 
     expect(deps.closeModal).toHaveBeenCalledTimes(1);
     expect(hook.result.current.checkinItemData).toBeNull();
-    expect(deps.addAuditLog).toHaveBeenCalledWith(expect.objectContaining({ type: 'item_checkin' }));
+    expect(deps.addAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'item_checkin' }),
+    );
     expect(mockAddToast).toHaveBeenCalledWith('Probe Item checked in successfully', 'success');
   });
 });

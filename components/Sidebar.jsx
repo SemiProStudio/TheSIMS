@@ -530,7 +530,6 @@ function Sidebar({
                 collapsed={collapsed}
               />
             ))}
-
           </div>
         )}
       </nav>

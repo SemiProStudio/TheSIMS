@@ -34,9 +34,33 @@ beforeEach(() => {
 // =============================================================================
 
 const filterFixture = [
-  { id: 'I2', name: 'Bravo', category: 'Audio', status: 'checked-out', currentValue: 300, purchasePrice: 900, createdAt: '2026-02-01' },
-  { id: 'I1', name: 'Alpha', category: 'Cameras', status: 'available', currentValue: 100, purchasePrice: 500, createdAt: '2026-03-01' },
-  { id: 'I3', name: 'Charlie', category: 'Cameras', status: 'missing', currentValue: 200, purchasePrice: 100, createdAt: '2026-01-01' },
+  {
+    id: 'I2',
+    name: 'Bravo',
+    category: 'Audio',
+    status: 'checked-out',
+    currentValue: 300,
+    purchasePrice: 900,
+    createdAt: '2026-02-01',
+  },
+  {
+    id: 'I1',
+    name: 'Alpha',
+    category: 'Cameras',
+    status: 'available',
+    currentValue: 100,
+    purchasePrice: 500,
+    createdAt: '2026-03-01',
+  },
+  {
+    id: 'I3',
+    name: 'Charlie',
+    category: 'Cameras',
+    status: 'missing',
+    currentValue: 200,
+    purchasePrice: 100,
+    createdAt: '2026-01-01',
+  },
 ];
 
 describe('useReportItemFilter', () => {
@@ -44,11 +68,7 @@ describe('useReportItemFilter', () => {
     const { result } = renderHook(() => useReportItemFilter(filterFixture, 'name'));
     expect(result.current.selectedCategory).toBe('all');
     expect(result.current.sortBy).toBe('name');
-    expect(result.current.filteredItems.map((i) => i.name)).toEqual([
-      'Alpha',
-      'Bravo',
-      'Charlie',
-    ]);
+    expect(result.current.filteredItems.map((i) => i.name)).toEqual(['Alpha', 'Bravo', 'Charlie']);
   });
 
   it('sorts by value descending (Insurance default)', () => {
@@ -125,9 +145,7 @@ describe('ReportHeader', () => {
       rows: [['CA1', 'Cam']],
       filename: 'insurance-report.csv',
     }));
-    render(
-      <ReportHeader title="Insurance Report" onBack={noop} buildCsv={buildCsv} />,
-    );
+    render(<ReportHeader title="Insurance Report" onBack={noop} buildCsv={buildCsv} />);
     fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
     expect(buildCsv).toHaveBeenCalledTimes(1);
     expect(globalThis.URL.createObjectURL).toHaveBeenCalledTimes(1);

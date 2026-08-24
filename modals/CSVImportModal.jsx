@@ -33,9 +33,48 @@ const TEMPLATE_HEADERS = [
 ];
 
 const TEMPLATE_ROWS = [
-  ['Sony A7S III', 'Sony', 'Cameras', 'available', 'excellent', 'Studio A - Shelf 1', '2023-06-15', '3498', '2800', 'SN-A7S3-001', '1', 'Great condition'],
-  ['Canon RF 24-70mm f/2.8', 'Canon', 'Lenses', 'available', 'good', 'Lens Cabinet', '2023-03-20', '2399', '2100', 'SN-RF2470-002', '1', ''],
-  ['Aputure 600d Pro', 'Aputure', 'Lighting', 'checked-out', 'excellent', 'Lighting Storage', '2023-01-10', '1699', '1400', 'SN-600D-003', '1', ''],
+  [
+    'Sony A7S III',
+    'Sony',
+    'Cameras',
+    'available',
+    'excellent',
+    'Studio A - Shelf 1',
+    '2023-06-15',
+    '3498',
+    '2800',
+    'SN-A7S3-001',
+    '1',
+    'Great condition',
+  ],
+  [
+    'Canon RF 24-70mm f/2.8',
+    'Canon',
+    'Lenses',
+    'available',
+    'good',
+    'Lens Cabinet',
+    '2023-03-20',
+    '2399',
+    '2100',
+    'SN-RF2470-002',
+    '1',
+    '',
+  ],
+  [
+    'Aputure 600d Pro',
+    'Aputure',
+    'Lighting',
+    'checked-out',
+    'excellent',
+    'Lighting Storage',
+    '2023-01-10',
+    '1699',
+    '1400',
+    'SN-600D-003',
+    '1',
+    '',
+  ],
 ];
 
 const noticeBoxStyle = (color) => ({
@@ -140,9 +179,7 @@ export const CSVImportModal = memo(function CSVImportModal({
     setImporting(true);
     setProgress({ done: 0, total: prepared.items.length });
     try {
-      const summary = await onImport(prepared.items, (done, total) =>
-        setProgress({ done, total }),
-      );
+      const summary = await onImport(prepared.items, (done, total) => setProgress({ done, total }));
       if (summary && (summary.failed.length > 0 || summary.noteFailures > 0)) {
         // Partial failure: stay open and say exactly what happened. Import is
         // disabled from here — re-running would duplicate the created rows.
@@ -190,8 +227,8 @@ export const CSVImportModal = memo(function CSVImportModal({
               marginBottom: spacing[3],
             }}
           >
-            Download our CSV template with all available columns and example data. Exports from
-            SIMS re-import as-is.
+            Download our CSV template with all available columns and example data. Exports from SIMS
+            re-import as-is.
           </p>
           <Button variant="secondary" onClick={downloadTemplate} icon={Download}>
             Download Template
@@ -260,7 +297,10 @@ export const CSVImportModal = memo(function CSVImportModal({
 
         {/* Import result: partial failures keep the modal open and honest */}
         {result && (
-          <div style={noticeBoxStyle(result.failed.length ? colors.danger : colors.warning)} role="alert">
+          <div
+            style={noticeBoxStyle(result.failed.length ? colors.danger : colors.warning)}
+            role="alert"
+          >
             {[
               `Imported ${result.created.length} of ${result.created.length + result.failed.length} items.`,
               result.failed.length
@@ -315,19 +355,50 @@ export const CSVImportModal = memo(function CSVImportModal({
                 <tbody>
                   {prepared.items.slice(0, 5).map((item, idx) => (
                     <tr key={idx}>
-                      <td style={{ padding: spacing[2], borderBottom: `1px solid ${colors.borderLight}`, color: colors.textPrimary }}>
+                      <td
+                        style={{
+                          padding: spacing[2],
+                          borderBottom: `1px solid ${colors.borderLight}`,
+                          color: colors.textPrimary,
+                        }}
+                      >
                         {item.name}
                       </td>
-                      <td style={{ padding: spacing[2], borderBottom: `1px solid ${colors.borderLight}`, color: colors.textPrimary }}>
+                      <td
+                        style={{
+                          padding: spacing[2],
+                          borderBottom: `1px solid ${colors.borderLight}`,
+                          color: colors.textPrimary,
+                        }}
+                      >
                         {item.brand || '-'}
                       </td>
-                      <td style={{ padding: spacing[2], borderBottom: `1px solid ${colors.borderLight}`, color: colors.textPrimary }}>
+                      <td
+                        style={{
+                          padding: spacing[2],
+                          borderBottom: `1px solid ${colors.borderLight}`,
+                          color: colors.textPrimary,
+                        }}
+                      >
                         {item.category}
                       </td>
-                      <td style={{ padding: spacing[2], borderBottom: `1px solid ${colors.borderLight}`, color: colors.textPrimary }}>
+                      <td
+                        style={{
+                          padding: spacing[2],
+                          borderBottom: `1px solid ${colors.borderLight}`,
+                          color: colors.textPrimary,
+                        }}
+                      >
                         {item.status}
                       </td>
-                      <td style={{ padding: spacing[2], borderBottom: `1px solid ${colors.borderLight}`, color: colors.textPrimary, textAlign: 'right' }}>
+                      <td
+                        style={{
+                          padding: spacing[2],
+                          borderBottom: `1px solid ${colors.borderLight}`,
+                          color: colors.textPrimary,
+                          textAlign: 'right',
+                        }}
+                      >
                         {item.purchasePrice ? formatMoney(item.purchasePrice) : '-'}
                       </td>
                     </tr>
@@ -364,20 +435,13 @@ export const CSVImportModal = memo(function CSVImportModal({
             Importing {progress.done} of {progress.total}…
           </p>
         )}
-
       </div>
       <ModalFooter>
         <Button variant="secondary" onClick={onClose}>
           {result ? 'Close' : 'Cancel'}
         </Button>
-        <Button
-          onClick={handleImport}
-          disabled={!canImport}
-          icon={importing ? null : Upload}
-        >
-          {importing
-            ? 'Importing...'
-            : `Import ${prepared?.items.length || 0} Items`}
+        <Button onClick={handleImport} disabled={!canImport} icon={importing ? null : Upload}>
+          {importing ? 'Importing...' : `Import ${prepared?.items.length || 0} Items`}
         </Button>
       </ModalFooter>
     </Modal>

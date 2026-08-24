@@ -189,7 +189,10 @@ function SearchView({
   }, []);
 
   // Types this role may search at all
-  const permittedTypes = useMemo(() => SEARCH_TYPES.filter((t) => canView(t.permission)), [canView]);
+  const permittedTypes = useMemo(
+    () => SEARCH_TYPES.filter((t) => canView(t.permission)),
+    [canView],
+  );
 
   // Selected ∩ permitted; empty selection means "all permitted"
   const activeTypes = useMemo(() => {
@@ -232,9 +235,7 @@ function SearchView({
       result = result.filter((i) => selectedCategories.includes(i.category));
     }
     if (selectedStatuses.length > 0) {
-      result = result.filter((i) =>
-        matchesStatusSelection(i, selectedStatuses, categorySettings),
-      );
+      result = result.filter((i) => matchesStatusSelection(i, selectedStatuses, categorySettings));
     }
     return rankBySearchRelevance(result, debouncedSearch);
   }, [
@@ -311,10 +312,7 @@ function SearchView({
   }, [hasQuery, activeTypes, clientsLoaded, packListsLoaded, tier2Loaded]);
 
   // Gear is the only section large enough to need pagination
-  const { page, totalPages, paginatedItems, goToPage } = usePagination(
-    gearResults,
-    GEAR_PAGE_SIZE,
-  );
+  const { page, totalPages, paginatedItems, goToPage } = usePagination(gearResults, GEAR_PAGE_SIZE);
 
   // Reset to page 1 when the query or gear filters change
   useEffect(() => {

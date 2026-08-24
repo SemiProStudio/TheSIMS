@@ -478,7 +478,11 @@ function ReservationDetail({
                     </div>
                     <div style={{ display: 'flex', gap: spacing[1] }}>
                       <Badge text={itm.id} color={colors.primary} size="sm" />
-                      <Badge text={getStatusLabel(itm.status)} color={getStatusColor(itm.status)} size="sm" />
+                      <Badge
+                        text={getStatusLabel(itm.status)}
+                        color={getStatusColor(itm.status)}
+                        size="sm"
+                      />
                     </div>
                   </div>
                 </div>

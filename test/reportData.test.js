@@ -67,7 +67,14 @@ describe('computeAlertData', () => {
         lowStockAlert: true,
       },
       // Reminder off: never low stock even at quantity 0
-      { id: 'D', name: 'Gels', category: 'Consumables', status: 'available', quantity: 0, reorderPoint: 5 },
+      {
+        id: 'D',
+        name: 'Gels',
+        category: 'Consumables',
+        status: 'available',
+        quantity: 0,
+        reorderPoint: 5,
+      },
       // Not quantity-tracked: never low stock even with the flag on
       {
         id: 'C',
@@ -332,10 +339,13 @@ describe('acquisitionSeries', () => {
   });
 
   it('12-month spans keep bare month labels', () => {
-    const { series } = acquisitionSeries([{ id: 'A', purchaseDate: '2026-08-01', currentValue: 10 }], {
-      months: 12,
-      now: NOW,
-    });
+    const { series } = acquisitionSeries(
+      [{ id: 'A', purchaseDate: '2026-08-01', currentValue: 10 }],
+      {
+        months: 12,
+        now: NOW,
+      },
+    );
     expect(series[series.length - 1].label).toBe('Aug');
   });
 });

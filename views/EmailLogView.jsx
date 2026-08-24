@@ -82,10 +82,17 @@ const EmailLogView = memo(function EmailLogView({ onBack }) {
       )}
 
       {rows && rows.length > 0 && (
-        <div style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[3], flexWrap: 'wrap' }}>
+        <div
+          style={{ display: 'flex', gap: spacing[2], marginBottom: spacing[3], flexWrap: 'wrap' }}
+        >
           {Object.entries(STATUS_META).map(([key, meta]) =>
             counts[key] ? (
-              <Badge key={key} text={`${counts[key]} ${meta.label.toLowerCase()}`} color={meta.color} size="xs" />
+              <Badge
+                key={key}
+                text={`${counts[key]} ${meta.label.toLowerCase()}`}
+                color={meta.color}
+                size="xs"
+              />
             ) : null,
           )}
         </div>
@@ -111,7 +118,13 @@ const EmailLogView = memo(function EmailLogView({ onBack }) {
               }}
             >
               <thead>
-                <tr style={{ background: colors.bgMedium, color: colors.textMuted, textAlign: 'left' }}>
+                <tr
+                  style={{
+                    background: colors.bgMedium,
+                    color: colors.textMuted,
+                    textAlign: 'left',
+                  }}
+                >
                   <th style={{ padding: spacing[3] }}>When</th>
                   <th style={{ padding: spacing[3] }}>Status</th>
                   <th style={{ padding: spacing[3] }}>Type</th>
@@ -125,7 +138,13 @@ const EmailLogView = memo(function EmailLogView({ onBack }) {
                   const meta = STATUS_META[row.status] || STATUS_META.pending;
                   return (
                     <tr key={row.id} style={{ borderTop: `1px solid ${colors.borderLight}` }}>
-                      <td style={{ padding: spacing[3], whiteSpace: 'nowrap', color: colors.textSecondary }}>
+                      <td
+                        style={{
+                          padding: spacing[3],
+                          whiteSpace: 'nowrap',
+                          color: colors.textSecondary,
+                        }}
+                      >
                         {formatDateTime(row.sent_at || row.created_at)}
                       </td>
                       <td style={{ padding: spacing[3], whiteSpace: 'nowrap' }}>
@@ -143,13 +162,29 @@ const EmailLogView = memo(function EmailLogView({ onBack }) {
                           <meta.Icon size={14} /> {meta.label}
                         </span>
                       </td>
-                      <td style={{ padding: spacing[3], color: colors.textPrimary, whiteSpace: 'nowrap' }}>
+                      <td
+                        style={{
+                          padding: spacing[3],
+                          color: colors.textPrimary,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
                         {TYPE_LABEL[row.notification_type] || row.notification_type}
                       </td>
-                      <td style={{ padding: spacing[3], color: colors.textPrimary }}>{row.email}</td>
-                      <td style={{ padding: spacing[3], color: colors.textSecondary }}>{row.subject}</td>
-                      <td style={{ padding: spacing[3], color: row.error_message ? colors.danger : colors.textMuted }}>
-                        {row.error_message || (row.external_id ? `Resend ${row.external_id}` : row.item_id || '')}
+                      <td style={{ padding: spacing[3], color: colors.textPrimary }}>
+                        {row.email}
+                      </td>
+                      <td style={{ padding: spacing[3], color: colors.textSecondary }}>
+                        {row.subject}
+                      </td>
+                      <td
+                        style={{
+                          padding: spacing[3],
+                          color: row.error_message ? colors.danger : colors.textMuted,
+                        }}
+                      >
+                        {row.error_message ||
+                          (row.external_id ? `Resend ${row.external_id}` : row.item_id || '')}
                       </td>
                     </tr>
                   );

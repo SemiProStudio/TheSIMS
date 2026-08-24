@@ -114,7 +114,7 @@ describe('member rows (both sections)', () => {
     expect(screen.getByRole('button', { name: 'No Longer a Kit' })).toBeInTheDocument();
   });
 
-  it('routes view and remove clicks through each section\'s own handlers', () => {
+  it("routes view and remove clicks through each section's own handlers", () => {
     const props = renderDetail();
 
     fireEvent.click(screen.getByRole('button', { name: 'View Battery' }));
@@ -135,7 +135,7 @@ describe('member rows (both sections)', () => {
     expect(props.onSetKitStatus).toHaveBeenCalledWith('BAG001', false);
   });
 
-  it('keeps each section\'s empty copy and the non-kit state', () => {
+  it("keeps each section's empty copy and the non-kit state", () => {
     renderDetail({ item: { ...bag, isKit: false, kitItems: [], requiredAccessories: [] } });
     expect(screen.getByText('No required accessories defined')).toBeInTheDocument();
     expect(screen.getByText(/This item is not a kit/)).toBeInTheDocument();
@@ -223,7 +223,9 @@ describe('gating passthrough', () => {
 
     expect(screen.getByText('BAT001 • Power')).toBeInTheDocument();
     expect(screen.getByText('CHG001 • Power')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Add Required Accessory' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Add Required Accessory' }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Add Items to Kit' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'No Longer a Kit' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^Remove / })).not.toBeInTheDocument();

@@ -247,7 +247,6 @@ describe('emailService', () => {
       sendSpy.mockRestore();
     });
   });
-
 });
 
 // =============================================================================
@@ -1046,7 +1045,12 @@ describe('threaded notes orphan handling (B6)', () => {
   it('surfaces a reply whose parent is missing at the root instead of dropping it', async () => {
     const rows = [
       { id: 'n1', note: 'root note', parent_id: null, created_at: '2026-08-01T00:00:00Z' },
-      { id: 'n2', note: 'reply to a deleted parent', parent_id: 'GONE', created_at: '2026-08-02T00:00:00Z' },
+      {
+        id: 'n2',
+        note: 'reply to a deleted parent',
+        parent_id: 'GONE',
+        created_at: '2026-08-02T00:00:00Z',
+      },
       { id: 'n3', note: 'reply to n1', parent_id: 'n1', created_at: '2026-08-03T00:00:00Z' },
     ];
     getSupabase.mockResolvedValueOnce(createMockSupabaseClient(rows));

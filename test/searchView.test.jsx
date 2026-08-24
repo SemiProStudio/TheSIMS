@@ -227,7 +227,9 @@ describe('global sections', () => {
   it('finds packages', () => {
     resetState({ query: 'two-person' });
     renderSearch();
-    expect(screen.getByRole('button', { name: 'View package Interview Package' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'View package Interview Package' }),
+    ).toBeInTheDocument();
   });
 
   it('finds pack lists', () => {
@@ -251,7 +253,9 @@ describe('global sections', () => {
   it('searches reservations by client name too', () => {
     resetState({ query: 'acme' });
     renderSearch();
-    expect(screen.getByRole('button', { name: 'View reservation Desert Shoot' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'View reservation Desert Shoot' }),
+    ).toBeInTheDocument();
   });
 });
 

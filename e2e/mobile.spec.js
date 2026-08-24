@@ -25,7 +25,10 @@ test.beforeEach(async ({ context, page }) => {
 test('drawer navigation opens, navigates, and closes', async ({ page }) => {
   // Phone width shows the mobile header hamburger, not the sidebar
   await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Gear List' }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('button', { name: 'Gear List' })
+    .click();
   await expect(page.getByRole('heading', { name: 'Gear List' })).toBeVisible();
   // Drawer closed itself after navigation (off-canvas via transform, so
   // check the class rather than CSS visibility)
@@ -34,7 +37,10 @@ test('drawer navigation opens, navigates, and closes', async ({ page }) => {
 
 test('gear list defaults to compact list mode on phones', async ({ page }) => {
   await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Gear List' }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('button', { name: 'Gear List' })
+    .click();
   await expect(page.getByRole('heading', { name: 'Gear List' })).toBeVisible();
   // Seeded item renders; list mode = no giant square image placeholders
   await expect(page.getByText('Sony 24-70mm f/2.8 GM II').first()).toBeVisible({
@@ -64,7 +70,10 @@ test('modals render as full-screen sheets', async ({ page }) => {
 
 test('schedule defaults to day view on phones', async ({ page }) => {
   await page.getByRole('button', { name: 'Open menu' }).click();
-  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('button', { name: 'Schedule' }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('button', { name: 'Schedule' })
+    .click();
   await expect(page.getByRole('heading', { name: 'Schedule' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'day' })).toHaveAttribute('aria-pressed', 'true');
 });

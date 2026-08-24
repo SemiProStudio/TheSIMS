@@ -247,7 +247,9 @@ describe('delete', () => {
     const { props } = renderClients({ dataContext });
     fireEvent.click(screen.getByText('Acme Films'));
     fireEvent.click(screen.getByRole('button', { name: 'Delete Acme Films' }));
-    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete' }));
+    fireEvent.click(
+      within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete' }),
+    );
 
     await waitFor(() =>
       expect(mockAddToast).toHaveBeenCalledWith(expect.stringContaining('Failed'), 'error'),

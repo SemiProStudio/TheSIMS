@@ -60,9 +60,8 @@ vi.mock('../lib/supabase.js', () => ({
   supabase: null,
 }));
 
-const { packagesService, packListsService, specsService, reservationsService } = await import(
-  '../lib/services.js'
-);
+const { packagesService, packListsService, specsService, reservationsService } =
+  await import('../lib/services.js');
 
 beforeEach(() => {
   state.rpcResults = {};

@@ -242,10 +242,18 @@ function NotificationSettings({
           message: `Not sent: ${result.reason === 'notifications_disabled' ? 'your email notifications are switched off (save the toggle above first)' : result.reason}`,
         });
       } else {
-        setTestState({ busy: false, ok: false, message: `Not sent: ${result?.error || 'unknown error'}` });
+        setTestState({
+          busy: false,
+          ok: false,
+          message: `Not sent: ${result?.error || 'unknown error'}`,
+        });
       }
     } catch (err) {
-      setTestState({ busy: false, ok: false, message: `Not sent: ${err?.message || 'unknown error'}` });
+      setTestState({
+        busy: false,
+        ok: false,
+        message: `Not sent: ${err?.message || 'unknown error'}`,
+      });
     }
   };
 

@@ -437,4 +437,3 @@ ItemLabel.propTypes = {
   /** Drop the card shadow (rasterized exports like Cricut sheets) */
   flat: PropTypes.bool,
 };
-

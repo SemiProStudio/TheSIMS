@@ -1003,7 +1003,10 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             isAdmin={currentUser?.roleId === 'role_admin'}
             onSave={handlers.saveNotificationPreferences}
             onSendTest={() =>
-              dataContext.sendTestEmail({ user: currentUser, companyName: companyNameFor(currentUser) })
+              dataContext.sendTestEmail({
+                user: currentUser,
+                companyName: companyNameFor(currentUser),
+              })
             }
             onClose={() => setCurrentView(VIEWS.DASHBOARD)}
           />

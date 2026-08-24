@@ -384,9 +384,8 @@ export const BulkCheckInModal = memo(function BulkCheckInModal({
       <ModalHeader title="Check In Items" onClose={onClose} />
       <div style={{ padding: spacing[4] }}>
         <p style={{ color: colors.textSecondary, marginBottom: spacing[4] }}>
-          Check in{' '}
-          <strong style={{ color: colors.textPrimary }}>{checkedOut.length}</strong> checked-out
-          item{checkedOut.length === 1 ? '' : 's'}
+          Check in <strong style={{ color: colors.textPrimary }}>{checkedOut.length}</strong>{' '}
+          checked-out item{checkedOut.length === 1 ? '' : 's'}
           {skippedCount > 0 ? ` (${skippedCount} not checked out — skipped)` : ''}. Condition stays
           as recorded; use the single check-in to report damage.
         </p>

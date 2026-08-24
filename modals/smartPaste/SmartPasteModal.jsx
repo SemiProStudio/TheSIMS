@@ -504,11 +504,15 @@ export const SmartPasteModal = memo(function SmartPasteModal({
         // Same guards as single apply: threshold + category scoping (the
         // host form's category wins over per-product detection here too)
         const cat = currentCategory || result.category || '';
-        const payload = buildApplyPayload(result, {}, {
-          normalizeMetric,
-          threshold,
-          allowedFields: cat ? getCategoryFields(cat).map((s) => s.name) : null,
-        });
+        const payload = buildApplyPayload(
+          result,
+          {},
+          {
+            normalizeMetric,
+            threshold,
+            allowedFields: cat ? getCategoryFields(cat).map((s) => s.name) : null,
+          },
+        );
         payload.category = cat;
         return payload;
       });
@@ -751,8 +755,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({
               <strong style={{ color: colors.primary }}>{matchedCount}</strong> matched
               {altsCount > 0 && (
                 <>
-                  , <strong style={{ color: colors.accent1 }}>{altsCount}</strong> with
-                  alternatives
+                  , <strong style={{ color: colors.accent1 }}>{altsCount}</strong> with alternatives
                 </>
               )}
               {unmatchedCount > 0 && (

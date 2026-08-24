@@ -13,12 +13,7 @@ import { ImagePlus, Upload, CheckCircle, AlertTriangle, XCircle } from 'lucide-r
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button, Badge } from '../components/ui.jsx';
 import { Modal, ModalHeader, ModalFooter } from './ModalBase.jsx';
-import {
-  matchPhotosToItems,
-  planForRow,
-  runWithConcurrency,
-  fileStem,
-} from '../lib/bulkPhotos.js';
+import { matchPhotosToItems, planForRow, runWithConcurrency, fileStem } from '../lib/bulkPhotos.js';
 import { isImageFile, processImage } from '../lib/imageProcessing.js';
 import { error as logError } from '../lib/logger.js';
 
@@ -128,7 +123,10 @@ export const BulkPhotosModal = memo(function BulkPhotosModal({ items, onApplyPho
   return (
     <Modal onClose={running ? () => {} : onClose} maxWidth={760}>
       <ModalHeader title="Bulk Photos" onClose={running ? undefined : onClose} />
-      <div className="modal-body" style={{ padding: spacing[4], maxHeight: '70vh', overflowY: 'auto' }}>
+      <div
+        className="modal-body"
+        style={{ padding: spacing[4], maxHeight: '70vh', overflowY: 'auto' }}
+      >
         <p
           style={{
             margin: `0 0 ${spacing[4]}px`,
@@ -136,10 +134,9 @@ export const BulkPhotosModal = memo(function BulkPhotosModal({ items, onApplyPho
             fontSize: typography.fontSize.sm,
           }}
         >
-          Name each photo after the item it belongs to — its ID (
-          <code>CAM-00012.jpg</code>) or serial number — then drop the whole folder here. Any
-          size is fine; every photo is scaled down before upload. One photo per item; extra copies
-          are skipped.
+          Name each photo after the item it belongs to — its ID (<code>CAM-00012.jpg</code>) or
+          serial number — then drop the whole folder here. Any size is fine; every photo is scaled
+          down before upload. One photo per item; extra copies are skipped.
         </p>
 
         {/* Drop zone */}
@@ -224,16 +221,40 @@ export const BulkPhotosModal = memo(function BulkPhotosModal({ items, onApplyPho
               </label>
               <div style={{ display: 'flex', gap: spacing[2], flexWrap: 'wrap' }}>
                 {Object.entries(counts).map(([plan, n]) => (
-                  <Badge key={plan} text={`${n} ${PLAN_LABEL[plan].text}`} color={PLAN_LABEL[plan].color} size="xs" />
+                  <Badge
+                    key={plan}
+                    text={`${n} ${PLAN_LABEL[plan].text}`}
+                    color={PLAN_LABEL[plan].color}
+                    size="xs"
+                  />
                 ))}
               </div>
             </div>
 
             {/* Rows */}
-            <div style={{ overflowX: 'auto', border: `1px solid ${colors.borderLight}`, borderRadius: borderRadius.md }}>
-              <table style={{ width: '100%', minWidth: 560, borderCollapse: 'collapse', fontSize: typography.fontSize.sm }}>
+            <div
+              style={{
+                overflowX: 'auto',
+                border: `1px solid ${colors.borderLight}`,
+                borderRadius: borderRadius.md,
+              }}
+            >
+              <table
+                style={{
+                  width: '100%',
+                  minWidth: 560,
+                  borderCollapse: 'collapse',
+                  fontSize: typography.fontSize.sm,
+                }}
+              >
                 <thead>
-                  <tr style={{ background: colors.bgMedium, color: colors.textMuted, textAlign: 'left' }}>
+                  <tr
+                    style={{
+                      background: colors.bgMedium,
+                      color: colors.textMuted,
+                      textAlign: 'left',
+                    }}
+                  >
                     <th style={{ padding: spacing[2] }}>Photo</th>
                     <th style={{ padding: spacing[2] }}>Item</th>
                     <th style={{ padding: spacing[2] }}>Status</th>
@@ -245,14 +266,28 @@ export const BulkPhotosModal = memo(function BulkPhotosModal({ items, onApplyPho
                     const planInfo = PLAN_LABEL[plan];
                     const statusInfo = status && STATUS_ICON[status.state];
                     return (
-                      <tr key={row.file.name} style={{ borderTop: `1px solid ${colors.borderLight}` }}>
-                        <td style={{ padding: spacing[2], color: colors.textPrimary, whiteSpace: 'nowrap' }}>
+                      <tr
+                        key={row.file.name}
+                        style={{ borderTop: `1px solid ${colors.borderLight}` }}
+                      >
+                        <td
+                          style={{
+                            padding: spacing[2],
+                            color: colors.textPrimary,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
                           {row.file.name}
                           <span style={{ color: colors.textMuted, marginLeft: spacing[2] }}>
                             {formatBytes(row.file.size)}
                           </span>
                         </td>
-                        <td style={{ padding: spacing[2], color: row.item ? colors.textPrimary : colors.textMuted }}>
+                        <td
+                          style={{
+                            padding: spacing[2],
+                            color: row.item ? colors.textPrimary : colors.textMuted,
+                          }}
+                        >
                           {row.item ? (
                             <>
                               <strong>{row.item.id}</strong> · {row.item.name}
@@ -268,7 +303,14 @@ export const BulkPhotosModal = memo(function BulkPhotosModal({ items, onApplyPho
                           {status?.state === 'working' ? (
                             <span style={{ color: colors.primary }}>Uploading…</span>
                           ) : statusInfo ? (
-                            <span style={{ color: statusInfo.color, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <span
+                              style={{
+                                color: statusInfo.color,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}
+                            >
                               <statusInfo.Icon size={14} /> {statusInfo.text}
                               {status.message && (
                                 <span style={{ color: colors.textMuted }}> · {status.message}</span>
@@ -288,12 +330,26 @@ export const BulkPhotosModal = memo(function BulkPhotosModal({ items, onApplyPho
         )}
 
         {running && (
-          <p role="status" style={{ color: colors.textSecondary, fontSize: typography.fontSize.sm, margin: `${spacing[3]}px 0 0` }}>
+          <p
+            role="status"
+            style={{
+              color: colors.textSecondary,
+              fontSize: typography.fontSize.sm,
+              margin: `${spacing[3]}px 0 0`,
+            }}
+          >
             Uploading {progressDone} of {actionable.length}…
           </p>
         )}
         {summary && (
-          <p role="status" style={{ color: colors.textPrimary, fontSize: typography.fontSize.sm, margin: `${spacing[3]}px 0 0` }}>
+          <p
+            role="status"
+            style={{
+              color: colors.textPrimary,
+              fontSize: typography.fontSize.sm,
+              margin: `${spacing[3]}px 0 0`,
+            }}
+          >
             {summary.done} uploaded
             {summary.failed ? `, ${summary.failed} failed` : ''}
             {summary.cancelled ? `, ${summary.cancelled} cancelled` : ''}.

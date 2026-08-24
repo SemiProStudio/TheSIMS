@@ -88,17 +88,17 @@ SIMS manages the full lifecycle of production equipment: acquisition, storage, c
 
 ## Tech Stack
 
-| Layer          | Technology                                                          |
-| -------------- | ------------------------------------------------------------------- |
-| Framework      | React 18 + Vite 7                                                   |
-| Styling        | CSS-in-JS with CSS custom properties                                |
-| Icons          | Lucide React                                                        |
-| Backend        | Supabase (PostgreSQL + Auth + Edge Functions)                       |
-| Hosting        | Vercel (via GitHub auto-deploy)                                     |
-| State          | React hooks with memoization (useState, useCallback, useMemo, memo) |
-| QR Codes       | qrcode (generation) + jsQR (camera scanning)                        |
-| PDF Parsing    | pdf.js (CDN, loaded on demand for Smart Paste)                      |
-| Testing        | Vitest (unit/integration) + Playwright (E2E)                        |
+| Layer       | Technology                                                          |
+| ----------- | ------------------------------------------------------------------- |
+| Framework   | React 18 + Vite 7                                                   |
+| Styling     | CSS-in-JS with CSS custom properties                                |
+| Icons       | Lucide React                                                        |
+| Backend     | Supabase (PostgreSQL + Auth + Edge Functions)                       |
+| Hosting     | Vercel (via GitHub auto-deploy)                                     |
+| State       | React hooks with memoization (useState, useCallback, useMemo, memo) |
+| QR Codes    | qrcode (generation) + jsQR (camera scanning)                        |
+| PDF Parsing | pdf.js (CDN, loaded on demand for Smart Paste)                      |
+| Testing     | Vitest (unit/integration) + Playwright (E2E)                        |
 
 ---
 

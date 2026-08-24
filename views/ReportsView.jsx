@@ -113,7 +113,10 @@ export const ReportsPanel = memo(function ReportsPanel({
     () => computeAlertData(inventory, categorySettings),
     [inventory, categorySettings],
   );
-  const clientStats = useMemo(() => computeClientReportStats(clients, inventory), [clients, inventory]);
+  const clientStats = useMemo(
+    () => computeClientReportStats(clients, inventory),
+    [clients, inventory],
+  );
   const maintenanceRecords = useMemo(() => collectMaintenanceRecords(inventory), [inventory]);
   const maintenanceStats = useMemo(
     () => computeMaintenanceStats(maintenanceRecords),
@@ -300,9 +303,7 @@ export const ReportsPanel = memo(function ReportsPanel({
             </div>
             <div>
               <h4 style={{ margin: 0, color: colors.textPrimary }}>Alerts</h4>
-              <p style={cardSubtitleStyle}>
-                {formatMoney(alertData.valueAtRisk)} at risk
-              </p>
+              <p style={cardSubtitleStyle}>{formatMoney(alertData.valueAtRisk)} at risk</p>
             </div>
           </div>
           <div style={{ marginBottom: spacing[4] }}>

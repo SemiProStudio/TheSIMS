@@ -77,7 +77,9 @@ export function useReminderHandlers({
       const completedDate = completed ? getTodayISO() : null;
       applyReminders(
         selectedItem.id,
-        previousReminders.map((r) => (r.id === reminderId ? { ...r, completed, completedDate } : r)),
+        previousReminders.map((r) =>
+          r.id === reminderId ? { ...r, completed, completedDate } : r,
+        ),
       );
 
       const ok = await dataContext.updateItemReminder(reminderId, { completed, completedDate });

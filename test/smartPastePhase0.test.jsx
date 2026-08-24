@@ -172,10 +172,14 @@ describe('buildApplyPayload filtering (P0-1)', () => {
   });
 
   it('drops fields outside the allowed category even above threshold', () => {
-    const payload = buildApplyPayload(mkParseResult(entries), {}, {
-      threshold: 50,
-      allowedFields: LENS_FIELD_NAMES,
-    });
+    const payload = buildApplyPayload(
+      mkParseResult(entries),
+      {},
+      {
+        threshold: 50,
+        allowedFields: LENS_FIELD_NAMES,
+      },
+    );
     expect(payload.specs['Maximum Aperture']).toBe('f/2.8');
     expect(payload.specs['Focus Gear Pitch']).toBe('Autofocus'); // in category, ≥50
     expect(payload.specs['Beam Angle']).toBeUndefined(); // Lighting field

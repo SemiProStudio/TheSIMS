@@ -143,7 +143,10 @@ function DepreciationCalculator({ item, onUpdateValue }) {
             />
           </div>
           <div>
-            <label htmlFor={salvageId} style={{ ...styles.label, fontSize: typography.fontSize.xs }}>
+            <label
+              htmlFor={salvageId}
+              style={{ ...styles.label, fontSize: typography.fontSize.xs }}
+            >
               Salvage Value (%)
             </label>
             <input
@@ -372,16 +375,16 @@ function DepreciationCalculator({ item, onUpdateValue }) {
             {onUpdateValue &&
               (item.currentValue == null ||
                 Math.abs(item.currentValue - depreciation.currentValue) > 1) && (
-              <Button
-                variant="secondary"
-                size="sm"
-                fullWidth
-                onClick={() => onUpdateValue(Math.round(depreciation.currentValue))}
-                style={{ marginBottom: spacing[4] }}
-              >
-                Update Current Value to {formatMoney(depreciation.currentValue)}
-              </Button>
-            )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  fullWidth
+                  onClick={() => onUpdateValue(Math.round(depreciation.currentValue))}
+                  style={{ marginBottom: spacing[4] }}
+                >
+                  Update Current Value to {formatMoney(depreciation.currentValue)}
+                </Button>
+              )}
 
             {/* Schedule toggle */}
             <button
@@ -463,9 +466,7 @@ function DepreciationCalculator({ item, onUpdateValue }) {
                         >
                           <td style={{ padding: spacing[2], color: colors.textPrimary }}>
                             {row.year}
-                            {isCurrent && (
-                              <Badge text="Current" color={colors.primary} size="xs" />
-                            )}
+                            {isCurrent && <Badge text="Current" color={colors.primary} size="xs" />}
                           </td>
                           <td
                             style={{

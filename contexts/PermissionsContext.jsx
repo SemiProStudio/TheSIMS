@@ -165,4 +165,3 @@ export function PermissionGate({ permission, requireEdit = false, fallback = nul
 
   return children;
 }
-
