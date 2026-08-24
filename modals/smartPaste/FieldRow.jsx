@@ -117,8 +117,9 @@ export function FieldRow({
                   ⚠ Conflict
                 </span>
               )}
-              {/* Merged badge */}
-              {fieldData.mergedCount && (
+              {/* Merged badge — comparison, not bare &&: a 0 count would
+                  render as a literal "0" */}
+              {fieldData.mergedCount > 0 && (
                 <span
                   style={{
                     display: 'inline-block',

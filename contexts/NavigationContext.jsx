@@ -11,30 +11,21 @@ import { useAuth } from './AuthContext.js';
 import NavigationContext from './NavigationContext.js';
 
 /**
- * NavigationProviderWithData - A wrapper that pulls inventory/packages from DataContext
+ * NavigationProviderWithData - A wrapper that pulls inventory from DataContext
  * and isLoggedIn from AuthContext, then passes them to NavigationProvider
  */
 export function NavigationProviderWithData({ children }) {
-  const { inventory, packages } = useData();
+  const { inventory } = useData();
   const { isAuthenticated } = useAuth();
 
   return (
-    <NavigationProvider
-      isLoggedIn={isAuthenticated}
-      inventory={inventory || []}
-      packages={packages || []}
-    >
+    <NavigationProvider isLoggedIn={isAuthenticated} inventory={inventory || []}>
       {children}
     </NavigationProvider>
   );
 }
 
-export function NavigationProvider({
-  children,
-  isLoggedIn = false,
-  inventory = [],
-  packages = [],
-}) {
+export function NavigationProvider({ children, isLoggedIn = false, inventory = [] }) {
   // Navigation state
   const [currentView, setCurrentView] = useState(VIEWS.DASHBOARD);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -91,14 +82,7 @@ export function NavigationProvider({
       if (event.state?.view) {
         setCurrentView(event.state.view);
 
-        // Handle legacy PACKAGE_DETAIL entries in browser history
-        if (event.state.view === VIEWS.PACKAGE_DETAIL) {
-          setCurrentView(VIEWS.PACKAGES);
-          if (event.state.selectedPackageId) {
-            const pkg = packages.find((p) => p.id === event.state.selectedPackageId);
-            if (pkg) setSelectedPackage(pkg);
-          }
-        } else if (event.state.view === VIEWS.GEAR_DETAIL && event.state.selectedItemId) {
+        if (event.state.view === VIEWS.GEAR_DETAIL && event.state.selectedItemId) {
           const item = inventory.find((i) => i.id === event.state.selectedItemId);
           if (item) setSelectedItem(item);
         }
@@ -109,92 +93,7 @@ export function NavigationProvider({
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [isLoggedIn, inventory, packages]);
-
-  // ============================================================================
-  // Navigation Handlers
-  // ============================================================================
-
-  const navigate = useCallback(
-    (viewId) => {
-      setCurrentView(viewId);
-      window.scrollTo(0, 0);
-      const mainContent = document.getElementById('main-content');
-      if (mainContent) mainContent.scrollTop = 0;
-
-      if (viewId === VIEWS.GEAR_LIST) setSelectedItem(null);
-      else if (viewId === VIEWS.PACKAGES) setSelectedPackage(null);
-      else if (viewId === VIEWS.PACK_LISTS) setSelectedPackList(null);
-      bumpNavigationNonce();
-    },
-    [bumpNavigationNonce],
-  );
-
-  const navigateToItem = useCallback((item, backContext = null) => {
-    setSelectedItem(item);
-    setItemBackContext(backContext);
-    setCurrentView(VIEWS.GEAR_DETAIL);
-    window.scrollTo(0, 0);
-  }, []);
-
-  // Navigate to package detail — uses VIEWS.PACKAGES with initialSelectedPackage
-  // (PackagesView manages detail view internally via selectedPackage state)
-  const navigateToPackage = useCallback((pkg) => {
-    setSelectedPackage(pkg);
-    setCurrentView(VIEWS.PACKAGES);
-    window.scrollTo(0, 0);
-  }, []);
-
-  const navigateToPackList = useCallback((packList) => {
-    setSelectedPackList(packList);
-    setCurrentView(VIEWS.PACK_LISTS);
-    window.scrollTo(0, 0);
-  }, []);
-
-  const navigateToReservation = useCallback(
-    (reservation, item, backContext = null) => {
-      setReservationBackView({ view: currentView, context: backContext });
-      setSelectedReservation(reservation);
-      setSelectedReservationItem(item);
-      setCurrentView(VIEWS.RESERVATION_DETAIL);
-      window.scrollTo(0, 0);
-    },
-    [currentView],
-  );
-
-  const goBack = useCallback(() => {
-    if (currentView === VIEWS.GEAR_DETAIL) {
-      setSelectedItem(null);
-      setCurrentView(itemBackContext || VIEWS.GEAR_LIST);
-      setItemBackContext(null);
-    } else if (currentView === VIEWS.PACKAGE_DETAIL) {
-      setSelectedPackage(null);
-      setCurrentView(VIEWS.PACKAGES);
-    } else if (currentView === VIEWS.RESERVATION_DETAIL) {
-      setSelectedReservation(null);
-      setSelectedReservationItem(null);
-      setCurrentView(reservationBackView?.view || VIEWS.SCHEDULE);
-      setReservationBackView(null);
-    } else {
-      setCurrentView(VIEWS.DASHBOARD);
-    }
-    window.scrollTo(0, 0);
-  }, [currentView, itemBackContext, reservationBackView]);
-
-  const isDetailView = [VIEWS.GEAR_DETAIL, VIEWS.PACKAGE_DETAIL, VIEWS.RESERVATION_DETAIL].includes(
-    currentView,
-  );
-
-  const resetNavigation = useCallback(() => {
-    setCurrentView(VIEWS.DASHBOARD);
-    setSelectedItem(null);
-    setSelectedPackage(null);
-    setSelectedPackList(null);
-    setSelectedReservation(null);
-    setSelectedReservationItem(null);
-    setItemBackContext(null);
-    setReservationBackView(null);
-  }, []);
+  }, [isLoggedIn, inventory]);
 
   // ============================================================================
   // Memoized context value — only changes when actual state changes
@@ -210,7 +109,6 @@ export function NavigationProvider({
       selectedReservationItem,
       itemBackContext,
       reservationBackView,
-      isDetailView,
       navigationNonce,
 
       // Setters
@@ -224,13 +122,6 @@ export function NavigationProvider({
       setReservationBackView,
 
       // Handlers
-      navigate,
-      navigateToItem,
-      navigateToPackage,
-      navigateToPackList,
-      navigateToReservation,
-      goBack,
-      resetNavigation,
       bumpNavigationNonce,
     }),
     [
@@ -242,15 +133,7 @@ export function NavigationProvider({
       selectedReservationItem,
       itemBackContext,
       reservationBackView,
-      isDetailView,
       navigationNonce,
-      navigate,
-      navigateToItem,
-      navigateToPackage,
-      navigateToPackList,
-      navigateToReservation,
-      goBack,
-      resetNavigation,
       bumpNavigationNonce,
     ],
   );

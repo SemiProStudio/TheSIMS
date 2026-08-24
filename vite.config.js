@@ -63,14 +63,6 @@ export default defineConfig({
     port: 4173,
   },
 
-  // Resolve aliases for cleaner imports
-  resolve: {
-    alias: {
-      '@components': '/components',
-      '@lib': '/lib',
-    },
-  },
-
   // Environment variables prefix
   envPrefix: 'VITE_',
 

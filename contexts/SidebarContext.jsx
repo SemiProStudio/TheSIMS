@@ -4,9 +4,11 @@
 // sidebar-dependent components — not the entire App tree.
 // =============================================================================
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import SidebarContext from './SidebarContext.js';
 import { breakpoints } from '../theme.js';
+
+const STORAGE_KEY = 'sims-sidebar-collapsed';
 
 // Safe localStorage wrapper
 const safeLocalStorage = {
@@ -26,18 +28,11 @@ const safeLocalStorage = {
   },
 };
 
-export function SidebarProvider({
-  children,
-  storageKey = 'sims-sidebar-collapsed',
-  defaultCollapsed = false,
-  // Phones get the off-canvas drawer; 641-1024px keeps the real sidebar as
-  // a collapsed icon rail (see below) so tablets don't get the phone nav
-  mobileBreakpoint = breakpoints.phone,
-}) {
+export function SidebarProvider({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    const saved = safeLocalStorage.getItem(storageKey);
+    const saved = safeLocalStorage.getItem(STORAGE_KEY);
     if (saved !== null) return saved === 'true';
     // No stored choice: default to the icon rail on tablet-width screens.
     // An explicit user toggle (or profile pref applied later) always wins.
@@ -48,29 +43,31 @@ export function SidebarProvider({
     ) {
       return true;
     }
-    return defaultCollapsed;
+    return false;
   });
 
+  // Phones get the off-canvas drawer; 641-1024px keeps the real sidebar as
+  // a collapsed icon rail (see above) so tablets don't get the phone nav
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false;
-    return window.innerWidth < mobileBreakpoint;
+    return window.innerWidth < breakpoints.phone;
   });
 
   // Persist collapsed state
   useEffect(() => {
-    safeLocalStorage.setItem(storageKey, String(sidebarCollapsed));
-  }, [sidebarCollapsed, storageKey]);
+    safeLocalStorage.setItem(STORAGE_KEY, String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   // Responsive resize
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth < mobileBreakpoint;
+      const mobile = window.innerWidth < breakpoints.phone;
       setIsMobile(mobile);
       if (!mobile && sidebarOpen) setSidebarOpen(false);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [mobileBreakpoint, sidebarOpen]);
+  }, [sidebarOpen]);
 
   // Escape key closes mobile sidebar
   useEffect(() => {
@@ -89,54 +86,14 @@ export function SidebarProvider({
     };
   }, [sidebarOpen, isMobile]);
 
-  // Handlers
-  const toggleSidebarOpen = useCallback(() => setSidebarOpen((prev) => !prev), []);
-  const openSidebar = useCallback(() => setSidebarOpen(true), []);
-  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
-  const toggleSidebarCollapsed = useCallback(() => setSidebarCollapsed((prev) => !prev), []);
-  const collapseSidebar = useCallback(() => setSidebarCollapsed(true), []);
-  const expandSidebar = useCallback(() => setSidebarCollapsed(false), []);
-  const handleNavClick = useCallback(() => {
-    if (isMobile) setSidebarOpen(false);
-  }, [isMobile]);
-
-  // Computed
-  const sidebarWidth = sidebarCollapsed ? 64 : 256;
-  const mainContentMargin = isMobile ? 0 : sidebarWidth;
-
   const value = useMemo(
     () => ({
       sidebarOpen,
       setSidebarOpen,
       sidebarCollapsed,
       setSidebarCollapsed,
-      isMobile,
-      toggleSidebarOpen,
-      openSidebar,
-      closeSidebar,
-      toggleSidebarCollapsed,
-      collapseSidebar,
-      expandSidebar,
-      handleNavClick,
-      sidebarWidth,
-      mainContentMargin,
-      isExpanded: !sidebarCollapsed,
-      showOverlay: sidebarOpen && isMobile,
     }),
-    [
-      sidebarOpen,
-      sidebarCollapsed,
-      isMobile,
-      sidebarWidth,
-      mainContentMargin,
-      toggleSidebarOpen,
-      openSidebar,
-      closeSidebar,
-      toggleSidebarCollapsed,
-      collapseSidebar,
-      expandSidebar,
-      handleNavClick,
-    ],
+    [sidebarOpen, sidebarCollapsed],
   );
 
   return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;

@@ -86,12 +86,15 @@ export const ItemModal = memo(function ItemModal({
     setItemForm((prev) => applySmartPastePayload(prev, parsed));
   };
 
-  // Helper to render field error
-  const FieldError = ({ field }) => {
+  // Helper to render field error. `id` is the target of the input's
+  // aria-describedby — without it screen readers announce the invalid state
+  // but never the message.
+  const FieldError = ({ field, id }) => {
     const error = getFieldError(field);
     if (!error) return null;
     return (
       <span
+        id={id}
         style={{
           color: colors.danger,
           fontSize: typography.fontSize.xs,
@@ -185,7 +188,7 @@ export const ItemModal = memo(function ItemModal({
                 aria-invalid={getFieldError('name') ? 'true' : undefined}
                 aria-describedby={getFieldError('name') ? 'name-error' : undefined}
               />
-              <FieldError field="name" />
+              <FieldError field="name" id="name-error" />
             </div>
             <div>
               <label
@@ -209,7 +212,7 @@ export const ItemModal = memo(function ItemModal({
                 aria-invalid={getFieldError('brand') ? 'true' : undefined}
                 aria-describedby={getFieldError('brand') ? 'brand-error' : undefined}
               />
-              <FieldError field="brand" />
+              <FieldError field="brand" id="brand-error" />
             </div>
           </div>
 

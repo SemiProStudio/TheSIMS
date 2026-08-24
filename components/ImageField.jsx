@@ -33,7 +33,7 @@ const linkButton = {
   minHeight: 32,
 };
 
-export const ImageField = memo(function ImageField({
+const ImageField = memo(function ImageField({
   value,
   pending,
   onChange,

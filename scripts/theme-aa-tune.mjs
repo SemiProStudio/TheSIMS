@@ -77,7 +77,7 @@ function hslToRgb([h, s, l]) {
 }
 
 /** Every (fgKey → [bg, min]) pair the app renders as text. */
-export function pairsFor(colors) {
+function pairsFor(colors) {
   const g = (k) => parse(colors[k]);
   const bgD = g('--bg-dark'),
     bgM = g('--bg-medium'),

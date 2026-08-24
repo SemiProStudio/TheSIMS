@@ -575,10 +575,6 @@ export const isLowStock = (item, categorySettings) => {
   return threshold > 0 && item.quantity <= threshold;
 };
 
-/** Whether the low-stock reminder controls apply to this item at all */
-export const canTrackLowStock = (item, categorySettings) =>
-  Boolean(categorySettings?.[item?.category]?.trackQuantity);
-
 /**
  * Multi-select status match that understands the computed states: 'overdue'
  * and 'low-stock' are derived, so the plain equality check the Search view
@@ -686,14 +682,6 @@ export const findNoteById = (notes, noteId) => {
   return null;
 };
 
-// ============================================================================
-// Validation Utilities
-// ============================================================================
-
-/**
- * Check if required fields are filled
- * @param {Object} obj - Object to validate
- * @param {string[]} requiredFields - Array of required field names
 // ============================================================================
 // Location Utilities
 // ============================================================================
@@ -866,7 +854,10 @@ export const calculateDepreciation = (
     };
   }
   const purchase = new Date(purchaseDate);
-  const today = new Date();
+  // purchaseDate ('YYYY-MM-DD') parses as UTC midnight — put today on the
+  // same UTC-midnight footing (of the LOCAL calendar date, per the rule at
+  // toLocalYMD) or the timezone offset leaks into the age
+  const today = new Date(getTodayISO());
   // Clamp: a future purchase date used to yield a negative age, negative
   // depreciation, and a "current value" above the purchase price
   const ageInYears = Math.max(0, (today - purchase) / (365.25 * 24 * 60 * 60 * 1000));

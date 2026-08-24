@@ -33,7 +33,6 @@ function renderSchedule() {
       setScheduleDate={vi.fn()}
       scheduleMode="list"
       setScheduleMode={vi.fn()}
-      onViewItem={vi.fn()}
       onViewReservation={vi.fn()}
       onAddReservation={vi.fn()}
     />,

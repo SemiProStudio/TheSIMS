@@ -11,7 +11,7 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { colors, spacing, borderRadius, typography } from '../theme.js';
 import { Button } from './ui.jsx';
 
-export function LoadErrorBanner({ message, onRetry }) {
+function LoadErrorBanner({ message, onRetry }) {
   return (
     <div
       role="alert"

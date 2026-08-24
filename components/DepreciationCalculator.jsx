@@ -464,12 +464,7 @@ function DepreciationCalculator({ item, onUpdateValue }) {
                           <td style={{ padding: spacing[2], color: colors.textPrimary }}>
                             {row.year}
                             {isCurrent && (
-                              <Badge
-                                text="Current"
-                                color={colors.primary}
-                                size="xs"
-                                style={{ marginLeft: spacing[1] }}
-                              />
+                              <Badge text="Current" color={colors.primary} size="xs" />
                             )}
                           </td>
                           <td

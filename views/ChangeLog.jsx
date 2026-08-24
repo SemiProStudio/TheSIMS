@@ -309,13 +309,7 @@ const SearchResultItem = memo(function SearchResultItem({ item, onClick, changeC
 });
 
 // Main Change Log Component
-function ChangeLog({
-  changeLog = [],
-  inventory = [],
-  packages = [],
-  onViewItem: _onViewItem,
-  onBack,
-}) {
+function ChangeLog({ changeLog = [], inventory = [], packages = [], onBack }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
 

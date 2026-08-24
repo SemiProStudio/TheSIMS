@@ -306,28 +306,6 @@ export const CardHeader = memo(function CardHeader({ title, icon: Icon, action, 
 // CollapsibleSection - Card with collapsible content (click header to toggle)
 // ============================================================================
 
-// Helper to apply opacity to a color (supports hex, CSS variables, and rgb/rgba)
-// Uses CSS color-mix() for CSS variables, converts hex to rgba for hex colors
-const withAlpha = (color, alpha) => {
-  if (!color) return color;
-
-  // Already has alpha
-  if (color.startsWith('rgba') || color.startsWith('rgb')) return color;
-
-  // CSS variable - use color-mix()
-  if (color.startsWith('var(')) {
-    const percent = Math.round(alpha * 100);
-    return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
-  }
-
-  // Hex color - convert to rgba
-  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-  const expandedHex = color.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(expandedHex);
-  if (!result) return color;
-  return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${alpha})`;
-};
-
 export const CollapsibleSection = memo(function CollapsibleSection({
   title,
   icon: Icon,
@@ -410,7 +388,7 @@ export const CollapsibleSection = memo(function CollapsibleSection({
           {badge !== undefined && badge !== null && (
             <span
               style={{
-                background: withAlpha(accentColor, 0.15),
+                background: withOpacity(accentColor, 15),
                 color: colors.textPrimary,
                 padding: '2px 8px',
                 borderRadius: borderRadius.full,
@@ -875,75 +853,6 @@ export const SearchInput = memo(
 );
 
 // ============================================================================
-// Avatar - User avatar
-// ============================================================================
-
-export const Avatar = memo(function Avatar({ name, src, size = 40, style: customStyle }) {
-  const initial = name?.charAt(0)?.toUpperCase() || '?';
-
-  if (src) {
-    return (
-      <img
-        src={src}
-        alt={name}
-        style={{
-          width: size,
-          height: size,
-          borderRadius: borderRadius.md,
-          objectFit: 'cover',
-          ...customStyle,
-        }}
-      />
-    );
-  }
-
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: borderRadius.md,
-        background: `linear-gradient(135deg, ${colors.primary}, ${colors.accent1})`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontWeight: typography.fontWeight.semibold,
-        color: colors.textPrimary,
-        fontSize: size * 0.4,
-        ...customStyle,
-      }}
-    >
-      {initial}
-    </div>
-  );
-});
-
-// ============================================================================
-// Grid - Responsive grid layout
-// ============================================================================
-
-export const Grid = memo(function Grid({
-  children,
-  columns = 'auto-fill',
-  minWidth = 180,
-  gap = 4,
-  style: customStyle,
-}) {
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${columns}, minmax(${minWidth}px, 1fr))`,
-        gap: spacing[gap],
-        ...customStyle,
-      }}
-    >
-      {children}
-    </div>
-  );
-});
-
-// ============================================================================
 // Pagination - Page navigation component
 // ============================================================================
 
@@ -1295,26 +1204,6 @@ SearchInput.propTypes = {
   onFocus: PropTypes.func,
   /** Blur handler */
   onBlur: PropTypes.func,
-};
-
-Avatar.propTypes = {
-  /** User name for initials */
-  name: PropTypes.string,
-  /** Image source URL */
-  src: PropTypes.string,
-  /** Avatar size in pixels */
-  size: PropTypes.number,
-  /** Custom background color */
-  color: PropTypes.string,
-};
-
-Grid.propTypes = {
-  /** Grid content */
-  children: PropTypes.node.isRequired,
-  /** Minimum column width */
-  minWidth: PropTypes.number,
-  /** Gap between items */
-  gap: PropTypes.number,
 };
 
 Pagination.propTypes = {

@@ -189,8 +189,7 @@ a:focus-visible {
 }
 
 /* Cards that are clickable */
-.card-clickable:focus-visible,
-[onclick]:focus-visible {
+.card-clickable:focus-visible {
   outline: var(--focus-ring);
   outline-offset: 0;
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 20%, transparent);
@@ -218,28 +217,8 @@ a:focus-visible {
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 20%, transparent);
 }
 
-/* Tab buttons */
-
-/* Dropdown/Select trigger */
-
-/* Modal close buttons */
-.modal-close:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: 0;
-  background: color-mix(in srgb, var(--primary) 15%, transparent);
-  border-radius: 50%;
-}
-
-/* Calendar day buttons */
-
-/* Skip link (accessibility) */
-
-/* Focus trap indicator for modals */
-
 /* Danger button focus - uses theme-customizable color */
-.btn-danger:focus-visible,
-button.danger:focus-visible,
-[data-danger='true']:focus-visible {
+.btn-danger:focus-visible {
   outline: var(--focus-ring-danger);
   outline-offset: var(--focus-ring-offset);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--focus-ring-color-danger) 25%, transparent);
@@ -518,12 +497,6 @@ html.theme-cursor .btn-secondary:disabled {
 
   .item-detail-info {
     padding: 16px !important;
-  }
-
-  /* Hide sidebar on mobile - it moves below main content */
-  .mobile-stack-reverse {
-    display: flex;
-    flex-direction: column-reverse;
   }
 }
 
@@ -1523,11 +1496,6 @@ button:disabled,
   border-color: var(--primary);
 }
 
-.selection-item.selected-secondary {
-  background: color-mix(in srgb, var(--accent2) 20%, transparent);
-  border-color: var(--accent2);
-}
-
 .selection-item.partial {
   background: color-mix(in srgb, var(--primary) 10%, transparent);
   border: 1px dashed var(--primary);
@@ -1771,14 +1739,6 @@ button:disabled,
 .btn-icon:hover {
   color: var(--text-primary);
   background: color-mix(in srgb, var(--primary) 10%, transparent);
-}
-
-.btn-icon.danger {
-  color: var(--danger);
-}
-
-.btn-icon.danger:hover {
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 /* Data loading shimmer bar */

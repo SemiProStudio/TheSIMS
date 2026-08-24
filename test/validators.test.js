@@ -627,4 +627,25 @@ describe('validateItems (extended)', () => {
     const result = validateItems(items, { customCategories: ['Custom'] });
     expect(result.isValid).toBe(true);
   });
+
+  it('does not flag an item as a duplicate of its own code', () => {
+    const items = [
+      { name: 'Canon R5', category: 'Cameras', code: 'CAM-1' },
+      { name: 'Sony A7', category: 'Cameras', code: 'CAM-2' },
+    ];
+    const result = validateItems(items);
+    expect(result.isValid).toBe(true);
+    expect(result.invalidCount).toBe(0);
+  });
+
+  it('still flags genuine duplicate codes within the batch', () => {
+    const items = [
+      { name: 'Canon R5', category: 'Cameras', code: 'CAM-1' },
+      { name: 'Sony A7', category: 'Cameras', code: 'CAM-1' },
+    ];
+    const result = validateItems(items);
+    expect(result.isValid).toBe(false);
+    expect(result.invalidCount).toBe(2);
+    expect(result.invalidItems[0].errors.code).toBe('This code is already in use');
+  });
 });

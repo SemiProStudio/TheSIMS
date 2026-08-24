@@ -48,7 +48,6 @@ import {
   CollapsibleSection,
   PageHeader,
 } from '../components/ui.jsx';
-import { usePermissions } from '../contexts/PermissionsContext.js';
 import { useData } from '../contexts/DataContext.js';
 import { useMediaQuery } from '../hooks/useMediaQuery.js';
 import { useFillHeight } from '../hooks/useFillHeight.js';
@@ -152,9 +151,6 @@ function Dashboard({
 }) {
   const [quickSearch, setQuickSearch] = useState('');
   const { tier2Loaded, auditLog, auditLogLoaded, ensureAuditLog } = useData();
-
-  // Permissions
-  const { canEdit: _canEdit } = usePermissions();
 
   // Recent Activity reads the real audit log (latest 100, lazy-loaded)
   useEffect(() => {
@@ -1090,9 +1086,7 @@ function Dashboard({
                         type="button"
                         className="dash-row"
                         key={r.id}
-                        onClick={() =>
-                          onViewReservation ? onViewReservation(r, r.item) : onViewItem(r.item.id)
-                        }
+                        onClick={() => onViewReservation(r, r.item)}
                         style={{
                           ...listItemStyle(PANEL_COLORS.reservations),
                           marginBottom: 0,
