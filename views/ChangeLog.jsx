@@ -45,7 +45,7 @@ const formatFieldValue = (value) => {
 };
 
 // Change entry component
-const ChangeEntry = memo(function ChangeEntry({ change, onViewItem, isExpanded }) {
+const ChangeEntry = memo(function ChangeEntry({ change, onViewItem }) {
   const config = CHANGE_TYPE_CONFIG[change.type] || CHANGE_TYPE_CONFIG.updated;
   const Icon = config.icon;
 
@@ -54,7 +54,7 @@ const ChangeEntry = memo(function ChangeEntry({ change, onViewItem, isExpanded }
       style={{
         padding: spacing[3],
         borderBottom: `1px solid ${colors.border}`,
-        background: isExpanded ? `${withOpacity(colors.primary, 5)}` : 'transparent',
+        background: 'transparent',
       }}
     >
       <div

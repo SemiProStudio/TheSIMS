@@ -1089,3 +1089,67 @@ describe('emailService.sendDamageReport recipient guard (B7)', () => {
     expect(mock.functions.invoke).not.toHaveBeenCalled();
   });
 });
+
+describe('checkout history carries the collected fields (wiring fix 2026-08-24)', () => {
+  it('checkOut writes notes and condition_at_action to checkout_history', async () => {
+    // The modal collects them and the Item Timeline renders them; the insert
+    // silently dropped both until the wiring sweep
+    const client = createRecordingClient((entry) =>
+      entry.table === 'inventory'
+        ? { data: { id: 'IT1' }, error: null }
+        : { data: { id: 'h1' }, error: null },
+    );
+    // checkOut also fires the checkout-count RPC (fire-and-forget)
+    getSupabase.mockResolvedValue({ ...client, rpc: () => Promise.resolve({ error: null }) });
+
+    await inventoryService.checkOut('IT1', {
+      userId: 'u9',
+      userName: 'Jordan',
+      clientId: null,
+      clientName: null,
+      project: 'Shoot',
+      dueBack: '2026-09-01',
+      notes: 'Tripod plate included',
+      conditionAtCheckout: 'good',
+    });
+
+    const historyInsert = client.calls.find(
+      (c) => c.table === 'checkout_history' && c.ops.some(([m]) => m === 'insert'),
+    );
+    expect(historyInsert).toBeTruthy();
+    const [, [row]] = historyInsert.ops.find(([m]) => m === 'insert');
+    expect(row).toMatchObject({
+      action: 'checkout',
+      notes: 'Tripod plate included',
+      condition_at_action: 'good',
+    });
+    getSupabase.mockReset();
+  });
+
+  it('omitted fields insert as null, not undefined', async () => {
+    const client = createRecordingClient((entry) =>
+      entry.table === 'inventory'
+        ? { data: { id: 'IT1' }, error: null }
+        : { data: { id: 'h1' }, error: null },
+    );
+    // checkOut also fires the checkout-count RPC (fire-and-forget)
+    getSupabase.mockResolvedValue({ ...client, rpc: () => Promise.resolve({ error: null }) });
+
+    await inventoryService.checkOut('IT1', {
+      userId: null,
+      userName: 'Jordan',
+      clientId: null,
+      clientName: null,
+      project: '',
+      dueBack: '2026-09-01',
+    });
+
+    const historyInsert = client.calls.find(
+      (c) => c.table === 'checkout_history' && c.ops.some(([m]) => m === 'insert'),
+    );
+    const [, [row]] = historyInsert.ops.find(([m]) => m === 'insert');
+    expect(row.notes).toBeNull();
+    expect(row.condition_at_action).toBeNull();
+    getSupabase.mockReset();
+  });
+});

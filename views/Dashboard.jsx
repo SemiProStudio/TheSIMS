@@ -445,16 +445,8 @@ function Dashboard({
           itemId: item.id,
         });
       }
-      if (item.lastCheckedIn) {
-        events.push({
-          id: `${item.id}-checkin`,
-          type: 'item_checkin',
-          description: `${item.name} returned by ${item.lastCheckedInBy || 'Unknown'}`,
-          who: item.lastCheckedInBy || 'Unknown',
-          date: item.lastCheckedIn,
-          itemId: item.id,
-        });
-      }
+      // (No check-in half: nothing ever provided a lastCheckedIn field — the
+      // audit-log path, which loads almost immediately, carries returns)
     }
     events.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     return events.slice(0, 8);
@@ -601,7 +593,10 @@ function Dashboard({
                       </div>
                       <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
                         Goes out today{r.project ? ` • ${r.project}` : ''}
-                        {r.reservedBy ? ` • ${r.reservedBy}` : ''}
+                        {/* r.user is the reservation contact (transformReservation
+                            alias) — `reservedBy` was a field nothing ever provided,
+                            so the person never rendered here */}
+                        {r.user ? ` • ${r.user}` : ''}
                       </div>
                     </div>
                     <ChevronRight size={16} color={colors.textMuted} />

@@ -341,7 +341,10 @@ export function useReservationHandlers({
             item: firstItem,
             reservation: {
               ...reservationForm,
-              id: firstCreatedReservation.id,
+              // firstCreatedReservation is { reservation, item } — reading .id
+              // off the wrapper logged reservation_id: NULL on every
+              // confirmation email (the navigation below uses the right path)
+              id: firstCreatedReservation.reservation?.id,
               itemCount: itemIds.length,
             },
             companyName: companyNameFor(currentUser),
