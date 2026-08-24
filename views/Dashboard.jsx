@@ -6,7 +6,7 @@
 // real audit log (lazy-loaded on mount).
 // ============================================================================
 
-import { memo, useState, useMemo, useEffect } from 'react';
+import { memo, useState, useMemo, useEffect, useRef } from 'react';
 import {
   Package,
   CheckCircle,
@@ -51,6 +51,7 @@ import {
 import { usePermissions } from '../contexts/PermissionsContext.js';
 import { useData } from '../contexts/DataContext.js';
 import { useMediaQuery } from '../hooks/useMediaQuery.js';
+import { useFillHeight } from '../hooks/useFillHeight.js';
 
 // Panel color CSS variables for dashboard sections
 const PANEL_COLORS = {
@@ -86,6 +87,14 @@ const emptyStateStyle = {
   textAlign: 'center',
   margin: 0,
 };
+
+// Two-column mode sizes the column stacks to the window (see useFillHeight):
+// never shorter than this, so a short window scrolls a little instead of
+// squeezing every panel to a sliver
+const MIN_COLUMNS_HEIGHT = 720;
+// One list row (padding + two lines + its margin) — the floor a list keeps
+// when its column is shared out, so a busy panel always shows a full row
+const LIST_ROW_HEIGHT = 70;
 
 // Shared list row style builder. Rows render as <button> for keyboard access,
 // so button defaults are reset here.
@@ -245,6 +254,41 @@ function Dashboard({
         : [panelIds],
     [isTwoColumn, panelIds],
   );
+
+  // Wide screens: the two stacks end where the window ends and each panel
+  // takes an equal share of its column, capped at its own content (an empty
+  // panel stays one line; a long list scrolls inside its share). Below the
+  // breakpoint the single stack flows naturally with capped lists.
+  const columnsRef = useRef(null);
+  const columnsHeight = useFillHeight(columnsRef, {
+    enabled: isTwoColumn,
+    min: MIN_COLUMNS_HEIGHT,
+  });
+  const fill = isTwoColumn && columnsHeight != null;
+  const panelProps = fill
+    ? {
+        className: 'dashboard-panel',
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+          flex: '1 1 0px',
+          maxHeight: 'max-content',
+        },
+        contentStyle: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' },
+      }
+    : { className: 'dashboard-panel' };
+  // A panel's scrollable list: fills its panel when sharing a column,
+  // otherwise stops at `cap` and scrolls
+  const listBodyStyle = (rowCount, cap) =>
+    fill
+      ? {
+          padding: spacing[4],
+          flex: 1,
+          minHeight: Math.min(rowCount, 1) * LIST_ROW_HEIGHT + spacing[4] * 2,
+          overflowY: 'auto',
+        }
+      : { padding: spacing[4], maxHeight: cap, overflowY: 'auto' };
 
   // Computed stats — single-pass over inventory for performance
   const stats = useMemo(() => {
@@ -421,6 +465,7 @@ function Dashboard({
         return (
           <CollapsibleSection
             key="today"
+            {...panelProps}
             title="Today"
             icon={CalendarClock}
             badge={todayData.total || null}
@@ -433,7 +478,7 @@ function Dashboard({
             {todayData.total === 0 ? (
               <div style={emptyStateStyle}>Nothing due in or out today</div>
             ) : (
-              <div style={{ padding: spacing[4], maxHeight: 320, overflowY: 'auto' }}>
+              <div style={listBodyStyle(todayData.total, 320)}>
                 {stats.overdue.map((item) => (
                   <button
                     type="button"
@@ -715,6 +760,7 @@ function Dashboard({
         return (
           <CollapsibleSection
             key="checkedOut"
+            {...panelProps}
             title="Currently Checked Out"
             icon={LogOut}
             badge={stats.checkedOutItems.length || null}
@@ -744,7 +790,7 @@ function Dashboard({
             {stats.checkedOutItems.length === 0 ? (
               <div style={emptyStateStyle}>Nothing is checked out</div>
             ) : (
-              <div style={{ padding: spacing[4], maxHeight: 300, overflowY: 'auto' }}>
+              <div style={listBodyStyle(stats.checkedOutItems.length, 300)}>
                 {stats.checkedOutItems.slice(0, 8).map((item) => {
                   const isOverdue = item.dueBack && item.dueBack < today;
                   return (
@@ -792,6 +838,7 @@ function Dashboard({
         return (
           <CollapsibleSection
             key="alerts"
+            {...panelProps}
             title="Alerts"
             icon={AlertTriangle}
             badge={stats.alerts.length || null}
@@ -821,7 +868,7 @@ function Dashboard({
             {stats.alerts.length === 0 ? (
               <div style={emptyStateStyle}>No alerts</div>
             ) : (
-              <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
+              <div style={listBodyStyle(stats.alerts.length, 240)}>
                 {stats.alerts.map((item) => (
                   <button
                     type="button"
@@ -851,6 +898,7 @@ function Dashboard({
         return (
           <CollapsibleSection
             key="reminders"
+            {...panelProps}
             title="Due Reminders"
             icon={Bell}
             badge={stats.dueReminders.length || null}
@@ -865,7 +913,7 @@ function Dashboard({
                 {!tier2Loaded ? <TierLoading label="Loading reminders..." /> : 'No due reminders'}
               </div>
             ) : (
-              <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
+              <div style={listBodyStyle(stats.dueReminders.length, 240)}>
                 {stats.dueReminders.map((reminder) => (
                   <button
                     type="button"
@@ -897,6 +945,7 @@ function Dashboard({
         return (
           <CollapsibleSection
             key="lowStock"
+            {...panelProps}
             title="Low Stock Items"
             icon={TrendingDown}
             badge={stats.lowStockItems.length || null}
@@ -926,7 +975,7 @@ function Dashboard({
             {stats.lowStockItems.length === 0 ? (
               <div style={emptyStateStyle}>No low stock items</div>
             ) : (
-              <div style={{ padding: spacing[4], maxHeight: 200, overflowY: 'auto' }}>
+              <div style={listBodyStyle(stats.lowStockItems.length, 200)}>
                 {stats.lowStockItems.map((item) => (
                   <button
                     type="button"
@@ -959,6 +1008,7 @@ function Dashboard({
         return (
           <CollapsibleSection
             key="reservations"
+            {...panelProps}
             title="Upcoming Reservations"
             icon={Calendar}
             badge={upcomingReservations.length || null}
@@ -983,7 +1033,7 @@ function Dashboard({
             }
             padding={false}
           >
-            <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
+            <div style={listBodyStyle(upcomingReservations.length, 240)}>
               {upcomingReservations.length === 0 ? (
                 <p
                   style={{
@@ -1092,80 +1142,80 @@ function Dashboard({
 
       case 'maintenance':
         return (
-          <div key="maintenance" id="dash-section-maintenance">
-            <CollapsibleSection
-              title="Upcoming Maintenance"
-              icon={Wrench}
-              badge={stats.pendingMaintenance.length || null}
-              badgeColor={PANEL_COLORS.maintenance}
-              headerColor={PANEL_COLORS.maintenance}
-              collapsed={isCollapsed('maintenance')}
-              onToggleCollapse={() => toggleCollapse('maintenance')}
-              padding={false}
-            >
-              {stats.pendingMaintenance.length === 0 ? (
-                <div style={emptyStateStyle}>
-                  {!tier2Loaded ? (
-                    <TierLoading label="Loading maintenance..." />
-                  ) : (
-                    'No scheduled maintenance'
-                  )}
-                </div>
-              ) : (
-                <div style={{ padding: spacing[4], maxHeight: 240, overflowY: 'auto' }}>
-                  {stats.pendingMaintenance.slice(0, 6).map((record) => (
-                    <button
-                      type="button"
-                      className="dash-row"
-                      key={record.id}
-                      onClick={() => onViewItem(record.item.id)}
-                      style={listItemStyle(PANEL_COLORS.maintenance)}
-                    >
-                      <Wrench size={16} color={PANEL_COLORS.maintenance} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
-                          style={{
-                            fontSize: typography.fontSize.sm,
-                            color: colors.textPrimary,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {record.item.name}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: typography.fontSize.xs,
-                            color: PANEL_COLORS.maintenance,
-                          }}
-                        >
-                          {record.type || 'Maintenance'}
-                          {record.scheduledDate ? ` • ${formatDate(record.scheduledDate)}` : ''}
-                        </div>
+          <CollapsibleSection
+            key="maintenance"
+            id="dash-section-maintenance"
+            {...panelProps}
+            title="Upcoming Maintenance"
+            icon={Wrench}
+            badge={stats.pendingMaintenance.length || null}
+            badgeColor={PANEL_COLORS.maintenance}
+            headerColor={PANEL_COLORS.maintenance}
+            collapsed={isCollapsed('maintenance')}
+            onToggleCollapse={() => toggleCollapse('maintenance')}
+            padding={false}
+          >
+            {stats.pendingMaintenance.length === 0 ? (
+              <div style={emptyStateStyle}>
+                {!tier2Loaded ? (
+                  <TierLoading label="Loading maintenance..." />
+                ) : (
+                  'No scheduled maintenance'
+                )}
+              </div>
+            ) : (
+              <div style={listBodyStyle(stats.pendingMaintenance.length, 240)}>
+                {stats.pendingMaintenance.slice(0, 6).map((record) => (
+                  <button
+                    type="button"
+                    className="dash-row"
+                    key={record.id}
+                    onClick={() => onViewItem(record.item.id)}
+                    style={listItemStyle(PANEL_COLORS.maintenance)}
+                  >
+                    <Wrench size={16} color={PANEL_COLORS.maintenance} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: typography.fontSize.sm,
+                          color: colors.textPrimary,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {record.item.name}
                       </div>
-                      <Badge
-                        text={record.status === 'in-progress' ? 'In Progress' : 'Scheduled'}
-                        color={
-                          record.status === 'in-progress'
-                            ? colors.warning
-                            : PANEL_COLORS.maintenance
-                        }
-                        size="xs"
-                      />
-                      <ChevronRight size={16} color={colors.textMuted} />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </CollapsibleSection>
-          </div>
+                      <div
+                        style={{
+                          fontSize: typography.fontSize.xs,
+                          color: PANEL_COLORS.maintenance,
+                        }}
+                      >
+                        {record.type || 'Maintenance'}
+                        {record.scheduledDate ? ` • ${formatDate(record.scheduledDate)}` : ''}
+                      </div>
+                    </div>
+                    <Badge
+                      text={record.status === 'in-progress' ? 'In Progress' : 'Scheduled'}
+                      color={
+                        record.status === 'in-progress' ? colors.warning : PANEL_COLORS.maintenance
+                      }
+                      size="xs"
+                    />
+                    <ChevronRight size={16} color={colors.textMuted} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </CollapsibleSection>
         );
 
       case 'recentActivity':
         return (
           <CollapsibleSection
             key="recentActivity"
+            {...panelProps}
             title="Recent Activity"
             icon={Activity}
             badge={null}
@@ -1189,7 +1239,7 @@ function Dashboard({
                 tabIndex={0}
                 role="region"
                 aria-label="Recent activity"
-                style={{ padding: spacing[4], maxHeight: 300, overflowY: 'auto' }}
+                style={listBodyStyle(recentActivity.length, 300)}
               >
                 {recentActivity.map((event) => {
                   const EventIcon = ACTIVITY_EVENT_ICONS[event.type] || Activity;
@@ -1267,12 +1317,22 @@ function Dashboard({
         {sectionOrder
           .filter((id) => id === 'stats' || id === 'quickSearch')
           .map((sectionId) => renderSection(sectionId))}
-        <div className="dashboard-columns">
+        <div
+          ref={columnsRef}
+          className={`dashboard-columns${fill ? ' dashboard-columns-fill' : ''}`}
+          style={fill ? { height: columnsHeight } : undefined}
+        >
           {panelColumns.map((column, columnIdx) => (
             <div
               key={columnIdx}
               className="dashboard-columns-stack"
-              style={{ display: 'flex', flexDirection: 'column', gap: spacing[4], minWidth: 0 }}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: spacing[4],
+                minWidth: 0,
+                minHeight: 0,
+              }}
             >
               {column.map((sectionId) => renderSection(sectionId))}
             </div>

@@ -6,7 +6,15 @@
 import { memo, forwardRef, useState, useCallback, useRef, useEffect, useId } from 'react';
 import PropTypes from 'prop-types';
 import { ArrowLeft } from 'lucide-react';
-import { colors, styles, borderRadius, spacing, typography, withOpacity, zIndex } from '../theme.js';
+import {
+  colors,
+  styles,
+  borderRadius,
+  spacing,
+  typography,
+  withOpacity,
+  zIndex,
+} from '../theme.js';
 
 // ============================================================================
 // BackButton - Consistent back navigation
@@ -330,7 +338,10 @@ export const CollapsibleSection = memo(function CollapsibleSection({
   children,
   padding = true,
   style,
+  contentStyle,
   headerColor,
+  id,
+  className,
 }) {
   const accentColor = headerColor || colors.primary;
   const contentId = useId();
@@ -340,6 +351,8 @@ export const CollapsibleSection = memo(function CollapsibleSection({
     // accent border + colored icon — not from washing the whole panel in the
     // accent, which stacked every screen into a wall of colored slabs.
     <div
+      id={id}
+      className={className}
       style={{
         background: colors.bgCard,
         borderRadius: borderRadius.lg,
@@ -415,8 +428,10 @@ export const CollapsibleSection = memo(function CollapsibleSection({
       {!collapsed && (
         <div
           id={contentId}
+          className="collapsible-content"
           style={{
             padding: padding ? spacing[4] : 0,
+            ...contentStyle,
           }}
         >
           {children}
@@ -736,11 +751,7 @@ export const ConfirmDialog = memo(function ConfirmDialog({
           >
             {cancelText}
           </button>
-          <button
-            onClick={onConfirm}
-            type="button"
-            className={danger ? 'btn btn-danger' : 'btn'}
-          >
+          <button onClick={onConfirm} type="button" className={danger ? 'btn btn-danger' : 'btn'}>
             {confirmText}
           </button>
         </div>
