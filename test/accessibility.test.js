@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   hexToRgb,
+  parseColor,
   getLuminance,
   getContrastRatio,
   checkContrast,
@@ -44,6 +45,39 @@ describe('hexToRgb', () => {
     expect(hexToRgb('')).toBeNull();
     expect(hexToRgb('invalid')).toBeNull();
     expect(hexToRgb('#gg0000')).toBeNull();
+  });
+});
+
+// =============================================================================
+// parseColor — the contrast engine's parser (ported from theme-aa-tune.mjs,
+// plus the alpha-hex forms the custom theme editor produces)
+// =============================================================================
+
+describe('parseColor', () => {
+  it('parses opaque hex with a=1', () => {
+    expect(parseColor('#ff5500')).toEqual({ r: 255, g: 85, b: 0, a: 1 });
+    expect(parseColor('#f50')).toEqual({ r: 255, g: 85, b: 0, a: 1 });
+  });
+
+  it('parses 8-digit and 4-digit hex alpha', () => {
+    expect(parseColor('#ffffff80')).toEqual({ r: 255, g: 255, b: 255, a: 128 / 255 });
+    expect(parseColor('#fff8')).toEqual({ r: 255, g: 255, b: 255, a: 136 / 255 });
+    expect(parseColor('#e2e6eaff')).toEqual({ r: 226, g: 230, b: 234, a: 1 });
+  });
+
+  it('parses rgb()/rgba()', () => {
+    expect(parseColor('rgb(1, 2, 3)')).toEqual({ r: 1, g: 2, b: 3, a: 1 });
+    expect(parseColor('rgba(255, 255, 255, 0.65)')).toEqual({ r: 255, g: 255, b: 255, a: 0.65 });
+  });
+
+  it('returns null for what it cannot read', () => {
+    expect(parseColor(null)).toBeNull();
+    expect(parseColor('')).toBeNull();
+    expect(parseColor('hsl(200 50% 50%)')).toBeNull();
+    expect(parseColor('var(--primary)')).toBeNull();
+    expect(parseColor('#fffff')).toBeNull(); // 5 digits
+    expect(parseColor('rgb(a, b, c)')).toBeNull();
+    expect(parseColor('fff')).toBeNull(); // hex requires the #
   });
 });
 
@@ -92,6 +126,30 @@ describe('getContrastRatio', () => {
   it('should return 1 for invalid colors', () => {
     expect(getContrastRatio('invalid', '#ffffff')).toBe(1);
     expect(getContrastRatio('#ffffff', 'invalid')).toBe(1);
+  });
+
+  it('scores 8-digit hex instead of mis-reading it as ratio 1 (the editor bug)', () => {
+    // Fully opaque alpha suffix must not change the result
+    expect(getContrastRatio('#ffffffff', '#000000ff')).toBeCloseTo(21, 0);
+    expect(getContrastRatio('#e2e6eaff', '#1a1d21')).toBe(getContrastRatio('#e2e6ea', '#1a1d21'));
+  });
+
+  it('composites a translucent foreground over the background', () => {
+    // 50% white over black flattens to #808080 — same math as theme-aa-tune
+    const flattened = getContrastRatio('#808080', '#000000');
+    expect(getContrastRatio('#ffffff80', '#000000')).toBe(flattened);
+    expect(getContrastRatio('rgba(255, 255, 255, 0.5019607843137255)', '#000000')).toBe(flattened);
+    // ...and is nowhere near opaque white's 21:1
+    expect(getContrastRatio('#ffffff80', '#000000')).toBeLessThan(7);
+  });
+
+  it('composites a translucent background over the backdrop, or its own rgb without one', () => {
+    // Over white, 50% black becomes mid-gray; without a backdrop the
+    // background's own rgb is treated as opaque (no third surface is known)
+    expect(getContrastRatio('#ffffff', 'rgba(0, 0, 0, 0.5)', '#ffffff')).toBe(
+      getContrastRatio('#ffffff', '#808080'),
+    );
+    expect(getContrastRatio('#ffffff', 'rgba(0, 0, 0, 0.5)')).toBeCloseTo(21, 0);
   });
 });
 
@@ -200,14 +258,35 @@ describe('validateThemeContrast', () => {
     });
   });
 
-  it('should skip non-hex colors', () => {
-    const themeWithRgba = {
+  it('scores rgba and 8-digit hex colors instead of skipping them', () => {
+    const themeWithAlpha = {
       ...mockTheme,
-      '--text-secondary': 'rgba(226, 230, 234, 0.65)',
+      '--text-secondary': 'rgba(226, 230, 234, 0.85)',
+      '--text-primary': '#e2e6eaff',
     };
-    const results = validateThemeContrast(themeWithRgba);
+    const results = validateThemeContrast(themeWithAlpha);
+    const secondaryResult = results.find((r) => r.pair.fg === '--text-secondary');
+    expect(secondaryResult.result.skipped).toBeUndefined();
+    expect(secondaryResult.result.ratio).toBeGreaterThan(1);
+    // Opaque-alpha hex scores exactly like its 6-digit form
+    const primaryResult = results.find(
+      (r) => r.pair.fg === '--text-primary' && r.pair.bg === '--bg-dark',
+    );
+    const plainResult = validateThemeContrast(mockTheme).find(
+      (r) => r.pair.fg === '--text-primary' && r.pair.bg === '--bg-dark',
+    );
+    expect(primaryResult.result.ratio).toBe(plainResult.result.ratio);
+  });
+
+  it('skips only what the parser cannot read', () => {
+    const themeWithHsl = {
+      ...mockTheme,
+      '--text-secondary': 'hsl(210, 15%, 65%)',
+    };
+    const results = validateThemeContrast(themeWithHsl);
     const secondaryResult = results.find((r) => r.pair.fg === '--text-secondary');
     expect(secondaryResult.result.skipped).toBe(true);
+    expect(secondaryResult.result.level).toBe('Unknown');
   });
 });
 

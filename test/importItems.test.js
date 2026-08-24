@@ -39,6 +39,14 @@ describe('canonicalizeHeaders', () => {
     ]);
     expect(unknown).toEqual(['Mystery Column']);
   });
+
+  it('keeps the legacy "Item ID" alias alongside the canonical "ID"', () => {
+    // Report exports now emit "ID" (shared INVENTORY_COLUMNS label), but
+    // files exported before the §5.10 consolidation say "Item ID"
+    const { fields, unknown } = canonicalizeHeaders(['Item ID', 'ID', 'id']);
+    expect(fields).toEqual(['id', 'id', 'id']);
+    expect(unknown).toEqual([]);
+  });
 });
 
 describe('buildImportItems', () => {
