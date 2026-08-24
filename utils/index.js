@@ -866,7 +866,10 @@ export const calculateDepreciation = (
     };
   }
   const purchase = new Date(purchaseDate);
-  const today = new Date();
+  // purchaseDate ('YYYY-MM-DD') parses as UTC midnight — put today on the
+  // same UTC-midnight footing (of the LOCAL calendar date, per the rule at
+  // toLocalYMD) or the timezone offset leaks into the age
+  const today = new Date(getTodayISO());
   // Clamp: a future purchase date used to yield a negative age, negative
   // depreciation, and a "current value" above the purchase price
   const ageInYears = Math.max(0, (today - purchase) / (365.25 * 24 * 60 * 60 * 1000));

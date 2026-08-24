@@ -343,6 +343,54 @@ describe('Select', () => {
     expect(screen.getByRole('listbox')).toBeInTheDocument();
     expect(screen.getAllByRole('option')).toHaveLength(3);
   });
+
+  // Listbox pattern (mirrors MultiSelectDropdown): aria-activedescendant only
+  // works on the element that holds focus, and option ids must be unique
+  // across simultaneously open Selects
+  it('moves focus into the listbox on open and tracks arrows via aria-activedescendant', () => {
+    render(<Select options={options} value="option2" aria-label="Pick one" />);
+    fireEvent.click(screen.getByLabelText('Pick one'));
+
+    const listbox = screen.getByRole('listbox');
+    expect(document.activeElement).toBe(listbox);
+    // Opens highlighting the current value
+    expect(listbox.getAttribute('aria-activedescendant')).toBe(
+      screen.getByRole('option', { name: 'Option 2' }).id,
+    );
+
+    fireEvent.keyDown(listbox, { key: 'ArrowDown' });
+    expect(listbox.getAttribute('aria-activedescendant')).toBe(
+      screen.getByRole('option', { name: 'Option 3' }).id,
+    );
+  });
+
+  it('selects the highlighted option with Enter and returns focus to the trigger', () => {
+    const onChange = vi.fn();
+    render(<Select options={options} value="option1" onChange={onChange} aria-label="Pick one" />);
+    fireEvent.click(screen.getByLabelText('Pick one'));
+
+    const listbox = screen.getByRole('listbox');
+    fireEvent.keyDown(listbox, { key: 'ArrowDown' });
+    fireEvent.keyDown(listbox, { key: 'Enter' });
+    expect(onChange).toHaveBeenCalledWith({ target: { value: 'option2' } });
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(screen.getByLabelText('Pick one'));
+  });
+
+  it('gives options ids that never collide across two open Selects', () => {
+    render(
+      <>
+        <Select options={options} aria-label="First" />
+        <Select options={options} aria-label="Second" />
+      </>,
+    );
+    fireEvent.click(screen.getByLabelText('First'));
+    fireEvent.click(screen.getByLabelText('Second'));
+
+    const ids = screen.getAllByRole('option').map((el) => el.id);
+    expect(ids).toHaveLength(6);
+    expect(new Set(ids).size).toBe(6);
+  });
 });
 
 // =============================================================================

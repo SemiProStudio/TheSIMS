@@ -134,28 +134,6 @@ const styles = {
   placeholder: {
     color: colors.textMuted,
   },
-  // Calendar popup styles
-  popup: {
-    position: 'absolute',
-    top: 'calc(100% + 4px)',
-    left: 0,
-    zIndex: 1000,
-    background: colors.bgCard,
-    border: `1px solid ${colors.border}`,
-    borderRadius: borderRadius.lg,
-    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.4)',
-    padding: spacing[3],
-    minWidth: '280px',
-    animation: 'fadeIn 150ms ease',
-  },
-  popupAbove: {
-    top: 'auto',
-    bottom: 'calc(100% + 4px)',
-  },
-  popupLeft: {
-    left: 'auto',
-    right: 0,
-  },
   header: {
     display: 'flex',
     alignItems: 'center',
@@ -555,7 +533,6 @@ const DatePicker = memo(function DatePicker({
     // styles.input's border shorthand stays makes React warn on rerender
     borderColor: error ? colors.danger : isFocused || isOpen ? colors.primary : colors.border,
     ...(disabled ? styles.inputDisabled : {}),
-    ...style,
   };
 
   const displayValue = formatDisplayDate(value);
@@ -610,7 +587,6 @@ const DatePicker = memo(function DatePicker({
               boxShadow: '0 10px 40px rgba(0, 0, 0, 0.4)',
               padding: spacing[3],
               minWidth: '280px',
-              animation: 'fadeIn 150ms ease',
             }}
             role="dialog"
             aria-label="Choose date"
@@ -715,4 +691,3 @@ DatePicker.propTypes = {
 };
 
 export { DatePicker };
-export default DatePicker;

@@ -83,6 +83,10 @@ describe('cleanInputText', () => {
     expect(cleanInputText('&#169;')).toBe('©');
   });
 
+  it('should decode hex numeric HTML entities', () => {
+    expect(cleanInputText('It&#x27;s &#xA9; &#X2122;')).toBe("It's © ™");
+  });
+
   it('should convert <br> tags to newlines', () => {
     const result = cleanInputText('Line1<br/>Line2<br>Line3');
     expect(result).toContain('Line1\nLine2\nLine3');
@@ -992,6 +996,16 @@ describe('diffSpecs', () => {
     const newFields = new Map([['Weight', { value: '500g', confidence: 85 }]]);
     const diff = diffSpecs({}, newFields);
     expect(diff[0].confidence).toBe(85);
+  });
+
+  it('should not throw on non-string spec values', () => {
+    const existing = { 'Weight (g)': 658 };
+    const newFields = new Map([['Weight (g)', { value: '658', confidence: 90 }]]);
+    const diff = diffSpecs(existing, newFields);
+    expect(diff[0].status).toBe('unchanged');
+    expect(diffSpecs({ Count: 3 }, new Map([['Count', { value: '5', confidence: 80 }]]))[0].status).toBe(
+      'changed',
+    );
   });
 });
 

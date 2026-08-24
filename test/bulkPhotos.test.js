@@ -38,6 +38,12 @@ describe('stripSequenceSuffix', () => {
     expect(stripSequenceSuffix('cam-00012_2')).toBe('cam-00012');
     expect(stripSequenceSuffix('cam-00012 (2)')).toBe('cam-00012');
     expect(stripSequenceSuffix('cam-00012 2')).toBe('cam-00012');
+    expect(stripSequenceSuffix('cam-00012(2)')).toBe('cam-00012');
+  });
+
+  it('leaves bare trailing digits alone — they are part of the name', () => {
+    expect(stripSequenceSuffix('cam1002')).toBe('cam1002');
+    expect(stripSequenceSuffix('le1001')).toBe('le1001');
   });
 });
 

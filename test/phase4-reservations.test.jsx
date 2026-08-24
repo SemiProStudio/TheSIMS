@@ -143,7 +143,7 @@ describe('DataContext.createReservation', () => {
 
     await expect(
       ctx.createReservation('CAM001', { ...validForm, start: '2026-09-05', end: '2026-09-01' }),
-    ).rejects.toThrow(/End date must be after start date/);
+    ).rejects.toThrow(/End date cannot be before start date/);
     expect(reservationsService.create).not.toHaveBeenCalled();
   });
 
