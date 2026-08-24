@@ -34,6 +34,14 @@ jobs:
         run: npm run lint
         # --max-warnings 0 in package.json: warnings fail the build
 
+      - name: Format check
+        run: npm run format:check
+        # The repo went prettier-clean in the 2026-08-24 audit round; this
+        # keeps it that way (npm run format fixes violations locally)
+
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Build
         run: npm run build
         env:
