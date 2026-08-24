@@ -22,10 +22,15 @@ import {
   computeActivityStats,
   bucketEvents,
   dayOfWeekCounts,
+  csvForActivity,
+  csvForAlerts,
+  csvForInsurance,
   csvForClients,
   csvForMaintenance,
   csvDate,
 } from '../lib/reportData.js';
+import { inventoryLabel } from '../lib/inventoryCsv.js';
+import { canonicalizeHeaders } from '../lib/importItems.js';
 
 // 2026-08-10 is a Monday; fixed clock for every time-based assertion
 const NOW = new Date(2026, 7, 14); // Fri Aug 14 2026, local
@@ -470,6 +475,33 @@ describe('CSV builders', () => {
     const { rows } = csvForMaintenance(collectMaintenanceRecords(maintenanceInventory), NOW);
     expect(rows[0][4]).toBe('scheduled');
     expect(rows[0][7]).toBe('No');
+  });
+
+  it('every report CSV uses the canonical header spellings (audit §5.10)', () => {
+    // The id column had a third spelling ("Item ID") that only round-tripped
+    // via a special import alias — new exports all say what INVENTORY_COLUMNS
+    // says ("ID"), and shared fields follow the shared labels
+    const reportHeaderSets = [
+      csvForActivity([]).headers,
+      csvForAlerts([]).headers,
+      csvForMaintenance([]).headers,
+      csvForInsurance([]).headers,
+    ];
+    for (const headers of reportHeaderSets) {
+      expect(headers).toContain(inventoryLabel('id')); // 'ID'
+      expect(headers).not.toContain('Item ID');
+    }
+    // Insurance follows the shared serial label ('Serial #', import-recognized)
+    expect(csvForInsurance([]).headers).toContain(inventoryLabel('serialNumber'));
+    expect(csvForInsurance([]).headers).not.toContain('Serial Number');
+  });
+
+  it('report headers round-trip through the importer (id maps, legacy alias kept)', () => {
+    const { fields } = canonicalizeHeaders(csvForInsurance([]).headers);
+    expect(fields).toContain('id');
+    expect(fields).toContain('serialNumber');
+    // Files exported before the consolidation still import
+    expect(canonicalizeHeaders(['Item ID']).fields).toEqual(['id']);
   });
 
   it('csvDate stamps the LOCAL calendar date', () => {

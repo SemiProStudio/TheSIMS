@@ -204,14 +204,24 @@ const PackagesSection = memo(function PackagesSection({
   );
 });
 
-// Required Accessories Section Component
-const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
+// Shared picker machinery for the two membership sections below (Required
+// Accessories, Kit Contents), which had duplicated the same state machine
+// (add panel open, search, pending selection), the same membership and
+// eligibility memos, and the same member-row + add-panel JSX. The sections
+// differ only in copy, handlers, and how the add controls are gated —
+// `renderAddControls` receives the assembled panel plus the open state so
+// each section keeps its exact footer.
+function ItemPickerSection({
   item,
   inventory,
-  onAddAccessory,
-  onRemoveAccessory,
+  memberIds,
+  emptyText,
+  removeContext,
+  onAdd,
+  onRemove,
   onViewItem,
   panelColor,
+  renderAddControls,
 }) {
   const [showAddPanel, setShowAddPanel] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -220,294 +230,122 @@ const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
   const effectivePanelColor = panelColor && panelColor.length > 0 ? panelColor : colors.primary;
   const itemStyle = getItemStyle(effectivePanelColor);
 
-  // Get current required accessories
-  const requiredAccessories = useMemo(() => {
-    if (!item.requiredAccessories) return [];
-    return item.requiredAccessories.map((id) => inventory.find((i) => i.id === id)).filter(Boolean);
-  }, [item.requiredAccessories, inventory]);
+  // Current members
+  const members = useMemo(() => {
+    if (!memberIds) return [];
+    return memberIds.map((id) => inventory.find((i) => i.id === id)).filter(Boolean);
+  }, [memberIds, inventory]);
 
-  // Get available items to add (exclude self and already added)
+  // Items eligible to add: not this item, not already a member, and never a
+  // kit (kits don't nest and don't act as accessories)
   const availableItems = useMemo(() => {
-    const existingIds = new Set(item.requiredAccessories || []);
+    const existingIds = new Set(memberIds || []);
     existingIds.add(item.id);
 
     return inventory.filter((i) => {
       if (existingIds.has(i.id)) return false;
-      if (i.isKit) return false; // Don't add kits as accessories
+      if (i.isKit) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         return i.name.toLowerCase().includes(q) || i.id.toLowerCase().includes(q);
       }
       return true;
     });
-  }, [inventory, item.id, item.requiredAccessories, searchQuery]);
+  }, [inventory, item.id, memberIds, searchQuery]);
 
   const handleToggleSelect = (id) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   };
 
   const handleAddSelected = () => {
-    if (selectedIds.length > 0 && onAddAccessory) {
-      onAddAccessory(item.id, selectedIds);
+    if (selectedIds.length > 0 && onAdd) {
+      onAdd(item.id, selectedIds);
       setSelectedIds([]);
       setShowAddPanel(false);
       setSearchQuery('');
     }
   };
 
-  return (
-    <div style={{ padding: spacing[3] }}>
-      {/* Current required accessories */}
-      {requiredAccessories.length > 0 ? (
-        <div style={{ marginBottom: spacing[3] }}>
-          {requiredAccessories.map((acc) => (
-            <div key={acc.id} style={itemStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
-                <div
-                  style={{ flex: 1, cursor: 'pointer' }}
-                  onClick={() => onViewItem?.(acc.id)}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`View ${acc.name}`}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onViewItem?.(acc.id);
-                    }
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: typography.fontSize.sm,
-                      fontWeight: typography.fontWeight.medium,
-                      color: colors.textPrimary,
-                    }}
-                  >
-                    {acc.name}
-                  </div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                    {acc.id} • {acc.category}
-                  </div>
-                </div>
-                <Badge
-                  text={getStatusLabel(acc.status)}
-                  color={getStatusColor(acc.status)}
-                  size="sm"
-                />
-                {onRemoveAccessory && (
-                  <button
-                    onClick={() => onRemoveAccessory(item.id, acc.id)}
-                    aria-label={`Remove ${acc.name} from required accessories`}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: colors.textMuted,
-                      cursor: 'pointer',
-                      padding: spacing[1],
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      // ≥40px touch target; negative margins keep the 22x22
-                      // layout footprint so the row doesn't grow
-                      minWidth: 40,
-                      minHeight: 40,
-                      margin: -9,
-                    }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p
-          style={{
-            color: colors.textMuted,
-            textAlign: 'center',
-            fontSize: typography.fontSize.sm,
-            margin: `0 0 ${spacing[3]}px`,
-            padding: spacing[3],
-          }}
-        >
-          No required accessories defined
-        </p>
-      )}
-
-      {/* Add accessories panel — the whole flow gates on the handler, like
-          KitContentsSection: without gear_list edit the button used to render
-          anyway and "Add (n)" silently did nothing */}
-      {onAddAccessory &&
-        (showAddPanel ? (
-          <div
+  const addPanel = (
+    <div
+      style={{
+        background: withOpacity(effectivePanelColor, 10),
+        borderRadius: borderRadius.md,
+        padding: spacing[3],
+        border: `1px solid ${withOpacity(effectivePanelColor, 30)}`,
+      }}
+    >
+      <div style={{ marginBottom: spacing[2] }}>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search items..."
+          style={{ ...styles.input, width: '100%' }}
+        />
+      </div>
+      <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: spacing[2] }}>
+        {availableItems.slice(0, 50).map((i) => (
+          <label
+            key={i.id}
             style={{
-              background: withOpacity(effectivePanelColor, 10),
-              borderRadius: borderRadius.md,
-              padding: spacing[3],
-              border: `1px solid ${withOpacity(effectivePanelColor, 30)}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: spacing[2],
+              padding: spacing[2],
+              cursor: 'pointer',
+              borderRadius: borderRadius.sm,
+              background: selectedIds.includes(i.id)
+                ? withOpacity(effectivePanelColor, 20)
+                : 'transparent',
             }}
           >
-            <div style={{ marginBottom: spacing[2] }}>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search items..."
-                style={{ ...styles.input, width: '100%' }}
-              />
+            <input
+              type="checkbox"
+              checked={selectedIds.includes(i.id)}
+              onChange={() => handleToggleSelect(i.id)}
+              style={{ accentColor: colors.primary }}
+            />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
+                {i.name}
+              </div>
+              <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                {i.id}
+              </div>
             </div>
-            <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: spacing[2] }}>
-              {availableItems.slice(0, 50).map((i) => (
-                <label
-                  key={i.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: spacing[2],
-                    padding: spacing[2],
-                    cursor: 'pointer',
-                    borderRadius: borderRadius.sm,
-                    background: selectedIds.includes(i.id)
-                      ? withOpacity(effectivePanelColor, 20)
-                      : 'transparent',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(i.id)}
-                    onChange={() => handleToggleSelect(i.id)}
-                    style={{ accentColor: colors.primary }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
-                      {i.name}
-                    </div>
-                    <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                      {i.id}
-                    </div>
-                  </div>
-                </label>
-              ))}
-              {availableItems.length === 0 && (
-                <p style={{ color: colors.textMuted, textAlign: 'center', padding: spacing[2] }}>
-                  No items found
-                </p>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setShowAddPanel(false);
-                  setSelectedIds([]);
-                  setSearchQuery('');
-                }}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleAddSelected} disabled={selectedIds.length === 0} icon={Plus}>
-                Add ({selectedIds.length})
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <Button variant="secondary" onClick={() => setShowAddPanel(true)} icon={Plus} fullWidth>
-            Add Required Accessory
-          </Button>
+          </label>
         ))}
-    </div>
-  );
-});
-
-// Kit Contents Section Component — a kit is a container item (is_kit) whose
-// member item ids live in kit_contents. Editing callbacks are absent for
-// roles without gear_list edit; the section then renders read-only.
-const KitContentsSection = memo(function KitContentsSection({
-  item,
-  inventory,
-  onSetKitStatus,
-  onAddKitItems,
-  onRemoveKitItem,
-  onViewItem,
-  panelColor,
-}) {
-  const [showAddPanel, setShowAddPanel] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedIds, setSelectedIds] = useState([]);
-
-  const effectivePanelColor = panelColor && panelColor.length > 0 ? panelColor : colors.primary;
-  const itemStyle = getItemStyle(effectivePanelColor);
-
-  const kitMembers = useMemo(() => {
-    if (!item.kitItems) return [];
-    return item.kitItems.map((id) => inventory.find((i) => i.id === id)).filter(Boolean);
-  }, [item.kitItems, inventory]);
-
-  // Items eligible for membership: not this item, not another kit, not
-  // already a member
-  const availableItems = useMemo(() => {
-    const existingIds = new Set(item.kitItems || []);
-    existingIds.add(item.id);
-
-    return inventory.filter((i) => {
-      if (existingIds.has(i.id)) return false;
-      if (i.isKit) return false; // kits don't nest
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        return i.name.toLowerCase().includes(q) || i.id.toLowerCase().includes(q);
-      }
-      return true;
-    });
-  }, [inventory, item.id, item.kitItems, searchQuery]);
-
-  const handleToggleSelect = (id) => {
-    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
-  };
-
-  const handleAddSelected = () => {
-    if (selectedIds.length > 0 && onAddKitItems) {
-      onAddKitItems(item.id, selectedIds);
-      setSelectedIds([]);
-      setShowAddPanel(false);
-      setSearchQuery('');
-    }
-  };
-
-  if (!item.isKit) {
-    return (
-      <div style={{ padding: spacing[3] }}>
-        <p
-          style={{
-            color: colors.textMuted,
-            textAlign: 'center',
-            fontSize: typography.fontSize.sm,
-            margin: `0 0 ${onSetKitStatus ? spacing[3] : 0}px`,
-            padding: spacing[3],
-          }}
-        >
-          This item is not a kit. Kits are container items — a camera bag, a lighting case — whose
-          contents print together on kit labels.
-        </p>
-        {onSetKitStatus && (
-          <Button
-            variant="secondary"
-            onClick={() => onSetKitStatus(item.id, true)}
-            icon={Boxes}
-            fullWidth
-          >
-            Convert to Kit
-          </Button>
+        {availableItems.length === 0 && (
+          <p style={{ color: colors.textMuted, textAlign: 'center', padding: spacing[2] }}>
+            No items found
+          </p>
         )}
       </div>
-    );
-  }
+      <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            setShowAddPanel(false);
+            setSelectedIds([]);
+            setSearchQuery('');
+          }}
+        >
+          Cancel
+        </Button>
+        <Button onClick={handleAddSelected} disabled={selectedIds.length === 0} icon={Plus}>
+          Add ({selectedIds.length})
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ padding: spacing[3] }}>
-      {kitMembers.length > 0 ? (
+      {/* Current members */}
+      {members.length > 0 ? (
         <div style={{ marginBottom: spacing[3] }}>
-          {kitMembers.map((member) => (
+          {members.map((member) => (
             <div key={member.id} style={itemStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: spacing[2] }}>
                 <div
@@ -541,10 +379,10 @@ const KitContentsSection = memo(function KitContentsSection({
                   color={getStatusColor(member.status)}
                   size="sm"
                 />
-                {onRemoveKitItem && (
+                {onRemove && (
                   <button
-                    onClick={() => onRemoveKitItem(item.id, member.id)}
-                    aria-label={`Remove ${member.name} from kit`}
+                    onClick={() => onRemove(item.id, member.id)}
+                    aria-label={`Remove ${member.name} from ${removeContext}`}
                     style={{
                       background: 'none',
                       border: 'none',
@@ -578,104 +416,129 @@ const KitContentsSection = memo(function KitContentsSection({
             padding: spacing[3],
           }}
         >
-          This kit is empty
+          {emptyText}
         </p>
       )}
 
-      {showAddPanel ? (
-        <div
+      {renderAddControls({ showAddPanel, openPanel: () => setShowAddPanel(true), addPanel })}
+    </div>
+  );
+}
+
+// Required Accessories Section Component
+const RequiredAccessoriesSection = memo(function RequiredAccessoriesSection({
+  item,
+  inventory,
+  onAddAccessory,
+  onRemoveAccessory,
+  onViewItem,
+  panelColor,
+}) {
+  return (
+    <ItemPickerSection
+      item={item}
+      inventory={inventory}
+      memberIds={item.requiredAccessories}
+      emptyText="No required accessories defined"
+      removeContext="required accessories"
+      onAdd={onAddAccessory}
+      onRemove={onRemoveAccessory}
+      onViewItem={onViewItem}
+      panelColor={panelColor}
+      renderAddControls={({ showAddPanel, openPanel, addPanel }) =>
+        /* Add accessories panel — the whole flow gates on the handler, like
+           KitContentsSection: without gear_list edit the button used to render
+           anyway and "Add (n)" silently did nothing */
+        onAddAccessory &&
+        (showAddPanel ? (
+          addPanel
+        ) : (
+          <Button variant="secondary" onClick={openPanel} icon={Plus} fullWidth>
+            Add Required Accessory
+          </Button>
+        ))
+      }
+    />
+  );
+});
+
+// Kit Contents Section Component — a kit is a container item (is_kit) whose
+// member item ids live in kit_contents. Editing callbacks are absent for
+// roles without gear_list edit; the section then renders read-only.
+const KitContentsSection = memo(function KitContentsSection({
+  item,
+  inventory,
+  onSetKitStatus,
+  onAddKitItems,
+  onRemoveKitItem,
+  onViewItem,
+  panelColor,
+}) {
+  if (!item.isKit) {
+    return (
+      <div style={{ padding: spacing[3] }}>
+        <p
           style={{
-            background: withOpacity(effectivePanelColor, 10),
-            borderRadius: borderRadius.md,
+            color: colors.textMuted,
+            textAlign: 'center',
+            fontSize: typography.fontSize.sm,
+            margin: `0 0 ${onSetKitStatus ? spacing[3] : 0}px`,
             padding: spacing[3],
-            border: `1px solid ${withOpacity(effectivePanelColor, 30)}`,
           }}
         >
-          <div style={{ marginBottom: spacing[2] }}>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search items..."
-              style={{ ...styles.input, width: '100%' }}
-            />
-          </div>
-          <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: spacing[2] }}>
-            {availableItems.slice(0, 50).map((i) => (
-              <label
-                key={i.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: spacing[2],
-                  padding: spacing[2],
-                  cursor: 'pointer',
-                  borderRadius: borderRadius.sm,
-                  background: selectedIds.includes(i.id)
-                    ? withOpacity(effectivePanelColor, 20)
-                    : 'transparent',
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(i.id)}
-                  onChange={() => handleToggleSelect(i.id)}
-                  style={{ accentColor: colors.primary }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: typography.fontSize.sm, color: colors.textPrimary }}>
-                    {i.name}
-                  </div>
-                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                    {i.id}
-                  </div>
-                </div>
-              </label>
-            ))}
-            {availableItems.length === 0 && (
-              <p style={{ color: colors.textMuted, textAlign: 'center', padding: spacing[2] }}>
-                No items found
-              </p>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: spacing[2], justifyContent: 'flex-end' }}>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setShowAddPanel(false);
-                setSelectedIds([]);
-                setSearchQuery('');
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleAddSelected} disabled={selectedIds.length === 0} icon={Plus}>
-              Add ({selectedIds.length})
-            </Button>
-          </div>
-        </div>
-      ) : (
-        (onAddKitItems || onSetKitStatus) && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-            {onAddKitItems && (
-              <Button
-                variant="secondary"
-                onClick={() => setShowAddPanel(true)}
-                icon={Plus}
-                fullWidth
-              >
-                Add Items to Kit
-              </Button>
-            )}
-            {onSetKitStatus && (
-              <Button variant="secondary" onClick={() => onSetKitStatus(item.id, false)} fullWidth>
-                No Longer a Kit
-              </Button>
-            )}
-          </div>
+          This item is not a kit. Kits are container items — a camera bag, a lighting case — whose
+          contents print together on kit labels.
+        </p>
+        {onSetKitStatus && (
+          <Button
+            variant="secondary"
+            onClick={() => onSetKitStatus(item.id, true)}
+            icon={Boxes}
+            fullWidth
+          >
+            Convert to Kit
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <ItemPickerSection
+      item={item}
+      inventory={inventory}
+      memberIds={item.kitItems}
+      emptyText="This kit is empty"
+      removeContext="kit"
+      onAdd={onAddKitItems}
+      onRemove={onRemoveKitItem}
+      onViewItem={onViewItem}
+      panelColor={panelColor}
+      renderAddControls={({ showAddPanel, openPanel, addPanel }) =>
+        showAddPanel ? (
+          addPanel
+        ) : (
+          (onAddKitItems || onSetKitStatus) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
+              {onAddKitItems && (
+                <Button variant="secondary" onClick={openPanel} icon={Plus} fullWidth>
+                  Add Items to Kit
+                </Button>
+              )}
+              {onSetKitStatus && (
+                <Button
+                  variant="secondary"
+                  onClick={() => onSetKitStatus(item.id, false)}
+                  fullWidth
+                >
+                  No Longer a Kit
+                </Button>
+              )}
+            </div>
+          )
         )
-      )}
-    </div>
+      }
+    />
   );
 });
 

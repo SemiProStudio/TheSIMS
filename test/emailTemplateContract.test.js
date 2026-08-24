@@ -17,6 +17,8 @@ import {
   buildReservationConfirmationData,
   buildDamageReportData,
   buildTestEmailData,
+  formatEmailDate as appFormatEmailDate,
+  itemCountNote as appItemCountNote,
 } from '../lib/emailTemplates.js';
 import {
   buildDueReminderData,
@@ -24,8 +26,12 @@ import {
   buildMaintenanceReminderData,
   buildLowStockData,
   buildOverdueSummaryData,
+  itemCountNote as edgeItemCountNote,
 } from '../supabase/functions/_shared/templateData.ts';
-import { TEMPLATE_PREFERENCE } from '../supabase/functions/_shared/notificationRules.ts';
+import {
+  TEMPLATE_PREFERENCE,
+  formatEmailDate as edgeFormatEmailDate,
+} from '../supabase/functions/_shared/notificationRules.ts';
 
 const SQL = readFileSync(
   resolve(process.cwd(), 'supabase/migrations/20260821100000_notifications_fix.sql'),
@@ -162,5 +168,44 @@ describe('email template contract (migration ↔ builders)', () => {
     expect(SUPPLIED.due_date_reminder.due_date).toMatch(/^[A-Z][a-z]+day, August 25, 2026$/);
     expect(SUPPLIED.reservation_reminder.item_count_note).toBe('and 2 more items');
     expect(SUPPLIED.reservation_confirmation.item_count_note).toBe('and 1 more item');
+  });
+});
+
+// =============================================================================
+// App/edge helper parity (audit §5.9): formatEmailDate and itemCountNote are
+// duplicated across the runtimes ON PURPOSE — the browser bundle and the Deno
+// functions share no code. This table makes a one-sided edit fail loudly
+// instead of letting the app's emails silently drift from the daily job's.
+// =============================================================================
+
+describe('app/edge helper parity', () => {
+  it('formatEmailDate agrees on every representative input', () => {
+    const inputs = [
+      '2026-08-25', // date-only: pinned to noon so no TZ day slip
+      '2026-12-31',
+      '2026-02-14T09:30:00Z', // full ISO timestamp
+      '2026-08-25T23:59:59+02:00',
+      new Date(2026, 7, 25, 15, 4, 5), // Date instance
+      'yesterdayish', // junk echoes back as-is on both sides
+      '25/13/2026',
+      '', // empty → ''
+      null,
+      undefined,
+    ];
+    for (const input of inputs) {
+      expect(appFormatEmailDate(input), `input: ${String(input)}`).toBe(
+        edgeFormatEmailDate(input),
+      );
+    }
+    // One absolute pin so parity can't be satisfied by matching garbage
+    expect(appFormatEmailDate('2026-08-25')).toBe('Tuesday, August 25, 2026');
+  });
+
+  it('itemCountNote agrees for 0/1/2/many', () => {
+    for (const count of [0, 1, 2, 3, 12]) {
+      expect(appItemCountNote(count), `count: ${count}`).toBe(edgeItemCountNote(count));
+    }
+    expect(appItemCountNote(2)).toBe('and 1 more item');
+    expect(appItemCountNote(12)).toBe('and 11 more items');
   });
 });

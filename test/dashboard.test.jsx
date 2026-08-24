@@ -239,6 +239,55 @@ describe('Dashboard stats', () => {
   });
 });
 
+describe('Dashboard panel "View All" buttons (shared ViewAllButton)', () => {
+  const viewAllIn = (headerName) => {
+    const panel = screen.getByRole('button', { name: headerName }).closest('.dashboard-panel');
+    return within(panel).getByRole('button', { name: 'View All' });
+  };
+
+  it('renders one per busy panel and routes each to its own view', () => {
+    const { props } = renderDashboard();
+    // Checked Out, Alerts, and Upcoming Reservations are busy; Low Stock is
+    // empty with this fixture, so exactly three
+    expect(screen.getAllByRole('button', { name: 'View All' })).toHaveLength(3);
+
+    fireEvent.click(viewAllIn(/Currently Checked Out/));
+    expect(props.onViewCheckedOut).toHaveBeenCalledTimes(1);
+    fireEvent.click(viewAllIn(/Alerts/));
+    expect(props.onViewAlerts).toHaveBeenCalledTimes(1);
+    fireEvent.click(viewAllIn(/Upcoming Reservations/));
+    expect(props.onViewReservations).toHaveBeenCalledTimes(1);
+  });
+
+  it('clicking View All never collapses its section', () => {
+    const { props } = renderDashboard();
+    fireEvent.click(viewAllIn(/Alerts/));
+    expect(screen.getByRole('button', { name: /Alerts/ })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    expect(props.onToggleCollapse).not.toHaveBeenCalled();
+  });
+
+  it('the low stock panel gets one once it has rows', () => {
+    const { props } = renderDashboard({
+      categorySettings: { Consumables: { trackQuantity: true } },
+      inventory: [
+        baseItem({
+          id: 'CO1',
+          name: 'Gaff Tape',
+          category: 'Consumables',
+          quantity: 1,
+          reorderPoint: 3,
+          lowStockAlert: true,
+        }),
+      ],
+    });
+    fireEvent.click(viewAllIn(/Low Stock Items/));
+    expect(props.onViewLowStock).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('Dashboard recent activity (audit log)', () => {
   it('lazy-loads the audit log on mount', () => {
     renderDashboard();

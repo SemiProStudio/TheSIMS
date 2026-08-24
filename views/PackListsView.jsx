@@ -22,7 +22,6 @@ import {
   CheckSquare,
   Square,
   ScanLine,
-  Flashlight,
   X,
   RotateCcw,
   ArrowUpDown,
@@ -41,6 +40,7 @@ import {
 } from '../components/ui.jsx';
 import { Select } from '../components/Select.jsx';
 import { Modal, ModalHeader } from '../modals/ModalBase.jsx';
+import { QRCameraView } from '../components/QRCameraView.jsx';
 import LoadErrorBanner from '../components/LoadErrorBanner.jsx';
 import { useData } from '../contexts/DataContext.js';
 import { useToast } from '../contexts/ToastContext.js';
@@ -787,6 +787,18 @@ function PackListsView({
     setConfirmReset(false);
     addToast('Pack list selections cleared', 'success');
   }, [selectedList, setSelectedList, dataContext, addToast]);
+
+  // Delete confirmation — one instance shared by the detail and list branches
+  // below (ConfirmDialog renders nothing while closed)
+  const deleteConfirmDialog = (
+    <ConfirmDialog
+      isOpen={confirmDelete.isOpen}
+      title="Delete Pack List"
+      message={`Are you sure you want to delete "${confirmDelete.name}"? This action cannot be undone.`}
+      onConfirm={() => handleDelete(confirmDelete.id)}
+      onCancel={() => setConfirmDelete({ isOpen: false, id: null, name: '' })}
+    />
+  );
 
   // ============================================================================
   // Name Prompt Modal
@@ -1593,15 +1605,7 @@ function PackListsView({
         )}
 
         {/* Delete Confirmation */}
-        {confirmDelete.isOpen && (
-          <ConfirmDialog
-            isOpen={confirmDelete.isOpen}
-            title="Delete Pack List"
-            message={`Are you sure you want to delete "${confirmDelete.name}"? This action cannot be undone.`}
-            onConfirm={() => handleDelete(confirmDelete.id)}
-            onCancel={() => setConfirmDelete({ isOpen: false, id: null, name: '' })}
-          />
-        )}
+        {deleteConfirmDialog}
 
         {/* Reset Packed Confirmation */}
         {confirmReset && (
@@ -1733,13 +1737,7 @@ function PackListsView({
         </div>
       )}
 
-      <ConfirmDialog
-        isOpen={confirmDelete.isOpen}
-        title="Delete Pack List"
-        message={`Are you sure you want to delete "${confirmDelete.name}"? This action cannot be undone.`}
-        onConfirm={() => handleDelete(confirmDelete.id)}
-        onCancel={() => setConfirmDelete({ isOpen: false, id: null, name: '' })}
-      />
+      {deleteConfirmDialog}
     </>
   );
 }
@@ -2000,32 +1998,22 @@ function ScanToPackOverlay({
         </div>
 
         <div style={{ padding: spacing[4], flex: 1, overflowY: 'auto' }}>
-          {/* Camera view */}
-          <div
-            style={{
-              position: 'relative',
-              width: '100%',
-              aspectRatio: '4/3',
-              background: colors.bgDark,
-              borderRadius: borderRadius.lg,
-              overflow: 'hidden',
-              marginBottom: spacing[3],
-            }}
-          >
-            <video
-              ref={videoRef}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: scanning ? 'block' : 'none',
-              }}
-              playsInline
-              muted
-            />
-
-            {scanning && (
-              <>
+          <QRCameraView
+            videoRef={videoRef}
+            canvasRef={canvasRef}
+            scanning={scanning}
+            errorMessage={cameraError}
+            onStartCamera={startScanning}
+            onStopCamera={stopScanning}
+            torchSupported={torchSupported}
+            torchOn={torchOn}
+            onToggleTorch={toggleTorch}
+            statusText="Point camera at QR label..."
+            placeholderIcon={<ScanLine size={48} strokeWidth={1.5} />}
+            startIcon={ScanLine}
+            sectionGap={spacing[3]}
+            cameraOverlay={
+              flashItem && (
                 <div
                   style={{
                     position: 'absolute',
@@ -2033,193 +2021,55 @@ function ScanToPackOverlay({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    background: withOpacity(flashBg, 25),
+                    transition: 'opacity 0.3s',
                     pointerEvents: 'none',
                   }}
                 >
                   <div
                     style={{
-                      width: '60%',
-                      height: '60%',
-                      border: `2px solid ${colors.primary}`,
+                      background: 'rgba(0,0,0,0.8)',
+                      color: '#fff',
+                      padding: `${spacing[2]}px ${spacing[4]}px`,
                       borderRadius: borderRadius.lg,
-                      boxShadow: '0 0 0 9999px rgba(0,0,0,0.4)',
-                    }}
-                  />
-                </div>
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: spacing[2],
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: 'rgba(0,0,0,0.7)',
-                    padding: `${spacing[1]}px ${spacing[3]}px`,
-                    borderRadius: borderRadius.md,
-                    color: '#fff',
-                    fontSize: typography.fontSize.sm,
-                  }}
-                >
-                  Point camera at QR label...
-                </div>
-                {/* Torch toggle — rear cameras that support it */}
-                {torchSupported && (
-                  <button
-                    onClick={toggleTorch}
-                    aria-label={torchOn ? 'Turn flashlight off' : 'Turn flashlight on'}
-                    aria-pressed={torchOn}
-                    style={{
-                      position: 'absolute',
-                      top: spacing[2],
-                      right: spacing[2],
-                      background: torchOn ? colors.primary : 'rgba(0,0,0,0.7)',
-                      border: 'none',
-                      borderRadius: borderRadius.md,
-                      padding: spacing[2],
-                      color: torchOn ? colors.onPrimary : '#fff',
-                      cursor: 'pointer',
-                      display: 'flex',
+                      textAlign: 'center',
+                      maxWidth: '80%',
                     }}
                   >
-                    <Flashlight size={18} />
-                  </button>
-                )}
-              </>
-            )}
-
-            {!scanning && (
-              <div
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: colors.textMuted,
-                }}
-              >
-                <ScanLine size={48} strokeWidth={1.5} />
-                <p style={{ marginTop: spacing[2], fontSize: typography.fontSize.sm }}>
-                  Camera not active
-                </p>
-              </div>
-            )}
-
-            {/* Flash overlay for scan feedback */}
-            {flashItem && (
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: withOpacity(flashBg, 25),
-                  transition: 'opacity 0.3s',
-                  pointerEvents: 'none',
-                }}
-              >
-                <div
-                  style={{
-                    background: 'rgba(0,0,0,0.8)',
-                    color: '#fff',
-                    padding: `${spacing[2]}px ${spacing[4]}px`,
-                    borderRadius: borderRadius.lg,
-                    textAlign: 'center',
-                    maxWidth: '80%',
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: typography.fontSize.lg,
-                      fontWeight: typography.fontWeight.semibold,
-                    }}
-                  >
-                    {flashItem.status === 'packed'
-                      ? '✓ Packed!'
-                      : flashItem.status === 'already'
-                        ? '✓ Already Packed'
-                        : flashItem.status === 'failed'
-                          ? '✗ Save Failed — Rescan'
-                          : flashItem.status === 'in-package'
-                            ? '• Inside a Package — Scan Its Label'
-                            : '✗ Not in List'}
-                  </div>
-                  <div style={{ fontSize: typography.fontSize.sm, marginTop: 4, opacity: 0.8 }}>
-                    {flashItem.name}
+                    <div
+                      style={{
+                        fontSize: typography.fontSize.lg,
+                        fontWeight: typography.fontWeight.semibold,
+                      }}
+                    >
+                      {flashItem.status === 'packed'
+                        ? '✓ Packed!'
+                        : flashItem.status === 'already'
+                          ? '✓ Already Packed'
+                          : flashItem.status === 'failed'
+                            ? '✗ Save Failed — Rescan'
+                            : flashItem.status === 'in-package'
+                              ? '• Inside a Package — Scan Its Label'
+                              : '✗ Not in List'}
+                    </div>
+                    <div style={{ fontSize: typography.fontSize.sm, marginTop: 4, opacity: 0.8 }}>
+                      {flashItem.name}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-
-            <canvas ref={canvasRef} style={{ display: 'none' }} />
-          </div>
-
-          {/* Camera error */}
-          {cameraError && (
-            <div
-              style={{
-                background: withOpacity(colors.danger, 20),
-                border: `1px solid ${withOpacity(colors.danger, 50)}`,
-                borderRadius: borderRadius.md,
-                padding: spacing[3],
-                marginBottom: spacing[3],
-                color: colors.danger,
-                fontSize: typography.fontSize.sm,
-              }}
-            >
-              {cameraError}
-            </div>
-          )}
-
-          {/* Camera control */}
-          {!scanning ? (
-            <Button
-              fullWidth
-              onClick={startScanning}
-              icon={ScanLine}
-              style={{ marginBottom: spacing[3] }}
-            >
-              Start Camera
-            </Button>
-          ) : (
-            <Button
-              fullWidth
-              variant="secondary"
-              onClick={stopScanning}
-              style={{ marginBottom: spacing[3] }}
-            >
-              Stop Camera
-            </Button>
-          )}
-
-          {/* Manual entry */}
-          <div
-            style={{
-              borderTop: `1px solid ${colors.borderLight}`,
-              paddingTop: spacing[3],
-              marginBottom: spacing[3],
-            }}
-          >
-            <label style={styles.label}>Or enter item ID manually</label>
-            <div style={{ display: 'flex', gap: spacing[2] }}>
-              <input
-                type="text"
-                value={manualCode}
-                onChange={(e) => setManualCode(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleManualEntry()}
-                placeholder="Item ID or Serial Number"
-                style={{ ...styles.input, flex: 1 }}
-              />
-              <Button onClick={handleManualEntry} disabled={!manualCode.trim()}>
-                Pack
-              </Button>
-            </div>
-          </div>
+              )
+            }
+            manualLabel="Or enter item ID manually"
+            manualInputId="scan-pack-manual-code"
+            manualValue={manualCode}
+            manualButtonLabel="Pack"
+            onManualChange={(e) => setManualCode(e.target.value)}
+            onManualSubmit={handleManualEntry}
+          />
 
           {/* Scan log */}
           {scanLog.length > 0 && (
-            <div>
+            <div style={{ marginTop: spacing[3] }}>
               <label style={{ ...styles.label, marginBottom: spacing[2] }}>Scan History</label>
               <div
                 style={{

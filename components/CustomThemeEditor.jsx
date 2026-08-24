@@ -429,7 +429,7 @@ const ContrastChecker = memo(function ContrastChecker({ themeColors }) {
             }}
           >
             WCAG AA contrast requirements: {summary.passing} passing, {summary.failing} failing
-            {summary.skipped > 0 && `, ${summary.skipped} skipped (non-hex colors)`}
+            {summary.skipped > 0 && `, ${summary.skipped} skipped (unrecognized colors)`}
           </div>
 
           <div style={{ maxHeight: 200, overflowY: 'auto' }}>

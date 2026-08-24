@@ -8,19 +8,11 @@
 
 import { memo, useMemo, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Download, AlertTriangle, Clock, Package, MapPin, TrendingDown } from 'lucide-react';
+import { AlertTriangle, Clock, Package, MapPin, TrendingDown } from 'lucide-react';
 import { colors, spacing, typography } from '../theme.js';
-import { formatDate, formatMoney, downloadCSV, getTodayISO } from '../utils';
-import {
-  Badge,
-  Card,
-  CardHeader,
-  StatCard,
-  EmptyState,
-  Button,
-  PageHeader,
-} from '../components/ui.jsx';
-import { ReportBranding } from '../components/ReportBranding.jsx';
+import { formatDate, formatMoney, getTodayISO } from '../utils';
+import { Badge, Card, CardHeader, StatCard, EmptyState } from '../components/ui.jsx';
+import { ReportHeader, ReportStatGrid } from '../components/reports.jsx';
 import { DonutChart, HBarChart } from '../components/charts.jsx';
 import { computeAlertData, csvForAlerts } from '../lib/reportData.js';
 import { useData } from '../contexts/DataContext.js';
@@ -89,36 +81,18 @@ export const AlertsReportPanel = memo(function AlertsReportPanel({
     }
   };
 
-  const handleExport = () => {
-    const { headers, rows, filename } = csvForAlerts(alertData.allAlerts);
-    downloadCSV(headers, rows, filename);
-  };
-
   return (
     <>
-      <PageHeader
+      <ReportHeader
         title="Alerts Report"
         subtitle="Items needing attention, missing, overdue, low on stock, or in poor condition"
         onBack={onBack}
-        backLabel="Back to Reports"
-        action={
-          <Button onClick={handleExport} icon={Download}>
-            Export CSV
-          </Button>
-        }
+        buildCsv={() => csvForAlerts(alertData.allAlerts)}
+        profile={currentUser?.profile}
       />
 
-      <ReportBranding profile={currentUser?.profile} />
-
       {/* Summary Stats */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: spacing[4],
-          marginBottom: spacing[6],
-        }}
-      >
+      <ReportStatGrid>
         <StatCard
           icon={AlertTriangle}
           label="Total Alerts"
@@ -149,7 +123,7 @@ export const AlertsReportPanel = memo(function AlertsReportPanel({
           value={formatMoney(alertData.valueAtRisk)}
           color={alertData.valueAtRisk > 0 ? colors.danger : colors.textMuted}
         />
-      </div>
+      </ReportStatGrid>
 
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Main alerts list */}

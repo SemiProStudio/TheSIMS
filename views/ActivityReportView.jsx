@@ -8,11 +8,11 @@
 
 import { memo, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Download, BarChart3, TrendingUp, LogOut, Package, CalendarDays } from 'lucide-react';
+import { BarChart3, TrendingUp, LogOut, Package, CalendarDays } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { formatDate, downloadCSV, getTodayISO } from '../utils';
-import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
-import { ReportBranding } from '../components/ReportBranding.jsx';
+import { formatDate, getTodayISO } from '../utils';
+import { Badge, Card, CardHeader, StatCard } from '../components/ui.jsx';
+import { ReportHeader, ReportStatGrid, ReportTable } from '../components/reports.jsx';
 import LoadErrorBanner from '../components/LoadErrorBanner.jsx';
 import { TrendChart, ColumnChart, HBarChart } from '../components/charts.jsx';
 import {
@@ -27,6 +27,13 @@ const RANGE_OPTIONS = [
   { days: 30, label: '30 days' },
   { days: 90, label: '90 days' },
   { days: 365, label: '12 months' },
+];
+
+const TABLE_COLUMNS = [
+  { key: 'rank', label: '#', width: 36 },
+  { key: 'item', label: 'Item' },
+  { key: 'status', label: 'Status' },
+  { key: 'checkouts', label: 'Checkouts', align: 'right' },
 ];
 
 export const ActivityReportPanel = memo(function ActivityReportPanel({
@@ -109,33 +116,15 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
     [activityData.byCategory],
   );
 
-  const handleExport = () => {
-    const { headers, rows, filename } = csvForActivity(inventory);
-    downloadCSV(headers, rows, filename);
-  };
-
-  const handleRowKeyDown = (event, itemId) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onViewItem(itemId);
-    }
-  };
-
   return (
     <>
-      <PageHeader
+      <ReportHeader
         title="Activity Report"
         subtitle="Checkout activity and usage statistics"
         onBack={onBack}
-        backLabel="Back to Reports"
-        action={
-          <Button onClick={handleExport} icon={Download}>
-            Export CSV
-          </Button>
-        }
+        buildCsv={() => csvForActivity(inventory)}
+        profile={currentUser?.profile}
       />
-
-      <ReportBranding profile={currentUser?.profile} />
 
       {checkoutActivityLoadFailed && (
         <LoadErrorBanner
@@ -145,14 +134,7 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
       )}
 
       {/* Summary Stats */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: spacing[4],
-          marginBottom: spacing[6],
-        }}
-      >
+      <ReportStatGrid>
         <StatCard
           icon={BarChart3}
           label="Total Checkouts"
@@ -177,7 +159,7 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
           value={activityData.neverCheckedOut}
           color={activityData.neverCheckedOut > 0 ? colors.warning : colors.textMuted}
         />
-      </div>
+      </ReportStatGrid>
 
       {/* Checkout trend over time */}
       <Card padding={false} style={{ marginBottom: spacing[5] }}>
@@ -251,165 +233,86 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
         {/* Main content */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>
           {/* Most Checked Out */}
-          <Card
-            padding={false}
-            style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 380px)' }}
-          >
-            <CardHeader title="Most Checked Out Items" icon={TrendingUp} />
-            {/* One container scrolls both axes — a nested overflowX wrapper would
-                detach the sticky thead from the vertical scroll; table minWidth
-                keeps columns readable on narrow screens */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: 'auto',
-                overflowX: 'auto',
-                WebkitOverflowScrolling: 'touch',
-                minHeight: 200,
-              }}
-            >
-              {activityData.topItems.length === 0 ? (
-                <div style={{ padding: spacing[6], textAlign: 'center', color: colors.textMuted }}>
-                  <BarChart3 size={32} style={{ marginBottom: spacing[2], opacity: 0.3 }} />
-                  <p style={{ margin: 0 }}>No checkout activity yet</p>
-                </div>
-              ) : (
-                <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: colors.bgDark, position: 'sticky', top: 0 }}>
-                      <th
-                        style={{
-                          padding: spacing[3],
-                          textAlign: 'left',
-                          fontSize: typography.fontSize.xs,
-                          color: colors.textMuted,
-                          fontWeight: typography.fontWeight.medium,
-                          width: 36,
-                        }}
-                      >
-                        #
-                      </th>
-                      <th
-                        style={{
-                          padding: spacing[3],
-                          textAlign: 'left',
-                          fontSize: typography.fontSize.xs,
-                          color: colors.textMuted,
-                          fontWeight: typography.fontWeight.medium,
-                        }}
-                      >
-                        Item
-                      </th>
-                      <th
-                        style={{
-                          padding: spacing[3],
-                          textAlign: 'left',
-                          fontSize: typography.fontSize.xs,
-                          color: colors.textMuted,
-                          fontWeight: typography.fontWeight.medium,
-                        }}
-                      >
-                        Status
-                      </th>
-                      <th
-                        style={{
-                          padding: spacing[3],
-                          textAlign: 'right',
-                          fontSize: typography.fontSize.xs,
-                          color: colors.textMuted,
-                          fontWeight: typography.fontWeight.medium,
-                        }}
-                      >
-                        Checkouts
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activityData.topItems.map((item, idx) => (
-                      <tr
-                        key={item.id}
-                        className="report-tr"
-                        tabIndex={0}
-                        onClick={() => onViewItem(item.id)}
-                        onKeyDown={(e) => handleRowKeyDown(e, item.id)}
-                        style={{
-                          borderBottom: `1px solid ${colors.borderLight}`,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <td style={{ padding: spacing[3] }}>
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              width: 24,
-                              height: 24,
-                              borderRadius: borderRadius.full,
-                              background:
-                                idx < 3 ? `${withOpacity(colors.primary, 20)}` : colors.bgLight,
-                              color: idx < 3 ? colors.primary : colors.textMuted,
-                              fontSize: typography.fontSize.xs,
-                              fontWeight: typography.fontWeight.semibold,
-                            }}
-                          >
-                            {idx + 1}
-                          </span>
-                        </td>
-                        <td style={{ padding: spacing[3] }}>
-                          <div
-                            style={{
-                              fontWeight: typography.fontWeight.medium,
-                              color: colors.textPrimary,
-                              fontSize: typography.fontSize.sm,
-                            }}
-                          >
-                            {item.name}
-                          </div>
-                          <div
-                            style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}
-                          >
-                            {item.id}
-                            {item.brand ? ` • ${item.brand}` : ''}
-                          </div>
-                        </td>
-                        <td style={{ padding: spacing[3] }}>
-                          <Badge
-                            text={
-                              item.status === 'checked-out'
-                                ? 'Checked Out'
-                                : item.status === 'available'
-                                  ? 'Available'
-                                  : item.status
-                            }
-                            color={
-                              item.status === 'checked-out'
-                                ? colors.checkedOut
-                                : item.status === 'available'
-                                  ? colors.available
-                                  : colors.textMuted
-                            }
-                            size="xs"
-                          />
-                        </td>
-                        <td style={{ padding: spacing[3], textAlign: 'right' }}>
-                          <span
-                            style={{
-                              fontSize: typography.fontSize.sm,
-                              fontWeight: typography.fontWeight.semibold,
-                              color: colors.primary,
-                            }}
-                          >
-                            {item.checkoutCount}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </Card>
+          <ReportTable
+            title="Most Checked Out Items"
+            icon={TrendingUp}
+            columns={TABLE_COLUMNS}
+            rows={activityData.topItems}
+            onRowActivate={(item) => onViewItem(item.id)}
+            emptyState={
+              <div style={{ padding: spacing[6], textAlign: 'center', color: colors.textMuted }}>
+                <BarChart3 size={32} style={{ marginBottom: spacing[2], opacity: 0.3 }} />
+                <p style={{ margin: 0 }}>No checkout activity yet</p>
+              </div>
+            }
+            renderCells={(item, idx) => (
+              <>
+                <td style={{ padding: spacing[3] }}>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 24,
+                      height: 24,
+                      borderRadius: borderRadius.full,
+                      background: idx < 3 ? `${withOpacity(colors.primary, 20)}` : colors.bgLight,
+                      color: idx < 3 ? colors.primary : colors.textMuted,
+                      fontSize: typography.fontSize.xs,
+                      fontWeight: typography.fontWeight.semibold,
+                    }}
+                  >
+                    {idx + 1}
+                  </span>
+                </td>
+                <td style={{ padding: spacing[3] }}>
+                  <div
+                    style={{
+                      fontWeight: typography.fontWeight.medium,
+                      color: colors.textPrimary,
+                      fontSize: typography.fontSize.sm,
+                    }}
+                  >
+                    {item.name}
+                  </div>
+                  <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                    {item.id}
+                    {item.brand ? ` • ${item.brand}` : ''}
+                  </div>
+                </td>
+                <td style={{ padding: spacing[3] }}>
+                  <Badge
+                    text={
+                      item.status === 'checked-out'
+                        ? 'Checked Out'
+                        : item.status === 'available'
+                          ? 'Available'
+                          : item.status
+                    }
+                    color={
+                      item.status === 'checked-out'
+                        ? colors.checkedOut
+                        : item.status === 'available'
+                          ? colors.available
+                          : colors.textMuted
+                    }
+                    size="xs"
+                  />
+                </td>
+                <td style={{ padding: spacing[3], textAlign: 'right' }}>
+                  <span
+                    style={{
+                      fontSize: typography.fontSize.sm,
+                      fontWeight: typography.fontWeight.semibold,
+                      color: colors.primary,
+                    }}
+                  >
+                    {item.checkoutCount}
+                  </span>
+                </td>
+              </>
+            )}
+          />
 
           {/* Currently Checked Out */}
           {activityData.checkedOutDetails.length > 0 && (

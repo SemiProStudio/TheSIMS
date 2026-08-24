@@ -7,11 +7,11 @@
 
 import { memo, useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Flashlight } from 'lucide-react';
-import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
+import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { getStatusColor } from '../utils';
 import { Badge, Button } from '../components/ui.jsx';
 import { Modal, ModalHeader } from './ModalBase.jsx';
+import { QRCameraView } from '../components/QRCameraView.jsx';
 import { useQRScanner } from '../hooks/useQRScanner.js';
 import { parseScannedCode, resolveScannedCode, truncateScannedCode } from '../lib/qrData.js';
 
@@ -352,191 +352,43 @@ export const QRScannerModal = memo(function QRScannerModal({
           </div>
         ) : (
           <>
-            {/* Camera view */}
-            <div
-              style={{
-                position: 'relative',
-                width: '100%',
-                aspectRatio: '4/3',
-                background: colors.bgDark,
-                borderRadius: borderRadius.lg,
-                overflow: 'hidden',
-                marginBottom: spacing[4],
-              }}
-            >
-              {/* Video element always rendered (hidden when not scanning) */}
-              <video
-                ref={videoRef}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  display: scanning ? 'block' : 'none',
-                }}
-                playsInline
-                muted
-              />
-
-              {/* Scanning overlay - only show when scanning */}
-              {scanning && (
-                <>
-                  <div
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '60%',
-                        height: '60%',
-                        border: `2px solid ${colors.primary}`,
-                        borderRadius: borderRadius.lg,
-                        boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)',
-                      }}
-                    />
-                  </div>
-                  {/* Scanning indicator */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: spacing[3],
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      background: 'rgba(0,0,0,0.7)',
-                      padding: `${spacing[1]}px ${spacing[3]}px`,
-                      borderRadius: borderRadius.md,
-                      color: colors.textPrimary,
-                      fontSize: typography.fontSize.sm,
-                    }}
-                  >
-                    Scanning...
-                  </div>
-                  {/* Torch toggle — rear cameras that support it */}
-                  {torchSupported && (
-                    <button
-                      onClick={toggleTorch}
-                      aria-label={torchOn ? 'Turn flashlight off' : 'Turn flashlight on'}
-                      aria-pressed={torchOn}
-                      style={{
-                        position: 'absolute',
-                        top: spacing[2],
-                        right: spacing[2],
-                        background: torchOn ? colors.primary : 'rgba(0,0,0,0.7)',
-                        border: 'none',
-                        borderRadius: borderRadius.md,
-                        padding: spacing[2],
-                        color: '#fff',
-                        cursor: 'pointer',
-                        display: 'flex',
-                      }}
-                    >
-                      <Flashlight size={18} />
-                    </button>
-                  )}
-                </>
-              )}
-
-              {/* Camera not active placeholder - only show when not scanning */}
-              {!scanning && (
-                <div
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: colors.textMuted,
-                  }}
+            <QRCameraView
+              videoRef={videoRef}
+              canvasRef={canvasRef}
+              scanning={scanning}
+              errorMessage={error}
+              onStartCamera={handleStartCamera}
+              onStopCamera={stopScanning}
+              torchSupported={torchSupported}
+              torchOn={torchOn}
+              onToggleTorch={toggleTorch}
+              statusText="Scanning..."
+              placeholderIcon={
+                <svg
+                  width={48}
+                  height={48}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
                 >
-                  <svg
-                    width={48}
-                    height={48}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  >
-                    <path d="M23 19a2 2 0 0 1-2 2h-4m4-6v-1m-2-2h1m-6 0h-1m-2 2v1m-4 6H3a2 2 0 0 1-2-2v-4m6 0H6m-2-2V9m2 2v1" />
-                    <rect x="5" y="5" width="5" height="5" rx="1" />
-                    <rect x="14" y="5" width="5" height="5" rx="1" />
-                    <rect x="5" y="14" width="5" height="5" rx="1" />
-                  </svg>
-                  <p style={{ marginTop: spacing[2], fontSize: typography.fontSize.sm }}>
-                    Camera not active
-                  </p>
-                </div>
-              )}
-
-              <canvas ref={canvasRef} style={{ display: 'none' }} />
-            </div>
-
-            {/* Error message */}
-            {error && (
-              <div
-                style={{
-                  background: `${withOpacity(colors.danger, 20)}`,
-                  border: `1px solid ${withOpacity(colors.danger, 50)}`,
-                  borderRadius: borderRadius.md,
-                  padding: spacing[3],
-                  marginBottom: spacing[4],
-                  color: colors.danger,
-                  fontSize: typography.fontSize.sm,
-                }}
-              >
-                {error}
-              </div>
-            )}
-
-            {/* Camera control button */}
-            {!scanning ? (
-              <Button fullWidth onClick={handleStartCamera} style={{ marginBottom: spacing[4] }}>
-                Start Camera
-              </Button>
-            ) : (
-              <Button
-                fullWidth
-                variant="secondary"
-                onClick={stopScanning}
-                style={{ marginBottom: spacing[4] }}
-              >
-                Stop Camera
-              </Button>
-            )}
-
-            {/* Manual entry section */}
-            <div
-              style={{
-                borderTop: `1px solid ${colors.borderLight}`,
-                paddingTop: spacing[4],
+                  <path d="M23 19a2 2 0 0 1-2 2h-4m4-6v-1m-2-2h1m-6 0h-1m-2 2v1m-4 6H3a2 2 0 0 1-2-2v-4m6 0H6m-2-2V9m2 2v1" />
+                  <rect x="5" y="5" width="5" height="5" rx="1" />
+                  <rect x="14" y="5" width="5" height="5" rx="1" />
+                  <rect x="5" y="14" width="5" height="5" rx="1" />
+                </svg>
+              }
+              sectionGap={spacing[4]}
+              manualLabel="Or enter code manually"
+              manualInputId="qr-manual-code"
+              manualValue={manualCode}
+              manualButtonLabel="Lookup"
+              onManualChange={(e) => {
+                setManualCode(e.target.value);
+                setLookupError(null);
               }}
-            >
-              <label style={styles.label} htmlFor="qr-manual-code">
-                Or enter code manually
-              </label>
-              <div style={{ display: 'flex', gap: spacing[2] }}>
-                <input
-                  id="qr-manual-code"
-                  type="text"
-                  value={manualCode}
-                  onChange={(e) => {
-                    setManualCode(e.target.value);
-                    setLookupError(null);
-                  }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleManualLookup()}
-                  placeholder="Item ID or Serial Number"
-                  style={{ ...styles.input, flex: 1 }}
-                />
-                <Button onClick={handleManualLookup} disabled={!manualCode.trim()}>
-                  Lookup
-                </Button>
-              </div>
-            </div>
+              onManualSubmit={handleManualLookup}
+            />
 
             {/* Last scanned indicator */}
             {lastScanned && (
