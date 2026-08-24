@@ -137,7 +137,6 @@ export function useInventoryActions({
         reservations: [],
         reminders: [],
         maintenanceHistory: [],
-        viewCount: 0,
         checkoutCount: 0,
       };
 

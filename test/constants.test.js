@@ -140,9 +140,10 @@ describe('VIEWS', () => {
 // =============================================================================
 
 describe('MODALS', () => {
-  it('should have item modals', () => {
-    expect(MODALS.ADD_ITEM).toBeDefined();
+  it('should have the edit-item modal (adding goes through the ADD_ITEM page view)', () => {
     expect(MODALS.EDIT_ITEM).toBeDefined();
+    expect(MODALS.ADD_ITEM).toBeUndefined();
+    expect(VIEWS.ADD_ITEM).toBeDefined();
   });
 
   it('should have reservation modal', () => {

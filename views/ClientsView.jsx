@@ -550,7 +550,6 @@ const ClientDetailView = memo(function ClientDetailView({
         title="Notes"
         icon={MessageSquare}
         badge={clientNotes.filter((n) => !n.deleted).length || null}
-        badgeColor={colors.primary}
         collapsed={notesCollapsed}
         onToggleCollapse={() => setNotesCollapsed(!notesCollapsed)}
         style={{ marginBottom: spacing[4] }}

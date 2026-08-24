@@ -98,7 +98,6 @@ SIMS manages the full lifecycle of production equipment: acquisition, storage, c
 | State          | React hooks with memoization (useState, useCallback, useMemo, memo) |
 | QR Codes       | qrcode (generation) + jsQR (camera scanning)                        |
 | PDF Parsing    | pdf.js (CDN, loaded on demand for Smart Paste)                      |
-| Error Tracking | Sentry (optional — inert without `VITE_SENTRY_DSN`)                 |
 | Testing        | Vitest (unit/integration) + Playwright (E2E)                        |
 
 ---
@@ -130,7 +129,7 @@ hooks/          useInventoryActions + handlers/ (checkout, notes, reminders,
                 reservations, admin, packages, accessories/image)
 lib/            services.js (Supabase data layer), fieldMap, validators, csv,
                 importItems, backupExport, reportData, chartMath, smartPaste/,
-                errorTracking (Sentry, optional), logger, supabase client
+                logger, supabase client
 modals/         All modal dialogs (item, checkout/in, reservation, CSV import,
                 database export, smart paste, QR scanner, …)
 views/          One file per page (Dashboard, GearList, ItemDetail, Schedule,

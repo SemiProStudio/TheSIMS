@@ -141,7 +141,6 @@ export default memo(function AppModals({ handlers, currentUser }) {
 
   // Destructure handlers
   const {
-    createItem,
     updateItem,
     deleteItem,
     saveReservation,
@@ -206,21 +205,8 @@ export default memo(function AppModals({ handlers, currentUser }) {
     <>
       {/* Modals - All lazy loaded with Suspense */}
       <Suspense fallback={<ModalLoading />}>
-        {activeModal === MODALS.ADD_ITEM && (
-          <ItemModal
-            isEdit={false}
-            itemForm={itemForm}
-            setItemForm={setItemForm}
-            specs={specs}
-            categories={categories}
-            categorySettings={categorySettings}
-            locations={locations}
-            inventory={inventory}
-            onSave={createItem}
-            onClose={closeModal}
-          />
-        )}
-
+        {/* Adding goes through the full-page ItemFormPage (VIEWS.ADD_ITEM);
+            this modal is edit-only — its former ADD_ITEM twin had no opener */}
         {activeModal === MODALS.EDIT_ITEM && (
           <ItemModal
             isEdit={true}

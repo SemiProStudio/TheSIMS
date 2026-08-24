@@ -946,7 +946,6 @@ function ItemDetail({
             title="Reservations"
             icon={Calendar}
             badge={item.reservations?.length || 0}
-            badgeColor={reservationsColor}
             headerColor={reservationsColor}
             collapsed={isCollapsed('reservations')}
             onToggleCollapse={() => toggleCollapse('reservations')}
@@ -1087,7 +1086,6 @@ function ItemDetail({
             title="Notes"
             icon={MessageSquare}
             badge={countVisibleNotes(item.notes)}
-            badgeColor={notesColor}
             headerColor={notesColor}
             collapsed={isCollapsed('notes')}
             onToggleCollapse={() => toggleCollapse('notes')}
@@ -1112,7 +1110,6 @@ function ItemDetail({
             title="Reminders"
             icon={Bell}
             badge={(item.reminders || []).length}
-            badgeColor={remindersColor}
             headerColor={remindersColor}
             collapsed={isCollapsed('reminders')}
             onToggleCollapse={() => toggleCollapse('reminders')}
@@ -1174,7 +1171,6 @@ function ItemDetail({
             title="Required Accessories"
             icon={Settings}
             badge={(item.requiredAccessories || []).length}
-            badgeColor={accessoriesColor}
             headerColor={accessoriesColor}
             collapsed={isCollapsed('requiredAccessories')}
             onToggleCollapse={() => toggleCollapse('requiredAccessories')}
@@ -1199,7 +1195,6 @@ function ItemDetail({
             title="Kit Contents"
             icon={Boxes}
             badge={item.isKit ? (item.kitItems || []).length : 0}
-            badgeColor={kitColor}
             headerColor={kitColor}
             collapsed={isCollapsed('kitContents')}
             onToggleCollapse={() => toggleCollapse('kitContents')}
@@ -1228,7 +1223,6 @@ function ItemDetail({
             title="Packages"
             icon={Package}
             badge={packagesContainingItem}
-            badgeColor={packagesColor}
             headerColor={packagesColor}
             collapsed={isCollapsed('packages')}
             onToggleCollapse={() => toggleCollapse('packages')}
@@ -1251,7 +1245,6 @@ function ItemDetail({
             title="Maintenance"
             icon={Wrench}
             badge={(item.maintenanceHistory || []).length}
-            badgeColor={maintenanceColor}
             headerColor={maintenanceColor}
             collapsed={isCollapsed('maintenance')}
             onToggleCollapse={() => toggleCollapse('maintenance')}
@@ -1293,7 +1286,6 @@ function ItemDetail({
             title="Checkout History"
             icon={Clock}
             badge={historyCount}
-            badgeColor={checkoutColor}
             headerColor={checkoutColor}
             collapsed={isCollapsed('checkoutHistory')}
             onToggleCollapse={() => toggleCollapse('checkoutHistory')}
@@ -1374,7 +1366,6 @@ function ItemDetail({
             title="Value & Purchase"
             icon={DollarSign}
             badge={formatMoney(item.currentValue)}
-            badgeColor={valueColor}
             headerColor={valueColor}
             collapsed={isCollapsed('value')}
             onToggleCollapse={() => toggleCollapse('value')}

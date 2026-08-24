@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { DASHBOARD_SECTIONS, ITEM_DETAIL_SECTIONS, DEFAULT_LAYOUT_PREFS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { Button, Card, PageHeader } from '../components/ui.jsx';
+import { Button, Card, ConfirmDialog, PageHeader } from '../components/ui.jsx';
 
 // Context configuration
 const CONTEXTS = {
@@ -245,6 +245,14 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
     onBack();
   }, [editPrefs, onSave, onBack]);
 
+  // Cancel/Back with unsaved edits confirms before discarding — it used to
+  // track hasChanges and then throw the edits away silently
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const handleBack = useCallback(() => {
+    if (hasChanges) setConfirmDiscard(true);
+    else onBack();
+  }, [hasChanges, onBack]);
+
   return (
     <div
       style={{
@@ -256,7 +264,7 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
       <PageHeader
         title={config.title}
         subtitle={config.subtitle}
-        onBack={onBack}
+        onBack={handleBack}
         backLabel={config.backLabel}
       />
 
@@ -446,7 +454,7 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
           Reset to Defaults
         </Button>
         <div style={{ display: 'flex', gap: spacing[2] }}>
-          <Button variant="secondary" onClick={onBack}>
+          <Button variant="secondary" onClick={handleBack}>
             Cancel
           </Button>
           <Button onClick={handleSave} icon={Save}>
@@ -454,6 +462,15 @@ function LayoutCustomize({ context = 'dashboard', layoutPrefs, onSave, onBack })
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmDiscard}
+        title="Discard Changes"
+        message="Discard your unsaved layout changes?"
+        confirmText="Discard"
+        onConfirm={onBack}
+        onCancel={() => setConfirmDiscard(false)}
+      />
     </div>
   );
 }

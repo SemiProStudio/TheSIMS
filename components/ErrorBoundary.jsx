@@ -4,7 +4,6 @@
 // =============================================================================
 
 import React from 'react';
-import { captureException } from '../lib/errorTracking.js';
 
 // Error Boundary must be a class component
 export class ErrorBoundary extends React.Component {
@@ -21,12 +20,6 @@ export class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     this.setState({ errorInfo });
-
-    // Report to error tracking — a no-op unless a Sentry DSN is configured
-    captureException(error, {
-      component: 'ErrorBoundary',
-      componentStack: errorInfo?.componentStack,
-    });
   }
 
   handleReset = () => {

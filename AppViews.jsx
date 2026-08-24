@@ -601,7 +601,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
         {currentView === VIEWS.ADD_ITEM && (
           <Suspense fallback={<ViewLoading message="Loading Item Form..." />}>
             <ItemFormPage
-              isEdit={false}
               itemForm={itemForm}
               setItemForm={setItemForm}
               specs={specs}
