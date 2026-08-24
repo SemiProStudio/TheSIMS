@@ -366,7 +366,6 @@ const ClientDetailView = memo(function ClientDetailView({
   onAddNote,
   onReplyNote,
   onDeleteNote,
-  user,
   canEdit = true,
 }) {
   const [notesCollapsed, setNotesCollapsed] = useState(false);
@@ -559,7 +558,6 @@ const ClientDetailView = memo(function ClientDetailView({
           onAddNote={onAddNote}
           onReply={onReplyNote}
           onDelete={onDeleteNote}
-          user={user}
           panelColor={colors.primary}
           readOnly={!canEdit}
         />
@@ -882,7 +880,6 @@ function ClientsView({
           onAddNote={(text) => onAddNote(selectedClient.id, text)}
           onReplyNote={(parentId, text) => onReplyNote(selectedClient.id, parentId, text)}
           onDeleteNote={(noteId) => onDeleteNote(selectedClient.id, noteId)}
-          user={user}
           canEdit={canEditClients}
         />
         {editingClient && (

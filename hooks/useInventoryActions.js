@@ -741,5 +741,3 @@ export function useInventoryActions({
     applyBulkPhoto,
   };
 }
-
-export default useInventoryActions;

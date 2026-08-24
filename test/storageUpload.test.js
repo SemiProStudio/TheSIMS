@@ -112,7 +112,7 @@ describe('storageService.uploadRenditions', () => {
 
   it('exposes no legacy entry points that accepted raw files or data URLs', () => {
     expect(storageService.uploadFromDataUrl).toBeUndefined();
-    expect(typeof storageService.uploadImage).toBe('function');
+    expect(storageService.uploadImage).toBeUndefined();
     expect(typeof storageService.uploadPending).toBe('function');
   });
 });
