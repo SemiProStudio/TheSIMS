@@ -965,12 +965,13 @@ describe('categoriesService.syncAll shares the CRUD statements (§5.8)', () => {
     getSupabase.mockReset();
   });
 
-  it('CRUD create/update issue the same statements plus .select().single()', async () => {
+  it('CRUD create/delete issue the same statements plus .select().single()', async () => {
+    // categoriesService.update was deleted in the dead-code round (test-only
+    // caller); syncAll still exercises updateCategoryById via its own path.
     const client = createRecordingClient(() => ({ data: { id: 7 }, error: null }));
     getSupabase.mockResolvedValue(client);
 
     await categoriesService.create({ name: 'Audio', prefix: 'AU' });
-    await categoriesService.update(7, { sort_order: 3 });
     await categoriesService.delete('Audio');
 
     expect(client.calls[0].ops).toEqual([
@@ -979,12 +980,6 @@ describe('categoriesService.syncAll shares the CRUD statements (§5.8)', () => {
       ['single', []],
     ]);
     expect(client.calls[1].ops).toEqual([
-      ['update', [{ sort_order: 3 }]],
-      ['eq', ['id', 7]],
-      ['select', []],
-      ['single', []],
-    ]);
-    expect(client.calls[2].ops).toEqual([
       ['delete', []],
       ['eq', ['name', 'Audio']],
     ]);
