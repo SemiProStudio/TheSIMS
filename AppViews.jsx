@@ -554,7 +554,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             onAddNote={reservationNoteHandlers.add}
             onReplyNote={reservationNoteHandlers.reply}
             onDeleteNote={reservationNoteHandlers.delete}
-            user={currentUser}
             onViewItem={navigateToItem}
             onCheckOutItems={
               canEdit('gear_list')

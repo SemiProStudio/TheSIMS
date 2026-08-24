@@ -249,7 +249,9 @@ describe('processCheckout', () => {
     expect(lastUpdate(deps.setSelectedItem, { ...available, checkoutCount: 2 })).toMatchObject({
       status: STATUS.CHECKED_OUT,
       checkedOutTo: 'Jordan',
-      checkedOutToUserId: 'u1',
+      // Jordan matches no users row → the persisted row carries null, and the
+      // local mirror must agree (it used to stamp the OPERATOR's id here)
+      checkedOutToUserId: null,
       checkoutProject: 'Shoot',
       checkoutProjectType: 'Commercial',
       checkoutCount: 3,
@@ -269,6 +271,40 @@ describe('processCheckout', () => {
     expect(mockAddToast).toHaveBeenCalledWith('Camera checked out to Jordan', 'success');
     expect(deps.closeModal).toHaveBeenCalled();
     expect(hook.result.current.checkoutItem).toBeNull();
+  });
+
+  it('forwards checkout notes and the condition acknowledgment to the persist layer (wiring fix 2026-08-24)', async () => {
+    // The modal collected these and the handler silently dropped them — the
+    // Item Timeline renders notes/condition per checkout entry
+    const { hook, dataContext } = setup({});
+    await act(async () => {
+      await hook.result.current.processCheckout({
+        ...checkoutData,
+        notes: 'Tripod plate included',
+        conditionAtCheckout: 'good',
+      });
+    });
+    expect(dataContext.checkOutItem).toHaveBeenCalledWith(
+      'IT1',
+      expect.objectContaining({
+        notes: 'Tripod plate included',
+        conditionAtCheckout: 'good',
+      }),
+    );
+  });
+
+  it('resolves the borrower id for the local mirror when the borrower IS a user', async () => {
+    const dataContext = makeDataContext({
+      users: [{ id: 'u9', name: 'Jordan', email: 'jordan@example.com' }],
+    });
+    const { hook, deps } = setup({ selectedItem: available, dataContext });
+    await act(async () => {
+      await hook.result.current.processCheckout(checkoutData);
+    });
+    expect(dataContext.checkOutItem.mock.calls[0][1].userId).toBe('u9');
+    expect(lastUpdate(deps.setSelectedItem, { ...available })).toMatchObject({
+      checkedOutToUserId: 'u9',
+    });
   });
 
   it('warns the operator when the confirmation email fails, without failing the checkout', async () => {
@@ -588,7 +624,9 @@ describe('saveMaintenance', () => {
     const optimistic = patchInventoryItem.mock.calls[0][1](item);
     expect(optimistic.maintenanceHistory.map((m) => m.id)).toEqual(['m0', 'temp-1']);
     expect(deps.setSelectedItem.mock.calls[0][0](item).maintenanceHistory).toHaveLength(2);
-    expect(addMaintenance).toHaveBeenCalledWith('IT1', record);
+    // saveMaintenance stamps the operator (created_by_name was always 'Unknown')
+    const stamped = { ...record, performedBy: 'Admin' };
+    expect(addMaintenance).toHaveBeenCalledWith('IT1', stamped);
 
     const swapped = patchInventoryItem.mock.calls[1][1]({
       maintenanceHistory: optimistic.maintenanceHistory,
@@ -621,11 +659,14 @@ describe('saveMaintenance', () => {
       await hook.result.current.saveMaintenance(edited);
     });
 
-    expect(dataContext.updateMaintenance).toHaveBeenCalledWith('m0', edited);
+    expect(dataContext.updateMaintenance).toHaveBeenCalledWith('m0', {
+      ...edited,
+      performedBy: 'Admin',
+    });
     expect(dataContext.addMaintenance).not.toHaveBeenCalled();
     expect(dataContext.patchInventoryItem).toHaveBeenCalledTimes(1);
     expect(dataContext.patchInventoryItem.mock.calls[0][1](item).maintenanceHistory).toEqual([
-      edited,
+      { ...edited, performedBy: 'Admin' },
     ]);
     expect(deps.addAuditLog.mock.calls[0][0].type).toBe('maintenance_updated');
     expect(deps.addChangeLog.mock.calls[0][0].changes[0].newValue).toBe('Cleaning - completed');
@@ -665,7 +706,9 @@ describe('saveMaintenance', () => {
       await hook.result.current.saveMaintenance(record);
     });
     expect(dc.patchInventoryItem).toHaveBeenCalledTimes(1);
-    expect(dc.patchInventoryItem.mock.calls[0][1](bare).maintenanceHistory).toEqual([record]);
+    expect(dc.patchInventoryItem.mock.calls[0][1](bare).maintenanceHistory).toEqual([
+      { ...record, performedBy: 'Admin' },
+    ]);
   });
 
   it('does nothing when no maintenance item is set', async () => {

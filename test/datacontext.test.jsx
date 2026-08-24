@@ -1017,6 +1017,64 @@ describe('Check Out / Check In State Transitions', () => {
     expect(item.checkoutClientId).toBeNull();
   });
 
+  it('checkInItem keeps BOTH return notes and condition notes (wiring fix 2026-08-24)', async () => {
+    // `returnNotes || conditionNotes` used to throw the condition-change
+    // explanation away whenever a return note was also written
+    let capturedContext;
+
+    render(
+      <DataProvider>
+        <TestConsumer
+          onContextReady={(ctx) => {
+            capturedContext = ctx;
+          }}
+        />
+      </DataProvider>,
+    );
+
+    await waitFor(() => {
+      expect(capturedContext?.checkInItem).toBeDefined();
+      expect(capturedContext?.inventory?.length).toBeGreaterThan(0);
+    });
+
+    const { inventoryService } = await import('../lib/services.js');
+    inventoryService.checkIn.mockClear();
+
+    await act(async () => {
+      await capturedContext.checkInItem('CAM001', {
+        returnedBy: 'Bob',
+        userId: 'user-bob',
+        condition: 'good',
+        returnNotes: 'Returned after the studio day',
+        conditionNotes: 'small scratch on the lens hood',
+        damageReported: false,
+      });
+    });
+
+    expect(inventoryService.checkIn).toHaveBeenCalledWith(
+      'CAM001',
+      expect.objectContaining({
+        notes: 'Returned after the studio day — Condition: small scratch on the lens hood',
+      }),
+    );
+
+    // One field alone still round-trips untouched
+    inventoryService.checkIn.mockClear();
+    await act(async () => {
+      await capturedContext.checkInItem('CAM001', {
+        returnedBy: 'Bob',
+        userId: 'user-bob',
+        condition: 'good',
+        conditionNotes: 'sticky zoom ring',
+        damageReported: false,
+      });
+    });
+    expect(inventoryService.checkIn).toHaveBeenCalledWith(
+      'CAM001',
+      expect.objectContaining({ notes: 'Condition: sticky zoom ring' }),
+    );
+  });
+
   it('checkInItem sets needs-attention when damage is reported', async () => {
     let capturedContext;
 

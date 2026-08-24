@@ -218,6 +218,33 @@ describe('persist-first failure handling', () => {
     );
   });
 
+  it('reset clears packed PACKAGES too, not just items (wiring fix 2026-08-24)', async () => {
+    // The confirm dialog counts packages in "N packed selections", but reset
+    // used to clear only packedItems — package ticks survived
+    const packedPkgList = {
+      ...baseList,
+      packages: [{ id: 'PKG1', quantity: 1 }],
+      packedPackages: ['PKG1'],
+    };
+    const dataContext = makeDataContext({
+      togglePackListPackagePacked: vi.fn().mockResolvedValue({}),
+    });
+    renderView({ dataContext, initialSelectedList: packedPkgList });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    const dialog = screen.getByRole('alertdialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Reset' }));
+
+    await waitFor(() =>
+      expect(mockAddToast).toHaveBeenCalledWith('Pack list selections cleared', 'success'),
+    );
+    expect(dataContext.togglePackListPackagePacked).toHaveBeenCalledWith('PL1', 'PKG1', false);
+    expect(dataContext.patchPackList).toHaveBeenCalledWith('PL1', {
+      packedItems: [],
+      packedPackages: [],
+    });
+  });
+
   it('reset failure: toasts and keeps the packed state', async () => {
     const dataContext = makeDataContext({
       updatePackList: vi.fn().mockRejectedValue(new Error('offline')),
@@ -232,7 +259,7 @@ describe('persist-first failure handling', () => {
 
     await waitFor(() =>
       expect(mockAddToast).toHaveBeenCalledWith(
-        'Failed to reset packed state — nothing was changed',
+        'Failed to reset packed state — reopen the list to see what cleared',
         'error',
       ),
     );

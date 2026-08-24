@@ -108,7 +108,8 @@ export function useCheckoutHandlers({
             ...prev,
             status: STATUS.CHECKED_OUT,
             checkedOutTo: borrowerName,
-            checkedOutToUserId: currentUser?.id || null,
+            // Borrower, not operator — matches the persisted row
+            checkedOutToUserId: borrowerUserId,
             dueBack: dueDate,
             checkoutProject: project,
             checkoutClientId: clientId || null,
@@ -159,6 +160,8 @@ export function useCheckoutHandlers({
         projectType,
         dueDate,
         checkedOutDate,
+        notes,
+        conditionAtCheckout,
       } = checkoutData;
 
       // The borrower as a SIMS user (typed name/email matches a user) — never
@@ -178,6 +181,8 @@ export function useCheckoutHandlers({
           clientName: clientName || null,
           project: project,
           dueBack: dueDate,
+          notes,
+          conditionAtCheckout,
         });
       } catch (err) {
         // Keep the modal open with the form intact — closing it here made a
@@ -192,7 +197,10 @@ export function useCheckoutHandlers({
           ...prev,
           status: STATUS.CHECKED_OUT,
           checkedOutTo: borrowerName,
-          checkedOutToUserId: currentUser?.id || null,
+          // The BORROWER's id — the persisted row and the inventory-list
+          // mirror both carry it; stamping the operator here left the two
+          // local copies of the same row disagreeing until rehydration
+          checkedOutToUserId: borrowerUserId,
           checkedOutDate: checkedOutDate,
           dueBack: dueDate,
           checkoutProject: project,
@@ -521,6 +529,10 @@ export function useCheckoutHandlers({
   const saveMaintenance = useCallback(
     async (record) => {
       if (!maintenanceItem) return;
+
+      // created_by_name reads record.performedBy downstream, and the modal
+      // collects no such field — every record was attributed to 'Unknown'
+      record = { ...record, performedBy: record.performedBy || currentUser?.name || 'Unknown' };
 
       const itemId = maintenanceItem.id;
       const isEdit = !!editingMaintenanceRecord;

@@ -929,10 +929,17 @@ export function DataProvider({ children }) {
       // Use the dedicated checkIn service method. returnStatus lets the
       // caller return the item to 'reserved' when a confirmed reservation
       // covers today (damage still wins).
+      // Keep BOTH notes: `returnNotes || conditionNotes` used to throw away
+      // the condition-change explanation whenever a return note was also
+      // written — the one place either could still be read (timeline/history)
+      // lost it
+      const combinedNotes = [returnNotes, conditionNotes ? `Condition: ${conditionNotes}` : '']
+        .filter(Boolean)
+        .join(' — ');
       const { item: serverItem, historyEvent } = await inventoryService.checkIn(itemId, {
         userId: userId,
         userName: returnedBy,
-        notes: returnNotes || conditionNotes,
+        notes: combinedNotes,
         condition: condition,
         damageReported: !!damageReported,
         returnStatus,

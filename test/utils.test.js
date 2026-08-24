@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
+  nextRecurrenceDate,
   generateItemCode,
   generateId,
   formatDate,
@@ -176,6 +177,41 @@ describe('isOverdue', () => {
 
   it('should return false for empty string', () => {
     expect(isOverdue('')).toBe(false);
+  });
+});
+
+describe('nextRecurrenceDate (recurring reminders, 2026-08-24)', () => {
+  it('advances weekly on the original weekday, past today', () => {
+    expect(nextRecurrenceDate('2026-08-10', 'weekly', '2026-08-24')).toBe('2026-08-31');
+    // completed on its due day: next slot, not the same day
+    expect(nextRecurrenceDate('2026-08-24', 'weekly', '2026-08-24')).toBe('2026-08-31');
+    // completed early: still the next slot after today
+    expect(nextRecurrenceDate('2026-08-30', 'weekly', '2026-08-24')).toBe('2026-09-06');
+  });
+
+  it('biweekly / quarterly / biannual step correctly', () => {
+    expect(nextRecurrenceDate('2026-08-10', 'biweekly', '2026-08-24')).toBe('2026-09-07');
+    expect(nextRecurrenceDate('2026-01-15', 'quarterly', '2026-08-24')).toBe('2026-10-15');
+    expect(nextRecurrenceDate('2026-01-15', 'biannual', '2026-08-24')).toBe('2027-01-15');
+  });
+
+  it('monthly keeps the day-of-month anchor and clamps short months from the anchor', () => {
+    expect(nextRecurrenceDate('2026-01-31', 'monthly', '2026-02-10')).toBe('2026-02-28');
+    // The anchor day (31) survives the clamped February — March gets the 31st back
+    expect(nextRecurrenceDate('2026-01-31', 'monthly', '2026-03-01')).toBe('2026-03-31');
+  });
+
+  it('yearly handles a Feb-29 anchor across non-leap years', () => {
+    expect(nextRecurrenceDate('2024-02-29', 'yearly', '2026-01-01')).toBe('2026-02-28');
+    expect(nextRecurrenceDate('2024-02-29', 'yearly', '2027-06-01')).toBe('2028-02-29');
+  });
+
+  it('returns null for one-time, unknown, or malformed input', () => {
+    expect(nextRecurrenceDate('2026-08-10', 'none', '2026-08-24')).toBeNull();
+    expect(nextRecurrenceDate('2026-08-10', 'fortnightly', '2026-08-24')).toBeNull();
+    expect(nextRecurrenceDate('', 'weekly', '2026-08-24')).toBeNull();
+    expect(nextRecurrenceDate('not-a-date', 'weekly', '2026-08-24')).toBeNull();
+    expect(nextRecurrenceDate(null, 'weekly', '2026-08-24')).toBeNull();
   });
 });
 

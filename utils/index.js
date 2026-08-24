@@ -138,6 +138,55 @@ export const isOverdue = (date) => {
   return date < getTodayISO();
 };
 
+// Reminder recurrence steps (RemindersSection options minus 'none')
+const RECURRENCE_STEPS = {
+  weekly: { days: 7 },
+  biweekly: { days: 14 },
+  monthly: { months: 1 },
+  quarterly: { months: 3 },
+  biannual: { months: 6 },
+  yearly: { months: 12 },
+};
+
+/**
+ * The next occurrence of a recurring reminder, as YYYY-MM-DD.
+ *
+ * Anchored to the ORIGINAL due date, not the completion day: every candidate
+ * is original + k·step, and the first one strictly after `todayISO` wins —
+ * so a weekly reminder completed two weeks late resumes on its original
+ * weekday, and a monthly one keeps its day-of-month (clamped to short
+ * months: Jan 31 → Feb 28 → Mar 31, because each step recomputes from the
+ * anchor rather than the previous clamped date).
+ *
+ * Returns null for 'none', unknown recurrences, or unparseable dates.
+ */
+export const nextRecurrenceDate = (dueDateISO, recurrence, todayISO = getTodayISO()) => {
+  const step = RECURRENCE_STEPS[recurrence];
+  if (!step || !dueDateISO) return null;
+  const [y, m, d] = String(dueDateISO)
+    .split('-')
+    .map((n) => parseInt(n, 10));
+  if (!y || !m || !d) return null;
+
+  const toISO = (dt) =>
+    `${String(dt.getUTCFullYear()).padStart(4, '0')}-${String(dt.getUTCMonth() + 1).padStart(2, '0')}-${String(dt.getUTCDate()).padStart(2, '0')}`;
+
+  for (let k = 1; k <= 600; k++) {
+    let candidate;
+    if (step.days) {
+      candidate = toISO(new Date(Date.UTC(y, m - 1, d + k * step.days)));
+    } else {
+      const totalMonths = y * 12 + (m - 1) + k * step.months;
+      const ny = Math.floor(totalMonths / 12);
+      const nm = totalMonths % 12;
+      const daysInTarget = new Date(Date.UTC(ny, nm + 1, 0)).getUTCDate();
+      candidate = toISO(new Date(Date.UTC(ny, nm, Math.min(d, daysInTarget))));
+    }
+    if (candidate > todayISO) return candidate;
+  }
+  return null;
+};
+
 // ============================================================================
 // Reservation Conflict Detection
 // ============================================================================

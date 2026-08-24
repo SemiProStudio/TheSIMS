@@ -760,11 +760,14 @@ function PackListsView({
     [setSelectedList, dataContext, addToast],
   );
 
-  // Reset all packed items — persist-first: only clear local state (and
-  // toast success) after the DB accepted the reset
+  // Reset all packed items AND packed packages — persist-first: only clear
+  // local state (and toast success) after the DB accepted the reset. The
+  // confirm dialog counts packages in its "N packed selections", so leaving
+  // them ticked (as this did until 2026-08-24) broke the promise.
   const [confirmReset, setConfirmReset] = useState(false);
   const handleResetPacked = useCallback(async () => {
     if (!selectedList) return;
+    const packedPkgIds = selectedList.packedPackages || [];
 
     if (dataContext?.updatePackList) {
       try {
@@ -773,17 +776,26 @@ function PackListsView({
           packages: selectedList.packages,
           packedItems: [],
         });
+        // Package packed-state lives on the junction rows and deliberately
+        // survives child syncs — clear it explicitly per package
+        if (dataContext?.togglePackListPackagePacked) {
+          await Promise.all(
+            packedPkgIds.map((pkgId) =>
+              dataContext.togglePackListPackagePacked(selectedList.id, pkgId, false),
+            ),
+          );
+        }
       } catch (err) {
         logError('Failed to reset packed items:', err);
-        addToast('Failed to reset packed state — nothing was changed', 'error');
+        addToast('Failed to reset packed state — reopen the list to see what cleared', 'error');
         setConfirmReset(false);
         return;
       }
     }
 
-    const updatedList = { ...selectedList, packedItems: [] };
+    const updatedList = { ...selectedList, packedItems: [], packedPackages: [] };
     setSelectedList(updatedList);
-    dataContext.patchPackList(selectedList.id, { packedItems: [] });
+    dataContext.patchPackList(selectedList.id, { packedItems: [], packedPackages: [] });
     setConfirmReset(false);
     addToast('Pack list selections cleared', 'success');
   }, [selectedList, setSelectedList, dataContext, addToast]);

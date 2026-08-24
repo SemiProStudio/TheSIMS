@@ -514,6 +514,10 @@ export const ItemModal = memo(function ItemModal({
         <SmartPasteModal
           specs={specs}
           currentCategory={itemForm.category || ''}
+          // Editing an item: enables the "compare with existing" diff view
+          // against the specs currently on the form. Never passed before —
+          // the whole diff feature was unreachable from both mount points.
+          existingItem={isEdit ? itemForm : undefined}
           onApply={handleSmartPasteApply}
           onClose={() => setShowSmartPaste(false)}
         />

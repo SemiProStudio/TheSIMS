@@ -8,7 +8,7 @@
 // and the audit entry was written whether or not the write happened.)
 // ============================================================================
 import { useCallback } from 'react';
-import { getTodayISO } from '../../utils';
+import { formatDate, getTodayISO, nextRecurrenceDate } from '../../utils';
 import { useToast } from '../../contexts/ToastContext.js';
 
 export function useReminderHandlers({
@@ -108,8 +108,45 @@ export function useReminderHandlers({
         user: currentUser.name,
         itemId: selectedItem.id,
       });
+
+      // Recurring reminders spawn their next occurrence on completion —
+      // recurrence was collected, stored, and badged for months while
+      // completing simply ended the series (2026-08-24 wiring sweep).
+      // Anchored to the original due date, first occurrence after today;
+      // the completed row keeps its history. Un-completing restores that
+      // row only — the spawned occurrence stays (visible, deletable).
+      const nextDue = nextRecurrenceDate(reminder.dueDate, reminder.recurrence);
+      if (!nextDue) return;
+
+      const nextReminder = {
+        title: reminder.title,
+        description: reminder.description || '',
+        dueDate: nextDue,
+        recurrence: reminder.recurrence,
+        completed: false,
+      };
+      const dbResult = await dataContext.addItemReminder(selectedItem.id, {
+        ...nextReminder,
+        createdBy: currentUser.name,
+      });
+      if (!dbResult) {
+        addToast(
+          `Reminder completed, but the next occurrence could not be created — add it manually for ${formatDate(nextDue)}`,
+          'warning',
+        );
+        return;
+      }
+
+      const withNext = (reminders) => [...(reminders || []), { ...nextReminder, id: dbResult.id }];
+      dataContext.patchInventoryItem(selectedItem.id, (item) => ({
+        reminders: withNext(item.reminders),
+      }));
+      setSelectedItem((prev) =>
+        prev?.id === selectedItem.id ? { ...prev, reminders: withNext(prev.reminders) } : prev,
+      );
+      addToast(`Next "${reminder.title}" scheduled for ${formatDate(nextDue)}`, 'success');
     },
-    [selectedItem, currentUser, dataContext, setCompletion],
+    [selectedItem, setSelectedItem, currentUser, dataContext, setCompletion, addToast],
   );
 
   const uncompleteReminder = useCallback(

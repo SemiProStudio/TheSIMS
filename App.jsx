@@ -240,7 +240,10 @@ export default function App() {
     // own session keys; these are ours.
     try {
       localStorage.removeItem('sims_change_log');
-      localStorage.removeItem('sims-deeplink-item');
+      // The pending deep link lives in SESSION storage (written at boot,
+      // consumed after login) — removing it from localStorage was a no-op
+      // and an unconsumed link survived logout for the next user of the tab
+      sessionStorage.removeItem('sims-deeplink-item');
     } catch {
       /* ignore storage errors */
     }

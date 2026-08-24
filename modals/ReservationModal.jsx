@@ -492,16 +492,13 @@ export const ReservationModal = memo(function ReservationModal({
     });
 
     if (canSave) {
-      // Update form with selected item IDs before saving
-      const itemIds = selectedItems.map((i) => i.id);
-      setReservationForm((prev) => ({
-        ...prev,
-        itemIds,
-        itemId: itemIds[0] || '',
-      }));
+      // No pre-save form write here: a setState immediately before onSave()
+      // can't be observed by the parent's save closure anyway (state isn't
+      // applied yet). handleAddItem/handleRemoveItem keep itemIds in sync
+      // continuously — that is the path the save actually reads.
       onSave();
     }
-  }, [canSave, onSave, selectedItems, setReservationForm]);
+  }, [canSave, onSave]);
 
   const showProjectError = touched.project && !reservationForm.project;
   const showStartError = touched.start && !reservationForm.start;

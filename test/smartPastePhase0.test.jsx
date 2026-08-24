@@ -11,7 +11,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { parseProductText } from '../lib/smartPaste/parser.js';
-import { buildApplyPayload } from '../lib/smartPaste/applyPayload.js';
+import { buildApplyPayload, applySmartPastePayload } from '../lib/smartPaste/applyPayload.js';
 import { ResultsPanel } from '../modals/smartPaste/ResultsPanel.jsx';
 
 // Mini taxonomy mirroring the prod near-duplicates that caused fan-out
@@ -262,5 +262,39 @@ describe('category precedence (P0-3)', () => {
   it('an explicit override wins over the host category', () => {
     renderPanel({ categoryOverride: 'Lenses' });
     expect(screen.getByLabelText('Category')).toHaveTextContent('Lenses');
+  });
+});
+
+describe('applySmartPastePayload — Model # lands as a spec (2026-08-24)', () => {
+  it('folds the extracted modelNumber into specs.Model', () => {
+    const prev = { name: '', specs: { 'Sensor Type': 'CMOS' } };
+    const next = applySmartPastePayload(prev, {
+      name: 'Sony A7S III',
+      modelNumber: 'ILCE-7SM3',
+      specs: { 'Video Resolution': '4K 120fps' },
+    });
+    expect(next.specs).toEqual({
+      'Sensor Type': 'CMOS',
+      'Video Resolution': '4K 120fps',
+      Model: 'ILCE-7SM3',
+    });
+  });
+
+  it('a parsed Model SPEC wins over the standalone extraction', () => {
+    const next = applySmartPastePayload(
+      { specs: {} },
+      { modelNumber: 'WRONG-1', specs: { Model: 'RIGHT-2' } },
+    );
+    expect(next.specs.Model).toBe('RIGHT-2');
+  });
+
+  it('adds no Model key when nothing was extracted', () => {
+    const next = applySmartPastePayload({ specs: { A: '1' } }, { specs: {} });
+    expect('Model' in next.specs).toBe(false);
+  });
+
+  it('keeps the previously stored Model when a re-paste extracts none', () => {
+    const next = applySmartPastePayload({ specs: { Model: 'KEPT-3' } }, { specs: {} });
+    expect(next.specs.Model).toBe('KEPT-3');
   });
 });
