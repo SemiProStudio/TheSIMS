@@ -242,6 +242,48 @@ describe('persist-first failure handling', () => {
 });
 
 // =============================================================================
+// Delete confirmation — one shared dialog serves the overview and the detail
+// branch (it used to be rendered twice with identical copy)
+// =============================================================================
+
+describe('delete confirmation (shared dialog)', () => {
+  const expectedMessage =
+    'Are you sure you want to delete "Job Alpha"? This action cannot be undone.';
+
+  it('opens from the detail view with the same copy and deletes on confirm', async () => {
+    const { props } = renderView();
+    openDetail();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Job Alpha' }));
+    const dialog = screen.getByRole('alertdialog');
+    expect(within(dialog).getByText('Delete Pack List')).toBeInTheDocument();
+    expect(within(dialog).getByText(expectedMessage)).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
+    await waitFor(() =>
+      expect(props.addAuditLog).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'pack_list_deleted', packListId: 'PL1' }),
+      ),
+    );
+    // Deleting the open list closes its detail view
+    expect(screen.getByRole('heading', { level: 2, name: 'Pack Lists' })).toBeInTheDocument();
+  });
+
+  it('opens from the overview with identical copy; cancel closes without deleting', () => {
+    const { props } = renderView();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Job Alpha' }));
+    const dialog = screen.getByRole('alertdialog');
+    expect(within(dialog).getByText('Delete Pack List')).toBeInTheDocument();
+    expect(within(dialog).getByText(expectedMessage)).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(props.dataContext.deletePackList).not.toHaveBeenCalled();
+  });
+});
+
+// =============================================================================
 // Permission gating
 // =============================================================================
 

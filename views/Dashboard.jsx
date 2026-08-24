@@ -135,6 +135,24 @@ const TierLoading = ({ label }) => (
   </span>
 );
 
+// "View All" header action shared by the list panels. stopPropagation keeps
+// the click from also toggling the section header it sits in.
+const ViewAllButton = ({ onClick }) => (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
+    style={{
+      ...styles.btnSec,
+      padding: `${spacing[1]}px ${spacing[2]}px`,
+      fontSize: typography.fontSize.xs,
+    }}
+  >
+    View All
+  </button>
+);
+
 function Dashboard({
   inventory = [],
   categorySettings = {},
@@ -795,19 +813,7 @@ function Dashboard({
             onToggleCollapse={() => toggleCollapse('checkedOut')}
             action={
               stats.checkedOutItems.length > 0 ? (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewCheckedOut?.();
-                  }}
-                  style={{
-                    ...styles.btnSec,
-                    padding: `${spacing[1]}px ${spacing[2]}px`,
-                    fontSize: typography.fontSize.xs,
-                  }}
-                >
-                  View All
-                </button>
+                <ViewAllButton onClick={() => onViewCheckedOut?.()} />
               ) : null
             }
             padding={false}
@@ -870,23 +876,7 @@ function Dashboard({
             headerColor={PANEL_COLORS.alerts}
             collapsed={isCollapsed('alerts')}
             onToggleCollapse={() => toggleCollapse('alerts')}
-            action={
-              stats.alerts.length > 0 ? (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewAlerts();
-                  }}
-                  style={{
-                    ...styles.btnSec,
-                    padding: `${spacing[1]}px ${spacing[2]}px`,
-                    fontSize: typography.fontSize.xs,
-                  }}
-                >
-                  View All
-                </button>
-              ) : null
-            }
+            action={stats.alerts.length > 0 ? <ViewAllButton onClick={onViewAlerts} /> : null}
             padding={false}
           >
             {stats.alerts.length === 0 ? (
@@ -976,21 +966,7 @@ function Dashboard({
             collapsed={isCollapsed('lowStock')}
             onToggleCollapse={() => toggleCollapse('lowStock')}
             action={
-              stats.lowStockItems.length > 0 ? (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewLowStock();
-                  }}
-                  style={{
-                    ...styles.btnSec,
-                    padding: `${spacing[1]}px ${spacing[2]}px`,
-                    fontSize: typography.fontSize.xs,
-                  }}
-                >
-                  View All
-                </button>
-              ) : null
+              stats.lowStockItems.length > 0 ? <ViewAllButton onClick={onViewLowStock} /> : null
             }
             padding={false}
           >
@@ -1037,21 +1013,7 @@ function Dashboard({
             headerColor={PANEL_COLORS.reservations}
             collapsed={isCollapsed('reservations')}
             onToggleCollapse={() => toggleCollapse('reservations')}
-            action={
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewReservations();
-                }}
-                style={{
-                  ...styles.btnSec,
-                  padding: `${spacing[1]}px ${spacing[2]}px`,
-                  fontSize: typography.fontSize.xs,
-                }}
-              >
-                View All
-              </button>
-            }
+            action={<ViewAllButton onClick={onViewReservations} />}
             padding={false}
           >
             <div style={listBodyStyle(upcomingReservations.length, 240)}>
