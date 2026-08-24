@@ -8,19 +8,11 @@
 
 import { memo, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { Wrench, Clock, AlertTriangle, DollarSign, Building2, Download } from 'lucide-react';
+import { Wrench, Clock, AlertTriangle, DollarSign, Building2 } from 'lucide-react';
 import { colors, spacing, typography } from '../theme.js';
-import { formatDate, formatMoney, downloadCSV, getMaintenanceStatusColor } from '../utils';
-import {
-  Badge,
-  Card,
-  CardHeader,
-  StatCard,
-  Button,
-  PageHeader,
-  EmptyState,
-} from '../components/ui.jsx';
-import { ReportBranding } from '../components/ReportBranding.jsx';
+import { formatDate, formatMoney, getMaintenanceStatusColor } from '../utils';
+import { Badge, Card, CardHeader, StatCard, EmptyState } from '../components/ui.jsx';
+import { ReportHeader, ReportStatGrid } from '../components/reports.jsx';
 import LoadErrorBanner from '../components/LoadErrorBanner.jsx';
 import { ColumnChart, HBarChart } from '../components/charts.jsx';
 import {
@@ -80,28 +72,18 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
     }
   };
 
-  const handleExport = () => {
-    const { headers, rows, filename } = csvForMaintenance(allMaintenanceRecords);
-    downloadCSV(headers, rows, filename);
-  };
-
   return (
     <>
-      <PageHeader
+      <ReportHeader
         title="Maintenance Report"
         subtitle="All maintenance records across inventory"
         onBack={onBack}
-        backLabel="Back to Reports"
-        action={
-          // Disabled until the FULL history loads — exporting during
-          // "Loading records…" silently produced a pending-only CSV
-          <Button onClick={handleExport} icon={Download} disabled={!maintenanceLoaded}>
-            Export CSV
-          </Button>
-        }
+        buildCsv={() => csvForMaintenance(allMaintenanceRecords)}
+        // Disabled until the FULL history loads — exporting during
+        // "Loading records…" silently produced a pending-only CSV
+        exportDisabled={!maintenanceLoaded}
+        profile={currentUser?.profile}
       />
-
-      <ReportBranding profile={currentUser?.profile} />
 
       {maintenanceLoadFailed ? (
         <LoadErrorBanner
@@ -125,14 +107,7 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
       )}
 
       {/* Summary Stats */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: spacing[4],
-          marginBottom: spacing[6],
-        }}
-      >
+      <ReportStatGrid>
         <StatCard icon={Wrench} label="Total Records" value={stats.total} color={colors.primary} />
         <StatCard
           icon={Clock}
@@ -158,7 +133,7 @@ export const MaintenanceReportPanel = memo(function MaintenanceReportPanel({
           value={formatMoney(stats.warrantySavings)}
           color={colors.available}
         />
-      </div>
+      </ReportStatGrid>
 
       {/* Cost over time */}
       {maintenanceLoaded && stats.completed > 0 && (

@@ -4,19 +4,39 @@
 // an acquisition curve (cumulative value by purchase month).
 // ============================================================================
 
-import { memo, useMemo, useState } from 'react';
+import { memo, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { Download, Package, Layers, MapPin, BarChart3, TrendingUp } from 'lucide-react';
+import { Package, Layers, MapPin, BarChart3, TrendingUp } from 'lucide-react';
 import { colors, spacing, typography } from '../theme.js';
-import { formatMoney, downloadCSV, getStatusColor } from '../utils';
+import { formatMoney, getStatusColor } from '../utils';
 import { STATUS_LABELS } from '../constants.js';
-import { Badge, Card, CardHeader, StatCard, Button, PageHeader } from '../components/ui.jsx';
-import { Select } from '../components/Select.jsx';
-import { ReportBranding } from '../components/ReportBranding.jsx';
+import { Badge, Card, CardHeader, StatCard } from '../components/ui.jsx';
+import {
+  ReportHeader,
+  ReportStatGrid,
+  ReportFilterBar,
+  ReportTable,
+} from '../components/reports.jsx';
 import { DonutChart, HBarChart, TrendChart } from '../components/charts.jsx';
 import { computeInventoryStats, acquisitionSeries, csvForInventory } from '../lib/reportData.js';
+import { useReportItemFilter } from '../hooks/useReportItemFilter.js';
 
 const statusLabel = (status) => STATUS_LABELS[status] || status;
+
+const SORT_OPTIONS = [
+  { value: 'name', label: 'Name' },
+  { value: 'value-desc', label: 'Value (High to Low)' },
+  { value: 'category', label: 'Category' },
+  { value: 'status', label: 'Status' },
+  { value: 'newest', label: 'Newest First' },
+];
+
+const TABLE_COLUMNS = [
+  { key: 'item', label: 'Item' },
+  { key: 'category', label: 'Category' },
+  { key: 'status', label: 'Status' },
+  { key: 'value', label: 'Value', align: 'right' },
+];
 
 export const InventoryReportPanel = memo(function InventoryReportPanel({
   inventory,
@@ -25,39 +45,9 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
   onViewItem,
   onBack,
 }) {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
-
   // Filter and sort items
-  const filteredItems = useMemo(() => {
-    let items = [...inventory];
-
-    if (selectedCategory !== 'all') {
-      items = items.filter((i) => i.category === selectedCategory);
-    }
-
-    switch (sortBy) {
-      case 'name':
-        items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-        break;
-      case 'value-desc':
-        items.sort((a, b) => (b.currentValue || 0) - (a.currentValue || 0));
-        break;
-      case 'category':
-        items.sort((a, b) => (a.category || '').localeCompare(b.category || ''));
-        break;
-      case 'status':
-        items.sort((a, b) => (a.status || '').localeCompare(b.status || ''));
-        break;
-      case 'newest':
-        items.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-        break;
-      default:
-        break;
-    }
-
-    return items;
-  }, [inventory, selectedCategory, sortBy]);
+  const { selectedCategory, setSelectedCategory, sortBy, setSortBy, filteredItems } =
+    useReportItemFilter(inventory, 'name');
 
   const stats = useMemo(() => computeInventoryStats(inventory), [inventory]);
 
@@ -102,43 +92,18 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
     }
   };
 
-  const handleExport = () => {
-    const { headers, rows, filename } = csvForInventory(filteredItems);
-    downloadCSV(headers, rows, filename);
-  };
-
-  const handleRowKeyDown = (event, itemId) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onViewItem(itemId);
-    }
-  };
-
   return (
     <>
-      <PageHeader
+      <ReportHeader
         title="Inventory Summary"
         subtitle="Complete breakdown of all inventory items"
         onBack={onBack}
-        backLabel="Back to Reports"
-        action={
-          <Button onClick={handleExport} icon={Download}>
-            Export CSV
-          </Button>
-        }
+        buildCsv={() => csvForInventory(filteredItems)}
+        profile={currentUser?.profile}
       />
 
-      <ReportBranding profile={currentUser?.profile} />
-
       {/* Summary Stats */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: spacing[4],
-          marginBottom: spacing[6],
-        }}
-      >
+      <ReportStatGrid>
         <StatCard
           icon={Package}
           label="Total Items"
@@ -169,7 +134,7 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
           value={Object.keys(stats.byLocation).length}
           color={colors.accent2}
         />
-      </div>
+      </ReportStatGrid>
 
       {/* Value growth */}
       {acquisition.datedItems > 0 && (
@@ -201,185 +166,87 @@ export const InventoryReportPanel = memo(function InventoryReportPanel({
 
       <div className="responsive-two-col" style={{ display: 'grid', gap: spacing[5] }}>
         {/* Main inventory table */}
-        <Card
-          padding={false}
-          style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 380px)' }}
-        >
-          <CardHeader
-            title="All Items"
-            action={
-              <div style={{ display: 'flex', gap: spacing[2] }}>
-                <Select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  options={[
-                    { value: 'all', label: 'All Categories' },
-                    ...categories.map((cat) => ({ value: cat, label: cat })),
-                  ]}
-                  style={{ width: 140 }}
-                  compact
-                  aria-label="Filter by category"
-                />
-                <Select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  options={[
-                    { value: 'name', label: 'Name' },
-                    { value: 'value-desc', label: 'Value (High to Low)' },
-                    { value: 'category', label: 'Category' },
-                    { value: 'status', label: 'Status' },
-                    { value: 'newest', label: 'Newest First' },
-                  ]}
-                  style={{ width: 160 }}
-                  compact
-                  aria-label="Sort by"
-                />
-              </div>
-            }
-          />
-          {/* One container scrolls both axes — a nested overflowX wrapper would
-              detach the sticky thead from the vertical scroll; table minWidth
-              keeps columns readable on narrow screens */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              overflowX: 'auto',
-              WebkitOverflowScrolling: 'touch',
-              minHeight: 200,
-            }}
-          >
-            <table style={{ width: '100%', minWidth: 640, borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: colors.bgDark, position: 'sticky', top: 0 }}>
-                  <th
-                    style={{
-                      padding: spacing[3],
-                      textAlign: 'left',
-                      fontSize: typography.fontSize.xs,
-                      color: colors.textMuted,
-                      fontWeight: typography.fontWeight.medium,
-                    }}
-                  >
-                    Item
-                  </th>
-                  <th
-                    style={{
-                      padding: spacing[3],
-                      textAlign: 'left',
-                      fontSize: typography.fontSize.xs,
-                      color: colors.textMuted,
-                      fontWeight: typography.fontWeight.medium,
-                    }}
-                  >
-                    Category
-                  </th>
-                  <th
-                    style={{
-                      padding: spacing[3],
-                      textAlign: 'left',
-                      fontSize: typography.fontSize.xs,
-                      color: colors.textMuted,
-                      fontWeight: typography.fontWeight.medium,
-                    }}
-                  >
-                    Status
-                  </th>
-                  <th
-                    style={{
-                      padding: spacing[3],
-                      textAlign: 'right',
-                      fontSize: typography.fontSize.xs,
-                      color: colors.textMuted,
-                      fontWeight: typography.fontWeight.medium,
-                    }}
-                  >
-                    Value
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredItems.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="report-tr"
-                    tabIndex={0}
-                    onClick={() => onViewItem(item.id)}
-                    onKeyDown={(e) => handleRowKeyDown(e, item.id)}
-                    style={{
-                      borderBottom: `1px solid ${colors.borderLight}`,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <td style={{ padding: spacing[3] }}>
-                      <div
-                        style={{
-                          fontWeight: typography.fontWeight.medium,
-                          color: colors.textPrimary,
-                          fontSize: typography.fontSize.sm,
-                        }}
-                      >
-                        {item.name}
-                      </div>
-                      <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
-                        {item.id}
-                        {item.brand ? ` • ${item.brand}` : ''}
-                        {item.location ? ` • ${item.location}` : ''}
-                      </div>
-                    </td>
-                    <td style={{ padding: spacing[3] }}>
-                      <Badge text={item.category || 'None'} color={colors.primary} size="xs" />
-                    </td>
-                    <td style={{ padding: spacing[3] }}>
-                      <Badge
-                        text={statusLabel(item.status)}
-                        color={getStatusColor(item.status)}
-                        size="xs"
-                      />
-                    </td>
-                    <td
-                      style={{
-                        padding: spacing[3],
-                        textAlign: 'right',
-                        fontSize: typography.fontSize.sm,
-                        fontWeight: typography.fontWeight.medium,
-                        color: colors.available,
-                      }}
-                    >
-                      {formatMoney(item.currentValue)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr
-                  style={{ background: colors.bgDark, fontWeight: typography.fontWeight.semibold }}
+        <ReportTable
+          title="All Items"
+          headerAction={
+            <ReportFilterBar
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              sortOptions={SORT_OPTIONS}
+            />
+          }
+          columns={TABLE_COLUMNS}
+          rows={filteredItems}
+          onRowActivate={(item) => onViewItem(item.id)}
+          renderCells={(item) => (
+            <>
+              <td style={{ padding: spacing[3] }}>
+                <div
+                  style={{
+                    fontWeight: typography.fontWeight.medium,
+                    color: colors.textPrimary,
+                    fontSize: typography.fontSize.sm,
+                  }}
                 >
-                  <td
-                    colSpan={3}
-                    style={{
-                      padding: spacing[3],
-                      fontSize: typography.fontSize.sm,
-                      color: colors.textPrimary,
-                    }}
-                  >
-                    Total ({filteredItems.length} items)
-                  </td>
-                  <td
-                    style={{
-                      padding: spacing[3],
-                      textAlign: 'right',
-                      fontSize: typography.fontSize.sm,
-                      color: colors.available,
-                    }}
-                  >
-                    {formatMoney(filteredItems.reduce((sum, i) => sum + (i.currentValue || 0), 0))}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </Card>
+                  {item.name}
+                </div>
+                <div style={{ fontSize: typography.fontSize.xs, color: colors.textMuted }}>
+                  {item.id}
+                  {item.brand ? ` • ${item.brand}` : ''}
+                  {item.location ? ` • ${item.location}` : ''}
+                </div>
+              </td>
+              <td style={{ padding: spacing[3] }}>
+                <Badge text={item.category || 'None'} color={colors.primary} size="xs" />
+              </td>
+              <td style={{ padding: spacing[3] }}>
+                <Badge
+                  text={statusLabel(item.status)}
+                  color={getStatusColor(item.status)}
+                  size="xs"
+                />
+              </td>
+              <td
+                style={{
+                  padding: spacing[3],
+                  textAlign: 'right',
+                  fontSize: typography.fontSize.sm,
+                  fontWeight: typography.fontWeight.medium,
+                  color: colors.available,
+                }}
+              >
+                {formatMoney(item.currentValue)}
+              </td>
+            </>
+          )}
+          footerCells={
+            <>
+              <td
+                colSpan={3}
+                style={{
+                  padding: spacing[3],
+                  fontSize: typography.fontSize.sm,
+                  color: colors.textPrimary,
+                }}
+              >
+                Total ({filteredItems.length} items)
+              </td>
+              <td
+                style={{
+                  padding: spacing[3],
+                  textAlign: 'right',
+                  fontSize: typography.fontSize.sm,
+                  color: colors.available,
+                }}
+              >
+                {formatMoney(filteredItems.reduce((sum, i) => sum + (i.currentValue || 0), 0))}
+              </td>
+            </>
+          }
+        />
 
         {/* Sidebar */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[4] }}>

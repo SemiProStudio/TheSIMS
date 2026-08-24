@@ -7,19 +7,10 @@
 
 import { memo, useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Download, Building2, Users, FileText, TrendingUp } from 'lucide-react';
+import { Building2, Users, FileText, TrendingUp } from 'lucide-react';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
-import { downloadCSV } from '../utils';
-import {
-  Badge,
-  Card,
-  CardHeader,
-  StatCard,
-  EmptyState,
-  Button,
-  PageHeader,
-} from '../components/ui.jsx';
-import { ReportBranding } from '../components/ReportBranding.jsx';
+import { Badge, Card, CardHeader, StatCard, EmptyState } from '../components/ui.jsx';
+import { ReportHeader, ReportStatGrid } from '../components/reports.jsx';
 import { HBarChart, TrendChart } from '../components/charts.jsx';
 import { computeClientReportStats, bookingsSeries, csvForClients } from '../lib/reportData.js';
 import { useData } from '../contexts/DataContext.js';
@@ -56,11 +47,6 @@ export const ClientReportPanel = memo(function ClientReportPanel({
     [bookingsTrend],
   );
 
-  const handleExport = () => {
-    const { headers, rows, filename } = csvForClients(clientsWithStats);
-    downloadCSV(headers, rows, filename);
-  };
-
   const handleRowKeyDown = (event, client) => {
     if ((event.key === 'Enter' || event.key === ' ') && onViewClient) {
       event.preventDefault();
@@ -70,29 +56,16 @@ export const ClientReportPanel = memo(function ClientReportPanel({
 
   return (
     <>
-      <PageHeader
+      <ReportHeader
         title="Client Report"
         subtitle="Clients ranked by reservation activity"
         onBack={onBack}
-        backLabel="Back to Reports"
-        action={
-          <Button onClick={handleExport} icon={Download}>
-            Export CSV
-          </Button>
-        }
+        buildCsv={() => csvForClients(clientsWithStats)}
+        profile={currentUser?.profile}
       />
 
-      <ReportBranding profile={currentUser?.profile} />
-
       {/* Summary Stats */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: spacing[4],
-          marginBottom: spacing[6],
-        }}
-      >
+      <ReportStatGrid>
         <StatCard
           icon={Building2}
           label="Total Clients"
@@ -111,7 +84,7 @@ export const ClientReportPanel = memo(function ClientReportPanel({
           value={stats.totalReservations}
           color={colors.checkedOut}
         />
-      </div>
+      </ReportStatGrid>
 
       {/* Bookings over time */}
       {bookingsTotal > 0 && (
