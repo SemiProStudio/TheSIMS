@@ -84,7 +84,7 @@ const CategorySection = memo(function CategorySection({
   themeColors,
   selectedColor,
   onSelectColor,
-  _onColorChange,
+  onColorChange,
 }) {
   return (
     <div style={{ borderBottom: `1px solid ${colors.border}` }}>
@@ -142,13 +142,21 @@ const CategorySection = memo(function CategorySection({
                     : '1px solid transparent',
               }}
             >
-              <div
+              {/* Native picker on the swatch itself (this is what
+                  onColorChange is for) — the click also bubbles to the row,
+                  so the side panel follows the edited color */}
+              <input
+                type="color"
+                value={themeColors[colorDef.key] || '#888888'}
+                onChange={(e) => onColorChange(colorDef.key, e.target.value)}
+                aria-label={`${colorDef.label} color`}
                 style={{
                   width: 24,
                   height: 24,
+                  padding: 0,
                   borderRadius: borderRadius.sm,
-                  background: themeColors[colorDef.key] || '#888',
                   border: `1px solid ${colors.border}`,
+                  cursor: 'pointer',
                   flexShrink: 0,
                 }}
               />

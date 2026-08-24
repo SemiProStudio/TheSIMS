@@ -813,6 +813,31 @@ function GearList({
     onSaveUiPrefs?.({ gearListSort: sortBy, gearListPageSize: pageSize });
   }, [sortBy, pageSize, onSaveUiPrefs]);
 
+  // User-driven changes go through these so a later profile refresh can't
+  // clobber them (see the resync effect below)
+  const uiPrefsEditedRef = useRef(false);
+  const changeSortBy = useCallback((value) => {
+    uiPrefsEditedRef.current = true;
+    setSortBy(value);
+  }, []);
+  const changePageSize = useCallback((value) => {
+    uiPrefsEditedRef.current = true;
+    setPageSize(value);
+  }, []);
+
+  // Profile prefs load asynchronously and can refresh while this view is
+  // mounted — resync so the mount-time snapshot isn't sticky
+  // (NotificationSettings pattern). Values edited this session win.
+  const lastUiPrefsRef = useRef(uiPrefs);
+  useEffect(() => {
+    if (uiPrefs && uiPrefs !== lastUiPrefsRef.current && !uiPrefsEditedRef.current) {
+      lastUiPrefsRef.current = uiPrefs;
+      setPageSize(uiPrefs.gearListPageSize || DEFAULT_PAGE_SIZE);
+      const saved = uiPrefs.gearListSort;
+      setSortBy(SORT_OPTIONS.some((o) => o.value === saved) ? saved : 'default');
+    }
+  }, [uiPrefs]);
+
   // Selection state
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -824,13 +849,29 @@ function GearList({
   const [savedViews, setSavedViews] = useState(() => savedViewsProp ?? []);
   const [viewPendingDelete, setViewPendingDelete] = useState(null);
 
+  const savedViewsEditedRef = useRef(false);
   const persistViews = useCallback(
     (next) => {
+      savedViewsEditedRef.current = true;
       setSavedViews(next);
       onChangeSavedViews?.(next);
     },
     [onChangeSavedViews],
   );
+
+  // Same resync as the uiPrefs above: profile-loaded views arriving after
+  // mount must land, but never over views edited this session
+  const lastSavedViewsPropRef = useRef(savedViewsProp);
+  useEffect(() => {
+    if (
+      savedViewsProp &&
+      savedViewsProp !== lastSavedViewsPropRef.current &&
+      !savedViewsEditedRef.current
+    ) {
+      lastSavedViewsPropRef.current = savedViewsProp;
+      setSavedViews(savedViewsProp);
+    }
+  }, [savedViewsProp]);
 
   // Check if any filters are active
   const hasActiveFilters =
@@ -868,11 +909,11 @@ function GearList({
       setSearchQuery(view.filters.search || '');
       setCategoryFilter(view.filters.category || 'all');
       setStatusFilter(view.filters.status || 'all');
-      setSortBy(
+      changeSortBy(
         SORT_OPTIONS.some((o) => o.value === view.filters.sort) ? view.filters.sort : 'default',
       );
     },
-    [setSearchQuery, setCategoryFilter, setStatusFilter],
+    [setSearchQuery, setCategoryFilter, setStatusFilter, changeSortBy],
   );
 
   // The saved view whose filters exactly match the current state
@@ -1028,10 +1069,10 @@ function GearList({
     setSearchQuery('');
     setCategoryFilter('all');
     setStatusFilter('all');
-    setSortBy('default');
+    changeSortBy('default');
     setAvailStart('');
     setAvailEnd('');
-  }, [setSearchQuery, setCategoryFilter, setStatusFilter]);
+  }, [setSearchQuery, setCategoryFilter, setStatusFilter, changeSortBy]);
 
   return (
     <>
@@ -1185,7 +1226,7 @@ function GearList({
           {/* Sort */}
           <Select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+            onChange={(e) => changeSortBy(e.target.value)}
             options={SORT_OPTIONS}
             style={{ minWidth: 170 }}
             aria-label="Sort items"
@@ -1313,7 +1354,7 @@ function GearList({
             <span style={{ fontSize: typography.fontSize.sm, color: colors.textMuted }}>Show:</span>
             <Select
               value={pageSize}
-              onChange={(e) => setPageSize(parseInt(e.target.value, 10))}
+              onChange={(e) => changePageSize(parseInt(e.target.value, 10))}
               options={PAGE_SIZE_OPTIONS.map((size) => ({ value: size, label: String(size) }))}
               style={{ width: 80 }}
               aria-label="Items per page"

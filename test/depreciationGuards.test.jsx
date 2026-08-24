@@ -13,7 +13,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { calculateDepreciation, DEPRECIATION_METHODS } from '../utils';
+import { calculateDepreciation, DEPRECIATION_METHODS, getTodayISO } from '../utils';
 import DepreciationCalculator from '../components/DepreciationCalculator.jsx';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -53,7 +53,10 @@ describe('calculateDepreciation guards', () => {
   });
 
   it('credits all completed years at an exact anniversary (declining balance)', () => {
-    const purchase = new Date(Date.now() - 3 * 365.25 * DAY).toISOString();
+    // calculateDepreciation measures age from UTC midnight of the local
+    // calendar date, not from Date.now() — anchor the anniversary there
+    const todayUTC = new Date(getTodayISO());
+    const purchase = new Date(todayUTC.getTime() - 3 * 365.25 * DAY).toISOString();
     const result = calculateDepreciation(
       1000,
       purchase,

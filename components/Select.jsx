@@ -2,14 +2,17 @@
 // Custom Select Component
 // Styled dropdown that works consistently across browsers
 // Uses React Portal to escape stacking context issues (e.g., backdrop-filter)
+// Follows MultiSelectDropdown's listbox pattern: the popup takes focus and
+// exposes options via aria-activedescendant, so arrow-key highlight is
+// announced (activedescendant only works on the focused element).
 // ============================================================================
 
-import { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { useState, useRef, useEffect, useCallback, useId, memo } from 'react';
 import { createPortal } from 'react-dom';
-import { colors, typography, borderRadius } from '../theme.js';
+import { colors, typography, borderRadius, withOpacity } from '../theme.js';
 import { ChevronDown } from 'lucide-react';
 
-export function Select({
+export const Select = memo(function Select({
   value,
   onChange,
   options = [],
@@ -28,7 +31,14 @@ export function Select({
     direction: 'down',
   });
   const containerRef = useRef(null);
+  const triggerRef = useRef(null);
   const listRef = useRef(null);
+
+  // Option ids must be unique per instance — several Selects can be open in
+  // one document (option-${index} collided across them)
+  const baseId = useId();
+  const listboxId = `${baseId}-listbox`;
+  const optionId = (index) => `${baseId}-opt-${index}`;
 
   // Find the selected option
   const selectedOption = options.find(
@@ -79,10 +89,11 @@ export function Select({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  // Update position when opening and on scroll/resize
+  // Update position and move focus into the listbox when open
   useEffect(() => {
     if (isOpen) {
       updateDropdownPosition();
+      listRef.current?.focus();
 
       const handleScrollOrResize = () => updateDropdownPosition();
       window.addEventListener('scroll', handleScrollOrResize, true);
@@ -94,51 +105,6 @@ export function Select({
       };
     }
   }, [isOpen, updateDropdownPosition]);
-
-  // Keyboard navigation
-  const handleKeyDown = useCallback(
-    (e) => {
-      if (disabled) return;
-
-      switch (e.key) {
-        case 'Enter':
-        case ' ':
-          e.preventDefault();
-          if (isOpen && highlightedIndex >= 0) {
-            const opt = options[highlightedIndex];
-            const val = typeof opt === 'object' ? opt.value : opt;
-            onChange({ target: { value: val } });
-            setIsOpen(false);
-          } else {
-            setIsOpen(true);
-          }
-          break;
-        case 'Escape':
-          setIsOpen(false);
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          if (!isOpen) {
-            setIsOpen(true);
-          } else {
-            setIsKeyboardNav(true);
-            setHighlightedIndex((prev) => (prev < options.length - 1 ? prev + 1 : 0));
-          }
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          if (isOpen) {
-            setIsKeyboardNav(true);
-            setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : options.length - 1));
-          }
-          break;
-        case 'Tab':
-          setIsOpen(false);
-          break;
-      }
-    },
-    [isOpen, highlightedIndex, options, onChange, disabled],
-  );
 
   // Scroll highlighted option into view (only for keyboard navigation)
   const [isKeyboardNav, setIsKeyboardNav] = useState(false);
@@ -163,11 +129,73 @@ export function Select({
     }
   }, [isOpen, options, value]);
 
-  const handleSelect = (opt) => {
-    const val = typeof opt === 'object' ? opt.value : opt;
-    onChange({ target: { value: val } });
-    setIsOpen(false);
-  };
+  const handleSelect = useCallback(
+    (opt) => {
+      const val = typeof opt === 'object' ? opt.value : opt;
+      onChange({ target: { value: val } });
+      setIsOpen(false);
+      // Focus lives in the portaled listbox while open — closing unmounts
+      // it, so hand focus back to the trigger or it drops to <body>
+      triggerRef.current?.focus();
+    },
+    [onChange],
+  );
+
+  // While open, focus (and therefore keyboard input) is on the listbox —
+  // the trigger only ever opens or closes
+  const handleTriggerKeyDown = useCallback(
+    (e) => {
+      if (disabled) return;
+
+      switch (e.key) {
+        case 'Enter':
+        case ' ':
+        case 'ArrowDown':
+        case 'ArrowUp':
+          e.preventDefault();
+          if (!isOpen) setIsOpen(true);
+          break;
+        case 'Escape':
+          setIsOpen(false);
+          break;
+      }
+    },
+    [disabled, isOpen],
+  );
+
+  const handleListKeyDown = useCallback(
+    (e) => {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setIsKeyboardNav(true);
+          setHighlightedIndex((prev) => (prev < options.length - 1 ? prev + 1 : 0));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setIsKeyboardNav(true);
+          setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : options.length - 1));
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          if (highlightedIndex >= 0 && options[highlightedIndex] !== undefined) {
+            handleSelect(options[highlightedIndex]);
+          }
+          break;
+        case 'Escape':
+          e.preventDefault();
+          setIsOpen(false);
+          triggerRef.current?.focus();
+          break;
+        case 'Tab':
+          // Let focus move on naturally, but don't leave the popup orphaned
+          setIsOpen(false);
+          break;
+      }
+    },
+    [options, highlightedIndex, handleSelect],
+  );
 
   // Render dropdown via portal to escape stacking context
   const dropdown =
@@ -175,8 +203,12 @@ export function Select({
     createPortal(
       <ul
         ref={listRef}
+        id={listboxId}
         role="listbox"
-        aria-activedescendant={highlightedIndex >= 0 ? `option-${highlightedIndex}` : undefined}
+        aria-label={ariaLabel || placeholder}
+        aria-activedescendant={highlightedIndex >= 0 ? optionId(highlightedIndex) : undefined}
+        tabIndex={-1}
+        onKeyDown={handleListKeyDown}
         style={{
           position: 'fixed',
           top: dropdownPosition.top,
@@ -192,6 +224,7 @@ export function Select({
           overflowY: 'auto',
           listStyle: 'none',
           margin: 0,
+          outline: 'none',
           fontFamily: typography.fontFamily,
         }}
       >
@@ -204,7 +237,7 @@ export function Select({
           return (
             <li
               key={optValue}
-              id={`option-${index}`}
+              id={optionId(index)}
               role="option"
               aria-selected={isSelected}
               onClick={() => handleSelect(opt)}
@@ -217,9 +250,9 @@ export function Select({
                 fontSize: typography.fontSize.base,
                 fontFamily: 'inherit',
                 background: isHighlighted
-                  ? `rgba(106, 154, 184, 0.2)`
+                  ? withOpacity(colors.primary, 20)
                   : isSelected
-                    ? `rgba(106, 154, 184, 0.1)`
+                    ? withOpacity(colors.primary, 10)
                     : 'transparent',
                 fontWeight: isSelected ? 600 : 400,
                 transition: 'background 0.15s ease',
@@ -237,12 +270,14 @@ export function Select({
     <div ref={containerRef} style={{ position: 'relative', ...style }}>
       {/* Trigger button */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        onKeyDown={handleKeyDown}
+        onKeyDown={handleTriggerKeyDown}
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-controls={isOpen ? listboxId : undefined}
         aria-label={ariaLabel}
         style={{
           width: '100%',
@@ -266,7 +301,7 @@ export function Select({
           // while the border shorthand stays makes React warn on rerender
           borderColor: isOpen ? colors.primary : colors.border,
           ...(isOpen && {
-            boxShadow: `0 0 0 2px rgba(106, 154, 184, 0.2)`,
+            boxShadow: `0 0 0 2px ${withOpacity(colors.primary, 20)}`,
           }),
         }}
       >
@@ -289,6 +324,4 @@ export function Select({
       {dropdown}
     </div>
   );
-}
-
-export default memo(Select);
+});

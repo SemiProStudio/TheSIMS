@@ -8,7 +8,7 @@
 //   addToast('Save failed — changes may not persist', 'error');
 // =============================================================================
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import ToastContext from './ToastContext.js';
 import { colors, withOpacity, typography } from '../theme.js';
 
@@ -22,8 +22,14 @@ const TOAST_DURATION = {
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const idRef = useRef(0);
+  const timersRef = useRef(new Map()); // toast id → auto-dismiss timer
 
   const removeToast = useCallback((id) => {
+    const timer = timersRef.current.get(id);
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      timersRef.current.delete(id);
+    }
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
@@ -34,14 +40,31 @@ export function ToastProvider({ children }) {
 
       setToasts((prev) => [...prev.slice(-4), { id, message, type }]); // keep max 5
 
-      setTimeout(() => removeToast(id), duration);
+      timersRef.current.set(
+        id,
+        setTimeout(() => removeToast(id), duration),
+      );
       return id;
     },
     [removeToast],
   );
 
+  // Auto-dismiss timers must not outlive the provider — each would fire a
+  // setState on an unmounted component
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      for (const timer of timers.values()) clearTimeout(timer);
+      timers.clear();
+    };
+  }, []);
+
+  // This provider wraps the whole app — a fresh value object each render
+  // would re-render every useToast consumer whenever a toast comes or goes
+  const value = useMemo(() => ({ addToast, removeToast }), [addToast, removeToast]);
+
   return (
-    <ToastContext.Provider value={{ addToast, removeToast }}>
+    <ToastContext.Provider value={value}>
       {children}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
     </ToastContext.Provider>

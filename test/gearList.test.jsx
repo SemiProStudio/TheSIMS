@@ -115,7 +115,8 @@ describe('sortItems', () => {
     expect(desc[0].id).toBe('CA1'); // 3000
     expect(desc[1].id).toBe('LI1'); // 2000 via purchasePrice
     const asc = sortItems(inventory, 'value-asc');
-    expect(asc[0].isKit || asc[0].currentValue === undefined || true).toBe(true);
+    // KIT1 has no value at all (0), then 1000, 2000 (purchasePrice), 3000
+    expect(asc.map((i) => i.id)).toEqual(['KIT1', 'CA2', 'LI1', 'CA1']);
   });
 
   it('every SORT_OPTIONS value is handled', () => {
@@ -329,6 +330,28 @@ describe('GearList per-user UI prefs', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(localStorage.getItem('sims-saved-filter-views')).toBeNull();
+  });
+
+  it('resyncs sort and page size when profile prefs arrive after mount', () => {
+    const { props, view } = renderGearList(); // uiPrefs undefined at mount
+    expect(sortTrigger()).toHaveTextContent('Category (default)');
+    expect(screen.getByLabelText('Items per page')).toHaveTextContent('25');
+
+    view.rerender(
+      <GearList {...props} uiPrefs={{ gearListSort: 'name-asc', gearListPageSize: 50 }} />,
+    );
+    expect(sortTrigger()).toHaveTextContent('Name A–Z');
+    expect(screen.getByLabelText('Items per page')).toHaveTextContent('50');
+  });
+
+  it('keeps a sort picked this session over a later profile refresh', () => {
+    const { props, view } = renderGearList();
+    fireEvent.click(sortTrigger());
+    fireEvent.click(screen.getByRole('option', { name: 'Value: high to low' }));
+    expect(sortTrigger()).toHaveTextContent('Value: high to low');
+
+    view.rerender(<GearList {...props} uiPrefs={{ gearListSort: 'name-asc' }} />);
+    expect(sortTrigger()).toHaveTextContent('Value: high to low');
   });
 });
 

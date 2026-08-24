@@ -66,12 +66,26 @@ function LabelsView({ inventory, packages = [], user, uiPrefs, onSaveUiPrefs }) 
   );
   const [selectionTab, setSelectionTab] = useState('items'); // 'items', 'kits', 'packages'
 
+  const formatEditedRef = useRef(false);
   const pickFormat = (format) => {
+    formatEditedRef.current = true;
     setSelectedFormat(format);
     if (LABEL_FORMATS.some((f) => f.id === format.id)) {
       onSaveUiPrefs?.({ labelFormat: format.id });
     }
   };
+
+  // Profile prefs load asynchronously and can refresh while this view is
+  // mounted — resync the stored format so the mount-time snapshot isn't
+  // sticky (NotificationSettings pattern). A format picked this session wins.
+  const lastUiPrefsRef = useRef(uiPrefs);
+  useEffect(() => {
+    if (uiPrefs && uiPrefs !== lastUiPrefsRef.current && !formatEditedRef.current) {
+      lastUiPrefsRef.current = uiPrefs;
+      const saved = LABEL_FORMATS.find((f) => f.id === uiPrefs.labelFormat);
+      if (saved) setSelectedFormat(saved);
+    }
+  }, [uiPrefs]);
 
   // Get kits from inventory (items that are containers with kit items)
   const kits = useMemo(() => {
