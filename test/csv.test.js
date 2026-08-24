@@ -5,6 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseCSV, stripFormulaGuard, parseMoney } from '../lib/csv.js';
+import { parseCurrency } from '../lib/validators.js';
 
 describe('parseCSV', () => {
   it('parses headers and rows', () => {
@@ -86,5 +87,13 @@ describe('parseMoney', () => {
     expect(parseMoney('')).toEqual({ value: 0, ok: true });
     expect(parseMoney(null)).toEqual({ value: 0, ok: true });
     expect(parseMoney(undefined)).toEqual({ value: 0, ok: true });
+  });
+
+  it('stays strict where the lenient form parser coerces (one parser, two modes)', () => {
+    // parseCurrency('12abc') is 12 on form paths; the CSV import must flag it
+    expect(parseCurrency('12abc')).toBe(12);
+    expect(parseMoney('12abc')).toEqual({ value: 0, ok: false });
+    // Whitespace-wrapped junk: '$' alone survives trimming but is not a number
+    expect(parseMoney(' $ ')).toEqual({ value: 0, ok: false });
   });
 });

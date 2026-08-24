@@ -838,6 +838,215 @@ describe('locationsService.syncAll delete honesty (B5)', () => {
   });
 });
 
+// =============================================================================
+// syncAll ↔ CRUD consolidation (audit §5.8): both go through shared statement
+// builders, so the QUERY SHAPES are pinned here with a recording mock — the
+// generic chain above can't see which methods were chained.
+// =============================================================================
+
+// Records every from() chain as {table, ops: [[method, args], ...]};
+// respond(entry, callIndex) supplies {data, error} per call (default nulls)
+function createRecordingClient(respond = () => null) {
+  const calls = [];
+  const from = vi.fn((table) => {
+    const entry = { table, ops: [] };
+    calls.push(entry);
+    const result = () =>
+      Promise.resolve(respond(entry, calls.length) || { data: null, error: null });
+    const handler = {
+      get(_, prop) {
+        if (prop === 'then') return (...args) => result().then(...args);
+        if (prop === 'catch') return (...args) => result().catch(...args);
+        return (...chainArgs) => {
+          entry.ops.push([prop, chainArgs]);
+          if (prop === 'single') return result();
+          return new Proxy({}, handler);
+        };
+      },
+    };
+    return new Proxy({}, handler);
+  });
+  return { from, calls };
+}
+
+describe('categoriesService.syncAll shares the CRUD statements (§5.8)', () => {
+  const existing = [
+    { id: 1, name: 'Cameras', prefix: 'CA', sort_order: 0 },
+    { id: 2, name: 'Lenses', prefix: 'LE', sort_order: 1 },
+  ];
+
+  it('fetch → delete → update → insert, with the exact statement shapes', async () => {
+    const client = createRecordingClient((entry) =>
+      entry.ops.some(([m]) => m === 'select') ? { data: existing, error: null } : null,
+    );
+    getSupabase.mockResolvedValue(client);
+
+    await categoriesService.syncAll(['Cameras', 'Audio'], { Audio: { trackQuantity: true } });
+
+    // 1: fetch current state
+    expect(client.calls[0]).toMatchObject({ table: 'categories' });
+    expect(client.calls[0].ops).toEqual([
+      ['select', ['*']],
+      ['order', ['sort_order']],
+    ]);
+    // 2: category delete — same .delete().eq('name') statement delete() issues
+    expect(client.calls[1].table).toBe('categories');
+    expect(client.calls[1].ops).toEqual([
+      ['delete', []],
+      ['eq', ['name', 'Lenses']],
+    ]);
+    // 3: the removed category's specs
+    expect(client.calls[2].table).toBe('specs');
+    expect(client.calls[2].ops).toEqual([
+      ['delete', []],
+      ['eq', ['category_name', 'Lenses']],
+    ]);
+    // 4: update by id — bare statement, no select/single tacked on
+    expect(client.calls[3].table).toBe('categories');
+    expect(client.calls[3].ops).toEqual([
+      ['update', [{ track_quantity: false, track_serial_numbers: true, sort_order: 0 }]],
+      ['eq', ['id', 1]],
+    ]);
+    // 5: insert with a generated unique prefix — bare statement
+    expect(client.calls[4].table).toBe('categories');
+    expect(client.calls[4].ops).toEqual([
+      [
+        'insert',
+        [
+          {
+            name: 'Audio',
+            prefix: 'AU',
+            track_quantity: true,
+            track_serial_numbers: true,
+            sort_order: 1,
+          },
+        ],
+      ],
+    ]);
+    expect(client.calls).toHaveLength(5);
+    getSupabase.mockReset();
+  });
+
+  it('applies renames as row UPDATEs before diffing (id and specs survive)', async () => {
+    const client = createRecordingClient((entry) =>
+      entry.ops.some(([m]) => m === 'select')
+        ? { data: [{ id: 1, name: 'Video', prefix: 'CA', sort_order: 0 }], error: null }
+        : null,
+    );
+    getSupabase.mockResolvedValue(client);
+
+    await categoriesService.syncAll(['Video'], {}, { Cameras: 'Video' });
+
+    expect(client.calls[0].table).toBe('categories');
+    expect(client.calls[0].ops).toEqual([
+      ['update', [{ name: 'Video' }]],
+      ['eq', ['name', 'Cameras']],
+    ]);
+    expect(client.calls[1].table).toBe('specs');
+    expect(client.calls[1].ops).toEqual([
+      ['update', [{ category_name: 'Video' }]],
+      ['eq', ['category_name', 'Cameras']],
+    ]);
+    getSupabase.mockReset();
+  });
+
+  it('wraps a refused delete with the category name', async () => {
+    const client = createRecordingClient((entry) => {
+      if (entry.ops.some(([m]) => m === 'select')) return { data: existing, error: null };
+      if (entry.ops.some(([m]) => m === 'delete'))
+        return { data: null, error: new Error('RLS refused') };
+      return null;
+    });
+    getSupabase.mockResolvedValue(client);
+
+    await expect(categoriesService.syncAll(['Cameras'])).rejects.toThrow(
+      'Failed to delete category "Lenses": RLS refused',
+    );
+    getSupabase.mockReset();
+  });
+
+  it('CRUD create/update issue the same statements plus .select().single()', async () => {
+    const client = createRecordingClient(() => ({ data: { id: 7 }, error: null }));
+    getSupabase.mockResolvedValue(client);
+
+    await categoriesService.create({ name: 'Audio', prefix: 'AU' });
+    await categoriesService.update(7, { sort_order: 3 });
+    await categoriesService.delete('Audio');
+
+    expect(client.calls[0].ops).toEqual([
+      ['insert', [{ name: 'Audio', prefix: 'AU' }]],
+      ['select', []],
+      ['single', []],
+    ]);
+    expect(client.calls[1].ops).toEqual([
+      ['update', [{ sort_order: 3 }]],
+      ['eq', ['id', 7]],
+      ['select', []],
+      ['single', []],
+    ]);
+    expect(client.calls[2].ops).toEqual([
+      ['delete', []],
+      ['eq', ['name', 'Audio']],
+    ]);
+    getSupabase.mockReset();
+  });
+});
+
+describe('locationsService delete consolidation (§5.8)', () => {
+  it('syncAll deletes every removed id in ONE .in statement and upserts the rest', async () => {
+    const client = createRecordingClient((entry) =>
+      entry.ops.some(([m]) => m === 'select')
+        ? { data: [{ id: 'L1' }, { id: 'GONE1' }, { id: 'GONE2' }], error: null }
+        : null,
+    );
+    getSupabase.mockResolvedValue(client);
+
+    await locationsService.syncAll([{ id: 'L1', name: 'Keep', type: 'room' }]);
+
+    expect(client.calls[1].table).toBe('locations');
+    expect(client.calls[1].ops).toEqual([
+      ['delete', []],
+      ['in', ['id', ['GONE1', 'GONE2']]],
+    ]);
+    expect(client.calls[2].ops).toEqual([
+      [
+        'upsert',
+        [
+          [
+            {
+              id: 'L1',
+              name: 'Keep',
+              type: 'room',
+              parent_id: null,
+              path: 'Keep',
+              depth: 0,
+              sort_order: 0,
+            },
+          ],
+          { onConflict: 'id' },
+        ],
+      ],
+    ]);
+    expect(client.calls).toHaveLength(3);
+    getSupabase.mockReset();
+  });
+
+  it('delete(id) routes through the same batch statement', async () => {
+    const client = createRecordingClient();
+    getSupabase.mockResolvedValue(client);
+
+    const result = await locationsService.delete('loc-9');
+
+    expect(result).toEqual({ id: 'loc-9' });
+    expect(client.calls[0].table).toBe('locations');
+    expect(client.calls[0].ops).toEqual([
+      ['delete', []],
+      ['in', ['id', ['loc-9']]],
+    ]);
+    getSupabase.mockReset();
+  });
+});
+
 describe('threaded notes orphan handling (B6)', () => {
   it('surfaces a reply whose parent is missing at the root instead of dropping it', async () => {
     const rows = [

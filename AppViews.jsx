@@ -411,10 +411,11 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
 
       {currentView === VIEWS.PACKAGES && (
         <Suspense fallback={<ViewLoading message="Loading Packages..." />}>
+          {/* No dataContext prop: the view's useData() fallback reads the
+              same context object (the prop remains as a test seam) */}
           <PackagesView
             packages={packages}
             packLists={packLists}
-            dataContext={dataContext}
             inventory={inventory}
             categorySettings={categorySettings}
             onViewItem={navigateToItem}
@@ -436,7 +437,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           <Suspense fallback={<ViewLoading message="Loading Pack Lists..." />}>
             <PackListsView
               packLists={packLists}
-              dataContext={dataContext}
               inventory={inventory}
               packages={packages}
               categorySettings={categorySettings}
@@ -512,7 +512,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
           <ClientsView
             clients={clients}
             inventory={inventory}
-            dataContext={dataContext}
             onViewReservation={navigateToReservation}
             onAddNote={clientNoteHandlers.add}
             onReplyNote={clientNoteHandlers.reply}

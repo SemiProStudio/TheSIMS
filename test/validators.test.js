@@ -99,6 +99,33 @@ describe('parseCurrency', () => {
     expect(parseCurrency(undefined)).toBe(0);
     expect(parseCurrency(true)).toBe(0);
   });
+
+  it('lenient mode keeps parseFloat prefix semantics (form paths rely on it)', () => {
+    expect(parseCurrency('12abc')).toBe(12);
+  });
+
+  // The one parser behind parseMoney (lib/csv.js) — strict must reject what
+  // lenient coerces, and both must treat empty input as a clean zero
+  describe('strict mode', () => {
+    it('parses decorated numbers exactly like lenient mode', () => {
+      expect(parseCurrency('$3,498.50', { strict: true })).toBe(3498.5);
+      expect(parseCurrency(' 12.99 ', { strict: true })).toBe(12.99);
+      expect(parseCurrency('-50', { strict: true })).toBe(-50);
+    });
+
+    it('returns null for junk instead of coercing', () => {
+      expect(parseCurrency('abc', { strict: true })).toBeNull();
+      expect(parseCurrency('12abc', { strict: true })).toBeNull();
+      expect(parseCurrency('$', { strict: true })).toBeNull();
+    });
+
+    it('empty/absent input is still 0, not a junk signal', () => {
+      expect(parseCurrency('', { strict: true })).toBe(0);
+      expect(parseCurrency('   ', { strict: true })).toBe(0);
+      expect(parseCurrency(null, { strict: true })).toBe(0);
+      expect(parseCurrency(undefined, { strict: true })).toBe(0);
+    });
+  });
 });
 
 // =============================================================================

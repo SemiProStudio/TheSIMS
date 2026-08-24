@@ -1058,6 +1058,9 @@ export default function App() {
   // ============================================================================
   // Handler Objects (passed to AppViews and AppModals)
   // ============================================================================
+  // Only keys AppViews actually destructures or dot-reads — deleteItem,
+  // saveReservation, selectImage, updateUserProfile, and closeModal ride in
+  // modalHandlers instead (AppViews opens modals; the modals do the work)
   const viewHandlers = useMemo(
     () => ({
       navigateToItem,
@@ -1072,7 +1075,6 @@ export default function App() {
       handleSaveFilterViews,
       updateUiPrefs,
       createItem,
-      deleteItem,
       openEditItem,
       handleBulkAction,
       openCheckoutModal,
@@ -1090,7 +1092,6 @@ export default function App() {
       deleteReminder,
       openEditReservation,
       deleteReservation,
-      saveReservation,
       reservePackage,
       setKitStatus,
       addKitItems,
@@ -1099,15 +1100,12 @@ export default function App() {
       removeRequiredAccessory,
       updateItemValue,
       setLowStockAlert,
-      selectImage,
       addItemToPackage,
       updateMaintenanceStatus,
-      updateUserProfile,
       addAuditLog,
       resetItemForm,
       resetReservationForm,
       openModal,
-      closeModal,
       saveNotificationPreferences,
     }),
     [
@@ -1123,7 +1121,6 @@ export default function App() {
       handleSaveFilterViews,
       updateUiPrefs,
       createItem,
-      deleteItem,
       openEditItem,
       handleBulkAction,
       openCheckoutModal,
@@ -1141,7 +1138,6 @@ export default function App() {
       deleteReminder,
       openEditReservation,
       deleteReservation,
-      saveReservation,
       reservePackage,
       setKitStatus,
       addKitItems,
@@ -1150,22 +1146,20 @@ export default function App() {
       removeRequiredAccessory,
       updateItemValue,
       setLowStockAlert,
-      selectImage,
       addItemToPackage,
       updateMaintenanceStatus,
-      updateUserProfile,
       addAuditLog,
       resetItemForm,
       resetReservationForm,
       openModal,
-      closeModal,
       saveNotificationPreferences,
     ],
   );
 
+  // AppModals reads createItem from DataContext directly (createItemInDb) —
+  // it is not carried here
   const modalHandlers = useMemo(
     () => ({
-      createItem,
       updateItem,
       deleteItem,
       saveReservation,
@@ -1198,7 +1192,6 @@ export default function App() {
       applyBulkPhoto,
     }),
     [
-      createItem,
       updateItem,
       deleteItem,
       saveReservation,

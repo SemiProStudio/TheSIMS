@@ -43,6 +43,55 @@ export function hexToRgb(hex) {
 }
 
 /**
+ * Parse a CSS color into channels: #RGB/#RGBA/#RRGGBB/#RRGGBBAA and
+ * rgb()/rgba(). Ported from scripts/theme-aa-tune.mjs (which must stay
+ * standalone for the AA audit) plus the alpha-hex forms — the custom theme
+ * editor feeds 8-digit hex here, which the hex-only path scored as ratio 1.
+ * @param {string} color
+ * @returns {{r: number, g: number, b: number, a: number} | null} a in 0-1
+ */
+export function parseColor(color) {
+  if (!color || typeof color !== 'string') return null;
+  const str = color.trim();
+
+  const hexMatch = str.match(/^#([0-9a-f]{3,8})$/i);
+  if (hexMatch) {
+    let hex = hexMatch[1];
+    if (hex.length === 3 || hex.length === 4) {
+      hex = hex
+        .split('')
+        .map((c) => c + c)
+        .join('');
+    }
+    if (hex.length !== 6 && hex.length !== 8) return null;
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    return { r, g, b, a: hex.length === 8 ? parseInt(hex.slice(6, 8), 16) / 255 : 1 };
+  }
+
+  const fnMatch = str.match(/^rgba?\(([^)]+)\)$/i);
+  if (fnMatch) {
+    const parts = fnMatch[1].split(',').map(Number);
+    if (parts.length < 3 || parts.length > 4 || parts.some(Number.isNaN)) return null;
+    const [r, g, b, a] = parts;
+    return { r, g, b, a: parts.length === 4 ? a : 1 };
+  }
+
+  return null;
+}
+
+// Flatten a translucent color onto an opaque backdrop — WCAG contrast is
+// defined over opaque colors. Same arithmetic as theme-aa-tune's `over`.
+function compositeOver(fg, backdrop) {
+  if (!(fg.a < 1)) return fg;
+  return {
+    r: Math.round(fg.r * fg.a + backdrop.r * (1 - fg.a)),
+    g: Math.round(fg.g * fg.a + backdrop.g * (1 - fg.a)),
+    b: Math.round(fg.b * fg.a + backdrop.b * (1 - fg.a)),
+    a: 1,
+  };
+}
+
+/**
  * Calculate relative luminance of a color (WCAG formula)
  * @param {{r: number, g: number, b: number}} rgb
  * @returns {number} Luminance value (0-1)
@@ -56,19 +105,27 @@ export function getLuminance({ r, g, b }) {
 }
 
 /**
- * Calculate contrast ratio between two colors (WCAG formula)
- * @param {string} color1 - Hex color
- * @param {string} color2 - Hex color
+ * Calculate contrast ratio between two colors (WCAG formula).
+ * Accepts every parseColor form. Translucent colors are composited first:
+ * the background over `backdrop` (over its own rgb — treated opaque — when
+ * no backdrop is supplied, since no third surface is known), then the
+ * foreground over the resolved background.
+ * @param {string} color1 - Foreground color
+ * @param {string} color2 - Background color
+ * @param {string} [backdrop] - Surface behind a translucent background
  * @returns {number} Contrast ratio (1-21)
  */
-export function getContrastRatio(color1, color2) {
-  const rgb1 = hexToRgb(color1);
-  const rgb2 = hexToRgb(color2);
+export function getContrastRatio(color1, color2, backdrop) {
+  const fg = parseColor(color1);
+  const bg = parseColor(color2);
 
-  if (!rgb1 || !rgb2) return 1;
+  if (!fg || !bg) return 1;
 
-  const l1 = getLuminance(rgb1);
-  const l2 = getLuminance(rgb2);
+  const bgFlat = compositeOver(bg, (backdrop && parseColor(backdrop)) || bg);
+  const fgFlat = compositeOver(fg, bgFlat);
+
+  const l1 = getLuminance(fgFlat);
+  const l2 = getLuminance(bgFlat);
 
   const lighter = Math.max(l1, l2);
   const darker = Math.min(l1, l2);
@@ -78,13 +135,14 @@ export function getContrastRatio(color1, color2) {
 
 /**
  * Check if contrast meets WCAG AA requirements
- * @param {string} foreground - Foreground color (hex)
- * @param {string} background - Background color (hex)
+ * @param {string} foreground - Foreground color
+ * @param {string} background - Background color
  * @param {boolean} isLargeText - Whether text is large (18px+ or 14px+ bold)
+ * @param {string} [backdrop] - Surface behind a translucent background
  * @returns {{ratio: number, passes: boolean, level: string}}
  */
-export function checkContrast(foreground, background, isLargeText = false) {
-  const ratio = getContrastRatio(foreground, background);
+export function checkContrast(foreground, background, isLargeText = false, backdrop = undefined) {
+  const ratio = getContrastRatio(foreground, background, backdrop);
   const minRatio = isLargeText ? 3 : 4.5;
   const aaaRatio = isLargeText ? 4.5 : 7;
 
@@ -145,18 +203,21 @@ export const CONTRAST_PAIRS = [
  * @returns {Array<{pair: Object, result: Object}>}
  */
 export function validateThemeContrast(themeColors) {
+  // Panels sit on the page base, so a translucent background resolves over it
+  const backdrop = themeColors['--bg-dark'];
   return CONTRAST_PAIRS.map((pair) => {
     const fgColor = themeColors[pair.fg];
     const bgColor = themeColors[pair.bg];
 
-    // Skip if either color is not a hex value (e.g., rgba)
-    if (!fgColor?.startsWith('#') || !bgColor?.startsWith('#')) {
+    // Skip only what parseColor can't read (hsl(), var() refs, missing) —
+    // rgba()/8-digit hex used to land here and score as ratio 1 or 0
+    if (!parseColor(fgColor) || !parseColor(bgColor)) {
       return { pair, result: { ratio: 0, passes: false, level: 'Unknown', skipped: true } };
     }
 
     return {
       pair,
-      result: checkContrast(fgColor, bgColor),
+      result: checkContrast(fgColor, bgColor, false, backdrop),
     };
   });
 }
