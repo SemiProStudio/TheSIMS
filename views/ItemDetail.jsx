@@ -711,7 +711,16 @@ function ItemDetail({
       };
     });
 
-    return [...baseSpecs, ...specEntries];
+    // Stored spec values OUTSIDE the category's catalog (Smart Paste's
+    // Model #, keys left behind by a category change) used to be stored
+    // but never displayed anywhere — render them after the catalog rows
+    const catalogNames = new Set(catSpecs.map((s) => s.name));
+    const extraEntries = Object.entries(item.specs || {})
+      .filter(([name, value]) => !catalogNames.has(name) && value != null && value !== '')
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, value]) => ({ name, value: displayValue(value) }));
+
+    return [...baseSpecs, ...specEntries, ...extraEntries];
   }, [item, specs, categorySettings, onSetLowStockAlert, canEditGear]);
 
   const sortedSections = useMemo(() => {

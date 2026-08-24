@@ -95,3 +95,20 @@ describe('ItemDetail section columns', () => {
     expect(renderedTitles(container)).toEqual([...evens, ...odds]);
   });
 });
+
+describe('off-catalog specs render (2026-08-24 wiring sweep)', () => {
+  it('shows stored spec values outside the category catalog — e.g. Smart Paste Model #', () => {
+    const { getByText } = render(
+      <ItemDetail
+        {...props}
+        item={{ ...props.item, specs: { Model: 'ILCE-7SM3', 'Legacy Key': 'kept' } }}
+      />,
+    );
+    // No catalog is defined for Cameras in this harness (specs: {}), so both
+    // keys are off-catalog — they used to be stored but displayed nowhere
+    expect(getByText('Model')).toBeInTheDocument();
+    expect(getByText('ILCE-7SM3')).toBeInTheDocument();
+    expect(getByText('Legacy Key')).toBeInTheDocument();
+    expect(getByText('kept')).toBeInTheDocument();
+  });
+});

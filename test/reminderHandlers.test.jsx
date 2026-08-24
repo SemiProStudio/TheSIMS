@@ -71,6 +71,93 @@ describe('completeReminder', () => {
   });
 });
 
+describe('recurring reminders spawn the next occurrence (2026-08-24)', () => {
+  // recurrence was collected, stored, and badged while completion simply
+  // ended the series — nothing anywhere advanced an occurrence
+  const recurring = {
+    id: 'r2',
+    title: 'Sensor cleaning',
+    description: 'Full sensor swab',
+    dueDate: '2026-08-10',
+    recurrence: 'weekly',
+    completed: false,
+  };
+
+  const daysBetween = (a, b) =>
+    Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000);
+
+  it('completing a weekly reminder creates the next one, anchored to the original weekday', async () => {
+    const params = buildParams({
+      selectedItem: { id: 'CAM001', name: 'Camera', reminders: [recurring] },
+    });
+    const { result } = renderHook(() => useReminderHandlers(params));
+
+    await act(async () => {
+      await result.current.completeReminder('r2');
+    });
+
+    expect(params.dataContext.addItemReminder).toHaveBeenCalledTimes(1);
+    const [itemId, spawned] = params.dataContext.addItemReminder.mock.calls[0];
+    expect(itemId).toBe('CAM001');
+    expect(spawned).toMatchObject({
+      title: 'Sensor cleaning',
+      description: 'Full sensor swab',
+      recurrence: 'weekly',
+      completed: false,
+      createdBy: 'Tester',
+    });
+    // Strictly in the future, on the original cadence
+    const today = new Date().toISOString().slice(0, 10);
+    expect(spawned.dueDate > today).toBe(true);
+    expect(daysBetween('2026-08-10', spawned.dueDate) % 7).toBe(0);
+
+    // Both local copies gain the spawned reminder with the DB id
+    const appendPatch = params.dataContext.patchInventoryItem.mock.calls.at(-1)[1];
+    const appended = appendPatch({ reminders: [recurring] }).reminders;
+    expect(appended.map((r) => r.id)).toEqual(['r2', 'db-r-1']);
+    expect(addToastMock).toHaveBeenCalledWith(expect.stringContaining('scheduled'), 'success');
+  });
+
+  it('warns (but keeps the completion) when the spawn insert fails', async () => {
+    const params = buildParams({
+      selectedItem: { id: 'CAM001', name: 'Camera', reminders: [recurring] },
+    });
+    params.dataContext.addItemReminder.mockResolvedValue(null);
+    const { result } = renderHook(() => useReminderHandlers(params));
+
+    await act(async () => {
+      await result.current.completeReminder('r2');
+    });
+
+    expect(params.dataContext.addAuditLog).toHaveBeenCalledTimes(1); // completion stood
+    expect(addToastMock).toHaveBeenCalledWith(
+      expect.stringContaining('could not be created'),
+      'warning',
+    );
+  });
+
+  it('one-time reminders spawn nothing', async () => {
+    const params = buildParams(); // r1 has no recurrence
+    const { result } = renderHook(() => useReminderHandlers(params));
+    await act(async () => {
+      await result.current.completeReminder('r1');
+    });
+    expect(params.dataContext.addItemReminder).not.toHaveBeenCalled();
+  });
+
+  it('does not spawn when completion itself failed', async () => {
+    const params = buildParams({
+      selectedItem: { id: 'CAM001', name: 'Camera', reminders: [recurring] },
+    });
+    params.dataContext.updateItemReminder.mockResolvedValue(false);
+    const { result } = renderHook(() => useReminderHandlers(params));
+    await act(async () => {
+      await result.current.completeReminder('r2');
+    });
+    expect(params.dataContext.addItemReminder).not.toHaveBeenCalled();
+  });
+});
+
 describe('addReminder', () => {
   it('rolls the ghost reminder back when the insert fails', async () => {
     const params = buildParams();
