@@ -50,7 +50,11 @@ describe('clampCrop', () => {
   });
 
   it('pulls a crop that overhangs back inside the image', () => {
-    expect(clampCrop({ x: 350, y: 250, size: 100 }, 400, 300)).toEqual({ x: 300, y: 200, size: 100 });
+    expect(clampCrop({ x: 350, y: 250, size: 100 }, 400, 300)).toEqual({
+      x: 300,
+      y: 200,
+      size: 100,
+    });
     expect(clampCrop({ x: -30, y: -5, size: 100 }, 400, 300)).toEqual({ x: 0, y: 0, size: 100 });
   });
 
@@ -170,7 +174,9 @@ describe('canvasToBlob', () => {
     try {
       let lateCb;
       const canvas = {
-        toBlob: vi.fn((cb) => { lateCb = cb; }),
+        toBlob: vi.fn((cb) => {
+          lateCb = cb;
+        }),
         toDataURL: vi.fn(() => PNG_DATA_URL),
       };
       const pending = canvasToBlob(canvas, 'image/jpeg', 0.8, { timeoutMs: 50 });

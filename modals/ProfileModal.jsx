@@ -254,8 +254,8 @@ function ProfileModal({ user, onSave, onClose }) {
                   )}
                   {field === 'email' && !errors[field] && (
                     <span style={{ color: colors.textMuted, fontSize: typography.fontSize.xs }}>
-                      Contact email shown on labels &amp; reports — changing it does not change
-                      your login email
+                      Contact email shown on labels &amp; reports — changing it does not change your
+                      login email
                     </span>
                   )}
                 </div>

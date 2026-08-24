@@ -170,9 +170,7 @@ export const MaintenanceModal = memo(function MaintenanceModal({
           }}
         >
           <div>
-            <label
-              className={!formData.type || errors.type ? 'label label-error' : 'label'}
-            >
+            <label className={!formData.type || errors.type ? 'label label-error' : 'label'}>
               Maintenance Type{' '}
               <span aria-hidden="true" style={{ color: colors.danger }}>
                 *

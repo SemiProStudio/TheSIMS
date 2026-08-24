@@ -65,10 +65,18 @@ test.describe('Email Notifications', () => {
       await expect(modal).toBeHidden();
 
       // The checkout succeeded AND the operator learns the email did not
-      await expect(page.getByRole('alert').filter({ hasText: 'Checkout confirmation email could not be sent' })).toBeVisible({
+      await expect(
+        page
+          .getByRole('alert')
+          .filter({ hasText: 'Checkout confirmation email could not be sent' }),
+      ).toBeVisible({
         timeout: 15000,
       });
-      await expect(page.getByRole('alert').filter({ hasText: 'Recipient must be a registered user or client' })).toBeVisible();
+      await expect(
+        page
+          .getByRole('alert')
+          .filter({ hasText: 'Recipient must be a registered user or client' }),
+      ).toBeVisible();
 
       // Borrower is not a SIMS user → no user id (the old code stored the operator's)
       const db = await adminDb();
@@ -99,7 +107,9 @@ test.describe('Email Notifications', () => {
       // Toast first — it auto-dismisses, so it must be asserted before the DB
       // round-trips. A registered recipient passes the allow-list; the only
       // failure left is the (deliberately) unconfigured Resend key on TEST
-      await expect(page.getByRole('alert').filter({ hasText: 'Email service not configured' })).toBeVisible({
+      await expect(
+        page.getByRole('alert').filter({ hasText: 'Email service not configured' }),
+      ).toBeVisible({
         timeout: 15000,
       });
 

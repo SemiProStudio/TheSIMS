@@ -5,3 +5,14 @@ public/sw.js
 supabase/functions/
 *.min.js
 package-lock.json
+test-results/
+playwright-report/
+supabase/.temp/
+.claude/
+# Local working notes and one-off scripts (untracked by convention)
+/sims-*.md
+/HANDOFF-*.md
+/*-progress.md
+/admin-create-user-dashboard-paste.ts
+/prod-cleanup-*.sql
+/.probe-shots.mjs

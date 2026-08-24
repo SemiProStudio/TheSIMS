@@ -4,15 +4,7 @@
 // ============================================================================
 
 import { memo, useState, useCallback, useRef } from 'react';
-import {
-  Save,
-  RotateCcw,
-  Eye,
-  EyeOff,
-  GripVertical,
-  ChevronUp,
-  ChevronDown,
-} from 'lucide-react';
+import { Save, RotateCcw, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { DASHBOARD_SECTIONS, ITEM_DETAIL_SECTIONS, DEFAULT_LAYOUT_PREFS } from '../constants.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { Button, Card, ConfirmDialog, PageHeader } from '../components/ui.jsx';

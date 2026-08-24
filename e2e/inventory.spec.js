@@ -494,9 +494,9 @@ test.describe('Inventory Management', () => {
         await page.locator('input[placeholder="Search items..."]').first().fill(accId);
         await page.locator('label').filter({ hasText: accName }).click();
         await page.getByRole('button', { name: 'Add (1)' }).click();
-        await expect.poll(async () => (await accessories()).join(','), { timeout: 10000 }).toBe(
-          accId,
-        );
+        await expect
+          .poll(async () => (await accessories()).join(','), { timeout: 10000 })
+          .toBe(accId);
 
         await page.getByLabel(`Remove ${accName} from required accessories`).click();
         await expect.poll(async () => (await accessories()).length, { timeout: 10000 }).toBe(0);

@@ -75,10 +75,7 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- todayTick re-anchors the "today"-based window after midnight
     [checkoutsInWindow, rangeDays, todayTick],
   );
-  const trendTotal = useMemo(
-    () => trendSeries.reduce((sum, b) => sum + b.value, 0),
-    [trendSeries],
-  );
+  const trendTotal = useMemo(() => trendSeries.reduce((sum, b) => sum + b.value, 0), [trendSeries]);
   const dowSeries = useMemo(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -416,10 +413,7 @@ export const ActivityReportPanel = memo(function ActivityReportPanel({
           <Card padding={false}>
             <CardHeader title="Checkouts by Category" />
             <div style={{ padding: spacing[4] }}>
-              <HBarChart
-                data={categoryBars}
-                ariaLabel="Lifetime checkouts per category"
-              />
+              <HBarChart data={categoryBars} ariaLabel="Lifetime checkouts per category" />
             </div>
           </Card>
         </div>

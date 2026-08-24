@@ -262,10 +262,7 @@ describe('Dashboard panel "View All" buttons (shared ViewAllButton)', () => {
   it('clicking View All never collapses its section', () => {
     const { props } = renderDashboard();
     fireEvent.click(viewAllIn(/Alerts/));
-    expect(screen.getByRole('button', { name: /Alerts/ })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    );
+    expect(screen.getByRole('button', { name: /Alerts/ })).toHaveAttribute('aria-expanded', 'true');
     expect(props.onToggleCollapse).not.toHaveBeenCalled();
   });
 

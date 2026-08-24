@@ -18,7 +18,10 @@ const ThemePreview = memo(function ThemePreview({ theme, isSelected, onClick, on
   const themeColors = theme.colors || {};
   const tokens = { ...TOKEN_DEFAULTS, ...(theme.tokens || {}) };
   const previewRadius = tokens['--radius-md'];
-  const previewFont = tokens['--font-heading'] === 'var(--font-sans)' ? tokens['--font-sans'] : tokens['--font-heading'];
+  const previewFont =
+    tokens['--font-heading'] === 'var(--font-sans)'
+      ? tokens['--font-sans']
+      : tokens['--font-heading'];
 
   // Get preview colors (use defaults if random/empty)
   const bgDark = themeColors['--bg-dark'] || '#1a1d21';

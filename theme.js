@@ -270,4 +270,3 @@ export const styles = {
     boxShadow: shadows.lg,
   },
 };
-

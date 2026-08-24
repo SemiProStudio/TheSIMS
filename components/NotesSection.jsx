@@ -155,49 +155,49 @@ const Note = memo(function Note({
 
         {/* Note Actions — hidden for view-only users */}
         {!readOnly && (
-        <div
-          style={{
-            display: 'flex',
-            gap: spacing[2],
-            marginTop: spacing[2],
-          }}
-        >
-          <button
-            ref={replyToggleRef}
-            onClick={() => setShowReplyInput(!showReplyInput)}
+          <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: spacing[1],
-              background: 'none',
-              border: 'none',
-              color: colors.textMuted,
-              cursor: 'pointer',
-              fontSize: typography.fontSize.xs,
-              padding: spacing[1],
+              gap: spacing[2],
+              marginTop: spacing[2],
             }}
           >
-            <Reply size={12} />
-            Reply
-          </button>
-          <button
-            onClick={() => onDelete(note.id)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: spacing[1],
-              background: 'none',
-              border: 'none',
-              color: colors.textMuted,
-              cursor: 'pointer',
-              fontSize: typography.fontSize.xs,
-              padding: spacing[1],
-            }}
-          >
-            <Trash2 size={12} />
-            Delete
-          </button>
-        </div>
+            <button
+              ref={replyToggleRef}
+              onClick={() => setShowReplyInput(!showReplyInput)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[1],
+                background: 'none',
+                border: 'none',
+                color: colors.textMuted,
+                cursor: 'pointer',
+                fontSize: typography.fontSize.xs,
+                padding: spacing[1],
+              }}
+            >
+              <Reply size={12} />
+              Reply
+            </button>
+            <button
+              onClick={() => onDelete(note.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: spacing[1],
+                background: 'none',
+                border: 'none',
+                color: colors.textMuted,
+                cursor: 'pointer',
+                fontSize: typography.fontSize.xs,
+                padding: spacing[1],
+              }}
+            >
+              <Trash2 size={12} />
+              Delete
+            </button>
+          </div>
         )}
 
         {/* Reply Input — readOnly guard covers the edge where permissions
@@ -252,14 +252,7 @@ const Note = memo(function Note({
 });
 
 // Main Notes Section Component
-function NotesSection({
-  notes = [],
-  onAddNote,
-  onReply,
-  onDelete,
-  panelColor,
-  readOnly = false,
-}) {
+function NotesSection({ notes = [], onAddNote, onReply, onDelete, panelColor, readOnly = false }) {
   const [newNoteText, setNewNoteText] = useState('');
   // Deleting a note is destructive (soft-deleted, but not undoable from the
   // UI) — every other destructive action in the app confirms first
@@ -293,35 +286,35 @@ function NotesSection({
       <div style={{ padding: spacing[4] }}>
         {/* Add Note Input — hidden for view-only users */}
         {!readOnly && (
-        <div
-          style={{
-            display: 'flex',
-            gap: spacing[2],
-            marginBottom: spacing[4],
-          }}
-        >
-          <input
-            value={newNoteText}
-            onChange={(e) => setNewNoteText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Add a note..."
-            aria-label="Add a note"
+          <div
             style={{
-              ...styles.input,
-              flex: 1,
-              padding: spacing[2],
-              fontSize: typography.fontSize.sm,
+              display: 'flex',
+              gap: spacing[2],
+              marginBottom: spacing[4],
             }}
-          />
-          <button
-            onClick={handleSubmitNote}
-            disabled={!newNoteText.trim()}
-            className="btn"
-            aria-label="Submit note"
           >
-            <Plus size={16} />
-          </button>
-        </div>
+            <input
+              value={newNoteText}
+              onChange={(e) => setNewNoteText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Add a note..."
+              aria-label="Add a note"
+              style={{
+                ...styles.input,
+                flex: 1,
+                padding: spacing[2],
+                fontSize: typography.fontSize.sm,
+              }}
+            />
+            <button
+              onClick={handleSubmitNote}
+              disabled={!newNoteText.trim()}
+              className="btn"
+              aria-label="Submit note"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
         )}
 
         {/* Notes List */}

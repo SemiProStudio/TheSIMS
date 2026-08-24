@@ -26,8 +26,19 @@ const allThemes = Object.values(themes);
 // The catalogue that shipped before the Modern set — these must stay in
 // Legacy so existing users' saved theme ids keep resolving
 const ORIGINAL_IDS = [
-  'light', 'dark', 'darker', 'primaries', 'pastel', 'terminal', 'blackwhite',
-  'vibrant', 'muted', 'xp', 'cheese', 'cats', 'dogs',
+  'light',
+  'dark',
+  'darker',
+  'primaries',
+  'pastel',
+  'terminal',
+  'blackwhite',
+  'vibrant',
+  'muted',
+  'xp',
+  'cheese',
+  'cats',
+  'dogs',
 ];
 
 describe('theme groups', () => {

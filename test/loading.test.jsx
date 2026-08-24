@@ -9,7 +9,6 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Spinner, ModalLoading, ViewLoading } from '../components/Loading.jsx';
 
-
 describe('Spinner', () => {
   it('should render an SVG', () => {
     const { container } = render(<Spinner />);

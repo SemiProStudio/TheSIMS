@@ -48,7 +48,13 @@ export const DonutChart = memo(function DonutChart({
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: spacing[4], flexWrap: 'wrap' }}>
       <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={summary}>
+        <svg
+          width={size}
+          height={size}
+          viewBox={`0 0 ${size} ${size}`}
+          role="img"
+          aria-label={summary}
+        >
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -185,9 +191,7 @@ export const HBarChart = memo(function HBarChart({
   return (
     <div
       role="img"
-      aria-label={
-        ariaLabel || data.map((d) => `${d.label} ${formatValue(d.value)}`).join(', ')
-      }
+      aria-label={ariaLabel || data.map((d) => `${d.label} ${formatValue(d.value)}`).join(', ')}
     >
       {data.map((d, i) => (
         <div key={`${i}-${d.label}`} style={{ marginBottom: spacing[3] }}>
@@ -313,9 +317,7 @@ export const ColumnChart = memo(function ColumnChart({
       viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
       style={{ width: '100%', height: 'auto', display: 'block' }}
       role="img"
-      aria-label={
-        ariaLabel || data.map((d) => `${d.label} ${formatValue(d.value)}`).join(', ')
-      }
+      aria-label={ariaLabel || data.map((d) => `${d.label} ${formatValue(d.value)}`).join(', ')}
     >
       <line
         x1={0}
@@ -325,7 +327,15 @@ export const ColumnChart = memo(function ColumnChart({
         stroke={colors.borderLight}
         strokeWidth={1}
       />
-      <line x1={0} y1={PAD_TOP} x2={VIEW_W} y2={PAD_TOP} stroke={colors.borderLight} strokeWidth={1} strokeDasharray="4 4" />
+      <line
+        x1={0}
+        y1={PAD_TOP}
+        x2={VIEW_W}
+        y2={PAD_TOP}
+        stroke={colors.borderLight}
+        strokeWidth={1}
+        strokeDasharray="4 4"
+      />
       <text x={4} y={PAD_TOP - 3} fontSize={11} fill={colors.textMuted}>
         {formatValue(max)}
       </text>
@@ -400,9 +410,7 @@ export const TrendChart = memo(function TrendChart({
       viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
       style={{ width: '100%', height: 'auto', display: 'block' }}
       role="img"
-      aria-label={
-        ariaLabel || data.map((d) => `${d.label} ${formatValue(d.value)}`).join(', ')
-      }
+      aria-label={ariaLabel || data.map((d) => `${d.label} ${formatValue(d.value)}`).join(', ')}
     >
       <line
         x1={0}
@@ -412,17 +420,21 @@ export const TrendChart = memo(function TrendChart({
         stroke={colors.borderLight}
         strokeWidth={1}
       />
-      <line x1={0} y1={PAD_TOP} x2={VIEW_W} y2={PAD_TOP} stroke={colors.borderLight} strokeWidth={1} strokeDasharray="4 4" />
+      <line
+        x1={0}
+        y1={PAD_TOP}
+        x2={VIEW_W}
+        y2={PAD_TOP}
+        stroke={colors.borderLight}
+        strokeWidth={1}
+        strokeDasharray="4 4"
+      />
       <text x={4} y={PAD_TOP - 3} fontSize={11} fill={colors.textMuted}>
         {formatValue(max)}
       </text>
       {points.length > 0 && (
         <>
-          <path
-            d={buildAreaPath(points, VIEW_H - PAD_BOTTOM)}
-            fill={color}
-            opacity={0.15}
-          />
+          <path d={buildAreaPath(points, VIEW_H - PAD_BOTTOM)} fill={color} opacity={0.15} />
           <path d={buildLinePath(points)} fill="none" stroke={color} strokeWidth={2} />
         </>
       )}

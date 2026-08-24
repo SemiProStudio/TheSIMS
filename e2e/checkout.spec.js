@@ -78,10 +78,12 @@ test.describe('Check-Out Flow', () => {
     try {
       const modal = await openCheckOutModal(page, pages, id, name);
 
-      await modal.locator('input[placeholder="Who is taking this item?"]').fill(
-        `${E2E_PREFIX} Borrower`,
-      );
-      await modal.locator('input[placeholder="email@example.com"]').fill('e2e-borrower@example.com');
+      await modal
+        .locator('input[placeholder="Who is taking this item?"]')
+        .fill(`${E2E_PREFIX} Borrower`);
+      await modal
+        .locator('input[placeholder="email@example.com"]')
+        .fill('e2e-borrower@example.com');
       await modal.getByRole('button', { name: '1 week', exact: true }).click();
       await expect(modal.locator('input[placeholder="Select due date"]')).not.toHaveValue('');
       await modal.locator('input[type="checkbox"]').check();
@@ -191,8 +193,9 @@ test.describe('Check-In Flow', () => {
       // Item was created in excellent condition; select Good
       await modal.getByText('Good', { exact: true }).click();
       await expect(modal.getByText(/Condition changed from excellent to good/)).toBeVisible();
-      await expect(modal.locator('textarea[placeholder="Explain the condition change..."]'))
-        .toBeVisible();
+      await expect(
+        modal.locator('textarea[placeholder="Explain the condition change..."]'),
+      ).toBeVisible();
 
       await modal.getByRole('button', { name: 'Cancel' }).click();
       await expect(modal).toBeHidden();

@@ -5,7 +5,13 @@
 
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { DonutChart, HBarChart, ColumnChart, TrendChart, Sparkline } from '../components/charts.jsx';
+import {
+  DonutChart,
+  HBarChart,
+  ColumnChart,
+  TrendChart,
+  Sparkline,
+} from '../components/charts.jsx';
 
 describe('DonutChart', () => {
   const data = [
@@ -27,9 +33,7 @@ describe('DonutChart', () => {
   });
 
   it('zero-total data renders an em-dash center, no NaN anywhere', () => {
-    const { container } = render(
-      <DonutChart data={[{ label: 'None', value: 0, color: 'red' }]} />,
-    );
+    const { container } = render(<DonutChart data={[{ label: 'None', value: 0, color: 'red' }]} />);
     expect(screen.getByText('—')).toBeInTheDocument();
     expect(container.innerHTML).not.toContain('NaN');
   });

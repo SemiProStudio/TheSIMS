@@ -515,28 +515,26 @@ const KitContentsSection = memo(function KitContentsSection({
       onViewItem={onViewItem}
       panelColor={panelColor}
       renderAddControls={({ showAddPanel, openPanel, addPanel }) =>
-        showAddPanel ? (
-          addPanel
-        ) : (
-          (onAddKitItems || onSetKitStatus) && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
-              {onAddKitItems && (
-                <Button variant="secondary" onClick={openPanel} icon={Plus} fullWidth>
-                  Add Items to Kit
-                </Button>
-              )}
-              {onSetKitStatus && (
-                <Button
-                  variant="secondary"
-                  onClick={() => onSetKitStatus(item.id, false)}
-                  fullWidth
-                >
-                  No Longer a Kit
-                </Button>
-              )}
-            </div>
-          )
-        )
+        showAddPanel
+          ? addPanel
+          : (onAddKitItems || onSetKitStatus) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing[2] }}>
+                {onAddKitItems && (
+                  <Button variant="secondary" onClick={openPanel} icon={Plus} fullWidth>
+                    Add Items to Kit
+                  </Button>
+                )}
+                {onSetKitStatus && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => onSetKitStatus(item.id, false)}
+                    fullWidth
+                  >
+                    No Longer a Kit
+                  </Button>
+                )}
+              </div>
+            )
       }
     />
   );

@@ -193,9 +193,7 @@ describe('NotificationSettings', () => {
       const { rerender } = render(<NotificationSettings {...defaultProps} preferences={null} />);
       expect(screen.getByRole('switch', { name: 'Email Notifications' })).toBeChecked();
 
-      rerender(
-        <NotificationSettings {...defaultProps} preferences={{ email_enabled: false }} />,
-      );
+      rerender(<NotificationSettings {...defaultProps} preferences={{ email_enabled: false }} />);
       expect(screen.getByRole('switch', { name: 'Email Notifications' })).not.toBeChecked();
       expect(
         screen.getByText('All email notifications are currently disabled'),

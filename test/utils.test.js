@@ -489,7 +489,10 @@ describe('isLowStock', () => {
       false,
     );
     expect(
-      isLowStock({ category: 'Consumables', lowStockAlert: false, quantity: 1, reorderPoint: 5 }, settings),
+      isLowStock(
+        { category: 'Consumables', lowStockAlert: false, quantity: 1, reorderPoint: 5 },
+        settings,
+      ),
     ).toBe(false);
   });
 
@@ -547,9 +550,9 @@ describe('matchesStatusSelection', () => {
 
   it('ORs across a multi-select', () => {
     expect(matchesStatusSelection(lowStockItem, ['overdue', 'low-stock'], settings)).toBe(true);
-    expect(matchesStatusSelection(overdueItem, ['overdue', 'low-stock'], settings, '2026-08-13')).toBe(
-      true,
-    );
+    expect(
+      matchesStatusSelection(overdueItem, ['overdue', 'low-stock'], settings, '2026-08-13'),
+    ).toBe(true);
     expect(matchesStatusSelection(lowStockItem, ['overdue', 'missing'], settings)).toBe(false);
   });
 });

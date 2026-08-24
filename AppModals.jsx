@@ -452,7 +452,12 @@ export default memo(function AppModals({ handlers, currentUser }) {
                   // admin-authorized update — without it the account silently
                   // stayed Standard User while the panel showed the chosen
                   // role.
-                  if (!roleApplied && createdUser?.id && newUser.roleId && newUser.roleId !== 'role_user') {
+                  if (
+                    !roleApplied &&
+                    createdUser?.id &&
+                    newUser.roleId &&
+                    newUser.roleId !== 'role_user'
+                  ) {
                     try {
                       const { usersService } = await import('./lib/services.js');
                       await usersService.updateRole(createdUser.id, newUser.roleId);

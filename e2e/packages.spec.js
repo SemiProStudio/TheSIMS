@@ -86,7 +86,10 @@ test.describe('Package lifecycle', () => {
     await page.getByTitle('Delete package').click();
     await expect(page.getByText(/Are you sure you want to delete/)).toBeVisible();
     // Scoped to the confirm dialog — the notes section has Delete buttons too
-    await page.getByRole('alertdialog').getByRole('button', { name: 'Delete', exact: true }).click();
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: 'Delete', exact: true })
+      .click();
 
     await expect(page.locator('h2:has-text("Packages")')).toBeVisible();
     await expect(page.getByText(renamedName)).toHaveCount(0);

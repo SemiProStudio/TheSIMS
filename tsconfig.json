@@ -14,9 +14,17 @@
     "resolveJsonModule": true,
     "allowJs": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "types": ["vite/client"],
     "baseUrl": "."
   },
   "include": ["."],
-  "exclude": ["node_modules", "dist", "e2e", "public", "supabase/functions"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "e2e",
+    "public",
+    "supabase/functions",
+    "admin-create-user-dashboard-paste.ts"
+  ]
 }

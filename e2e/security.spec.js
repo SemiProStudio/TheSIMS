@@ -201,13 +201,11 @@ test.describe('standard user — database', () => {
 
   test('cannot create, edit or delete inventory (gear_list: view)', async () => {
     const db = await userDb();
-    const { error: insErr } = await db
-      .from('inventory')
-      .insert({
-        id: 'ZZE2E-USER-INSERT',
-        name: `${E2E_PREFIX} user insert`,
-        category_name: 'Cameras',
-      });
+    const { error: insErr } = await db.from('inventory').insert({
+      id: 'ZZE2E-USER-INSERT',
+      name: `${E2E_PREFIX} user insert`,
+      category_name: 'Cameras',
+    });
     expect(insErr?.code).toBe(PERMISSION_DENIED);
 
     const { data: upd } = await db

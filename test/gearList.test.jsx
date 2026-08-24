@@ -357,16 +357,12 @@ describe('GearList per-user UI prefs', () => {
 
 describe('ExportModal scope', () => {
   it('states the selection scope when items are selected', () => {
-    render(
-      <ExportModal onExport={vi.fn()} onClose={vi.fn()} selectionCount={2} totalCount={20} />,
-    );
+    render(<ExportModal onExport={vi.fn()} onClose={vi.fn()} selectionCount={2} totalCount={20} />);
     expect(screen.getByText('Exporting 2 selected items')).toBeInTheDocument();
   });
 
   it('states the full scope when nothing is selected', () => {
-    render(
-      <ExportModal onExport={vi.fn()} onClose={vi.fn()} selectionCount={0} totalCount={20} />,
-    );
+    render(<ExportModal onExport={vi.fn()} onClose={vi.fn()} selectionCount={0} totalCount={20} />);
     expect(screen.getByText('Exporting all 20 items')).toBeInTheDocument();
   });
 });

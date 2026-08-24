@@ -141,10 +141,7 @@ export const CheckInModal = memo(function CheckInModal({ item, currentUser, onCh
             marginBottom: spacing[4],
           }}
         >
-          <div
-            className="responsive-form-grid"
-            style={{ fontSize: typography.fontSize.sm }}
-          >
+          <div className="responsive-form-grid" style={{ fontSize: typography.fontSize.sm }}>
             <div>
               <span style={{ color: colors.textMuted }}>Checked out to:</span>
               <div style={{ color: colors.textPrimary, fontWeight: typography.fontWeight.medium }}>

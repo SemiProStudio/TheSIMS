@@ -104,9 +104,7 @@ describe('ItemTimeline event derivation', () => {
               text: null,
               date: '2026-08-09T12:00:00Z',
               user: 'Admin',
-              replies: [
-                { id: 'n2', text: 'A reply', date: '2026-08-10T12:00:00Z', user: 'Sam' },
-              ],
+              replies: [{ id: 'n2', text: 'A reply', date: '2026-08-10T12:00:00Z', user: 'Sam' }],
             },
           ],
         })}

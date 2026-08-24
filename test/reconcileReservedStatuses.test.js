@@ -14,22 +14,37 @@ const future = { start: '2026-09-01', end: '2026-09-03' };
 
 describe('reservationStatusCorrection', () => {
   it('returns available for a stored reserved item whose reservations are all past or future', () => {
-    expect(reservationStatusCorrection({ status: 'reserved', reservations: [past] }, TODAY)).toBe('available');
-    expect(reservationStatusCorrection({ status: 'reserved', reservations: [future] }, TODAY)).toBe('available');
-    expect(reservationStatusCorrection({ status: 'reserved', reservations: [] }, TODAY)).toBe('available');
+    expect(reservationStatusCorrection({ status: 'reserved', reservations: [past] }, TODAY)).toBe(
+      'available',
+    );
+    expect(reservationStatusCorrection({ status: 'reserved', reservations: [future] }, TODAY)).toBe(
+      'available',
+    );
+    expect(reservationStatusCorrection({ status: 'reserved', reservations: [] }, TODAY)).toBe(
+      'available',
+    );
   });
 
   it('returns reserved for a stored available item with a reservation covering today', () => {
-    expect(reservationStatusCorrection({ status: 'available', reservations: [current] }, TODAY)).toBe('reserved');
+    expect(
+      reservationStatusCorrection({ status: 'available', reservations: [current] }, TODAY),
+    ).toBe('reserved');
     // inclusive on both ends
     expect(
-      reservationStatusCorrection({ status: 'available', reservations: [{ start: TODAY, end: TODAY }] }, TODAY),
+      reservationStatusCorrection(
+        { status: 'available', reservations: [{ start: TODAY, end: TODAY }] },
+        TODAY,
+      ),
     ).toBe('reserved');
   });
 
   it('returns null when the stored status is already right', () => {
-    expect(reservationStatusCorrection({ status: 'reserved', reservations: [current] }, TODAY)).toBeNull();
-    expect(reservationStatusCorrection({ status: 'available', reservations: [past] }, TODAY)).toBeNull();
+    expect(
+      reservationStatusCorrection({ status: 'reserved', reservations: [current] }, TODAY),
+    ).toBeNull();
+    expect(
+      reservationStatusCorrection({ status: 'available', reservations: [past] }, TODAY),
+    ).toBeNull();
   });
 
   it('never touches statuses that own their own transitions', () => {
@@ -86,7 +101,10 @@ describe('reconcileReservedStatuses', () => {
 
   it('leaves untouched items referentially identical inside a changed array', () => {
     const keep = { id: 'K', status: 'available', reservations: [] };
-    const out = reconcileReservedStatuses([keep, { id: 'S', status: 'reserved', reservations: [] }], TODAY);
+    const out = reconcileReservedStatuses(
+      [keep, { id: 'S', status: 'reserved', reservations: [] }],
+      TODAY,
+    );
     expect(out[0]).toBe(keep);
     expect(out[1].status).toBe('available');
   });

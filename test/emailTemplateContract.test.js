@@ -42,7 +42,8 @@ const SQL = readFileSync(
 function parseTemplates(sql) {
   const block = sql.slice(sql.indexOf('INSERT INTO public.email_templates'));
   // Each row starts with ( 'key', 'name', 'subject', 'html', 'text', 'vars', bool )
-  const rowRe = /\(\s*'([a-z_]+)',\s*'(?:[^']|'')*',\s*'((?:[^']|'')*)',\s*'((?:[^']|'')*)',\s*'((?:[^']|'')*)',\s*'((?:[^']|'')*)',\s*(true|false)\s*\)/g;
+  const rowRe =
+    /\(\s*'([a-z_]+)',\s*'(?:[^']|'')*',\s*'((?:[^']|'')*)',\s*'((?:[^']|'')*)',\s*'((?:[^']|'')*)',\s*'((?:[^']|'')*)',\s*(true|false)\s*\)/g;
   const out = new Map();
   let m;
   while ((m = rowRe.exec(block))) {
@@ -79,7 +80,13 @@ const SUPPLIED = {
   reservation_confirmation: buildReservationConfirmationData({
     userName: 'A',
     item,
-    reservation: { project: 'P', start: '2026-09-01', end: '2026-09-03', location: 'L', itemCount: 2 },
+    reservation: {
+      project: 'P',
+      start: '2026-09-01',
+      end: '2026-09-03',
+      location: 'L',
+      itemCount: 2,
+    },
     companyName: 'S',
   }),
   damage_report: buildDamageReportData({
@@ -92,22 +99,54 @@ const SUPPLIED = {
   }),
   test_email: buildTestEmailData({ userName: 'A', sentAt: new Date(), companyName: 'S' }),
   due_date_reminder: buildDueReminderData(
-    { item_id: 'X', item_name: 'N', item_brand: 'B', due_back: '2026-08-25', days_until_due: 1, recipient_name: 'A', checked_out_to: 'A' },
+    {
+      item_id: 'X',
+      item_name: 'N',
+      item_brand: 'B',
+      due_back: '2026-08-25',
+      days_until_due: 1,
+      recipient_name: 'A',
+      checked_out_to: 'A',
+    },
     'S',
   ),
   overdue_notice: buildDueReminderData(
-    { item_id: 'X', item_name: 'N', item_brand: 'B', due_back: '2026-08-19', days_until_due: -2, recipient_name: 'A', checked_out_to: 'A' },
+    {
+      item_id: 'X',
+      item_name: 'N',
+      item_brand: 'B',
+      due_back: '2026-08-19',
+      days_until_due: -2,
+      recipient_name: 'A',
+      checked_out_to: 'A',
+    },
     'S',
   ),
   reservation_reminder: buildReservationReminderData(
     {
-      project: 'P', start_date: '2026-09-01', end_date: '2026-09-03', days_until_start: 1, location: 'L',
-      contact_name: 'A', item_count: 3, first_item_id: 'X', first_item_name: 'N', first_item_brand: 'B',
+      project: 'P',
+      start_date: '2026-09-01',
+      end_date: '2026-09-03',
+      days_until_start: 1,
+      location: 'L',
+      contact_name: 'A',
+      item_count: 3,
+      first_item_id: 'X',
+      first_item_name: 'N',
+      first_item_brand: 'B',
     },
     'S',
   ),
   maintenance_reminder: buildMaintenanceReminderData(
-    { source: 'reminder', record_id: 'r1', item_id: 'X', item_name: 'N', title: 'Clean', description: 'D', due_date: '2026-08-21' },
+    {
+      source: 'reminder',
+      record_id: 'r1',
+      item_id: 'X',
+      item_name: 'N',
+      title: 'Clean',
+      description: 'D',
+      due_date: '2026-08-21',
+    },
     'S',
   ),
   low_stock_alert: buildLowStockData(
@@ -116,7 +155,17 @@ const SUPPLIED = {
     'S',
   ),
   overdue_summary: buildOverdueSummaryData(
-    [{ item_id: 'X', item_name: 'N', item_brand: 'B', due_back: '2026-08-19', days_overdue: 2, checked_out_to: 'A', project: 'P' }],
+    [
+      {
+        item_id: 'X',
+        item_name: 'N',
+        item_brand: 'B',
+        due_back: '2026-08-19',
+        days_overdue: 2,
+        checked_out_to: 'A',
+        project: 'P',
+      },
+    ],
     new Date('2026-08-21T09:00:00Z'),
     'S',
   ),
@@ -126,9 +175,17 @@ describe('email template contract (migration ↔ builders)', () => {
   it('parses every template the migration seeds', () => {
     expect([...templates.keys()].sort()).toEqual(
       [
-        'checkin_confirmation', 'checkout_confirmation', 'damage_report', 'due_date_reminder',
-        'low_stock_alert', 'maintenance_reminder', 'overdue_notice', 'overdue_summary',
-        'reservation_confirmation', 'reservation_reminder', 'test_email',
+        'checkin_confirmation',
+        'checkout_confirmation',
+        'damage_report',
+        'due_date_reminder',
+        'low_stock_alert',
+        'maintenance_reminder',
+        'overdue_notice',
+        'overdue_summary',
+        'reservation_confirmation',
+        'reservation_reminder',
+        'test_email',
       ].sort(),
     );
   });
@@ -193,9 +250,7 @@ describe('app/edge helper parity', () => {
       undefined,
     ];
     for (const input of inputs) {
-      expect(appFormatEmailDate(input), `input: ${String(input)}`).toBe(
-        edgeFormatEmailDate(input),
-      );
+      expect(appFormatEmailDate(input), `input: ${String(input)}`).toBe(edgeFormatEmailDate(input));
     }
     // One absolute pin so parity can't be satisfied by matching garbage
     expect(appFormatEmailDate('2026-08-25')).toBe('Tuesday, August 25, 2026');

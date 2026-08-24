@@ -54,7 +54,9 @@ describe('DatabaseExportModal', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     const fetched = mockBackupService.fetchAllRows.mock.calls.map((c) => c[0]);
     // Defaults include inventory + its history tables and clients
-    expect(fetched).toEqual(expect.arrayContaining(['inventory', 'item_notes', 'checkout_history', 'clients']));
+    expect(fetched).toEqual(
+      expect.arrayContaining(['inventory', 'item_notes', 'checkout_history', 'clients']),
+    );
     // Defaults exclude users and audit log
     expect(fetched).not.toContain('users');
     expect(fetched).not.toContain('audit_log');

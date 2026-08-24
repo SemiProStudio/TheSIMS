@@ -481,7 +481,9 @@ describe('clipboard export', () => {
     renderView();
     await exportToClipboard();
 
-    await waitFor(() => expect(mockAddToast).toHaveBeenCalledWith('Copied to clipboard!', 'success'));
+    await waitFor(() =>
+      expect(mockAddToast).toHaveBeenCalledWith('Copied to clipboard!', 'success'),
+    );
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Alpha Cam'));
   });
 });

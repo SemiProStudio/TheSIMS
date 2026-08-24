@@ -262,9 +262,7 @@ export function useKitHandlers({
         itemType: 'item',
         itemName: targetItem.name,
         description: `Current value updated to $${newValue}`,
-        changes: [
-          { field: 'currentValue', oldValue: targetItem.currentValue ?? null, newValue },
-        ],
+        changes: [{ field: 'currentValue', oldValue: targetItem.currentValue ?? null, newValue }],
       });
     },
     [inventory, selectedItem, setSelectedItem, addChangeLog, dataContext, addToast],
@@ -296,7 +294,11 @@ export function useKitHandlers({
         itemName: targetItem.name,
         description: `Low stock reminder turned ${enabled ? 'on' : 'off'}`,
         changes: [
-          { field: 'lowStockAlert', oldValue: Boolean(targetItem.lowStockAlert), newValue: Boolean(enabled) },
+          {
+            field: 'lowStockAlert',
+            oldValue: Boolean(targetItem.lowStockAlert),
+            newValue: Boolean(enabled),
+          },
         ],
       });
     },
@@ -327,9 +329,8 @@ export function useKitHandlers({
         // Failure here only orphans a storage object, never breaks a reference.
         if (oldImage && oldImage !== image) {
           try {
-            const { storageService, isStorageUrl, getStoragePathFromUrl } = await import(
-              '../../lib/index.js'
-            );
+            const { storageService, isStorageUrl, getStoragePathFromUrl } =
+              await import('../../lib/index.js');
             if (isStorageUrl(oldImage)) {
               const oldPath = getStoragePathFromUrl(oldImage);
               if (oldPath) await storageService.deleteImage(oldPath).catch(() => {});

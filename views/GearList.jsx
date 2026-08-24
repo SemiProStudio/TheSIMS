@@ -32,14 +32,17 @@ import {
   withOpacity,
   zIndex,
 } from '../theme.js';
-import { getStatusColor,
+import {
+  getStatusColor,
   filterBySearch,
   filterByCategory,
   matchesStatusSelection,
   formatDate,
   getTodayISO,
   getAllReservationConflicts,
-  generateId, getStatusLabel } from '../utils';
+  generateId,
+  getStatusLabel,
+} from '../utils';
 import { DatePicker } from '../components/DatePicker.jsx';
 import {
   Badge,
@@ -476,7 +479,11 @@ const GridItem = memo(function GridItem({
             }}
           >
             <Badge text={item.id} color={colors.primary} size="xs" />
-            <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} size="xs" />
+            <Badge
+              text={getStatusLabel(item.status)}
+              color={getStatusColor(item.status)}
+              size="xs"
+            />
             {item.isKit && <Badge text="Kit" color={colors.accent1} size="xs" />}
           </div>
           <h4
@@ -517,8 +524,7 @@ const ListItem = memo(function ListItem({
   onToggleSelect,
   compact = false,
 }) {
-  const isOverdue =
-    item.status === 'checked-out' && item.dueBack && item.dueBack < getTodayISO();
+  const isOverdue = item.status === 'checked-out' && item.dueBack && item.dueBack < getTodayISO();
   const thumbSize = compact ? 40 : 56;
   return (
     <Card
@@ -598,7 +604,11 @@ const ListItem = memo(function ListItem({
             }}
           >
             <Badge text={item.id} color={colors.primary} size="xs" />
-            <Badge text={getStatusLabel(item.status)} color={getStatusColor(item.status)} size="xs" />
+            <Badge
+              text={getStatusLabel(item.status)}
+              color={getStatusColor(item.status)}
+              size="xs"
+            />
             {item.isKit && <Badge text="Kit" color={colors.accent1} size="xs" />}
             {isOverdue && <Badge text="Overdue" color={colors.danger} size="xs" />}
           </div>
@@ -1248,7 +1258,9 @@ function GearList({
                 ...styles.btnSec,
                 border: 'none',
                 padding: '12px 14px',
-                background: effectiveGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
+                background: effectiveGridView
+                  ? `${withOpacity(colors.primary, 30)}`
+                  : 'transparent',
                 color: effectiveGridView ? colors.primary : colors.textSecondary,
               }}
             >
@@ -1262,7 +1274,9 @@ function GearList({
                 ...styles.btnSec,
                 border: 'none',
                 padding: '12px 14px',
-                background: !effectiveGridView ? `${withOpacity(colors.primary, 30)}` : 'transparent',
+                background: !effectiveGridView
+                  ? `${withOpacity(colors.primary, 30)}`
+                  : 'transparent',
                 color: !effectiveGridView ? colors.primary : colors.textSecondary,
               }}
             >
@@ -1376,9 +1390,7 @@ function GearList({
       <ConfirmDialog
         isOpen={!!viewPendingDelete}
         title="Delete Saved View"
-        message={
-          viewPendingDelete ? `Delete the saved view "${viewPendingDelete.name}"?` : ''
-        }
+        message={viewPendingDelete ? `Delete the saved view "${viewPendingDelete.name}"?` : ''}
         confirmText="Delete"
         onConfirm={() => {
           persistViews(savedViews.filter((v) => v.id !== viewPendingDelete.id));

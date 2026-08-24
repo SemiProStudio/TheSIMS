@@ -312,18 +312,18 @@ Defines app name, icons, and colors for "Add to Home Screen" functionality.
 
 ## File Reference Summary
 
-| Setup Step          | File(s) Required                                |
-| ------------------- | ----------------------------------------------- |
-| Database (all of it)| `supabase/migrations/` applied in order         |
-| Sample data         | `supabase/seed.sql`                             |
-| Image storage       | `supabase/storage.sql`                          |
-| Email function      | `supabase/functions/send-email/index.ts`        |
-| Reminder function   | `supabase/functions/due-date-reminder/index.ts` |
-| Shared utilities    | `supabase/functions/_shared/utils.ts`           |
-| Vercel config       | `vercel.json`                                   |
-| Build config        | `vite.config.js`                                |
-| PWA manifest        | `public/manifest.json`                          |
-| Supabase client     | `lib/supabase.js`                               |
+| Setup Step           | File(s) Required                                |
+| -------------------- | ----------------------------------------------- |
+| Database (all of it) | `supabase/migrations/` applied in order         |
+| Sample data          | `supabase/seed.sql`                             |
+| Image storage        | `supabase/storage.sql`                          |
+| Email function       | `supabase/functions/send-email/index.ts`        |
+| Reminder function    | `supabase/functions/due-date-reminder/index.ts` |
+| Shared utilities     | `supabase/functions/_shared/utils.ts`           |
+| Vercel config        | `vercel.json`                                   |
+| Build config         | `vite.config.js`                                |
+| PWA manifest         | `public/manifest.json`                          |
+| Supabase client      | `lib/supabase.js`                               |
 
 ---
 

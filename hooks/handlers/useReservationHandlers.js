@@ -176,16 +176,17 @@ export function useReservationHandlers({
           await dataContext.cancelReservations(rowIdsForItem);
         } catch (err) {
           logError('Failed to remove item from reservation:', removeItemId, err);
-          addToast(`Failed to remove ${invItem?.name || removeItemId} from the reservation`, 'error');
+          addToast(
+            `Failed to remove ${invItem?.name || removeItemId} from the reservation`,
+            'error',
+          );
           continue;
         }
         const remaining = (invItem?.reservations || []).filter(
           (r) => !rowIdsForItem.includes(r.id),
         );
         dataContext.patchInventoryItem(removeItemId, (patchItem) => ({
-          reservations: (patchItem.reservations || []).filter(
-            (r) => !rowIdsForItem.includes(r.id),
-          ),
+          reservations: (patchItem.reservations || []).filter((r) => !rowIdsForItem.includes(r.id)),
         }));
         if (selectedItem?.id === removeItemId) {
           setSelectedItem((prev) => ({

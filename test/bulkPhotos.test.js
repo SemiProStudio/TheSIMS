@@ -15,7 +15,12 @@ const f = (name, size = 1000) => ({ name, size });
 
 const items = [
   { id: 'CAM-00012', name: 'Sony FX6', serialNumber: 'SN-FX6-001', image: null },
-  { id: 'CAM-00013', name: 'Sony A7S III', serialNumber: '  sn-a7s-77 ', image: 'https://x/old.jpg' },
+  {
+    id: 'CAM-00013',
+    name: 'Sony A7S III',
+    serialNumber: '  sn-a7s-77 ',
+    image: 'https://x/old.jpg',
+  },
   { id: 'LE1001', name: 'Sony 24-70', serialNumber: '', image: null },
 ];
 
@@ -52,11 +57,17 @@ describe('matchPhotosToItems', () => {
     const rows = matchPhotosToItems([f('cam-00012.jpg'), f('SN-A7S-77.png')], items);
     const byName = Object.fromEntries(rows.map((r) => [r.file.name, r]));
     expect(byName['cam-00012.jpg']).toMatchObject({ item: { id: 'CAM-00012' }, matchedBy: 'id' });
-    expect(byName['SN-A7S-77.png']).toMatchObject({ item: { id: 'CAM-00013' }, matchedBy: 'serial' });
+    expect(byName['SN-A7S-77.png']).toMatchObject({
+      item: { id: 'CAM-00013' },
+      matchedBy: 'serial',
+    });
   });
 
   it('orders rows by filename with numeric awareness', () => {
-    const rows = matchPhotosToItems([f('LE1001.jpg'), f('CAM-00013.jpg'), f('CAM-00012.jpg')], items);
+    const rows = matchPhotosToItems(
+      [f('LE1001.jpg'), f('CAM-00013.jpg'), f('CAM-00012.jpg')],
+      items,
+    );
     expect(rows.map((r) => r.file.name)).toEqual(['CAM-00012.jpg', 'CAM-00013.jpg', 'LE1001.jpg']);
   });
 
@@ -111,7 +122,9 @@ describe('planForRow', () => {
 
   it('replaces or skips existing photos per the option', () => {
     expect(planForRow(matched('https://x/a.jpg'), { replaceExisting: true })).toBe('replace');
-    expect(planForRow(matched('https://x/a.jpg'), { replaceExisting: false })).toBe('skip-existing');
+    expect(planForRow(matched('https://x/a.jpg'), { replaceExisting: false })).toBe(
+      'skip-existing',
+    );
   });
 
   it('flags duplicates and unmatched rows', () => {

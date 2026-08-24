@@ -49,7 +49,11 @@ test.describe('Low-stock reminder (per item)', () => {
       const db = await adminDb();
       await expect
         .poll(async () => {
-          const { data } = await db.from('inventory').select('low_stock_alert').eq('id', id).maybeSingle();
+          const { data } = await db
+            .from('inventory')
+            .select('low_stock_alert')
+            .eq('id', id)
+            .maybeSingle();
           return data?.low_stock_alert ?? null;
         })
         .toBe(true);
@@ -70,7 +74,11 @@ test.describe('Low-stock reminder (per item)', () => {
       await expect(page.getByText('On — low now')).toBeVisible({ timeout: 10000 });
       await expect
         .poll(async () => {
-          const { data } = await db.from('inventory').select('reorder_point').eq('id', id).maybeSingle();
+          const { data } = await db
+            .from('inventory')
+            .select('reorder_point')
+            .eq('id', id)
+            .maybeSingle();
           return data?.reorder_point ?? null;
         })
         .toBe(3);
@@ -89,7 +97,11 @@ test.describe('Low-stock reminder (per item)', () => {
       await page.getByRole('switch', { name: 'Low stock reminder' }).click();
       await expect
         .poll(async () => {
-          const { data } = await db.from('inventory').select('low_stock_alert').eq('id', id).maybeSingle();
+          const { data } = await db
+            .from('inventory')
+            .select('low_stock_alert')
+            .eq('id', id)
+            .maybeSingle();
           return data?.low_stock_alert ?? null;
         })
         .toBe(false);

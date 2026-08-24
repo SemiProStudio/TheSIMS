@@ -58,14 +58,7 @@ export function useCheckoutHandlers({
   // failure doesn't block the rest; dataContext.checkOutItem patches local
   // inventory state itself.
   const processBatchCheckout = useCallback(
-    async ({
-      items,
-      borrowerName,
-      clientId = null,
-      clientName = null,
-      project = '',
-      dueDate,
-    }) => {
+    async ({ items, borrowerName, clientId = null, clientName = null, project = '', dueDate }) => {
       let done = 0;
       const failed = [];
       // The borrower as a SIMS user — never the operator (that sent reminders
@@ -380,7 +373,9 @@ export function useCheckoutHandlers({
       // Damage reports go to every admin (each admin's own "Damage reports"
       // toggle is applied server-side)
       if (damageReported && dataContext?.sendDamageReportEmail) {
-        const admins = (dataContext.users || []).filter((u) => u.roleId === 'role_admin' && u.email);
+        const admins = (dataContext.users || []).filter(
+          (u) => u.roleId === 'role_admin' && u.email,
+        );
         if (admins.length) {
           dataContext
             .sendDamageReportEmail({
@@ -439,8 +434,7 @@ export function useCheckoutHandlers({
   // flow. dataContext.checkInItem patches local inventory itself.
   const processBatchCheckin = useCallback(
     async ({ itemIds, returnNotes = '' }) => {
-      const returnedBy =
-        currentUser?.name || currentUser?.email?.split('@')[0] || 'Unknown';
+      const returnedBy = currentUser?.name || currentUser?.email?.split('@')[0] || 'Unknown';
       const targets = inventory.filter(
         (i) => itemIds.includes(i.id) && i.status === STATUS.CHECKED_OUT,
       );

@@ -42,7 +42,12 @@ test.describe('Notification Settings', () => {
     await expect(page.getByText('Email Notifications', { exact: true })).toBeVisible();
 
     // Sections
-    for (const section of ['Due Date Reminders', 'Reservations', 'Checkout & Returns', 'Maintenance']) {
+    for (const section of [
+      'Due Date Reminders',
+      'Reservations',
+      'Checkout & Returns',
+      'Maintenance',
+    ]) {
       await expect(page.getByText(section, { exact: true })).toBeVisible();
     }
 

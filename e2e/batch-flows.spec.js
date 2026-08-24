@@ -118,10 +118,7 @@ test.describe('Bulk check-in from the gear list', () => {
       await expect
         .poll(
           async () => {
-            const { data } = await db
-              .from('inventory')
-              .select('id, status')
-              .in('id', [idA, idB]);
+            const { data } = await db.from('inventory').select('id, status').in('id', [idA, idB]);
             return data?.map((r) => r.status).join(',');
           },
           { timeout: 10000 },

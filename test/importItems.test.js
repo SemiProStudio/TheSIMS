@@ -91,10 +91,7 @@ describe('buildImportItems', () => {
     );
     expect(items.map((i) => i.status)).toEqual(['available', 'checked-out']);
     expect(items[1].condition).toBe('excellent');
-    expect(errors).toEqual([
-      'Row 4: Invalid status "broken"',
-      'Row 5: Invalid condition "mint"',
-    ]);
+    expect(errors).toEqual(['Row 4: Invalid status "broken"', 'Row 5: Invalid condition "mint"']);
   });
 
   it('never stores derived statuses', () => {

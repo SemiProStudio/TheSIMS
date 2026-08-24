@@ -3,24 +3,26 @@
 // =============================================================================
 
 import { describe, it, expect } from 'vitest';
-import {
-  groupReservationsForSchedule,
-  hasActiveReservation,
-  stableColorIndex,
-} from '../utils';
+import { groupReservationsForSchedule, hasActiveReservation, stableColorIndex } from '../utils';
 
 const itemA = {
   id: 'A',
-  reservations: [{ id: 'r1', groupId: 'g1', project: 'Job X', start: '2026-08-10', end: '2026-08-12' }],
+  reservations: [
+    { id: 'r1', groupId: 'g1', project: 'Job X', start: '2026-08-10', end: '2026-08-12' },
+  ],
 };
 const itemB = {
   id: 'B',
-  reservations: [{ id: 'r2', groupId: 'g1', project: 'Job X', start: '2026-08-10', end: '2026-08-12' }],
+  reservations: [
+    { id: 'r2', groupId: 'g1', project: 'Job X', start: '2026-08-10', end: '2026-08-12' },
+  ],
 };
 // Same name+dates, DIFFERENT group — must stay separate
 const itemC = {
   id: 'C',
-  reservations: [{ id: 'r3', groupId: 'g2', project: 'Job X', start: '2026-08-10', end: '2026-08-12' }],
+  reservations: [
+    { id: 'r3', groupId: 'g2', project: 'Job X', start: '2026-08-10', end: '2026-08-12' },
+  ],
 };
 // Legacy rows without groupId, same name+dates — merge by fallback
 const itemD = {
@@ -74,7 +76,10 @@ describe('hasActiveReservation', () => {
 
   it('tolerates startDate/endDate aliases and missing data', () => {
     expect(
-      hasActiveReservation({ reservations: [{ startDate: '2026-08-10', endDate: '2026-08-12' }] }, '2026-08-11'),
+      hasActiveReservation(
+        { reservations: [{ startDate: '2026-08-10', endDate: '2026-08-12' }] },
+        '2026-08-11',
+      ),
     ).toBe(true);
     expect(hasActiveReservation({ reservations: [] }, '2026-08-11')).toBe(false);
     expect(hasActiveReservation(null, '2026-08-11')).toBe(false);
