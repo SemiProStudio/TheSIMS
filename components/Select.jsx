@@ -112,9 +112,8 @@ export const Select = memo(function Select({
   useEffect(() => {
     if (isOpen && highlightedIndex >= 0 && listRef.current && isKeyboardNav) {
       const highlightedEl = listRef.current.children[highlightedIndex];
-      if (highlightedEl) {
-        highlightedEl.scrollIntoView({ block: 'nearest' });
-      }
+      // Optional call: jsdom elements have no scrollIntoView
+      highlightedEl?.scrollIntoView?.({ block: 'nearest' });
       setIsKeyboardNav(false);
     }
   }, [highlightedIndex, isOpen, isKeyboardNav]);
