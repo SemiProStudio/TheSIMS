@@ -97,10 +97,26 @@ export function buildTemplateData(
 
 export const isTestEmail = (templateKey: string) => templateKey === 'test_email';
 
+/** 64-bit FNV-1a as 16 hex chars — sync, dependency-free, stable across runs. */
+function fnv1a64Hex(input: string): string {
+  let hash = 0xcbf29ce484222325n;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= BigInt(input.charCodeAt(i));
+    hash = (hash * 0x100000001b3n) & 0xffffffffffffffffn;
+  }
+  return hash.toString(16).padStart(16, '0');
+}
+
 /**
  * Same template + recipient + data is one email a day — except a test
  * email, which must always be attempted (a dedup'd "Send me a test email"
  * reported "duplicate" on the second click).
+ *
+ * dedup_key is VARCHAR(255), so the variable-size template data is folded
+ * into a fixed-width digest and only the readable prefix may be truncated.
+ * Slicing the raw JSON tail instead used to cut off the daily report_key on
+ * ≥3-item digests, making day-1 and day-2 keys identical — the daily admin
+ * digests went silent after the first send whenever the item set was stable.
  */
 export function buildDedupKey(
   templateKey: string,
@@ -109,7 +125,9 @@ export function buildDedupKey(
   now: number = Date.now(),
 ): string {
   if (isTestEmail(templateKey)) return `test_email-${recipient}-${now}`;
-  return `${templateKey}-${recipient}-${JSON.stringify(data)}`.slice(0, 255);
+  const digest = fnv1a64Hex(JSON.stringify(data));
+  const prefix = `${templateKey}-${recipient}`.slice(0, 255 - 17);
+  return `${prefix}-${digest}`;
 }
 
 /** ISO timestamp of the start of the dedup window. */

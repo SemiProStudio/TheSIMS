@@ -128,13 +128,45 @@ describe('buildTemplateData', () => {
 });
 
 describe('dedup', () => {
-  it('keys on template + recipient + data, capped at 255 chars', () => {
+  it('keys on template + recipient + a digest of the data, capped at 255 chars', () => {
     const data = { company_name: 'SIMS', item_name: 'x'.repeat(300) };
     const key = buildDedupKey('due_date_reminder', 'a@b', data);
-    expect(key.startsWith('due_date_reminder-a@b-{"company_name":"SIMS"')).toBe(true);
-    expect(key).toHaveLength(255);
+    expect(key).toMatch(/^due_date_reminder-a@b-[0-9a-f]{16}$/);
+    expect(key.length).toBeLessThanOrEqual(255);
     expect(buildDedupKey('due_date_reminder', 'a@b', data)).toBe(key); // stable
     expect(buildDedupKey('due_date_reminder', 'c@d', data)).not.toBe(key);
+  });
+
+  it('every data field changes the key, however long the payload (the A4 bug)', () => {
+    // Regression: the old form appended raw JSON and sliced to 255, which cut
+    // off the trailing daily report_key on ≥3-item digests — day-1 and day-2
+    // keys came out identical and the digest was suppressed after day one.
+    const items = Array.from({ length: 3 }, (_, i) => ({
+      name: `Item ${i} with a realistically long descriptive name`,
+      qty: i,
+    }));
+    const base = {
+      company_name: 'SIMS',
+      items_list: items.map((i) => `${i.name} (${i.qty} left)`).join('\n'),
+    };
+    const day1 = buildDedupKey('low_stock_digest', 'admin@example.com', {
+      ...base,
+      report_key: 'low_stock-2026-08-23',
+    });
+    const day2 = buildDedupKey('low_stock_digest', 'admin@example.com', {
+      ...base,
+      report_key: 'low_stock-2026-08-24',
+    });
+    expect(day1).not.toBe(day2);
+    expect(day1.length).toBeLessThanOrEqual(255);
+  });
+
+  it('never truncates away the digest for very long recipients', () => {
+    const recipient = `${'r'.repeat(250)}@example.com`;
+    const key = buildDedupKey('overdue_digest', recipient, { report_key: 'a' });
+    const other = buildDedupKey('overdue_digest', recipient, { report_key: 'b' });
+    expect(key).toHaveLength(255);
+    expect(key).not.toBe(other); // digest survives at the tail
   });
 
   it('never dedups a test email (timestamped key)', () => {

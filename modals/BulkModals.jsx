@@ -7,6 +7,7 @@ import { memo, useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Trash2 } from 'lucide-react';
 import { STATUS } from '../constants.js';
+import { error as logError } from '../lib/logger.js';
 import { colors, styles, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { flattenLocations } from '../utils';
 import { Button } from '../components/ui.jsx';
@@ -368,7 +369,14 @@ export const BulkCheckInModal = memo(function BulkCheckInModal({
   const handleConfirm = async () => {
     if (!checkedOut.length || submitting) return;
     setSubmitting(true);
-    await onConfirm({ itemIds: checkedOut.map((i) => i.id), returnNotes: returnNotes.trim() });
+    try {
+      // onConfirm closes the modal on completion
+      await onConfirm({ itemIds: checkedOut.map((i) => i.id), returnNotes: returnNotes.trim() });
+    } catch (err) {
+      logError('Bulk check-in failed:', err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

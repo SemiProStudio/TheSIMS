@@ -8,6 +8,7 @@ import { memo, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { AlertTriangle, LogOut } from 'lucide-react';
 import { STATUS } from '../constants.js';
+import { error as logError } from '../lib/logger.js';
 import { colors, spacing, borderRadius, typography, withOpacity } from '../theme.js';
 import { getTodayISO, getStatusColor, getStatusLabel } from '../utils';
 import { Badge, Button, Input } from '../components/ui.jsx';
@@ -44,15 +45,21 @@ export const BatchCheckOutModal = memo(function BatchCheckOutModal({
   const handleConfirm = async () => {
     if (!canConfirm) return;
     setSubmitting(true);
-    await onConfirm({
-      items: checkoutable,
-      borrowerName: borrowerName.trim(),
-      clientId: reservation?.clientId || null,
-      clientName: reservation?.clientName || null,
-      project: reservation?.project || '',
-      dueDate,
-    });
-    // onConfirm closes the modal on completion
+    try {
+      // onConfirm closes the modal on completion
+      await onConfirm({
+        items: checkoutable,
+        borrowerName: borrowerName.trim(),
+        clientId: reservation?.clientId || null,
+        clientName: reservation?.clientName || null,
+        project: reservation?.project || '',
+        dueDate,
+      });
+    } catch (err) {
+      logError('Batch checkout failed:', err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
