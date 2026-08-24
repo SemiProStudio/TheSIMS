@@ -17,51 +17,51 @@ ON CONFLICT (id) DO NOTHING;
 -- =============================================================================
 -- SAMPLE INVENTORY (Cameras)
 -- =============================================================================
-INSERT INTO inventory (id, name, brand, category_name, status, condition, location_display, purchase_date, purchase_price, current_value, serial_number, specs, view_count, checkout_count) VALUES
-  ('CA1001', 'Sony A7S III', 'Sony', 'Cameras', 'available', 'excellent', 'Studio A - Shelf 1', '2023-06-15', 3498.00, 2800.00, 'SN-A7S3-001', '{"Sensor Type": "Full Frame BSI CMOS", "Effective Pixels": "12.1MP", "Video Resolution": "4K 120fps", "ISO Range": "80-102400", "Lens Mount": "Sony E"}', 45, 23),
-  ('CA1002', 'Canon EOS R5', 'Canon', 'Cameras', 'available', 'excellent', 'Studio A - Shelf 1', '2023-03-20', 3899.00, 3200.00, 'SN-R5-002', '{"Sensor Type": "Full Frame CMOS", "Effective Pixels": "45MP", "Video Resolution": "8K 30fps", "Lens Mount": "Canon RF"}', 62, 31),
-  ('CA1003', 'Blackmagic URSA Mini Pro 12K', 'Blackmagic Design', 'Cameras', 'available', 'excellent', 'Studio B - Camera Cage', '2023-09-10', 5995.00, 5200.00, 'SN-URSA12K-003', '{"Sensor Type": "Super 35 CMOS", "Effective Pixels": "12288 x 6480", "Video Resolution": "12K 60fps", "Lens Mount": "PL/EF", "Codecs / Formats": "BRAW, ProRes"}', 28, 8),
-  ('CA1004', 'Sony FX6', 'Sony', 'Cameras', 'available', 'excellent', 'Studio A - Shelf 2', '2023-01-15', 5998.00, 5000.00, 'SN-FX6-004', '{"Sensor Type": "Full Frame BSI CMOS", "Effective Pixels": "10.2MP", "Video Resolution": "4K 120fps", "Lens Mount": "Sony E"}', 55, 27),
-  ('CA1005', 'Canon C70', 'Canon', 'Cameras', 'available', 'good', 'Studio A - Shelf 2', '2022-06-01', 5499.00, 4200.00, 'SN-C70-005', '{"Sensor Type": "Super 35 DGO CMOS", "Video Resolution": "4K 120fps", "Lens Mount": "Canon RF"}', 38, 19),
-  ('CA1006', 'RED Komodo 6K', 'RED', 'Cameras', 'available', 'excellent', 'Studio B - Camera Cage', '2023-04-20', 5999.00, 5200.00, 'SN-KOMODO-006', '{"Sensor Type": "Super 35 CMOS", "Effective Pixels": "19.9MP", "Video Resolution": "6K 40fps", "Lens Mount": "Canon RF", "Codecs / Formats": "REDCODE RAW"}', 42, 15),
-  ('CA1007', 'Panasonic GH6', 'Panasonic', 'Cameras', 'available', 'excellent', 'Studio A - Shelf 3', '2023-07-10', 2197.00, 1800.00, 'SN-GH6-007', '{"Sensor Type": "Micro Four Thirds", "Effective Pixels": "25.2MP", "Video Resolution": "5.7K 60fps", "Lens Mount": "MFT"}', 31, 12)
+INSERT INTO inventory (id, name, brand, category_name, status, condition, location_display, purchase_date, purchase_price, current_value, serial_number, specs, checkout_count) VALUES
+  ('CA1001', 'Sony A7S III', 'Sony', 'Cameras', 'available', 'excellent', 'Studio A - Shelf 1', '2023-06-15', 3498.00, 2800.00, 'SN-A7S3-001', '{"Sensor Type": "Full Frame BSI CMOS", "Effective Pixels": "12.1MP", "Video Resolution": "4K 120fps", "ISO Range": "80-102400", "Lens Mount": "Sony E"}', 23),
+  ('CA1002', 'Canon EOS R5', 'Canon', 'Cameras', 'available', 'excellent', 'Studio A - Shelf 1', '2023-03-20', 3899.00, 3200.00, 'SN-R5-002', '{"Sensor Type": "Full Frame CMOS", "Effective Pixels": "45MP", "Video Resolution": "8K 30fps", "Lens Mount": "Canon RF"}', 31),
+  ('CA1003', 'Blackmagic URSA Mini Pro 12K', 'Blackmagic Design', 'Cameras', 'available', 'excellent', 'Studio B - Camera Cage', '2023-09-10', 5995.00, 5200.00, 'SN-URSA12K-003', '{"Sensor Type": "Super 35 CMOS", "Effective Pixels": "12288 x 6480", "Video Resolution": "12K 60fps", "Lens Mount": "PL/EF", "Codecs / Formats": "BRAW, ProRes"}', 8),
+  ('CA1004', 'Sony FX6', 'Sony', 'Cameras', 'available', 'excellent', 'Studio A - Shelf 2', '2023-01-15', 5998.00, 5000.00, 'SN-FX6-004', '{"Sensor Type": "Full Frame BSI CMOS", "Effective Pixels": "10.2MP", "Video Resolution": "4K 120fps", "Lens Mount": "Sony E"}', 27),
+  ('CA1005', 'Canon C70', 'Canon', 'Cameras', 'available', 'good', 'Studio A - Shelf 2', '2022-06-01', 5499.00, 4200.00, 'SN-C70-005', '{"Sensor Type": "Super 35 DGO CMOS", "Video Resolution": "4K 120fps", "Lens Mount": "Canon RF"}', 19),
+  ('CA1006', 'RED Komodo 6K', 'RED', 'Cameras', 'available', 'excellent', 'Studio B - Camera Cage', '2023-04-20', 5999.00, 5200.00, 'SN-KOMODO-006', '{"Sensor Type": "Super 35 CMOS", "Effective Pixels": "19.9MP", "Video Resolution": "6K 40fps", "Lens Mount": "Canon RF", "Codecs / Formats": "REDCODE RAW"}', 15),
+  ('CA1007', 'Panasonic GH6', 'Panasonic', 'Cameras', 'available', 'excellent', 'Studio A - Shelf 3', '2023-07-10', 2197.00, 1800.00, 'SN-GH6-007', '{"Sensor Type": "Micro Four Thirds", "Effective Pixels": "25.2MP", "Video Resolution": "5.7K 60fps", "Lens Mount": "MFT"}', 12)
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
 -- SAMPLE INVENTORY (Lenses)
 -- =============================================================================
-INSERT INTO inventory (id, name, brand, category_name, status, condition, location_display, purchase_date, purchase_price, current_value, serial_number, specs, view_count, checkout_count) VALUES
-  ('LE1001', 'Sony 24-70mm f/2.8 GM II', 'Sony', 'Lenses', 'available', 'excellent', 'Studio A - Lens Cabinet', '2023-04-10', 2298.00, 2000.00, 'SN-2470GM-001', '{"Focal Length": "24-70mm", "Maximum Aperture": "f/2.8", "Lens Mount": "Sony E", "Filter Thread": "82"}', 89, 45),
-  ('LE1002', 'Canon RF 70-200mm f/2.8L IS', 'Canon', 'Lenses', 'available', 'excellent', 'Studio A - Lens Cabinet', '2023-02-28', 2699.00, 2400.00, 'SN-70200RF-002', '{"Focal Length": "70-200mm", "Maximum Aperture": "f/2.8", "Lens Mount": "Canon RF", "Image Stabilization": "5 stops"}', 56, 28),
-  ('LE1003', 'Sony 50mm f/1.2 GM', 'Sony', 'Lenses', 'available', 'excellent', 'Studio A - Lens Cabinet', '2023-05-15', 1998.00, 1800.00, 'SN-50GM-003', '{"Focal Length": "50mm", "Maximum Aperture": "f/1.2", "Lens Mount": "Sony E", "Filter Thread": "72"}', 72, 36),
-  ('LE1004', 'Sigma 18-35mm f/1.8 Art', 'Sigma', 'Lenses', 'available', 'excellent', 'Studio A - Lens Cabinet', '2022-11-20', 799.00, 650.00, 'SN-1835ART-004', '{"Focal Length": "18-35mm", "Maximum Aperture": "f/1.8", "Lens Mount": "Canon EF", "Filter Thread": "72"}', 45, 22),
-  ('LE1005', 'Canon RF 15-35mm f/2.8L IS', 'Canon', 'Lenses', 'available', 'excellent', 'Studio A - Lens Cabinet', '2023-01-08', 2399.00, 2100.00, 'SN-1535RF-005', '{"Focal Length": "15-35mm", "Maximum Aperture": "f/2.8", "Lens Mount": "Canon RF", "Image Stabilization": "5 stops"}', 38, 18)
+INSERT INTO inventory (id, name, brand, category_name, status, condition, location_display, purchase_date, purchase_price, current_value, serial_number, specs, checkout_count) VALUES
+  ('LE1001', 'Sony 24-70mm f/2.8 GM II', 'Sony', 'Lenses', 'available', 'excellent', 'Studio A - Lens Cabinet', '2023-04-10', 2298.00, 2000.00, 'SN-2470GM-001', '{"Focal Length": "24-70mm", "Maximum Aperture": "f/2.8", "Lens Mount": "Sony E", "Filter Thread": "82"}', 45),
+  ('LE1002', 'Canon RF 70-200mm f/2.8L IS', 'Canon', 'Lenses', 'available', 'excellent', 'Studio A - Lens Cabinet', '2023-02-28', 2699.00, 2400.00, 'SN-70200RF-002', '{"Focal Length": "70-200mm", "Maximum Aperture": "f/2.8", "Lens Mount": "Canon RF", "Image Stabilization": "5 stops"}', 28),
+  ('LE1003', 'Sony 50mm f/1.2 GM', 'Sony', 'Lenses', 'available', 'excellent', 'Studio A - Lens Cabinet', '2023-05-15', 1998.00, 1800.00, 'SN-50GM-003', '{"Focal Length": "50mm", "Maximum Aperture": "f/1.2", "Lens Mount": "Sony E", "Filter Thread": "72"}', 36),
+  ('LE1004', 'Sigma 18-35mm f/1.8 Art', 'Sigma', 'Lenses', 'available', 'excellent', 'Studio A - Lens Cabinet', '2022-11-20', 799.00, 650.00, 'SN-1835ART-004', '{"Focal Length": "18-35mm", "Maximum Aperture": "f/1.8", "Lens Mount": "Canon EF", "Filter Thread": "72"}', 22),
+  ('LE1005', 'Canon RF 15-35mm f/2.8L IS', 'Canon', 'Lenses', 'available', 'excellent', 'Studio A - Lens Cabinet', '2023-01-08', 2399.00, 2100.00, 'SN-1535RF-005', '{"Focal Length": "15-35mm", "Maximum Aperture": "f/2.8", "Lens Mount": "Canon RF", "Image Stabilization": "5 stops"}', 18)
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
 -- SAMPLE INVENTORY (Lighting)
 -- =============================================================================
-INSERT INTO inventory (id, name, brand, category_name, status, condition, location_display, purchase_date, purchase_price, current_value, serial_number, specs, view_count, checkout_count) VALUES
-  ('LI1001', 'Aputure 600d Pro', 'Aputure', 'Lighting', 'available', 'excellent', 'Warehouse - Lighting Storage', '2023-03-15', 1590.00, 1400.00, 'SN-600D-001', '{"Light Type": "LED COB", "Color Temperature": "Daylight 5600K", "Power Output": "600W equiv", "CRI": "96", "TLCI": "98"}', 52, 26),
-  ('LI1002', 'Aputure 300x', 'Aputure', 'Lighting', 'available', 'excellent', 'Warehouse - Lighting Storage', '2023-04-20', 1149.00, 1000.00, 'SN-300X-002', '{"Light Type": "LED COB", "Color Temperature": "2700-6500K Bi-Color", "Power Output": "350W equiv", "CRI": "95"}', 48, 24),
-  ('LI1003', 'Nanlite Forza 500', 'Nanlite', 'Lighting', 'available', 'excellent', 'Warehouse - Lighting Storage', '2023-02-10', 899.00, 780.00, 'SN-FORZA500-003', '{"Light Type": "LED COB", "Color Temperature": "Daylight 5600K", "Power Output": "500W", "CRI": "98"}', 35, 17)
+INSERT INTO inventory (id, name, brand, category_name, status, condition, location_display, purchase_date, purchase_price, current_value, serial_number, specs, checkout_count) VALUES
+  ('LI1001', 'Aputure 600d Pro', 'Aputure', 'Lighting', 'available', 'excellent', 'Warehouse - Lighting Storage', '2023-03-15', 1590.00, 1400.00, 'SN-600D-001', '{"Light Type": "LED COB", "Color Temperature": "Daylight 5600K", "Power Output": "600W equiv", "CRI": "96", "TLCI": "98"}', 26),
+  ('LI1002', 'Aputure 300x', 'Aputure', 'Lighting', 'available', 'excellent', 'Warehouse - Lighting Storage', '2023-04-20', 1149.00, 1000.00, 'SN-300X-002', '{"Light Type": "LED COB", "Color Temperature": "2700-6500K Bi-Color", "Power Output": "350W equiv", "CRI": "95"}', 24),
+  ('LI1003', 'Nanlite Forza 500', 'Nanlite', 'Lighting', 'available', 'excellent', 'Warehouse - Lighting Storage', '2023-02-10', 899.00, 780.00, 'SN-FORZA500-003', '{"Light Type": "LED COB", "Color Temperature": "Daylight 5600K", "Power Output": "500W", "CRI": "98"}', 17)
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
 -- SAMPLE INVENTORY (Audio)
 -- =============================================================================
-INSERT INTO inventory (id, name, brand, category_name, status, condition, location_display, purchase_date, purchase_price, current_value, serial_number, specs, view_count, checkout_count) VALUES
-  ('AU1001', 'Sennheiser MKH 416', 'Sennheiser', 'Audio', 'available', 'excellent', 'Audio Cabinet', '2023-01-20', 999.00, 900.00, 'SN-MKH416-001', '{"Audio Type": "Shotgun Mic", "Polar Pattern": "Supercardioid", "Frequency Response": "40Hz-20kHz", "Connectivity": "XLR"}', 65, 32),
-  ('AU1002', 'Rode NTG5', 'Rode', 'Audio', 'available', 'excellent', 'Audio Cabinet', '2023-03-05', 499.00, 450.00, 'SN-NTG5-002', '{"Audio Type": "Shotgun Mic", "Polar Pattern": "Supercardioid", "Frequency Response": "20Hz-20kHz"}', 42, 21),
-  ('AU1003', 'Sony UWP-D21 Wireless', 'Sony', 'Audio', 'available', 'excellent', 'Audio Cabinet', '2023-05-12', 599.00, 520.00, 'SN-UWPD21-003', '{"Audio Type": "Wireless System", "Wireless Range": "100m", "Battery Life": "8 hours"}', 58, 29)
+INSERT INTO inventory (id, name, brand, category_name, status, condition, location_display, purchase_date, purchase_price, current_value, serial_number, specs, checkout_count) VALUES
+  ('AU1001', 'Sennheiser MKH 416', 'Sennheiser', 'Audio', 'available', 'excellent', 'Audio Cabinet', '2023-01-20', 999.00, 900.00, 'SN-MKH416-001', '{"Audio Type": "Shotgun Mic", "Polar Pattern": "Supercardioid", "Frequency Response": "40Hz-20kHz", "Connectivity": "XLR"}', 32),
+  ('AU1002', 'Rode NTG5', 'Rode', 'Audio', 'available', 'excellent', 'Audio Cabinet', '2023-03-05', 499.00, 450.00, 'SN-NTG5-002', '{"Audio Type": "Shotgun Mic", "Polar Pattern": "Supercardioid", "Frequency Response": "20Hz-20kHz"}', 21),
+  ('AU1003', 'Sony UWP-D21 Wireless', 'Sony', 'Audio', 'available', 'excellent', 'Audio Cabinet', '2023-05-12', 599.00, 520.00, 'SN-UWPD21-003', '{"Audio Type": "Wireless System", "Wireless Range": "100m", "Battery Life": "8 hours"}', 29)
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================
 -- SAMPLE INVENTORY (Support)
 -- =============================================================================
-INSERT INTO inventory (id, name, brand, category_name, status, condition, location_display, purchase_date, purchase_price, current_value, serial_number, specs, view_count, checkout_count) VALUES
-  ('SU1001', 'Sachtler Video 18 S2', 'Sachtler', 'Support', 'available', 'excellent', 'Warehouse - Support', '2023-02-15', 3999.00, 3500.00, 'SN-V18S2-001', '{"Support Type": "Fluid Head", "Head Type": "Video 18 S2", "Max Payload": "40", "Counterbalance": "18 steps"}', 35, 18),
-  ('SU1002', 'DJI RS 3 Pro', 'DJI', 'Support', 'available', 'excellent', 'Studio B - Gimbal Area', '2023-06-20', 999.00, 850.00, 'SN-RS3PRO-002', '{"Support Type": "Gimbal", "Max Payload": "10", "Battery Life": "12 hours", "Axes / Modes": "3-Axis; Pan Follow, Lock, FPV"}', 48, 24)
+INSERT INTO inventory (id, name, brand, category_name, status, condition, location_display, purchase_date, purchase_price, current_value, serial_number, specs, checkout_count) VALUES
+  ('SU1001', 'Sachtler Video 18 S2', 'Sachtler', 'Support', 'available', 'excellent', 'Warehouse - Support', '2023-02-15', 3999.00, 3500.00, 'SN-V18S2-001', '{"Support Type": "Fluid Head", "Head Type": "Video 18 S2", "Max Payload": "40", "Counterbalance": "18 steps"}', 18),
+  ('SU1002', 'DJI RS 3 Pro', 'DJI', 'Support', 'available', 'excellent', 'Studio B - Gimbal Area', '2023-06-20', 999.00, 850.00, 'SN-RS3PRO-002', '{"Support Type": "Gimbal", "Max Payload": "10", "Battery Life": "12 hours", "Axes / Modes": "3-Axis; Pan Follow, Lock, FPV"}', 24)
 ON CONFLICT (id) DO NOTHING;
 
 -- =============================================================================

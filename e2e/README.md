@@ -31,9 +31,11 @@ deleted its private data, so screenshots always see the pristine seeded
 dataset. **Do not merge these projects** — a functional test checking out an
 item mid-run would flake any screenshot showing inventory counts or badges.
 
-firefox/webkit/mobile projects were removed: they were configured but never
-verified green (the mobile viewport cannot use the desktop sidebar page
-objects at all). Re-add a browser project only together with a run that
+firefox/webkit projects were removed: they were configured but never verified
+green. `chromium-mobile` came BACK on 2026-08-23 (playwright.config.js) with
+mobile-specific specs and its own visual baselines — only the desktop-sidebar
+page objects remain off-limits to it. Re-add a browser project only together
+with a run that
 proves it passes.
 
 **Auth**: `auth.setup.js` logs in ONCE per run (as admin and as the standard
