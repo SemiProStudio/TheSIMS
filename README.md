@@ -136,7 +136,7 @@ views/          One file per page (Dashboard, GearList, ItemDetail, Schedule,
                 Packages, PackLists, Clients, Search, Reports + 6 report pages,
                 admin pages, RolesManager, …)
 utils/          Pure helpers (dates, money, status, CSV download, a11y)
-supabase/       schema.sql, migrations/, edge functions
+supabase/       migrations/, seed.sql, edge functions
 e2e/            Playwright specs + fixtures; test/ holds the Vitest suite
 ```
 
@@ -146,10 +146,8 @@ Smart Paste imports product specifications from retailer pages, PDFs, or text fi
 
 **Architecture:**
 
-- `lib/smartPasteParser.js` — Extraction engine: text cleaning, HTML table conversion, key-value extraction, multi-strategy matching (direct alias, abbreviation expansion, Levenshtein fuzzy matching)
-- `modals/SmartPasteModal.jsx` — UI: tabbed Paste Text / Import File interface, drag-and-drop file zone, confidence badges, alternative selection dropdowns, category-aware result ordering
-
-See [SMART_PASTE_IMPROVEMENTS.md](SMART_PASTE_IMPROVEMENTS.md) for the planned enhancement roadmap.
+- `lib/smartPaste/` — Extraction engine (one module per concern): text cleaning, HTML table conversion, key-value extraction, multi-strategy matching (direct alias, abbreviation expansion, Levenshtein fuzzy matching), unit normalization, batch splitting, OCR
+- `modals/smartPaste/` — UI: tabbed Paste Text / Import File interface, drag-and-drop file zone, confidence badges, alternative selection dropdowns, category-aware result ordering
 
 ---
 
@@ -173,7 +171,10 @@ Supabase (PostgreSQL) with Row Level Security. Key tables:
 | `roles` / `role_permissions`         | Custom role definitions              |
 | `users`                              | Accounts with role assignments       |
 
-Run `schema.sql` → `functions.sql` → `seed.sql` in the Supabase SQL Editor.
+Apply `supabase/migrations/` in order (`supabase db push`, or run each file in
+the SQL Editor), then optionally `supabase/seed.sql` for sample data. The old
+`schema.sql`/`functions.sql` snapshot pre-dated the migrations and produced a
+broken database — it has been removed; migrations are the only setup path.
 
 ---
 

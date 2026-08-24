@@ -286,7 +286,7 @@ Defines app name, icons, and colors for "Add to Home Screen" functionality.
 
 **Fix:**
 
-1. Run `supabase/schema.sql` in SQL Editor
+1. Apply `supabase/migrations/` in order (`supabase db push`, or run each file in the SQL Editor)
 2. Verify tables exist in Table Editor
 
 ### Styles look wrong
@@ -314,9 +314,7 @@ Defines app name, icons, and colors for "Add to Home Screen" functionality.
 
 | Setup Step          | File(s) Required                                |
 | ------------------- | ----------------------------------------------- |
-| Database tables     | `supabase/schema.sql`                           |
-| Notification tables | `notifications-schema.sql`                      |
-| Database functions  | `supabase/functions.sql`                        |
+| Database (all of it)| `supabase/migrations/` applied in order         |
 | Sample data         | `supabase/seed.sql`                             |
 | Image storage       | `supabase/storage.sql`                          |
 | Email function      | `supabase/functions/send-email/index.ts`        |

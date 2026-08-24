@@ -45,8 +45,10 @@ describe('migration security lint', () => {
   it('parses the migration directory', () => {
     expect(surface.files.length).toBeGreaterThan(20);
     expect(surface.tables.size).toBeGreaterThan(20);
-    expect(surface.views.size).toBe(4);
-    expect(surface.functions.size).toBeGreaterThan(25);
+    // 20260824090000 dropped the four baseline views (nothing read them) and
+    // nine orphan RPCs. A future CREATE re-enters the model on its own.
+    expect(surface.views.size).toBe(0);
+    expect(surface.functions.size).toBeGreaterThan(20);
   });
 
   it('self-check: every CREATE TABLE / VIEW / FUNCTION in the SQL is modelled', () => {
@@ -142,7 +144,8 @@ describe('migration security lint', () => {
       'get_maintenance_due_today',
       'get_notification_recipients',
       'reconcile_reservation_statuses',
-      'cleanup_smart_paste_aliases',
+      // cleanup_smart_paste_aliases was dropped outright by 20260824090000
+      // (no cron ever scheduled it) — a dropped fn can't leak
     ];
     const leaks = serviceOnly.filter((name) => {
       const fn = surface.functions.get(name);
