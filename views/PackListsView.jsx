@@ -788,6 +788,18 @@ function PackListsView({
     addToast('Pack list selections cleared', 'success');
   }, [selectedList, setSelectedList, dataContext, addToast]);
 
+  // Delete confirmation — one instance shared by the detail and list branches
+  // below (ConfirmDialog renders nothing while closed)
+  const deleteConfirmDialog = (
+    <ConfirmDialog
+      isOpen={confirmDelete.isOpen}
+      title="Delete Pack List"
+      message={`Are you sure you want to delete "${confirmDelete.name}"? This action cannot be undone.`}
+      onConfirm={() => handleDelete(confirmDelete.id)}
+      onCancel={() => setConfirmDelete({ isOpen: false, id: null, name: '' })}
+    />
+  );
+
   // ============================================================================
   // Name Prompt Modal
   // ============================================================================
@@ -1593,15 +1605,7 @@ function PackListsView({
         )}
 
         {/* Delete Confirmation */}
-        {confirmDelete.isOpen && (
-          <ConfirmDialog
-            isOpen={confirmDelete.isOpen}
-            title="Delete Pack List"
-            message={`Are you sure you want to delete "${confirmDelete.name}"? This action cannot be undone.`}
-            onConfirm={() => handleDelete(confirmDelete.id)}
-            onCancel={() => setConfirmDelete({ isOpen: false, id: null, name: '' })}
-          />
-        )}
+        {deleteConfirmDialog}
 
         {/* Reset Packed Confirmation */}
         {confirmReset && (
@@ -1733,13 +1737,7 @@ function PackListsView({
         </div>
       )}
 
-      <ConfirmDialog
-        isOpen={confirmDelete.isOpen}
-        title="Delete Pack List"
-        message={`Are you sure you want to delete "${confirmDelete.name}"? This action cannot be undone.`}
-        onConfirm={() => handleDelete(confirmDelete.id)}
-        onCancel={() => setConfirmDelete({ isOpen: false, id: null, name: '' })}
-      />
+      {deleteConfirmDialog}
     </>
   );
 }
