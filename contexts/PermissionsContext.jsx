@@ -166,34 +166,3 @@ export function PermissionGate({ permission, requireEdit = false, fallback = nul
   return children;
 }
 
-// Button wrapper that disables based on permissions
-export function PermissionButton({ functionId, children, onClick, ...props }) {
-  const { canEdit, getPermissionLevel } = usePermissions();
-  const hasEditAccess = canEdit(functionId);
-
-  const handleClick = (e) => {
-    if (!hasEditAccess) {
-      e.preventDefault();
-      alert(
-        `You don't have permission to perform this action. Your current access level is "${getPermissionLevel(functionId)}".`,
-      );
-      return;
-    }
-    onClick?.(e);
-  };
-
-  return (
-    <button
-      {...props}
-      onClick={handleClick}
-      style={{
-        ...props.style,
-        opacity: hasEditAccess ? 1 : 0.5,
-        cursor: hasEditAccess ? 'pointer' : 'not-allowed',
-      }}
-      title={hasEditAccess ? props.title : "You don't have permission for this action"}
-    >
-      {children}
-    </button>
-  );
-}

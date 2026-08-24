@@ -575,10 +575,6 @@ export const isLowStock = (item, categorySettings) => {
   return threshold > 0 && item.quantity <= threshold;
 };
 
-/** Whether the low-stock reminder controls apply to this item at all */
-export const canTrackLowStock = (item, categorySettings) =>
-  Boolean(categorySettings?.[item?.category]?.trackQuantity);
-
 /**
  * Multi-select status match that understands the computed states: 'overdue'
  * and 'low-stock' are derived, so the plain equality check the Search view
@@ -686,14 +682,6 @@ export const findNoteById = (notes, noteId) => {
   return null;
 };
 
-// ============================================================================
-// Validation Utilities
-// ============================================================================
-
-/**
- * Check if required fields are filled
- * @param {Object} obj - Object to validate
- * @param {string[]} requiredFields - Array of required field names
 // ============================================================================
 // Location Utilities
 // ============================================================================

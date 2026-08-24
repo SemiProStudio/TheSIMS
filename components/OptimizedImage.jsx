@@ -192,5 +192,3 @@ OptimizedImage.propTypes = {
   onError: PropTypes.func,
   lazy: PropTypes.bool,
 };
-
-export default OptimizedImage;

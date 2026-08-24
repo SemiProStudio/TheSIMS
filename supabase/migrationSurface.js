@@ -282,7 +282,7 @@ export function rpcFunctions(surface) {
 // Placeholder argument values by Postgres type, for probes that must
 // RESOLVE a function (PostgREST matches RPC calls by argument names) without
 // touching real rows: ids that cannot exist, dates in the past, empty sets.
-export function placeholderArg(type) {
+function placeholderArg(type) {
   const t = type.toLowerCase();
   if (/\[\]$/.test(t)) return [];
   if (/uuid/.test(t)) return '00000000-0000-0000-0000-000000000000';

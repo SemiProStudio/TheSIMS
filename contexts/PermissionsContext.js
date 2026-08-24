@@ -12,19 +12,17 @@ const PermissionsContext = createContext(null);
 // Consumed by canAccessView below — AppViews refuses to render a view the
 // role can't see, so hiding a sidebar button is never the only barrier
 // (scanner results, QR deep links, and stale state all route directly).
-export const VIEW_PERMISSIONS = {
+const VIEW_PERMISSIONS = {
   [VIEWS.DASHBOARD]: 'dashboard',
   [VIEWS.GEAR_LIST]: 'gear_list',
   [VIEWS.GEAR_DETAIL]: 'item_details',
   [VIEWS.PACKAGES]: 'gear_list',
-  [VIEWS.PACKAGE_DETAIL]: 'item_details',
   [VIEWS.PACK_LISTS]: 'pack_lists',
   [VIEWS.SCHEDULE]: 'schedule',
   [VIEWS.RESERVATION_DETAIL]: 'schedule',
   [VIEWS.SEARCH]: 'search',
   [VIEWS.LABELS]: 'labels',
   [VIEWS.CLIENTS]: 'clients',
-  [VIEWS.CLIENT_DETAIL]: 'clients',
   [VIEWS.REPORTS]: 'reports',
   [VIEWS.ADMIN]: 'admin_users', // Special-cased: ANY admin permission (see canAccessView)
   [VIEWS.USERS]: 'admin_users',

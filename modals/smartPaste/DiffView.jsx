@@ -7,7 +7,7 @@ import { colors, spacing, borderRadius, typography, withOpacity } from '../../th
 
 const STATUS_LABELS = { changed: '~', added: '+', removed: '-', unchanged: '=' };
 
-export function DiffView({ diffResults, onHideDiff: _onHideDiff }) {
+export function DiffView({ diffResults }) {
   if (!diffResults) return null;
 
   return (

@@ -183,7 +183,6 @@ const VIEW_LABELS = {
   [VIEWS.SCHEDULE]: 'Schedule',
   [VIEWS.LABELS]: 'Labels',
   [VIEWS.CLIENTS]: 'Clients',
-  [VIEWS.CLIENT_DETAIL]: 'Client Details',
   [VIEWS.SEARCH]: 'Search',
   [VIEWS.ADMIN]: 'Admin Panel',
   [VIEWS.REPORTS]: 'Reports',

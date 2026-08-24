@@ -39,18 +39,6 @@ export function ModalProvider({ children }) {
   });
 
   // ============================================================================
-  // Modal Handlers
-  // ============================================================================
-
-  const openModal = useCallback((modalId) => {
-    setActiveModal(modalId);
-  }, []);
-
-  const closeModal = useCallback(() => {
-    setActiveModal(null);
-  }, []);
-
-  // ============================================================================
   // Confirm Dialog
   // ============================================================================
 
@@ -113,8 +101,6 @@ export function ModalProvider({ children }) {
     () => ({
       activeModal,
       setActiveModal,
-      openModal,
-      closeModal,
       editingItemId,
       setEditingItemId,
       editingReservationId,
@@ -139,8 +125,6 @@ export function ModalProvider({ children }) {
       itemForm,
       reservationForm,
       confirmDialog,
-      openModal,
-      closeModal,
       resetItemForm,
       resetReservationForm,
       showConfirm,

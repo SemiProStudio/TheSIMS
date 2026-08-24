@@ -461,7 +461,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
             setScheduleDate={setScheduleDate}
             scheduleMode={scheduleMode}
             setScheduleMode={setScheduleMode}
-            onViewItem={navigateToItem}
             onViewReservation={navigateToReservation}
             onAddReservation={() => {
               resetReservationForm();
@@ -977,7 +976,6 @@ export default memo(function AppViews({ handlers, currentUser, changeLog }) {
               changeLog={changeLog}
               inventory={inventory}
               packages={packages}
-              onViewItem={navigateToItem}
               onBack={() => setCurrentView(VIEWS.ADMIN)}
             />
           </Suspense>

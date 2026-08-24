@@ -15,7 +15,6 @@ import AuthContext from './AuthContext.js';
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
-  const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -34,7 +33,6 @@ export function AuthProvider({ children }) {
 
         // Get current session
         const currentSession = await auth.getSession();
-        setSession(currentSession);
 
         if (currentSession?.user) {
           setUser(currentSession.user);
@@ -62,7 +60,6 @@ export function AuthProvider({ children }) {
           if (event === 'INITIAL_SESSION') return;
 
           log('Auth state changed:', event);
-          setSession(newSession);
           setUser(newSession?.user ?? null);
 
           if (!newSession?.user) {
@@ -107,10 +104,8 @@ export function AuthProvider({ children }) {
     try {
       const data = await auth.signIn(email, password);
       const authUser = data.user;
-      const newSession = data.session;
 
       setUser(authUser);
-      setSession(newSession);
 
       // Fetch user profile
       let profile = null;
@@ -131,21 +126,6 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // =============================================================================
-  // Sign Up
-  // =============================================================================
-  const signUp = useCallback(async (email, password, name, roleId) => {
-    setError(null);
-
-    try {
-      const data = await auth.signUp(email, password, name, roleId);
-      return { user: data.user, error: null };
-    } catch (err) {
-      setError(err);
-      return { user: null, error: err };
-    }
-  }, []);
-
   // Admin-initiated user creation on an isolated client — never replaces the
   // current (admin) session. Throws on failure.
   const adminCreateUser = useCallback(async (email, password, name, roleId) => {
@@ -161,41 +141,10 @@ export function AuthProvider({ children }) {
       await auth.signOut();
       setUser(null);
       setUserProfile(null);
-      setSession(null);
       setError(null);
     } catch (err) {
       setError(err);
       throw err;
-    }
-  }, []);
-
-  // =============================================================================
-  // Password Reset
-  // =============================================================================
-  const resetPassword = useCallback(async (email) => {
-    setError(null);
-
-    try {
-      await auth.resetPassword(email);
-      return { error: null };
-    } catch (err) {
-      setError(err);
-      return { error: err };
-    }
-  }, []);
-
-  // =============================================================================
-  // Update Password
-  // =============================================================================
-  const updatePassword = useCallback(async (newPassword) => {
-    setError(null);
-
-    try {
-      await auth.updatePassword(newPassword);
-      return { error: null };
-    } catch (err) {
-      setError(err);
-      return { error: err };
     }
   }, []);
 
@@ -207,38 +156,18 @@ export function AuthProvider({ children }) {
       // State
       user,
       userProfile,
-      session,
       loading,
       error,
 
       // Computed
       isAuthenticated: !!user,
-      // Always a role ID string — userProfile.role is the joined role OBJECT
-      userRole: userProfile?.roleId || 'role_user',
-      userName: userProfile?.name || user?.email?.split('@')[0] || 'User',
-      userEmail: userProfile?.email || user?.email || '',
 
       // Methods
       signIn,
-      signUp,
       adminCreateUser,
       signOut,
-      resetPassword,
-      updatePassword,
     }),
-    [
-      user,
-      userProfile,
-      session,
-      loading,
-      error,
-      signIn,
-      signUp,
-      adminCreateUser,
-      signOut,
-      resetPassword,
-      updatePassword,
-    ],
+    [user, userProfile, loading, error, signIn, adminCreateUser, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

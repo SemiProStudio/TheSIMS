@@ -17,12 +17,9 @@ export const colors = {
   bgMedium: 'var(--bg-medium)',
   bgLight: 'var(--bg-light)',
   bgCard: 'var(--bg-card)',
-  bgCardSolid: 'var(--bg-card-solid)',
 
   // Accent colors
   primary: 'var(--primary)',
-  primaryLight: 'var(--primary-light)',
-  primaryDark: 'var(--primary-dark)',
 
   accent1: 'var(--accent1)',
   accent2: 'var(--accent2)',
@@ -58,11 +55,7 @@ export const colors = {
   // Label colors for text rendered ON colored fills (buttons, filled badges).
   // Per-theme values chosen for WCAG 4.5:1 — see test/theme-contrast.test.js
   onPrimary: 'var(--on-primary)',
-  onDanger: 'var(--on-danger)',
   onSuccess: 'var(--on-success)',
-
-  // Focus ring (accessibility)
-  focusRing: 'var(--focus-ring-color)',
 };
 
 // ============================================================================
@@ -169,7 +162,6 @@ export const shadows = {
 // phone<w≤desktop = sidebar icon rail by default.
 export const breakpoints = {
   phone: 640,
-  tablet: 768,
   desktop: 1024,
 };
 
@@ -177,16 +169,11 @@ export const breakpoints = {
 export const zIndex = {
   base: 0,
   dropdown: 100,
-  sticky: 200,
-  fixed: 300,
-  modalBackdrop: 1090,
   // Mobile chrome (.mobile-header 998, sidebar drawer 1000 in index.css) must
   // stay UNDER open modals, so the modal layer sits above 1000; dropdown
   // portals (Select/DatePicker) and toasts render higher still.
   modal: 1100,
-  popover: 1150,
   confirm: 1200,
-  tooltip: 1250,
 };
 
 // Transitions
@@ -231,12 +218,6 @@ export const styles = {
     transition: transitions.fast,
   },
 
-  // Danger button modifier
-  btnDanger: {
-    borderColor: colors.danger,
-    color: colors.danger,
-  },
-
   // Input field
   input: {
     width: '100%',
@@ -249,28 +230,6 @@ export const styles = {
     fontFamily: typography.fontFamily,
     outline: 'none',
     boxSizing: 'border-box',
-  },
-
-  // Select dropdown - matches input but with proper height
-  select: {
-    width: '100%',
-    padding: `${spacing[3]}px ${spacing[4]}px`,
-    paddingRight: `${spacing[8]}px`, // Extra space for dropdown arrow
-    background: 'var(--input-bg, color-mix(in srgb, var(--primary) 10%, transparent))',
-    border: `1px solid ${colors.border}`,
-    borderRadius: borderRadius.lg,
-    color: colors.textPrimary,
-    fontSize: typography.fontSize.base,
-    outline: 'none',
-    boxSizing: 'border-box',
-    cursor: 'pointer',
-    appearance: 'none',
-    WebkitAppearance: 'none',
-    MozAppearance: 'none',
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: `right ${spacing[3]}px center`,
-    minHeight: '42px', // Match input height
   },
 
   // Form label

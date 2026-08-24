@@ -53,23 +53,6 @@ export const testUsers = {
   },
 };
 
-export const testItems = {
-  camera: {
-    name: 'Test Camera',
-    code: 'CAM-TEST-001',
-    category: 'Camera',
-    location: 'Main Storage',
-    value: '5000',
-  },
-  lens: {
-    name: 'Test Lens',
-    code: 'LENS-TEST-001',
-    category: 'Lens',
-    location: 'Lens Cabinet',
-    value: '2000',
-  },
-};
-
 // =============================================================================
 // Page Object Models
 // =============================================================================
@@ -234,63 +217,6 @@ export class ItemDetailPage {
   }
 }
 
-export class CheckOutModal {
-  constructor(page) {
-    this.page = page;
-    this.modal = page.locator('[role="dialog"]');
-    this.borrowerInput = page.locator('input[placeholder="Who is taking this item?"]');
-    this.dueDateInput = page.locator('input[placeholder="Select due date"]');
-    this.projectInput = page.locator('input[id*="project"], input[placeholder*="Project"]');
-    this.acknowledgeCheckbox = page.locator('input[type="checkbox"]');
-    this.submitButton = page.locator('button:has-text("Check Out")');
-    this.cancelButton = page.locator('button:has-text("Cancel")');
-  }
-
-  async expectModalOpen() {
-    await expect(this.modal).toBeVisible();
-  }
-
-  async fillForm(data) {
-    if (data.borrowerName) {
-      await this.borrowerInput.fill(data.borrowerName);
-    }
-    if (data.dueDate) {
-      await this.dueDateInput.fill(data.dueDate);
-    }
-    if (data.project) {
-      await this.projectInput.fill(data.project);
-    }
-    if (data.acknowledge) {
-      await this.acknowledgeCheckbox.check();
-    }
-  }
-
-  async submit() {
-    await this.submitButton.click();
-  }
-
-  async cancel() {
-    await this.cancelButton.click();
-  }
-}
-
-export class ThemeSelectorPage {
-  constructor(page) {
-    this.page = page;
-    this.heading = page.locator('h2:has-text("Theme")');
-    this.themeCards = page.locator('[data-testid="theme-card"]');
-    this.customThemeButton = page.locator('button:has-text("Custom")');
-  }
-
-  async expectThemeSelector() {
-    await expect(this.heading).toBeVisible();
-  }
-
-  async selectTheme(themeName) {
-    await this.page.locator(`text=${themeName}`).click();
-  }
-}
-
 // =============================================================================
 // Extended Test with Auth Fixture
 // =============================================================================
@@ -317,17 +243,6 @@ export const test = base.extend({
     await use(context);
   },
 
-  // Fixture that provides a logged-in page. The project's storageState
-  // (written by auth.setup.js) already carries the admin session — just
-  // load the app and wait for the dashboard.
-  authenticatedPage: async ({ page }, use) => {
-    await page.goto('/');
-    const dashboard = new DashboardPage(page);
-    await dashboard.expectDashboard();
-
-    await use(page);
-  },
-
   // Fixture that provides page objects
   pages: async ({ page }, use) => {
     await use({
@@ -335,8 +250,6 @@ export const test = base.extend({
       dashboard: new DashboardPage(page),
       gearList: new GearListPage(page),
       itemDetail: new ItemDetailPage(page),
-      checkOutModal: new CheckOutModal(page),
-      themeSelector: new ThemeSelectorPage(page),
     });
   },
 });
@@ -346,20 +259,6 @@ export { expect };
 // =============================================================================
 // Utility Functions
 // =============================================================================
-
-export async function waitForPageLoad(page) {
-  await page.waitForLoadState('networkidle');
-}
-
-export async function takeScreenshot(page, name) {
-  await page.screenshot({ path: `screenshots/${name}.png`, fullPage: true });
-}
-
-export function getFutureDate(daysFromNow = 7) {
-  const date = new Date();
-  date.setDate(date.getDate() + daysFromNow);
-  return date.toISOString().split('T')[0];
-}
 
 /**
  * Pick a date in the custom DatePicker component (its input is readOnly —
@@ -391,8 +290,4 @@ export async function pickDate(page, inputLocator, daysFromNow) {
   });
   await popup.getByRole('button', { name: dayLabel, exact: true }).first().click();
   await expect(popup).toBeHidden();
-}
-
-export function getTodayDate() {
-  return new Date().toISOString().split('T')[0];
 }

@@ -663,7 +663,7 @@ function PackagesView({
       <>
         <PageHeader title="Packages" />
 
-        <Modal isOpen onClose={handleDetailsCancel}>
+        <Modal onClose={handleDetailsCancel}>
           <ModalHeader
             title={editingPackage ? 'Edit Package Details' : 'New Package'}
             onClose={handleDetailsCancel}
@@ -1247,7 +1247,6 @@ function PackagesView({
               onAddNote={onAddNote}
               onReply={onReplyNote}
               onDelete={onDeleteNote}
-              user={currentUser}
               readOnly={!canEditPackages}
             />
           )}

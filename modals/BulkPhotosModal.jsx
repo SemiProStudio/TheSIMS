@@ -331,5 +331,3 @@ BulkPhotosModal.propTypes = {
   onApplyPhoto: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired,
 };
-
-export default BulkPhotosModal;

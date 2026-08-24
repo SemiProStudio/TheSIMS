@@ -193,7 +193,7 @@ describe('ControlBar', () => {
 
 describe('DiffView', () => {
   it('should return null when diffResults is null', () => {
-    const { container } = render(<DiffView diffResults={null} onHideDiff={vi.fn()} />);
+    const { container } = render(<DiffView diffResults={null} />);
     expect(container.firstChild).toBeNull();
   });
 
@@ -202,7 +202,7 @@ describe('DiffView', () => {
       { specName: 'Weight', status: 'changed', oldValue: '500g', newValue: '658g' },
       { specName: 'Sensor', status: 'unchanged', oldValue: 'CMOS', newValue: 'CMOS' },
     ];
-    render(<DiffView diffResults={diffResults} onHideDiff={vi.fn()} />);
+    render(<DiffView diffResults={diffResults} />);
     expect(screen.getByText(/1 difference/)).toBeInTheDocument();
   });
 
@@ -210,7 +210,7 @@ describe('DiffView', () => {
     const diffResults = [
       { specName: 'Weight', status: 'changed', oldValue: '500g', newValue: '658g' },
     ];
-    render(<DiffView diffResults={diffResults} onHideDiff={vi.fn()} />);
+    render(<DiffView diffResults={diffResults} />);
     expect(screen.getByText('Weight')).toBeInTheDocument();
     expect(screen.getByText('500g')).toBeInTheDocument();
     expect(screen.getByText('658g')).toBeInTheDocument();
@@ -220,7 +220,7 @@ describe('DiffView', () => {
     const diffResults = [
       { specName: 'ISO Range', status: 'added', oldValue: '', newValue: '100-51200' },
     ];
-    render(<DiffView diffResults={diffResults} onHideDiff={vi.fn()} />);
+    render(<DiffView diffResults={diffResults} />);
     expect(screen.getByText('ISO Range')).toBeInTheDocument();
     expect(screen.getByText('100-51200')).toBeInTheDocument();
     expect(screen.getByText('+')).toBeInTheDocument();
@@ -230,7 +230,7 @@ describe('DiffView', () => {
     const diffResults = [
       { specName: 'Old Spec', status: 'removed', oldValue: 'removed-val', newValue: '' },
     ];
-    render(<DiffView diffResults={diffResults} onHideDiff={vi.fn()} />);
+    render(<DiffView diffResults={diffResults} />);
     expect(screen.getByText('Old Spec')).toBeInTheDocument();
     expect(screen.getByText('-')).toBeInTheDocument();
   });
@@ -239,13 +239,13 @@ describe('DiffView', () => {
     const diffResults = [
       { specName: 'Hidden', status: 'unchanged', oldValue: 'same', newValue: 'same' },
     ];
-    render(<DiffView diffResults={diffResults} onHideDiff={vi.fn()} />);
+    render(<DiffView diffResults={diffResults} />);
     expect(screen.queryByText('Hidden')).not.toBeInTheDocument();
   });
 
   it('should show "—" for empty new values', () => {
     const diffResults = [{ specName: 'Removed', status: 'removed', oldValue: 'old', newValue: '' }];
-    render(<DiffView diffResults={diffResults} onHideDiff={vi.fn()} />);
+    render(<DiffView diffResults={diffResults} />);
     expect(screen.getByText('—')).toBeInTheDocument();
   });
 });

@@ -15,12 +15,7 @@
     "allowJs": true,
     "noEmit": true,
     "types": ["vite/client"],
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"],
-      "@components/*": ["components/*"],
-      "@lib/*": ["lib/*"]
-    }
+    "baseUrl": "."
   },
   "include": ["."],
   "exclude": ["node_modules", "dist", "e2e", "public", "supabase/functions"]

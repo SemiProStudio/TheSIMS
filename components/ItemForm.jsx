@@ -65,7 +65,6 @@ export function useItemForm({
       categorySettings?.[itemForm.category] || {
         trackQuantity: false,
         trackSerialNumbers: true,
-        lowStockThreshold: 0,
       },
     [categorySettings, itemForm.category],
   );
@@ -209,5 +208,3 @@ export function useItemForm({
     handleSpecChange,
   };
 }
-
-export default useItemForm;

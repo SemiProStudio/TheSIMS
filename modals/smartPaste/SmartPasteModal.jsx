@@ -840,7 +840,7 @@ export const SmartPasteModal = memo(function SmartPasteModal({
         )}
 
         {/* Diff View */}
-        <DiffView diffResults={diffResults} onHideDiff={() => setDiffResults(null)} />
+        <DiffView diffResults={diffResults} />
 
         {/* Action Buttons */}
         <div

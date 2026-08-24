@@ -26,13 +26,10 @@ describe('colors', () => {
     expect(colors.bgMedium).toBeDefined();
     expect(colors.bgLight).toBeDefined();
     expect(colors.bgCard).toBeDefined();
-    expect(colors.bgCardSolid).toBeDefined();
   });
 
   it('should have all required primary colors', () => {
     expect(colors.primary).toBeDefined();
-    expect(colors.primaryLight).toBeDefined();
-    expect(colors.primaryDark).toBeDefined();
   });
 
   it('should have all required status colors', () => {
@@ -59,11 +56,6 @@ describe('colors', () => {
     expect(colors.primary).toContain('var(--');
     expect(colors.textPrimary).toContain('var(--');
     expect(colors.danger).toContain('var(--');
-  });
-
-  it('should have focus ring color', () => {
-    expect(colors.focusRing).toBeDefined();
-    expect(colors.focusRing).toContain('var(--');
   });
 });
 
@@ -178,17 +170,16 @@ describe('shadows', () => {
 describe('zIndex', () => {
   it('should have all z-index levels', () => {
     expect(zIndex.dropdown).toBeDefined();
-    expect(zIndex.sticky).toBeDefined();
     expect(zIndex.modal).toBeDefined();
-    expect(zIndex.tooltip).toBeDefined();
+    expect(zIndex.confirm).toBeDefined();
   });
 
   it('should have modal higher than dropdown', () => {
     expect(zIndex.modal).toBeGreaterThan(zIndex.dropdown);
   });
 
-  it('should have tooltip higher than modal', () => {
-    expect(zIndex.tooltip).toBeGreaterThan(zIndex.modal);
+  it('should have confirm higher than modal', () => {
+    expect(zIndex.confirm).toBeGreaterThan(zIndex.modal);
   });
 });
 

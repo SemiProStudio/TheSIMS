@@ -513,7 +513,6 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
   const [dragOverIndex, setDragOverIndex] = useState(null);
   // Track field renames per category: { category: { oldFieldName: newFieldName } }
   const [fieldRenames, setFieldRenames] = useState({});
-  const listRef = useRef(null);
   const newItemRef = useRef(null);
   const addInputRef = useRef(null);
   const dragNodeRef = useRef(null);
@@ -910,7 +909,7 @@ export const SpecsPage = memo(function SpecsPage({ specs, onSave, onBack, showCo
             </div>
 
             {/* Fields List */}
-            <div ref={listRef} style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+            <div style={{ maxHeight: '50vh', overflowY: 'auto' }}>
               {filteredSpecs.length === 0 ? (
                 <div style={{ textAlign: 'center', color: colors.textMuted, padding: spacing[6] }}>
                   {searchFilter || showOnlyRequired
@@ -1213,14 +1212,9 @@ export const CategoriesPage = memo(function CategoriesPage({
     setDirty(true);
   };
 
+  // No item-count guard needed: the Remove button is disabled while the
+  // category still has items.
   const handleRemoveCategory = (row) => {
-    const count = getCategoryCount(row);
-    if (count > 0) {
-      setCategoryError(
-        `Cannot delete "${row.name}" — it has ${count} item(s). Reassign items first.`,
-      );
-      return;
-    }
     setRows((prev) => prev.filter((r) => r.key !== row.key));
     setDirty(true);
   };
@@ -1598,5 +1592,3 @@ export const CategoriesPage = memo(function CategoriesPage({
     </>
   );
 });
-
-export default { ItemFormPage, SpecsPage, CategoriesPage };
