@@ -369,6 +369,7 @@ export const CollapsibleSection = memo(function CollapsibleSection({
         onClick={onToggleCollapse}
         style={{
           '--section-accent-color': accentColor,
+          flexShrink: 0,
           padding: `${spacing[3]}px ${spacing[4]}px`,
           display: 'flex',
           alignItems: 'center',
