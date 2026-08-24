@@ -63,7 +63,6 @@ describe('fromDb — edge cases', () => {
       is_kit: true,
       kit_type: 'camera-kit',
       kit_contents: ['item1', 'item2'],
-      view_count: 10,
       checkout_count: 3,
       location_display: 'Shelf A',
       location_id: 'loc-1',
@@ -86,7 +85,6 @@ describe('fromDb — edge cases', () => {
     expect(result.isKit).toBe(true);
     expect(result.kitType).toBe('camera-kit');
     expect(result.kitItems).toEqual(['item1', 'item2']);
-    expect(result.viewCount).toBe(10);
     expect(result.checkoutCount).toBe(3);
     expect(result.location).toBe('Shelf A');
     expect(result.locationId).toBe('loc-1');
@@ -202,7 +200,6 @@ describe('toDb — edge cases', () => {
       serialNumber: 'SN-123',
       isKit: false,
       kitItems: [],
-      viewCount: 0,
     };
     const result = toDb(frontendObj, INVENTORY_FIELD_MAP);
     expect(result.category_name).toBe('Cameras');
@@ -211,7 +208,6 @@ describe('toDb — edge cases', () => {
     expect(result.serial_number).toBe('SN-123');
     expect(result.is_kit).toBe(false);
     expect(result.kit_contents).toEqual([]);
-    expect(result.view_count).toBe(0);
   });
 
   it('should handle partial updates (only some fields)', () => {

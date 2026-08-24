@@ -4,7 +4,6 @@
 // =============================================================================
 
 import { createContext, useContext } from 'react';
-import { InstallStatus } from '../hooks/usePWA.js';
 
 const PWAContext = createContext(null);
 
@@ -18,29 +17,13 @@ export function usePWAContext() {
   if (!context) {
     // Return a fallback if not in provider (for testing or SSR)
     return {
-      isOnline: true,
-      installStatus: InstallStatus.IDLE,
-      canInstall: false,
-      isInstalled: false,
-      isStandalone: false,
-      promptInstall: () => Promise.resolve({ outcome: 'unavailable' }),
-      dismissInstall: () => {},
       swStatus: 'idle',
-      swRegistration: null,
       updateAvailable: false,
       updateServiceWorker: () => {},
-      checkForUpdates: () => Promise.resolve(false),
-      clearCache: () => Promise.resolve(),
-      notificationsEnabled: false,
-      requestNotificationPermission: () => Promise.resolve(false),
-      sendNotification: () => null,
     };
   }
 
   return context;
 }
-
-// Re-export InstallStatus for convenience
-export { InstallStatus };
 
 export default PWAContext;

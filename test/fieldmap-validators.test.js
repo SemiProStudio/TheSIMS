@@ -45,7 +45,6 @@ describe('fromDb', () => {
       serial_number: 'SN123',
       is_kit: false,
       kit_contents: [],
-      view_count: 5,
       checkout_count: 3,
       location_display: 'Shelf A',
       location_id: 'loc-1',
@@ -66,7 +65,6 @@ describe('fromDb', () => {
     expect(result.serialNumber).toBe('SN123');
     expect(result.isKit).toBe(false);
     expect(result.kitItems).toEqual([]);
-    expect(result.viewCount).toBe(5);
     expect(result.checkoutCount).toBe(3);
     expect(result.location).toBe('Shelf A');
     expect(result.locationId).toBe('loc-1');
@@ -83,12 +81,12 @@ describe('fromDb', () => {
 
   it('applies defaults for missing fields', () => {
     const dbRow = { id: 'CAM-001', name: 'Test' };
-    const defaults = { isKit: false, kitItems: [], viewCount: 0 };
+    const defaults = { isKit: false, kitItems: [], checkoutCount: 0 };
     const result = fromDb(dbRow, INVENTORY_FIELD_MAP, defaults);
 
     expect(result.isKit).toBe(false);
     expect(result.kitItems).toEqual([]);
-    expect(result.viewCount).toBe(0);
+    expect(result.checkoutCount).toBe(0);
   });
 
   it('returns null for null input', () => {

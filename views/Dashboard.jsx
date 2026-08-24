@@ -217,13 +217,28 @@ function Dashboard({
     }
   };
 
-  // The Maintenance stat card scrolls to (and expands) the maintenance panel
+  // The Maintenance stat card scrolls to (and expands) the maintenance panel.
+  // If Customize has hidden the panel, reveal it for this session first — the
+  // card used to be a silent no-op in that state (2026-08-24 audit §3.9).
+  const [forceShowMaintenance, setForceShowMaintenance] = useState(false);
   const revealMaintenancePanel = () => {
     setCollapsedSections((prev) => (prev.maintenance ? { ...prev, maintenance: false } : prev));
+    const hiddenByPrefs = layoutPrefs?.sections?.maintenance?.visible === false;
+    if (hiddenByPrefs && !forceShowMaintenance) {
+      setForceShowMaintenance(true); // the effect below scrolls once it mounts
+      return;
+    }
     document
       .getElementById('dash-section-maintenance')
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+  useEffect(() => {
+    if (forceShowMaintenance) {
+      document
+        .getElementById('dash-section-maintenance')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [forceShowMaintenance]);
 
   // Get sections sorted by order
   const sectionOrder = useMemo(() => {
@@ -233,6 +248,7 @@ function Dashboard({
       return pref?.order ?? defaultSection?.order ?? 99;
     };
     const isVisible = (sectionId) => {
+      if (sectionId === 'maintenance' && forceShowMaintenance) return true;
       const pref = layoutPrefs?.sections?.[sectionId];
       return pref?.visible !== false;
     };
@@ -242,7 +258,7 @@ function Dashboard({
       .map((id) => ({ id, order: getOrder(id) }))
       .sort((a, b) => a.order - b.order)
       .map((s) => s.id);
-  }, [layoutPrefs]);
+  }, [layoutPrefs, forceShowMaintenance]);
 
   // Two independent panel stacks on wide desktops (same breakpoint as the
   // .dashboard-columns CSS); one ordered stack below it
@@ -481,7 +497,6 @@ function Dashboard({
             title="Today"
             icon={CalendarClock}
             badge={todayData.total || null}
-            badgeColor={PANEL_COLORS.today}
             headerColor={PANEL_COLORS.today}
             collapsed={isCollapsed('today')}
             onToggleCollapse={() => toggleCollapse('today')}
@@ -590,7 +605,6 @@ function Dashboard({
             title="Statistics"
             icon={Package}
             badge={stats.total}
-            badgeColor={PANEL_COLORS.stats}
             headerColor={PANEL_COLORS.stats}
             collapsed={isCollapsed('stats')}
             onToggleCollapse={() => toggleCollapse('stats')}
@@ -776,7 +790,6 @@ function Dashboard({
             title="Currently Checked Out"
             icon={LogOut}
             badge={stats.checkedOutItems.length || null}
-            badgeColor={PANEL_COLORS.checkedOut}
             headerColor={PANEL_COLORS.checkedOut}
             collapsed={isCollapsed('checkedOut')}
             onToggleCollapse={() => toggleCollapse('checkedOut')}
@@ -854,7 +867,6 @@ function Dashboard({
             title="Alerts"
             icon={AlertTriangle}
             badge={stats.alerts.length || null}
-            badgeColor={PANEL_COLORS.alerts}
             headerColor={PANEL_COLORS.alerts}
             collapsed={isCollapsed('alerts')}
             onToggleCollapse={() => toggleCollapse('alerts')}
@@ -914,7 +926,6 @@ function Dashboard({
             title="Due Reminders"
             icon={Bell}
             badge={stats.dueReminders.length || null}
-            badgeColor={PANEL_COLORS.reminders}
             headerColor={PANEL_COLORS.reminders}
             collapsed={isCollapsed('reminders')}
             onToggleCollapse={() => toggleCollapse('reminders')}
@@ -961,7 +972,6 @@ function Dashboard({
             title="Low Stock Items"
             icon={TrendingDown}
             badge={stats.lowStockItems.length || null}
-            badgeColor={PANEL_COLORS.lowStock}
             headerColor={PANEL_COLORS.lowStock}
             collapsed={isCollapsed('lowStock')}
             onToggleCollapse={() => toggleCollapse('lowStock')}
@@ -1024,7 +1034,6 @@ function Dashboard({
             title="Upcoming Reservations"
             icon={Calendar}
             badge={upcomingReservations.length || null}
-            badgeColor={PANEL_COLORS.reservations}
             headerColor={PANEL_COLORS.reservations}
             collapsed={isCollapsed('reservations')}
             onToggleCollapse={() => toggleCollapse('reservations')}
@@ -1161,7 +1170,6 @@ function Dashboard({
             title="Upcoming Maintenance"
             icon={Wrench}
             badge={stats.pendingMaintenance.length || null}
-            badgeColor={PANEL_COLORS.maintenance}
             headerColor={PANEL_COLORS.maintenance}
             collapsed={isCollapsed('maintenance')}
             onToggleCollapse={() => toggleCollapse('maintenance')}

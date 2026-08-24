@@ -206,7 +206,6 @@ export const VIEWS = {
 
 // Modal identifiers
 export const MODALS = {
-  ADD_ITEM: 'add-item',
   EDIT_ITEM: 'edit-item',
   ADD_RESERVATION: 'add-res',
   QR_CODE: 'qr',

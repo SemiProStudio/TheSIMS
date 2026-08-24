@@ -33,18 +33,10 @@ function getRequiredEnv(key: string): string {
   return value;
 }
 
-function getOptionalEnv(key: string, fallback = ''): string {
-  return import.meta.env[key] || fallback;
-}
-
 // Validate required vars immediately on module load (fail fast)
 export const env = {
   SUPABASE_URL: getRequiredEnv('VITE_SUPABASE_URL'),
   SUPABASE_ANON_KEY: getRequiredEnv('VITE_SUPABASE_ANON_KEY'),
-
-  SENTRY_DSN: getOptionalEnv('VITE_SENTRY_DSN'),
-  APP_VERSION: getOptionalEnv('VITE_APP_VERSION', '1.0.0'),
-  SENTRY_ENABLED: getOptionalEnv('VITE_SENTRY_ENABLED'),
 
   MODE: (import.meta.env.MODE as string) || 'development',
   DEV: import.meta.env.DEV ?? false,

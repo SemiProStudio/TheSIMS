@@ -227,6 +227,40 @@ export default memo(function MobileHeader({
                   </svg>
                   Theme
                 </button>
+                {/* Same entry the desktop user menu offers — the mobile menu
+                    had no path to Notification Settings at all */}
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onSetView(VIEWS.NOTIFICATIONS);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: `${spacing[2]}px ${spacing[3]}px`,
+                    background: 'transparent',
+                    border: 'none',
+                    borderRadius: borderRadius.md,
+                    color: colors.textPrimary,
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: spacing[2],
+                  }}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                  </svg>
+                  Notifications
+                </button>
                 <div
                   style={{
                     borderTop: `1px solid ${colors.borderLight}`,

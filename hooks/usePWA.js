@@ -1,151 +1,33 @@
 // =============================================================================
 // usePWA Hook
-// Manages PWA installation, service worker, and online/offline status
+// Service-worker registration and the update-available flow — the parts of
+// the PWA layer the app actually ships. The former install-prompt, offline
+// indicator, cache-management and push-notification surface had zero
+// consumers (2026-08-24 audit §3.1) and was stripped to this working core.
 // =============================================================================
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { log, error as logError } from '../lib/logger.js';
 
 /**
- * PWA installation status
- */
-export const InstallStatus = {
-  IDLE: 'idle',
-  AVAILABLE: 'available',
-  INSTALLED: 'installed',
-  DISMISSED: 'dismissed',
-};
-
-/**
- * Custom hook for PWA functionality
- * @returns {Object} PWA state and methods
+ * Registers /sw.js and tracks the update lifecycle.
+ * @returns {{ swStatus: string, updateAvailable: boolean, updateServiceWorker: Function }}
  */
 export function usePWA() {
-  // Installation state
-  const [installStatus, setInstallStatus] = useState(InstallStatus.IDLE);
-
-  // Online/offline state
-  const [isOnline, setIsOnline] = useState(
-    typeof navigator !== 'undefined' ? navigator.onLine : true,
-  );
-
-  // Service worker state
-  const [swStatus, setSwStatus] = useState('idle'); // idle, installing, installed, updating, updated
+  const [swStatus, setSwStatus] = useState('idle'); // idle, installing, installed, updated
   const [swRegistration, setSwRegistration] = useState(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
-
-  // Refs
-  const deferredPrompt = useRef(null);
-
-  // ============================================================================
-  // Online/Offline Detection
-  // ============================================================================
-
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      log('[PWA] Online');
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-      log('[PWA] Offline');
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  // ============================================================================
-  // Install Prompt Handling
-  // ============================================================================
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e) => {
-      // Prevent Chrome's default mini-infobar
-      e.preventDefault();
-
-      // Store the event for later use
-      deferredPrompt.current = e;
-
-      setInstallStatus(InstallStatus.AVAILABLE);
-
-      log('[PWA] Install prompt available');
-    };
-
-    const handleAppInstalled = () => {
-      deferredPrompt.current = null;
-
-      setInstallStatus(InstallStatus.INSTALLED);
-
-      log('[PWA] App installed');
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setInstallStatus(InstallStatus.INSTALLED);
-    }
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
-  }, []);
-
-  /**
-   * Prompt user to install the PWA
-   */
-  const promptInstall = useCallback(async () => {
-    if (!deferredPrompt.current) {
-      log('[PWA] No install prompt available');
-      return { outcome: 'unavailable' };
-    }
-
-    // Show the prompt
-    deferredPrompt.current.prompt();
-
-    // Wait for user choice
-    const { outcome } = await deferredPrompt.current.userChoice;
-
-    log('[PWA] Install prompt outcome:', outcome);
-
-    if (outcome === 'accepted') {
-      setInstallStatus(InstallStatus.INSTALLED);
-    } else {
-      setInstallStatus(InstallStatus.DISMISSED);
-    }
-
-    // Clear the prompt
-    deferredPrompt.current = null;
-
-    return { outcome };
-  }, []);
-
-  /**
-   * Dismiss install prompt
-   */
-  const dismissInstall = useCallback(() => {
-    setInstallStatus(InstallStatus.DISMISSED);
-    log('[PWA] Install dismissed');
-  }, []);
-
-  // ============================================================================
-  // Service Worker Registration
-  // ============================================================================
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) {
       log('[PWA] Service workers not supported');
       return;
     }
+
+    // The controllerchange listener must be removed on cleanup — StrictMode's
+    // double-mount used to stack a second listener that could double the
+    // update reload
+    let removeControllerListener = null;
 
     const registerSW = async () => {
       try {
@@ -194,13 +76,16 @@ export function usePWA() {
         // landings back to the dashboard).
         let hadController = !!navigator.serviceWorker.controller;
         let refreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
+        const onControllerChange = () => {
           const wasControlled = hadController;
           hadController = true;
           if (!wasControlled || refreshing) return;
           refreshing = true;
           window.location.reload();
-        });
+        };
+        navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+        removeControllerListener = () =>
+          navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
 
         setSwStatus('installed');
 
@@ -234,6 +119,7 @@ export function usePWA() {
 
     const cleanup = registerSW();
     return () => {
+      removeControllerListener?.();
       cleanup?.then?.((fn) => fn?.());
     };
   }, []);
@@ -253,109 +139,9 @@ export function usePWA() {
     log('[PWA] Updating service worker');
   }, [swRegistration]);
 
-  /**
-   * Check for service worker updates
-   */
-  const checkForUpdates = useCallback(async () => {
-    if (!swRegistration) return;
-
-    try {
-      await swRegistration.update();
-      log('[PWA] Checked for updates');
-    } catch (error) {
-      logError('[PWA] Update check failed:', error);
-    }
-  }, [swRegistration]);
-
-  /**
-   * Clear all caches
-   */
-  const clearCache = useCallback(async () => {
-    if ('caches' in window) {
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map((name) => caches.delete(name)));
-      log('[PWA] Cache cleared');
-    }
-  }, []);
-
-  // ============================================================================
-  // Push Notifications
-  // ============================================================================
-
-  /**
-   * Request notification permission
-   */
-  const requestNotificationPermission = useCallback(async () => {
-    if (!('Notification' in window)) {
-      log('[PWA] Notifications not supported');
-      return 'unsupported';
-    }
-
-    const permission = await Notification.requestPermission();
-    log('[PWA] Notification permission:', permission);
-    return permission;
-  }, []);
-
-  /**
-   * Check if notifications are enabled
-   */
-  const notificationsEnabled =
-    typeof Notification !== 'undefined' && Notification.permission === 'granted';
-
-  /**
-   * Send a local notification
-   */
-  const sendNotification = useCallback(
-    (title, options = {}) => {
-      if (!notificationsEnabled) {
-        log('[PWA] Notifications not enabled');
-        return null;
-      }
-
-      return new Notification(title, {
-        icon: '/favicon.svg',
-        badge: '/favicon.svg',
-        ...options,
-      });
-    },
-    [notificationsEnabled],
-  );
-
-  // ============================================================================
-  // Computed Values
-  // ============================================================================
-
-  const canInstall = installStatus === InstallStatus.AVAILABLE;
-  const isInstalled =
-    installStatus === InstallStatus.INSTALLED ||
-    window.matchMedia('(display-mode: standalone)').matches;
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-
   return {
-    // Online status
-    isOnline,
-
-    // Installation
-    installStatus,
-    canInstall,
-    isInstalled,
-    isStandalone,
-    promptInstall,
-    dismissInstall,
-
-    // Service worker
     swStatus,
-    swRegistration,
     updateAvailable,
     updateServiceWorker,
-    checkForUpdates,
-    clearCache,
-
-    // Notifications
-    notificationsEnabled,
-    requestNotificationPermission,
-    sendNotification,
   };
 }
-
-export default usePWA;

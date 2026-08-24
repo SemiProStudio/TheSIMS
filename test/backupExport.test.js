@@ -18,16 +18,26 @@ describe('sections', () => {
     );
   });
 
-  it('defaults include data sections but not users/audit', () => {
+  it('defaults include data sections but not users/audit/email log', () => {
     expect(DEFAULT_BACKUP_INCLUDE.inventory).toBe(true);
     expect(DEFAULT_BACKUP_INCLUDE.clients).toBe(true);
+    expect(DEFAULT_BACKUP_INCLUDE.notifications).toBe(true);
     expect(DEFAULT_BACKUP_INCLUDE.users).toBe(false);
     expect(DEFAULT_BACKUP_INCLUDE.auditLog).toBe(false);
+    expect(DEFAULT_BACKUP_INCLUDE.emailLog).toBe(false);
+  });
+
+  it('specs section carries the Smart Paste learning data (2026-08-24 audit §3.5)', () => {
+    const specs = BACKUP_SECTIONS.find((s) => s.key === 'specs');
+    expect(specs.tables).toEqual(['specs', 'smart_paste_aliases']);
+    const notifications = BACKUP_SECTIONS.find((s) => s.key === 'notifications');
+    expect(notifications.tables).toEqual(['email_templates']);
   });
 
   it('tablesForInclude flattens only enabled sections', () => {
     expect(tablesForInclude({ specs: true, clients: true })).toEqual([
       'specs',
+      'smart_paste_aliases',
       'clients',
       'client_notes',
     ]);
@@ -51,8 +61,13 @@ describe('assembleBackup', () => {
     expect(data.version).toBe('3.0');
     expect(data.format).toBe('tables');
     expect(data.exportedAt).toBe('2026-08-14T12:00:00.000Z');
-    expect(Object.keys(data.tables)).toEqual(['specs', 'clients', 'client_notes']);
-    expect(data.counts).toEqual({ specs: 1, clients: 1, client_notes: 2 });
+    expect(Object.keys(data.tables)).toEqual([
+      'specs',
+      'smart_paste_aliases',
+      'clients',
+      'client_notes',
+    ]);
+    expect(data.counts).toEqual({ specs: 1, smart_paste_aliases: 0, clients: 1, client_notes: 2 });
   });
 
   it('strips credential-shaped fields from users no matter the schema', async () => {

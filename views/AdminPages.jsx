@@ -69,11 +69,13 @@ function RowMoveButtons({ onMoveUp, onMoveDown, isFirst, isLast }) {
 }
 
 // ============================================================================
-// Add/Edit Item Page
+// Add Item Page
+// Add-only by design: editing goes through the EDIT_ITEM modal. The page's
+// former edit branch was unreachable (only ever mounted with isEdit={false})
+// and was removed in the 2026-08-24 audit round (§3.3).
 // ============================================================================
 
 export const ItemFormPage = memo(function ItemFormPage({
-  isEdit,
   itemForm,
   setItemForm,
   specs,
@@ -83,7 +85,6 @@ export const ItemFormPage = memo(function ItemFormPage({
   inventory,
   onSave,
   onBack,
-  editingItemId,
 }) {
   const [showSmartPaste, setShowSmartPaste] = useState(false);
 
@@ -105,8 +106,8 @@ export const ItemFormPage = memo(function ItemFormPage({
     handleChange,
     handleSpecChange,
   } = useItemForm({
-    isEdit,
-    itemId: editingItemId,
+    isEdit: false,
+    itemId: undefined,
     itemForm,
     setItemForm,
     specs,
@@ -122,10 +123,8 @@ export const ItemFormPage = memo(function ItemFormPage({
   return (
     <>
       <PageHeader
-        title={isEdit ? 'Edit Item' : 'Add Item'}
-        subtitle={
-          isEdit ? `Editing ${itemForm.name || 'item'}` : 'Add a new item to your inventory'
-        }
+        title="Add Item"
+        subtitle="Add a new item to your inventory"
         onBack={onBack}
         backLabel="Back to Gear List"
       />
@@ -141,12 +140,12 @@ export const ItemFormPage = memo(function ItemFormPage({
                 onClick={() => setShowSmartPaste(true)}
                 style={{ width: '100%', justifyContent: 'center' }}
               >
-                📋 Smart Paste - {isEdit ? 'Update from Product Page' : 'Import from Product Page'}
+                📋 Smart Paste - Import from Product Page
               </Button>
             </div>
 
             {/* Preview Code Badge */}
-            {!isEdit && previewCode && (
+            {previewCode && (
               <div
                 style={{
                   marginBottom: spacing[5],
@@ -377,9 +376,9 @@ export const ItemFormPage = memo(function ItemFormPage({
                 // an unhandled rejection on every failed save
                 onClick={() => Promise.resolve(onSave()).catch(() => {})}
                 disabled={!isValid}
-                icon={isEdit ? Save : Plus}
+                icon={Plus}
               >
-                {isEdit ? 'Save Changes' : 'Add Item'}
+                Add Item
               </Button>
             </div>
           </div>

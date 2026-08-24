@@ -13,13 +13,7 @@ import { SidebarProvider } from './contexts/SidebarContext.jsx';
 import { ModalProvider } from './contexts/ModalContext.jsx';
 import { FilterProvider } from './contexts/FilterContext.jsx';
 import { NavigationProviderWithData } from './contexts/NavigationContext.jsx';
-import { initErrorTracking } from './lib/errorTracking.js';
 import './index.css';
-
-// Error tracking boots with the app. Without VITE_SENTRY_DSN this is a
-// silent no-op — the module shipped fully built but was never initialized,
-// so the app had NO error reporting despite the README claiming Sentry.
-initErrorTracking().catch(() => {});
 
 // Handle stale chunk errors after deployments — force one reload to get fresh assets
 window.addEventListener('error', (event) => {
