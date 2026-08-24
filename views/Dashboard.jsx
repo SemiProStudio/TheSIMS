@@ -88,17 +88,16 @@ const emptyStateStyle = {
   margin: 0,
 };
 
-// Two-column mode sizes the column stacks to the window (see useFillHeight):
-// never shorter than this, so a short window scrolls a little instead of
-// squeezing every panel to a sliver
-const MIN_COLUMNS_HEIGHT = 720;
 // One list row (padding + two lines + its margin) — the floor a list keeps
 // when its column is shared out, so a busy panel always shows a full row
 const LIST_ROW_HEIGHT = 70;
 // Header bar + list padding + one row: a shrinking panel stops here. The
 // section root's overflow:hidden zeroes its automatic flex minimum, so the
-// floor has to live on the panel itself. Four list panels per column (the
-// most possible) still fit inside MIN_COLUMNS_HEIGHT at this floor.
+// floor has to live on the panel itself. These minimums are the only floor
+// under the column area: when the window is shorter than their sum the
+// panels overflow the column box and the page scrolls just that far — the
+// columns themselves keep tracking the window all the way down (an earlier
+// fixed 720px floor read as "stuck at max height" when shrinking a window).
 const PANEL_MIN_HEIGHT = 46 + LIST_ROW_HEIGHT + 32;
 
 // Shared list row style builder. Rows render as <button> for keyboard access,
@@ -265,10 +264,7 @@ function Dashboard({
   // panel stays one line; a long list scrolls inside its share). Below the
   // breakpoint the single stack flows naturally with capped lists.
   const columnsRef = useRef(null);
-  const columnsHeight = useFillHeight(columnsRef, {
-    enabled: isTwoColumn,
-    min: MIN_COLUMNS_HEIGHT,
-  });
+  const columnsHeight = useFillHeight(columnsRef, { enabled: isTwoColumn });
   const fill = isTwoColumn && columnsHeight != null;
   // Every basis in the chain is `auto`, never an intrinsic keyword or 0:
   // WebKit resolves a flex item's max-content through a flex-basis-0 child

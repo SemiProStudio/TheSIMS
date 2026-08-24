@@ -404,11 +404,14 @@ describe('Dashboard column fill (wide screens)', () => {
     expect(lowStock.style.minHeight).toBe('');
   });
 
-  it('never sizes the columns shorter than the floor on a short window', () => {
+  it('tracks a short window down instead of holding a fixed floor', () => {
     wide(true);
     window.innerHeight = 500;
     const { view } = renderDashboard();
-    expect(view.container.querySelector('.dashboard-columns').style.height).toBe('720px');
+    // jsdom lays nothing out (top = 0, no <main> padding): the whole window.
+    // The per-panel minimums are the only floor — a fixed columns floor made
+    // shrinking a window look like the dashboard was stuck at max height.
+    expect(view.container.querySelector('.dashboard-columns').style.height).toBe('500px');
   });
 
   it('keeps the capped free-flowing stack below the breakpoint', () => {
