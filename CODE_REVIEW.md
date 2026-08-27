@@ -20,7 +20,7 @@ _Comprehensive review of architecture, data flow, security, performance, and bes
 | 3.1 | RLS Policies Too Permissive         | CRITICAL | ✅ Already fixed in schema.sql — writes use has_permission()                            |
 | 3.2 | Missing RLS DELETE Policies         | HIGH     | ✅ Already fixed in schema.sql — DELETE policies exist                                  |
 | 3.3 | Users Table No INSERT Policy        | HIGH     | ✅ Already fixed — admin_insert_users policy exists                                     |
-| 3.4 | SECURITY DEFINER Functions          | MEDIUM   | ✅ harden-security-definer.sql exists                                                   |
+| 3.4 | SECURITY DEFINER Functions          | MEDIUM   | ✅ Hardened in migrations — DEFINER fns pin `search_path` (20260810071210)              |
 | 3.5 | Supabase Anon Key Exposure          | LOW      | ✅ By design                                                                            |
 | 4.1 | Service Worker Cache-First          | CRITICAL | ✅ Rewritten with correct strategies + update banner                                    |
 | 4.2 | Full Table Loads on Every Mount     | HIGH     | ⏳ Requires TanStack Query or similar                                                   |
@@ -33,8 +33,8 @@ _Comprehensive review of architecture, data flow, security, performance, and bes
 | 6.1 | Test Coverage Unknown               | MEDIUM   | ✅ 42% statements, 44% branches, 37.5% functions — thresholds enforced in CI            |
 | 6.2 | No Tests for Services               | MEDIUM   | ✅ 51 tests across 13 services                                                          |
 | 7.1 | Service Worker Versioning           | HIGH     | ✅ Fixed with §4.1                                                                      |
-| 7.2 | No Environment Separation           | MEDIUM   | ⏳ Requires Supabase project linking                                                    |
-| 7.3 | No Database Migration System        | MEDIUM   | ⏳ Requires Supabase CLI setup                                                          |
+| 7.2 | No Environment Separation           | MEDIUM   | ✅ Separate prod and test Supabase projects; E2E/CI target the test project             |
+| 7.3 | No Database Migration System        | MEDIUM   | ✅ Versioned migrations in `supabase/migrations/` (baseline + dated)                    |
 
 ---
 
@@ -339,11 +339,15 @@ There's a single Supabase project used for both development and production (infe
 
 **Recommendation:** Use Supabase's project linking for separate dev/staging/prod environments, with different `VITE_SUPABASE_URL` values per environment.
 
+**Resolved:** production and test now run on separate Supabase projects; E2E and CI run exclusively against the test project (`.env.e2e`).
+
 ### 7.3 No Database Migration System — MEDIUM
 
-Schema changes are managed via standalone `.sql` files (`schema.sql`, `functions.sql`, `smart-paste-aliases.sql`). There's no migration history, versioning, or rollback capability.
+Schema changes were originally managed via standalone `.sql` files (`schema.sql`, `functions.sql`, `smart-paste-aliases.sql`) with no migration history, versioning, or rollback capability.
 
 **Recommendation:** Adopt Supabase's built-in migration system (`supabase db diff`, `supabase migration new`) or a tool like `dbmate` for versioned, reversible migrations.
+
+**Resolved:** the repo uses Supabase's migration system — `supabase/migrations/` is the sole source of truth (applied via `supabase db reset` / `supabase db push`), and the deprecated standalone `.sql` files have been removed.
 
 ---
 
