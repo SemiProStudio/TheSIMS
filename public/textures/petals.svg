@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260" viewBox="0 0 260 260">
+  <!-- Sakura theme: five-petal blossoms and single petals drifting down the
+       washi ground -->
+  <g fill="#d98a9e">
+    <g opacity="0.2" transform="translate(48 56)">
+      <path d="M0 -9 C4 -5 4 -1 0 2 C-4 -1 -4 -5 0 -9" transform="rotate(0)"/>
+      <path d="M0 -9 C4 -5 4 -1 0 2 C-4 -1 -4 -5 0 -9" transform="rotate(72)"/>
+      <path d="M0 -9 C4 -5 4 -1 0 2 C-4 -1 -4 -5 0 -9" transform="rotate(144)"/>
+      <path d="M0 -9 C4 -5 4 -1 0 2 C-4 -1 -4 -5 0 -9" transform="rotate(216)"/>
+      <path d="M0 -9 C4 -5 4 -1 0 2 C-4 -1 -4 -5 0 -9" transform="rotate(288)"/>
+    </g>
+    <path d="M180 30 C186 34 186 40 180 44 C174 40 174 34 180 30" opacity="0.16" transform="rotate(24 180 37)"/>
+    <path d="M226 150 C232 154 232 160 226 164 C220 160 220 154 226 150" opacity="0.14" transform="rotate(-30 226 157)"/>
+    <path d="M90 190 C96 194 96 200 90 204 C84 200 84 194 90 190" opacity="0.18" transform="rotate(48 90 197)"/>
+    <path d="M150 236 C156 240 156 246 150 250 C144 246 144 240 150 236" opacity="0.12" transform="rotate(-12 150 243)"/>
+    <path d="M20 130 C26 134 26 140 20 144 C14 140 14 134 20 130" opacity="0.12" transform="rotate(66 20 137)"/>
+  </g>
+</svg>

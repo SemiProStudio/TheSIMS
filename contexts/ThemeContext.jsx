@@ -154,7 +154,7 @@ export function ThemeProvider({ children }) {
 
     // Structural variant: index.css restyles the class-based surfaces per
     // html[data-theme-variant] (hairlines + flat cards, dashed blueprint
-    // rules, hard-edged ledger, frosted glass, extruded clay)
+    // rules, hard-edged ledger, frosted glass, and the rest)
     if (theme.variant) root.dataset.themeVariant = theme.variant;
     else delete root.dataset.themeVariant;
 

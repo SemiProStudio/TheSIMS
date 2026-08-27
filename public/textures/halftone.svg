@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
+  <!-- Riso theme: coarse halftone rosette in the pink ink, offset half a
+       pitch like a misregistered second pass -->
+  <circle cx="7" cy="7" r="1.6" fill="#c94f8e" opacity="0.3"/>
+  <circle cx="21" cy="21" r="1.6" fill="#c94f8e" opacity="0.3"/>
+  <circle cx="21" cy="7" r="1" fill="#3d63c9" opacity="0.22"/>
+  <circle cx="7" cy="21" r="1" fill="#3d63c9" opacity="0.22"/>
+</svg>

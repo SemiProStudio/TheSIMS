@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="360" viewBox="0 0 360 360">
+  <!-- Meridian theme: contour lines of an uncharted rise, with a survey
+       cross — sepia ink on parchment -->
+  <g fill="none" stroke="#7a5c34">
+    <path d="M40 300 C90 240 80 180 130 150 C180 120 200 60 280 40" opacity="0.14" stroke-width="1"/>
+    <path d="M70 320 C120 260 110 200 160 170 C210 140 230 80 310 60" opacity="0.12" stroke-width="1"/>
+    <path d="M100 340 C150 280 140 220 190 190 C240 160 260 100 340 80" opacity="0.1" stroke-width="1"/>
+    <path d="M10 280 C60 220 50 160 100 130 C150 100 170 40 250 20" opacity="0.12" stroke-width="1"/>
+    <path d="M130 355 C180 295 170 235 220 205 C270 175 290 115 358 100" opacity="0.08" stroke-width="1"/>
+  </g>
+  <g stroke="#9c2818" opacity="0.14" stroke-width="1">
+    <path d="M300 280 h16 M308 272 v16"/>
+  </g>
+</svg>

@@ -1923,7 +1923,26 @@ html[data-theme-variant='ledger'] .sidebar-nav-btn[aria-current='page'] svg {
 }
 html[data-theme-variant='ledger'] .sidebar-section-title {
   letter-spacing: 0.12em;
-  border-bottom: 2px solid var(--text-primary);
+  /* Underline the WORD, not the box — the border-bottom this used to carry
+     painted an edge-to-edge black bar under "Admin" (the <p> is full-width) */
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+/* Ledger panels get the same stamp construction as the buttons, one step
+   slimmer (buttons 3px, cards 4px, panels 2px). The section accent survives
+   as a heavier left rule via --section-accent-color (set on the panel root).
+   !important: these surfaces are inline-styled. */
+html[data-theme-variant='ledger'] .collapsible-panel {
+  border: 2px solid var(--text-primary) !important;
+  border-left: 4px solid var(--section-accent-color, var(--text-primary)) !important;
+  border-radius: 0 !important;
+  box-shadow: 2px 2px 0 var(--text-primary) !important;
+}
+html[data-theme-variant='ledger'] .stat-card {
+  border: 2px solid var(--text-primary) !important;
+  border-radius: 0 !important;
+  box-shadow: 2px 2px 0 var(--text-primary) !important;
 }
 
 /* Aurora — frosted glass over the gradient, pills, glow */
@@ -1948,57 +1967,332 @@ html[data-theme-variant='aurora'] .sidebar-nav-btn[aria-current='page'] {
   border-radius: 999px !important;
   box-shadow: 0 0 24px color-mix(in srgb, var(--nav-active-color) 35%, transparent);
 }
+/* The aurora artwork drifts. The tile layer is oversized (inset −12%) so a
+   composited transform can wander without ever exposing an edge; the wrapper
+   clips the excess (overflow: clip is not a scroll container, and nothing in
+   the app uses position: sticky). The layer stays position: absolute — the
+   Safari repaint bug this file warns about is specific to FIXED layers under
+   backdrop-filter. Reduced-motion users get the same framing, parked. */
+html[data-theme-variant='aurora'] .app-wrapper {
+  overflow: clip;
+}
+html.theme-tile[data-theme-variant='aurora'] .app-wrapper::before {
+  inset: -12%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-tile[data-theme-variant='aurora'] .app-wrapper::before {
+    animation: aurora-drift 140s ease-in-out infinite alternate;
+  }
+}
+@keyframes aurora-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  25% {
+    transform: translate3d(-3.5%, 2.5%, 0) scale(1.06);
+  }
+  55% {
+    transform: translate3d(2.5%, -3%, 0) scale(1.1);
+  }
+  100% {
+    transform: translate3d(-1.5%, 3.5%, 0) scale(1.05);
+  }
+}
 
-/* Clay — soft-extruded: no rules, raised buttons that press in, sunken
-   inputs */
-html[data-theme-variant='clay'] .card {
-  border: none;
-}
-html[data-theme-variant='clay'] .btn {
+/* Riso — two-ink print: blue ink rules, pink second pass laid down slightly
+   off-register (offset shadows, heading misprint) */
+html[data-theme-variant='riso'] .btn {
   background: var(--primary);
-  border-radius: var(--radius-2xl);
-  box-shadow:
-    6px 6px 12px rgba(163, 177, 198, 0.6),
-    -6px -6px 12px rgba(255, 255, 255, 0.9);
+  box-shadow: 3px 3px 0 rgba(194, 28, 110, 0.5);
 }
-html[data-theme-variant='clay'] .btn:hover {
+html[data-theme-variant='riso'] .btn:hover {
+  filter: none;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(194, 28, 110, 0.55);
+}
+html[data-theme-variant='riso'] .btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgba(194, 28, 110, 0.5);
+}
+html[data-theme-variant='riso'] .btn-secondary {
+  color: var(--primary);
+  box-shadow: 2px 2px 0 rgba(194, 28, 110, 0.35);
+}
+html[data-theme-variant='riso'] h1,
+html[data-theme-variant='riso'] h2 {
+  text-shadow: 2px 2px 0 rgba(194, 28, 110, 0.3);
+}
+html[data-theme-variant='riso'] .sidebar-nav-btn[aria-current='page'] {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow:
+    inset 3px 0 0 var(--nav-active-color),
+    2px 2px 0 rgba(194, 28, 110, 0.25);
+}
+
+/* Bauhaus — square surfaces, circular controls: pill buttons on 3px black
+   rules, geometry doing the talking */
+html[data-theme-variant='bauhaus'] .btn {
+  background: var(--primary);
+  border: 2px solid var(--text-primary);
+  border-radius: 999px;
+  box-shadow: 0 3px 0 var(--text-primary);
+}
+html[data-theme-variant='bauhaus'] .btn:hover {
+  filter: none;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 var(--text-primary);
+}
+html[data-theme-variant='bauhaus'] .btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--text-primary);
+}
+html[data-theme-variant='bauhaus'] .btn-secondary {
+  border: 2px solid var(--text-primary);
+  border-radius: 999px;
+  background: var(--bg-light);
+  box-shadow: 0 2px 0 var(--text-primary);
+}
+html[data-theme-variant='bauhaus'] .input {
+  background: var(--bg-light);
+  border-color: var(--text-primary);
+}
+html[data-theme-variant='bauhaus'] .sidebar-nav-btn[aria-current='page'] {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: inset 4px 0 0 var(--nav-active-color);
+}
+html[data-theme-variant='bauhaus'] .sidebar-section-title {
+  letter-spacing: 0.14em;
+}
+
+/* Sakura — washi: double-ruled cards, a vermilion hanko marking the active
+   view */
+html[data-theme-variant='sakura'] .card,
+html[data-theme-variant='sakura'] .collapsible-panel {
+  outline: 1px solid var(--border);
+  outline-offset: 3px;
+}
+html[data-theme-variant='sakura'] .btn {
+  background: var(--primary);
+}
+html[data-theme-variant='sakura'] .btn:hover {
+  filter: brightness(1.08);
   transform: none;
-  filter: brightness(1.05);
 }
-html[data-theme-variant='clay'] .btn:active {
+html[data-theme-variant='sakura'] .sidebar-nav-btn[aria-current='page'] {
+  background: transparent !important;
+  box-shadow: inset 3px 0 0 var(--nav-active-color);
+  border-radius: 0 !important;
+}
+html[data-theme-variant='sakura'] .sidebar-section-title {
+  letter-spacing: 0.2em;
+}
+
+/* Meridian — the surveyor's chart: outline stamp buttons, double-ruled map
+   frames, dashed secondary lines */
+html[data-theme-variant='meridian'] .card {
   box-shadow:
-    inset 4px 4px 8px rgba(0, 0, 0, 0.25),
-    inset -4px -4px 8px rgba(255, 255, 255, 0.2);
+    inset 0 0 0 3px var(--bg-light),
+    inset 0 0 0 4px var(--border-light);
 }
-html[data-theme-variant='clay'] .btn-secondary {
-  border: none;
-  background: var(--bg-medium);
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-sm);
+html[data-theme-variant='meridian'] .btn {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 12px;
 }
-html[data-theme-variant='clay'] .btn-secondary:hover {
-  background: var(--bg-medium);
+html[data-theme-variant='meridian'] .btn:hover {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  filter: none;
+  transform: none;
+}
+html[data-theme-variant='meridian'] .btn-secondary {
+  border-style: dashed;
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 12px;
+}
+html[data-theme-variant='meridian'] .sidebar-nav-btn[aria-current='page'] {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: inset 3px 0 0 var(--nav-active-color);
+}
+html[data-theme-variant='meridian'] .sidebar-section-title {
+  letter-spacing: 0.16em;
+}
+
+/* Glacier — frosted glass in daylight: translucent white cards over the
+   arctic gradient, soft pills */
+html[data-theme-variant='glacier'] .card {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.9);
+}
+html[data-theme-variant='glacier'] .btn {
+  background: var(--primary);
+  border-radius: 999px;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+html[data-theme-variant='glacier'] .btn-secondary {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.95);
+}
+html[data-theme-variant='glacier'] .input {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(255, 255, 255, 0.95);
+}
+html[data-theme-variant='glacier'] .sidebar-nav-btn[aria-current='page'] {
+  border-radius: 999px !important;
+}
+
+/* Abyss — the deep: pill glass surfaces lit by their own bioluminescence */
+html[data-theme-variant='abyss'] .btn {
+  background: var(--primary);
+  border-radius: 999px;
+  box-shadow: 0 0 20px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+html[data-theme-variant='abyss'] .btn:hover {
+  filter: brightness(1.08);
+  transform: none;
+  box-shadow: 0 0 30px color-mix(in srgb, var(--primary) 50%, transparent);
+}
+html[data-theme-variant='abyss'] .btn-secondary {
+  border-radius: 999px;
+  background: rgba(94, 234, 212, 0.06);
+}
+html[data-theme-variant='abyss'] .input {
+  background: rgba(94, 234, 212, 0.05);
+  border-color: rgba(94, 234, 212, 0.18);
+}
+html[data-theme-variant='abyss'] .sidebar-nav-btn[aria-current='page'] {
+  border-radius: 999px !important;
+  box-shadow: 0 0 22px color-mix(in srgb, var(--nav-active-color) 40%, transparent);
+}
+
+/* Ember — the forge: molten fills with a banked inner shadow, everything
+   else kept dark and quiet */
+html[data-theme-variant='ember'] .btn {
+  background: var(--primary);
   box-shadow:
-    inset 3px 3px 6px rgba(163, 177, 198, 0.5),
-    inset -3px -3px 6px rgba(255, 255, 255, 0.8);
+    0 0 16px color-mix(in srgb, var(--primary) 30%, transparent),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.3);
 }
-html[data-theme-variant='clay'] .input {
-  border: none;
-  background: var(--bg-dark);
-  box-shadow:
-    inset 4px 4px 8px rgba(163, 177, 198, 0.45),
-    inset -4px -4px 8px rgba(255, 255, 255, 0.85);
+html[data-theme-variant='ember'] .btn:hover {
+  filter: brightness(1.08);
+  transform: none;
 }
-html[data-theme-variant='clay'] .input:focus {
-  box-shadow:
-    inset 4px 4px 8px rgba(163, 177, 198, 0.45),
-    inset -4px -4px 8px rgba(255, 255, 255, 0.85),
-    0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
+html[data-theme-variant='ember'] .card {
+  border-top-color: rgba(255, 160, 77, 0.3);
 }
-html[data-theme-variant='clay'] .sidebar-nav-btn[aria-current='page'] {
-  background: var(--bg-medium) !important;
-  border-radius: var(--radius-2xl) !important;
+html[data-theme-variant='ember'] .sidebar-nav-btn[aria-current='page'] {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: inset 3px 0 0 var(--nav-active-color);
+}
+
+/* Synthwave — neon: glowing pink fills, cyan-underlined active view,
+   headline glow */
+html[data-theme-variant='synthwave'] .btn {
+  background: var(--primary);
   box-shadow:
-    4px 4px 8px rgba(163, 177, 198, 0.5),
-    -4px -4px 8px rgba(255, 255, 255, 0.9);
+    0 0 14px color-mix(in srgb, var(--primary) 45%, transparent),
+    0 0 32px color-mix(in srgb, var(--accent1) 18%, transparent);
+}
+html[data-theme-variant='synthwave'] .btn:hover {
+  filter: brightness(1.08);
+  transform: none;
+}
+html[data-theme-variant='synthwave'] h1,
+html[data-theme-variant='synthwave'] h2 {
+  text-shadow: 0 0 14px color-mix(in srgb, var(--accent1) 55%, transparent);
+}
+html[data-theme-variant='synthwave'] .input {
+  background: rgba(92, 232, 245, 0.05);
+  border-color: rgba(255, 106, 213, 0.25);
+}
+html[data-theme-variant='synthwave'] .sidebar-nav-btn[aria-current='page'] {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow:
+    inset 0 -2px 0 var(--nav-active-color),
+    0 0 18px color-mix(in srgb, var(--nav-active-color) 35%, transparent);
+}
+
+/* Arcade — coin-op: mono labels, hard 2px rules, buttons with real press
+   travel */
+html[data-theme-variant='arcade'] .btn {
+  background: var(--primary);
+  border: 2px solid #0a0d1f;
+  box-shadow:
+    0 4px 0 var(--primary-dark),
+    0 6px 0 rgba(0, 0, 0, 0.5);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 12px;
+}
+html[data-theme-variant='arcade'] .btn:hover {
+  filter: brightness(1.06);
+  transform: none;
+}
+html[data-theme-variant='arcade'] .btn:active {
+  transform: translateY(4px);
+  box-shadow:
+    0 0 0 var(--primary-dark),
+    0 2px 0 rgba(0, 0, 0, 0.5);
+}
+html[data-theme-variant='arcade'] .btn-secondary {
+  border: 2px solid var(--border);
+  background: var(--bg-light);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 12px;
+}
+html[data-theme-variant='arcade'] .sidebar-nav-btn[aria-current='page'] {
+  background: var(--nav-active-color) !important;
+  color: #0b0d10 !important;
+  border-radius: 0 !important;
+}
+html[data-theme-variant='arcade'] .sidebar-nav-btn[aria-current='page'] svg {
+  color: #0b0d10 !important;
+}
+html[data-theme-variant='arcade'] .sidebar-nav-label,
+html[data-theme-variant='arcade'] .sidebar-section-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* Circuit — the bare board: gold pads, silkscreen labels, a routed trace
+   marking the active view */
+html[data-theme-variant='circuit'] .btn {
+  background: var(--primary);
+}
+html[data-theme-variant='circuit'] .btn:hover {
+  filter: brightness(1.08);
+  transform: none;
+}
+html[data-theme-variant='circuit'] .input {
+  background: rgba(94, 232, 164, 0.05);
+  border-color: rgba(232, 192, 92, 0.28);
+}
+html[data-theme-variant='circuit'] .input:focus {
+  border-color: var(--primary);
+}
+html[data-theme-variant='circuit'] .sidebar-nav-btn[aria-current='page'] {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow:
+    inset 3px 0 0 var(--nav-active-color),
+    0 0 14px color-mix(in srgb, var(--nav-active-color) 25%, transparent);
+}
+html[data-theme-variant='circuit'] .sidebar-nav-label,
+html[data-theme-variant='circuit'] .sidebar-section-title {
+  letter-spacing: 0.04em;
 }

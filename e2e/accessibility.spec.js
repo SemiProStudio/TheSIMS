@@ -58,7 +58,7 @@ test.describe('Theme System', () => {
     for (const name of ['Dark', 'Light', 'Cheese', 'Cats', 'Dogs', 'XP']) {
       await expect(section('Legacy').getByText(name, { exact: true })).toBeVisible();
     }
-    for (const name of ['Midnight', 'Paper', 'Darkroom', 'Clay']) {
+    for (const name of ['Midnight', 'Paper', 'Darkroom', 'Aurora']) {
       await expect(section('Modern').getByText(name, { exact: true })).toBeVisible();
     }
     await expect(section('Custom & Random').getByText('Random', { exact: true })).toBeVisible();
