@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <!-- Arcade theme: faint 24px checkerboard, straight off the level select -->
+  <rect x="0" y="0" width="24" height="24" fill="#2e3a68" opacity="0.16"/>
+  <rect x="24" y="24" width="24" height="24" fill="#2e3a68" opacity="0.16"/>
+</svg>

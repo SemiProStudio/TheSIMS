@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1200" viewBox="0 0 1920 1200" preserveAspectRatio="xMidYMid slice">
+  <!-- Synthwave theme: neon horizon — gradient sky, a low sun, and a
+       perspective grid floor (background-size: cover) -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a0b33"/>
+      <stop offset="0.55" stop-color="#2d1050"/>
+      <stop offset="0.72" stop-color="#55175e"/>
+      <stop offset="1" stop-color="#1a0b33"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff9de4" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#ff6ad5" stop-opacity="0.12"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1200" fill="url(#sky)"/>
+  <circle cx="960" cy="820" r="230" fill="url(#sun)"/>
+  <g stroke="#ff6ad5" fill="none">
+    <path d="M0 880 H1920" opacity="0.28" stroke-width="1.5"/>
+    <path d="M0 928 H1920" opacity="0.22" stroke-width="1.5"/>
+    <path d="M0 990 H1920" opacity="0.18" stroke-width="1.5"/>
+    <path d="M0 1070 H1920" opacity="0.14" stroke-width="1.5"/>
+    <path d="M0 1165 H1920" opacity="0.1" stroke-width="1.5"/>
+    <path d="M960 872 L960 1200" opacity="0.2" stroke-width="1"/>
+    <path d="M960 872 L700 1200 M960 872 L440 1200 M960 872 L180 1200 M960 872 L-80 1200" opacity="0.16" stroke-width="1"/>
+    <path d="M960 872 L1220 1200 M960 872 L1480 1200 M960 872 L1740 1200 M960 872 L2000 1200" opacity="0.16" stroke-width="1"/>
+  </g>
+  <g stroke="#5ce8f5" opacity="0.12" fill="none">
+    <path d="M0 872 H1920" stroke-width="2"/>
+  </g>
+</svg>

@@ -24,7 +24,16 @@ test.describe('Visual Regression - Themes', () => {
       'blueprint',
       'ledger',
       'aurora',
-      'clay',
+      'riso',
+      'bauhaus',
+      'sakura',
+      'meridian',
+      'glacier',
+      'abyss',
+      'ember',
+      'synthwave',
+      'arcade',
+      'circuit',
     ];
 
     for (const theme of themesToTest) {

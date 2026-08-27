@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1200" viewBox="0 0 1920 1200" preserveAspectRatio="xMidYMid slice">
+  <!-- Glacier theme: pale arctic light — full-bleed gradient mesh, the
+       bright twin of aurora.svg (background-size: cover) -->
+  <defs>
+    <radialGradient id="a" cx="15%" cy="10%" r="60%">
+      <stop offset="0" stop-color="#8ec9ee" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#8ec9ee" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="b" cx="85%" cy="20%" r="55%">
+      <stop offset="0" stop-color="#9be8d8" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#9be8d8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="c" cx="50%" cy="95%" r="65%">
+      <stop offset="0" stop-color="#c3d3f5" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#c3d3f5" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="d" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e4f0fa"/>
+      <stop offset="1" stop-color="#cfe1f0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1200" fill="url(#d)"/>
+  <rect width="1920" height="1200" fill="url(#a)"/>
+  <rect width="1920" height="1200" fill="url(#b)"/>
+  <rect width="1920" height="1200" fill="url(#c)"/>
+  <g stroke="#ffffff" opacity="0.5">
+    <path d="M0 320 L520 240 L980 350 L1500 230 L1920 330" fill="none" stroke-width="1.5"/>
+    <path d="M0 760 L620 690 L1150 800 L1920 700" fill="none" stroke-width="1.5"/>
+  </g>
+</svg>

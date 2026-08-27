@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">
+  <!-- Bauhaus theme: sparse geometric primer — circle, square, triangle
+       outlines drifting on the gallery ground -->
+  <g fill="none" stroke-width="2">
+    <circle cx="60" cy="70" r="26" stroke="#c02418" opacity="0.1"/>
+    <rect x="210" y="40" width="44" height="44" stroke="#1d4fb5" opacity="0.1" transform="rotate(12 232 62)"/>
+    <path d="M100 250 L130 200 L160 250 Z" stroke="#8a6800" opacity="0.12"/>
+    <circle cx="270" cy="230" r="18" stroke="#141414" opacity="0.08"/>
+    <rect x="30" y="180" width="26" height="26" stroke="#c02418" opacity="0.08" transform="rotate(-8 43 193)"/>
+  </g>
+</svg>

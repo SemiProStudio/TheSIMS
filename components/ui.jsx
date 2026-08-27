@@ -330,8 +330,11 @@ export const CollapsibleSection = memo(function CollapsibleSection({
     // accent, which stacked every screen into a wall of colored slabs.
     <div
       id={id}
-      className={className}
+      className={className ? `collapsible-panel ${className}` : 'collapsible-panel'}
       style={{
+        // The accent var lives on the root (not just the header) so variant
+        // CSS (ledger's stamp panels) can re-use it for the left rule
+        '--section-accent-color': accentColor,
         background: colors.bgCard,
         borderRadius: borderRadius.lg,
         border: `1px solid ${colors.border}`,
@@ -518,7 +521,7 @@ export const StatCard = memo(function StatCard({
   return (
     <Tag
       type={onClick ? 'button' : undefined}
-      className={onClick ? 'stat-card-button' : undefined}
+      className={onClick ? 'stat-card stat-card-button' : 'stat-card'}
       onClick={onClick}
       style={{
         padding: spacing[5],
